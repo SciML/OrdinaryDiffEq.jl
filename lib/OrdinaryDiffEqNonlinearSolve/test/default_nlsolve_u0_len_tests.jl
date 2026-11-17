@@ -41,16 +41,6 @@ end
     @test start_index(default_nlsolve(nothing, Val(false), [0.0], big_oop)) == 1
 end
 
-@testset "SCCNonlinearProblem default is not changed here" begin
-    # SCC init problems keep their current Broyden-first default for now; see the note next
-    # to `_init_u0_len` in src/initialize_dae.jl.
-    explicit = (Returns(nothing), Returns(nothing))
-    scc = SCCNonlinearProblem((small_oop, small_oop), explicit, nothing, Val(true))
-    for iip in (Val(true), Val(false))
-        @test start_index(default_nlsolve(nothing, iip, zeros(4), scc)) == 1
-    end
-end
-
 # Stand-in for a GPU array: anything that says scalar indexing is slow. Newton would need a
 # dense ForwardDiff Jacobian of it up front, so those keep the Broyden-first order.
 struct SlowIndexVector{T} <: AbstractVector{T}
@@ -65,6 +55,28 @@ OrdinaryDiffEqNonlinearSolve.ArrayInterface.fast_scalar_indexing(::Type{<:SlowIn
     @test start_index(default_nlsolve(nothing, Val(false), slow.u0, slow)) == 1
     # a slow `u` alone is enough, e.g. Brown's full state living on the GPU
     @test start_index(default_nlsolve(nothing, Val(false), SlowIndexVector(zeros(4)), small_oop)) == 1
+end
+
+const explicit = (Returns(nothing), Returns(nothing))
+
+@testset "SCCNonlinearProblem is sized by its largest block" begin
+    # The SCC solve hands the same algorithm to every block, so it starts at Newton only when
+    # all of the blocks are small enough for it.
+    small = SCCNonlinearProblem((small_oop, small_iip), explicit, nothing, Val(true))
+    # two blocks of 25 are 50 unknowns in total, but each solve only sees 25
+    edge = SCCNonlinearProblem((edge_oop, edge_oop), explicit, nothing, Val(true))
+    big = SCCNonlinearProblem((small_oop, big_oop), explicit, nothing, Val(true))
+    slow_block = NonlinearProblem((u, p) -> u .^ 2 .- 4, SlowIndexVector([1.5, 1.5]))
+    slow = SCCNonlinearProblem((small_oop, slow_block), explicit, nothing, Val(true))
+    for iip in (Val(true), Val(false)), ad in (false, true)
+        @test start_index(default_nlsolve(nothing, iip, zeros(4), small, ad)) == 3
+        @test start_index(default_nlsolve(nothing, iip, zeros(50), edge, ad)) == 3
+        @test start_index(default_nlsolve(nothing, iip, zeros(28), big, ad)) == 1
+        # one GPU block keeps the Broyden-first order for the whole problem...
+        @test start_index(default_nlsolve(nothing, iip, zeros(4), slow, ad)) == 1
+        # ...and so does a GPU `u`
+        @test start_index(default_nlsolve(nothing, iip, SlowIndexVector(zeros(4)), small, ad)) == 1
+    end
 end
 
 @testset "least-squares default is untouched" begin
@@ -102,6 +114,23 @@ tagof(::AutoForwardDiff{CS, T}) where {CS, T} = T
     # and the default solver actually goes through Newton's Jacobian on the wrapped problem
     for prob in (auto, full)
         sol = solve(prob, default_nlsolve(nothing, Val(true), u, prob, true); abstol = 1.0e-12)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u ≈ [2.0, 2.0]
+    end
+
+    # An SCC problem uses one backend for all of its blocks, so a single AutoSpecialize block
+    # is enough to leave the tag to NonlinearSolve.
+    full_scc = SCCNonlinearProblem((full, full), explicit, nothing, Val(true))
+    mixed_scc = SCCNonlinearProblem((full, auto), explicit, nothing, Val(true))
+    @test _init_autodiff(u, mixed_scc, false, Val(1)) isa AutoFiniteDiff
+    @test tagof(_init_autodiff(u, full_scc, true, Val(1))) <: ForwardDiff.Tag
+    @test tagof(_init_autodiff(u, mixed_scc, true, Val(1))) === Nothing
+    # Every block of the mixed problem gets through Newton's Jacobian with that algorithm,
+    # which is how the SCC solve uses it.
+    alg = default_nlsolve(nothing, Val(true), zeros(4), mixed_scc, true)
+    @test start_index(alg) == 3
+    for block in mixed_scc.probs
+        sol = solve(block, alg; abstol = 1.0e-12)
         @test SciMLBase.successful_retcode(sol)
         @test sol.u ≈ [2.0, 2.0]
     end

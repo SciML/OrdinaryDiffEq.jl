@@ -37,6 +37,11 @@ _untagged_autodiff(::Val{CS} = Val(1)) where {CS} = AutoForwardDiff(; chunksize 
 # and only swaps that tag into an *untagged* backend, so ours would hit
 # `NoFunctionWrapperFoundError` on the first Jacobian. Leave the tag to NonlinearSolve there.
 _needs_ode_tag(nlprob) = SciMLBase.specialization(nlprob.f) === SciMLBase.FullSpecialize
+# An `SCCNonlinearProblem` hands the same backend to every block, so it only keeps our tag
+# when every nonlinear block is `FullSpecialize`.
+function _needs_ode_tag(prob::SciMLBase.SCCNonlinearProblem)
+    return all(p -> !(p isa AbstractNonlinearProblem) || _needs_ode_tag(p), prob.probs)
+end
 function _init_autodiff(u, nlprob, autodiff, chunksize)
     autodiff || return AutoFiniteDiff()
     return _needs_ode_tag(nlprob) ? _tagged_autodiff(u, chunksize) : _untagged_autodiff(chunksize)
@@ -53,15 +58,27 @@ end
 # GPU arrays are left out on purpose. Newton needs a Jacobian straight away, and building a
 # dense ForwardDiff Jacobian of a GPU array scalar-indexes it, while Broyden gets going
 # without one. So for those we keep the old Broyden-first order (`u0_len = nothing`).
-#
-# The `SCCNonlinearProblem` methods further down are not sized yet and still start with
-# Broyden. They hand one algorithm to every block, and switching them moves the init results
-# of SCC-split models around inside the solve tolerance, so that is left for its own change.
 function _init_u0_len(u, nlprob)
     u0 = nlprob.u0
     u0 === nothing && return nothing
     fast = ArrayInterface.fast_scalar_indexing(u) && ArrayInterface.fast_scalar_indexing(u0)
     return fast ? length(u0) : nothing
+end
+# An `SCCNonlinearProblem` solves each block with the same algorithm, so it is sized by its
+# largest block. It then starts at Newton exactly when NonlinearSolve's own default would for
+# every block. Blocks that aren't nonlinear problems (e.g. `LinearProblem`s) or have no state
+# don't go through the polyalg, and one GPU block is enough to keep the Broyden-first order.
+function _init_u0_len(u, prob::SciMLBase.SCCNonlinearProblem)
+    ArrayInterface.fast_scalar_indexing(u) || return nothing
+    u0_len = 0
+    for p in prob.probs
+        p isa AbstractNonlinearProblem || continue
+        u0 = p.u0
+        u0 === nothing && continue
+        ArrayInterface.fast_scalar_indexing(u0) || return nothing
+        u0_len = max(u0_len, length(u0))
+    end
+    return u0_len
 end
 
 function default_nlsolve(
@@ -196,7 +213,8 @@ function default_nlsolve(
     )
     any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, prob, autodiff, chunksize),
+        u0_len = _init_u0_len(u, prob)
     )
 end
 function default_nlsolve(
@@ -205,7 +223,8 @@ function default_nlsolve(
     )
     any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, prob, autodiff, chunksize),
+        u0_len = _init_u0_len(u, prob)
     )
 end
 function default_nlsolve(
