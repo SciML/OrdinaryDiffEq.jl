@@ -303,7 +303,7 @@ function alg_cache(
 end
 
 @cache struct RKV76IIaCache{
-        uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
+        uType, rateType, uNoUnitsType, TabType, InterpType, StageLimiter, StepLimiter,
         Thread, L,
     } <:
     OrdinaryDiffEqMutableCache
@@ -324,6 +324,7 @@ end
     rtmp::rateType
     atmp::uNoUnitsType
     tab::TabType
+    interp::InterpType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -340,6 +341,7 @@ function alg_cache(
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = RKV76IIaTableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    interp = RKV76IIaInterpolation(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = k2
@@ -357,12 +359,13 @@ function alg_cache(
     rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
     return RKV76IIaCache(
         u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, tab,
-        alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy
+        interp, alg.stage_limiter!, alg.step_limiter!, alg.thread, alg.lazy
     )
 end
 
-struct RKV76IIaConstantCache{TabType, L} <: OrdinaryDiffEqConstantCache
+struct RKV76IIaConstantCache{TabType, InterpType, L} <: OrdinaryDiffEqConstantCache
     tab::TabType
+    interp::InterpType
     lazy::L
 end
 
@@ -373,5 +376,6 @@ function alg_cache(
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = RKV76IIaTableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    return RKV76IIaConstantCache(tab, alg.lazy)
+    interp = RKV76IIaInterpolation(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return RKV76IIaConstantCache(tab, interp, alg.lazy)
 end

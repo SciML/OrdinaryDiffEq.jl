@@ -138,6 +138,36 @@ let dt = 0.25
     @test iip.u[end][1] ≈ oop.u[end] rtol = 1.0e-10
 end
 
+let ts = range(0.0, 4.0, length = 81)
+    for prob in (prob_oop, prob_iip), alg in (RKV76IIa(), RKV76IIa(lazy = Val{false}()))
+        sol = solve(prob, alg; dt = 0.25, adaptive = false)
+        @test maximum(abs(first(sol(t)) - exp(-t)) for t in ts) < 1.0e-10
+        @test maximum(abs(first(sol(t, Val{1})) + exp(-t)) for t in ts) < 1.0e-9
+        @test maximum(abs(first(sol(t, Val{2})) - exp(-t)) for t in ts) < 1.0e-8
+        @test maximum(abs(first(sol(t, Val{3})) + exp(-t)) for t in ts) < 1.0e-6
+        sol = solve(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10, saveat = 0.3)
+        @test maximum(abs(first(sol.u[i]) - exp(-sol.t[i])) for i in eachindex(sol.t)) < 1.0e-9
+    end
+end
+
+let prob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 2.0))
+    eager = RKV76IIa(lazy = Val{false}())
+    for alg in (
+            RKV76IIa(), eager, OrdinaryDiffEqCore.CompositeAlgorithm((Vern6(), eager), _ -> 1),
+            OrdinaryDiffEqCore.CompositeAlgorithm((Vern6(), eager), _ -> 2),
+        )
+        integrator = init(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10)
+        step!(integrator, 1.0, true)
+        resize!(integrator, 2)
+        integrator.u[2] = integrator.u[1]
+        derivative_discontinuity!(integrator, true)
+        sol = solve!(integrator)
+        @test SciMLBase.successful_retcode(sol)
+        @test maximum(abs.(sol.u[end] .- exp(-2.0))) < 1.0e-10
+        @test abs(sol(1.5)[2] - exp(-1.5)) < 1.0e-10
+    end
+end
+
 # -------------------------------------------------------------
 ### Backward solve lazy interpolation dt sign regression test
 # Tests that lazy interpolation during a backward solve produces correct results.
