@@ -1,4 +1,4 @@
-using OrdinaryDiffEqLowStorageRK, DiffEqDevTools, Test, Random
+using OrdinaryDiffEqLowStorageRK, DiffEqDevTools, Test, Random, JLArrays
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear
 
 Random.seed!(100)
@@ -2185,5 +2185,43 @@ end
     @test sol.t ≈ sol_SA.t
     for i in eachindex(sol_SA.u), j in eachindex(u)
         @test sol.u[i][j] ≈ sol_SA.u[i][j][1]
+    end
+end
+
+@testset "Retry after a rejected step" begin
+    rhs(u, p, t) = [-u[1] + u[2] * cos(t) - u[1]^2 / 5, -u[2] / 2 - u[1] * sin(2t) + cos(3t)]
+    rhs!(du, u, p, t) = (du .= rhs(u, p, t))
+    probs = (ODEProblem(rhs, [1.0, 0.5], (0.0, 6.0)), ODEProblem(rhs!, [1.0, 0.5], (0.0, 6.0)))
+    algs = (
+        CKLLSRK43_2(), CKLLSRK54_3C(), CKLLSRK95_4S(), CKLLSRK95_4C(), CKLLSRK95_4M(),
+        CKLLSRK54_3C_3R(), CKLLSRK54_3M_3R(), CKLLSRK54_3N_3R(), CKLLSRK85_4C_3R(),
+        CKLLSRK85_4M_3R(), CKLLSRK85_4P_3R(), CKLLSRK54_3N_4R(), CKLLSRK54_3M_4R(),
+        CKLLSRK65_4M_4R(), CKLLSRK85_4FM_4R(), CKLLSRK75_4M_5R(),
+        RDPK3SpFSAL35(), RDPK3SpFSAL49(), RDPK3SpFSAL510(),
+    )
+    for alg in algs, prob in probs, save_everystep in (true, false)
+        tols = (; abstol = 1.0e-7, reltol = 1.0e-7, save_everystep)
+        retried = init(prob, alg; dt = 3.0, tols...)
+        step!(retried)
+        @test retried.stats.nreject > 0
+        fresh = init(prob, alg; dt = retried.t, tols...)
+        step!(fresh)
+        @test fresh.stats.nreject == 0
+        @test fresh.u ≈ retried.u
+    end
+
+    A = [0.0 1.0; -1.0 0.0]
+    lin!(du, u, A, t) = (du .= A * u; nothing)
+    linprobs = (
+        ODEProblem((u, A, t) -> A * u, [1.0, 0.0], (0.0, 6.0), A),
+        ODEProblem(lin!, [1.0, 0.0], (0.0, 6.0), A),
+        ODEProblem(lin!, JLArray([1.0, 0.0]), (0.0, 6.0), JLArray(A)),
+    )
+    JLArrays.allowscalar(false)
+    for alg in algs, prob in linprobs, save_everystep in (true, false)
+        integ = init(prob, alg; dt = 3.0, abstol = 1.0e-7, reltol = 1.0e-7, save_everystep)
+        step!(integ)
+        @test integ.stats.nreject > 0
+        @test Array(integ.u) ≈ [cos(integ.t), -sin(integ.t)] atol = 2.0e-6
     end
 end
