@@ -35,13 +35,16 @@ end
         before = fill(true, 2)
         after = fill(false, 2)
         stable = fill(false, 2)
+        pinned = fill(false, 2)
         caught = fill(false, 2)
         Threads.@threads :dynamic for i in 1:2
             task = current_task()
             before[i] = task.sticky
             ids = Int[]
+            flags = Bool[]
             try
                 ODEX._threaded_foreach(true, 1:4) do j
+                    push!(flags, current_task().sticky)
                     push!(ids, Threads.threadid())
                     yield()
                     push!(ids, Threads.threadid())
@@ -52,9 +55,11 @@ end
             end
             after[i] = task.sticky
             stable[i] = allequal(ids)
+            pinned[i] = all(flags)
         end
         @test before == after == [false, false]
         @test all(stable)
+        @test all(pinned)
         @test caught == [throws, throws]
     end
 end
