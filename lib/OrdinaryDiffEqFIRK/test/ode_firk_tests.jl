@@ -1,5 +1,6 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
 using SparseArrays
+using LinearSolve: LUFactorization
 using OrdinaryDiffEqTsit5: AutoTsit5
 using ADTypes: AutoFiniteDiff
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
@@ -363,4 +364,25 @@ end
     oop = solve(ODEProblem(foop, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
     @test oop.retcode == ReturnCode.Success
     @test oop.u[end] ≈ iip.u[end] rtol = 1.0e-8
+end
+
+@testset "In-place FIRK rejects the step when the linear solve fails (#4997)" begin
+    # ∂w'/∂c = -Inf at c = 0, so W is non-finite and LU reports a failed factorization
+    function f!(du, u, p, t)
+        d, c, w = u
+        du[1] = -d
+        du[2] = d - c
+        du[3] = -(c < 0 ? NaN : c^0.1) - w
+        return nothing
+    end
+    prob = ODEProblem(f!, [1.0, 0.0, 0.0], (0.0, 10.0))
+    algs = (
+        RadauIIA3(linsolve = LUFactorization()), RadauIIA5(linsolve = LUFactorization()),
+        RadauIIA9(linsolve = LUFactorization()), AdaptiveRadau(linsolve = LUFactorization()),
+        AdaptiveRadau(linsolve = LUFactorization(), threading = true),
+    )
+    for alg in algs, kw in ((;), (; adaptive = false, dt = 1.0e-3))
+        sol = solve(prob, alg; kw...)
+        @test sol.retcode != ReturnCode.Success || isapprox(sol.u[end][1], exp(-10); rtol = 1.0e-2)
+    end
 end
