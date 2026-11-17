@@ -419,10 +419,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] = z1
-            integrator.k[4] = z2
-        end
+        integrator.k[3] = z1
+        integrator.k[4] = z2
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -589,10 +587,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] .= z1
-            integrator.k[4] .= z2
-        end
+        integrator.k[3] .= z1
+        integrator.k[4] .= z2
     end
 
     f(fsallast, u, p, t + dt)
@@ -787,11 +783,9 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] = z1
-            integrator.k[4] = z2
-            integrator.k[5] = z3
-        end
+        integrator.k[3] = z1
+        integrator.k[4] = z2
+        integrator.k[5] = z3
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -1055,11 +1049,9 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] .= z1
-            integrator.k[4] .= z2
-            integrator.k[5] .= z3
-        end
+        integrator.k[3] .= z1
+        integrator.k[4] .= z2
+        integrator.k[5] .= z3
     end
 
     f(fsallast, u, p, t + dt)
@@ -1346,13 +1338,11 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] = z1
-            integrator.k[4] = z2
-            integrator.k[5] = z3
-            integrator.k[6] = z4
-            integrator.k[7] = z5
-        end
+        integrator.k[3] = z1
+        integrator.k[4] = z2
+        integrator.k[5] = z3
+        integrator.k[6] = z4
+        integrator.k[7] = z5
     end
 
     integrator.fsallast = f(u, p, t + dt)
@@ -1739,13 +1729,11 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            integrator.k[3] .= z1
-            integrator.k[4] .= z2
-            integrator.k[5] .= z3
-            integrator.k[6] .= z4
-            integrator.k[7] .= z5
-        end
+        integrator.k[3] .= z1
+        integrator.k[4] .= z2
+        integrator.k[5] .= z3
+        integrator.k[6] .= z4
+        integrator.k[7] .= z5
     end
 
     f(fsallast, u, p, t + dt)
@@ -2004,17 +1992,15 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            cmax = tabs[end].c
-            for j in eachindex(cmax)
-                weight = _stage_weight(c, 1, cmax[j])
-                kj = @.. weight * z[1]
-                for i in 2:num_stages
-                    weight = _stage_weight(c, i, cmax[j])
-                    kj = @.. kj + weight * z[i]
-                end
-                integrator.k[j + 2] = kj
+        cmax = tabs[end].c
+        for j in eachindex(cmax)
+            weight = _stage_weight(c, 1, cmax[j])
+            kj = @.. weight * z[1]
+            for i in 2:num_stages
+                weight = _stage_weight(c, i, cmax[j])
+                kj = @.. kj + weight * z[i]
             end
+            integrator.k[j + 2] = kj
         end
     end
 
@@ -2360,15 +2346,13 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            cmax = tabs[end].c
-            for j in eachindex(cmax)
-                weight = _stage_weight(c, 1, cmax[j])
-                @.. integrator.k[j + 2] = weight * z[1]
-                for i in 2:num_stages
-                    weight = _stage_weight(c, i, cmax[j])
-                    @.. integrator.k[j + 2] += weight * z[i]
-                end
+        cmax = tabs[end].c
+        for j in eachindex(cmax)
+            weight = _stage_weight(c, 1, cmax[j])
+            @.. integrator.k[j + 2] = weight * z[1]
+            for i in 2:num_stages
+                weight = _stage_weight(c, i, cmax[j])
+                @.. integrator.k[j + 2] += weight * z[i]
             end
         end
     end
@@ -2610,10 +2594,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            for i in 1:num_stages
-                integrator.k[i + 2] = z[i]
-            end
+        for i in 1:num_stages
+            integrator.k[i + 2] = z[i]
         end
     end
 
@@ -2798,10 +2780,8 @@ end
 
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
-        if alg.extrapolant != :constant
-            for i in 1:num_stages
-                integrator.k[i + 2] .= z[i]
-            end
+        for i in 1:num_stages
+            integrator.k[i + 2] .= z[i]
         end
     end
 
