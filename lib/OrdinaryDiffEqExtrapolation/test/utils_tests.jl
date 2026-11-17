@@ -29,3 +29,32 @@ const ODEX = OrdinaryDiffEqExtrapolation
     @test ODEX._thread_storage_size() ==
         Threads.nthreads(:default) + Threads.nthreads(:interactive)
 end
+
+@testset "Nested threaded fallback keeps caller migration state" begin
+    for throws in (false, true)
+        before = fill(true, 2)
+        after = fill(false, 2)
+        stable = fill(false, 2)
+        caught = fill(false, 2)
+        Threads.@threads :dynamic for i in 1:2
+            task = current_task()
+            before[i] = task.sticky
+            ids = Int[]
+            try
+                ODEX._threaded_foreach(true, 1:4) do j
+                    push!(ids, Threads.threadid())
+                    yield()
+                    push!(ids, Threads.threadid())
+                    throws && j == 3 && error("body failed")
+                end
+            catch
+                caught[i] = true
+            end
+            after[i] = task.sticky
+            stable[i] = allequal(ids)
+        end
+        @test before == after == [false, false]
+        @test all(stable)
+        @test caught == [throws, throws]
+    end
+end

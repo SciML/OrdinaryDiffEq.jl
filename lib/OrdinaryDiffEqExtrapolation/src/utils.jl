@@ -22,9 +22,14 @@
 @inline function _threaded_foreach(f, ::Union{Bool, BaseThreads}, range)
     if ccall(:jl_in_threaded_region, Cint, ()) != 0
         # Bodies index buffers by threadid, so pin the serial loop to one thread.
-        t = Task(() -> foreach(f, range))
-        t.sticky = true
-        wait(schedule(t))
+        task = current_task()
+        sticky = task.sticky
+        task.sticky = true
+        try
+            foreach(f, range)
+        finally
+            task.sticky = sticky
+        end
         return nothing
     end
     return Threads.@threads :static for i in range
