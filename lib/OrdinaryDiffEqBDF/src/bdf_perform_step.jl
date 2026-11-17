@@ -1612,6 +1612,7 @@ function perform_step!(
     #for terkp1, we could use corrector and predictor to make an estimation.
     if _fbdf_use_first_step_estimate(integrator, cache)
         _fbdf_first_step_terkp1!(integrator, cache)
+        integrator.force_stepfail && return
     else
         @.. broadcast = false terkp1_tmp = (u - u₀)
         for j in 1:(k + 1)

@@ -1,6 +1,6 @@
 using OrdinaryDiffEqBDF, LinearAlgebra, Test, ODEProblemLibrary
 using OrdinaryDiffEqNonlinearSolve: NLFunctional
-import OrdinaryDiffEqCore
+import OrdinaryDiffEqCore, LinearSolve, SciMLBase
 
 # Start-up of FBDF (https://github.com/SciML/OrdinaryDiffEq.jl/issues/5003): the first step
 # after a (re)start has no history, and order-1 steps used to be sized from ‖h y′‖.
@@ -22,6 +22,7 @@ rlc_solve(prob) = solve(prob, FBDF(); reltol = 1.0e-6, abstol = [1.0e-6, 1.0e-12
 
 decay(u, p, t) = -u
 decay!(du, u, p, t) = (du .= -u)
+scaled_decay!(du, u, p, t) = (du .= -p .* u)   # with mass matrix p·I: still y′ = -y
 
 # Weighted RMS norm of the true local error of one backward-Euler step from u0, with
 # abstol = reltol = 1: an independent reference for EEst.
@@ -102,4 +103,82 @@ end
     s4, s6 = sol(1.0e-4), sol(1.0e-6)
     @test s6.retcode == ReturnCode.Success
     @test 5 < s6.stats.naccept / s4.stats.naccept < 20
+end
+
+@testset "FBDF startup supports multidimensional state arrays" begin
+    prob = ODEProblem(decay!, ones(2, 2, 2), (0.0, 1.0))
+    for alg in (FBDF(), FBDF(nlsolve = NLFunctional()))
+        sol = solve(prob, alg; reltol = 1.0e-6, abstol = 1.0e-6)
+        @test sol.retcode == ReturnCode.Success
+        @test size(sol.u[end]) == size(prob.u0)
+        @test sol.u[end] ≈ exp(-1) .* prob.u0 rtol = 1.0e-5
+    end
+end
+
+# Fail only the extra error-estimator solve, after Newton has converged.
+# A failed solver is allowed to overwrite its input and output buffers.
+struct FailFBDFEstimate <: LinearSolve.AbstractSolveFunction
+    rhs::Base.RefValue{Any}
+    failures::Base.RefValue{Int}
+    persistent::Bool
+end
+
+LinearSolve.needs_concrete_A(::FailFBDFEstimate) = true
+
+function SciMLBase.solve!(cache::LinearSolve.LinearCache, alg::FailFBDFEstimate; kwargs...)
+    if cache.b === alg.rhs[] && (alg.persistent || alg.failures[] == 0)
+        alg.failures[] += 1
+        fill!(cache.b, NaN)
+        fill!(cache.u, NaN)
+        return SciMLBase.build_linear_solution(
+            alg, cache.u, nothing, nothing; retcode = ReturnCode.ConvergenceFailure
+        )
+    end
+    cache.u .= cache.A \ cache.b
+    return SciMLBase.build_linear_solution(
+        alg, cache.u, nothing, nothing; retcode = ReturnCode.Success
+    )
+end
+
+# An FBDF integrator whose first-step estimator solve fails (once, or every time).
+function init_failing_estimate(prob, persistent; kwargs...)
+    linsolve = FailFBDFEstimate(Ref{Any}(nothing), Ref(0), persistent)
+    integ = init(prob, FBDF(; linsolve); reltol = 1.0e-6, abstol = 1.0e-6, kwargs...)
+    linsolve.rhs[] = integ.cache.terkp1_tmp   # identifies the estimator solve
+    return integ, linsolve
+end
+
+@testset "FBDF rejects a failed first-step error-estimator solve" begin
+    # Rescaling y' = -y must not make an inaccurate step acceptable. An unfiltered
+    # residual would be smaller by 1e-9 even though the state error is unchanged.
+    for scale in (1.0, 1.0e-9), persistent in (false, true)
+        prob = ODEProblem(
+            ODEFunction(scaled_decay!; mass_matrix = Diagonal([scale])), [1.0], (0.0, 1.0),
+            scale
+        )
+        integ, linsolve = init_failing_estimate(prob, persistent; dt = 0.1, maxiters = 10)
+        if persistent
+            sol = solve!(integ)
+            @test !SciMLBase.successful_retcode(sol)
+            @test integ.stats.naccept == 0
+            @test integ.t == prob.tspan[1]
+            @test linsolve.failures[] > 1
+        else
+            step!(integ)
+            @test linsolve.failures[] == 1
+            @test 0 < integ.t < 0.1
+            @test isfinite(OrdinaryDiffEqCore.get_EEst(integ))
+            true_error = abs(integ.u[1] - exp(-integ.t)) / (2.0e-6)
+            @test true_error < 1
+        end
+    end
+end
+
+@testset "FBDF falls back to the unfiltered estimate for M = I" begin
+    # For M = I the residual is a state error, so a failing estimator solve must not stop the solve.
+    integ, linsolve = init_failing_estimate(ODEProblem(decay!, [1.0], (0.0, 1.0)), true)
+    sol = solve!(integ)
+    @test sol.retcode == ReturnCode.Success
+    @test linsolve.failures[] >= 1
+    @test sol.u[end][1] ≈ exp(-1) rtol = 1.0e-4
 end

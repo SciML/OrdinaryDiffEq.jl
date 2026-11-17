@@ -393,8 +393,7 @@ end
 # Newton's matrix as (M - h γ J)⁻¹ r. The filter damps stiff components and gives index-1
 # algebraic rows (zero rows of M) the error their differential rows imply. EEst =
 # ‖terkp1‖ / 2 as on later order-1 steps, and it does not depend on the absolute time.
-# With a Krylov linsolve the filter costs one extra iterative solve per (re)start; if that
-# solve fails, the unfiltered r is used.
+# With a Krylov linsolve the filter costs one extra iterative solve per (re)start.
 function _fbdf_first_step_terkp1!(integrator, cache)
     (; nlsolver, terkp1_tmp, tmp) = cache
     @.. broadcast = false tmp = integrator.u - integrator.uprev
@@ -406,20 +405,32 @@ function _fbdf_first_step_terkp1!(integrator, cache)
         integrator, nlsolver.cache.linsolve; b = vec(terkp1_tmp), linu = vec(est)
     )
     SciMLBase.has_stats(integrator) && (integrator.stats.nsolve += 1)
-    if SciMLBase.successful_retcode(linres.retcode) ||
-            linres.retcode == SciMLBase.ReturnCode.Default
+    rc = linres.retcode
+    ok = (SciMLBase.successful_retcode(rc) || rc == SciMLBase.ReturnCode.Default) &&
+        all(isfinite, est)
+    if ok
         c = -inv(nlsolver.cache.W_γdt)
         @.. broadcast = false terkp1_tmp = c * est
+    elseif integrator.f.mass_matrix === I
+        # r is already a state error; recompute it, since the solve may overwrite b
+        _fbdf_first_step_residual!(terkp1_tmp, tmp, integrator)
     else
-        _fbdf_first_step_residual!(terkp1_tmp, tmp, integrator)   # b may be overwritten
+        # r is in the units of M (rescaling the equations rescales it): reject the step
+        integrator.force_stepfail = true
     end
     return nothing
 end
 
 # r = M (u - uprev) - h f(uprev), with `Δu` = u - uprev.
 function _fbdf_first_step_residual!(r, Δu, integrator)
-    mul!(r, integrator.f.mass_matrix, Δu)
-    @.. broadcast = false r = r - integrator.dt * integrator.fsalfirst
+    (; dt, fsalfirst) = integrator
+    mass_matrix = integrator.f.mass_matrix
+    if mass_matrix === I
+        @.. broadcast = false r = Δu - dt * fsalfirst
+    else
+        mul!(vec(r), mass_matrix, vec(Δu))
+        @.. broadcast = false r = r - dt * fsalfirst
+    end
     return r
 end
 
