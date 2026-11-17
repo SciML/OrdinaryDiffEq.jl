@@ -211,6 +211,7 @@ const ET = OrdinaryDiffEqExplicitTableaus
     @time @testset "ODE Tableau Convergence Tests" begin
         include("ode_tableau_convergence_tests.jl")
     end
+    
     @testset "Tableau consistency: c equals row sums of A" begin
         for tab in [
                 ET.Feagin12(BigFloat),
@@ -222,17 +223,23 @@ const ET = OrdinaryDiffEqExplicitTableaus
     end
 
     @testset "Non-autonomous high-order convergence (catches wrong c)" begin
-        setprecision(400)
-        # u' = u*cos(t)  =>  u(t) = u0*exp(sin(t)); explicit t-dependence exercises c
-        f_na = ODEFunction(
-            (u, p, t) -> u * cos(t);
-            analytic = (u0, p, t) -> u0 * exp(sin(t))
-        )
-        prob_na = ODEProblem(f_na, big"1.0", (big"0.0", big"1.0"))
-        dts_na = big"1.0" ./ 2 .^ (6:-1:3)
-        for tab in [ET.Feagin12(BigFloat), ET.Feagin14(BigFloat)]
-            sim = test_convergence(dts_na, prob_na, ExplicitRK(tableau = tab))
-            @test sim.𝒪est[:l∞] >= tab.order - 0.3
+        setprecision(BigFloat, 400) do
+            # u' = u*cos(t)  =>  u(t) = u0*exp(sin(t)); explicit t-dependence exercises c
+            f_na = ODEFunction(
+                (u, p, t) -> u * cos(t);
+                analytic = (u0, p, t) -> u0 * exp(sin(t))
+            )
+            prob_na = ODEProblem(f_na, big"1.0", (big"0.0", big"1.0"))
+            dts_na = big"1.0" ./ 2 .^ (6:-1:3)
+            for tab in [
+                    ET.Feagin10(BigFloat),
+                    ET.Feagin12(BigFloat),
+                    ET.Feagin14(BigFloat),
+                    ET.Ono12(BigFloat),
+                ]
+                sim = test_convergence(dts_na, prob_na, ExplicitRK(tableau = tab))
+                @test sim.𝒪est[:l∞] >= tab.order - 0.3
+            end
         end
     end
 end
