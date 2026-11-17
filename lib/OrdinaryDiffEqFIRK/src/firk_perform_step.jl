@@ -1810,8 +1810,14 @@ end
         c_prime = Vector{typeof(dt)}(undef, num_stages) #time stepping
         c_prime[num_stages] = dt / cache.dtprev
         derivatives = Matrix{typeof(u)}(undef, num_stages, num_stages)
+        cmax = tabs[end].c
         for i in 1:num_stages
-            z[i] = @.. integrator.k[i + 2]
+            weight = _stage_weight(cmax, 1, c[i])
+            z[i] = @.. weight * integrator.k[3]
+            for j in 2:length(cmax)
+                weight = _stage_weight(cmax, j, c[i])
+                z[i] = @.. z[i] + weight * integrator.k[j + 2]
+            end
         end
         derivatives[1, 1] = @.. z[1] / c[1]
         for j in 2:num_stages
@@ -1999,8 +2005,15 @@ end
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            for i in 1:num_stages
-                integrator.k[i + 2] = @.. z[i]
+            cmax = tabs[end].c
+            for j in eachindex(cmax)
+                weight = _stage_weight(c, 1, cmax[j])
+                kj = @.. weight * z[1]
+                for i in 2:num_stages
+                    weight = _stage_weight(c, i, cmax[j])
+                    kj = @.. kj + weight * z[i]
+                end
+                integrator.k[j + 2] = kj
             end
         end
     end
@@ -2021,7 +2034,7 @@ end
     (; κ, derivatives, z, w, c_prime, αdt, βdt) = cache
     (; dw1, ubuff, dw2, cubuff, dw) = cache
     (; ks, fw, J, W1, W2) = cache
-    (; tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol) = cache
+    (; tmp, atmp, jac_config, linsolve1, linsolve2) = cache
     (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     alg = unwrap_alg(integrator, true)
     (; maxiters) = alg
@@ -2048,6 +2061,7 @@ end
         end
         κ = cache.κ
     end
+    (; rtol, atol) = cache
 
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt)
@@ -2084,8 +2098,14 @@ end
             integrator.k[i + 2] = map(zero, u)
         end
     else
+        cmax = tabs[end].c
         for i in 1:num_stages
-            @.. z[i] = integrator.k[i + 2]
+            weight = _stage_weight(cmax, 1, c[i])
+            @.. z[i] = weight * integrator.k[3]
+            for j in 2:length(cmax)
+                weight = _stage_weight(cmax, j, c[i])
+                @.. z[i] += weight * integrator.k[j + 2]
+            end
         end
         @.. derivatives[1, 1] = z[1] / c[1]
         for j in 2:num_stages
@@ -2341,8 +2361,14 @@ end
     if OrdinaryDiffEqCore.get_EEst(integrator) <= oneunit(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            for i in 1:num_stages
-                integrator.k[i + 2] .= z[i]
+            cmax = tabs[end].c
+            for j in eachindex(cmax)
+                weight = _stage_weight(c, 1, cmax[j])
+                @.. integrator.k[j + 2] = weight * z[1]
+                for i in 2:num_stages
+                    weight = _stage_weight(c, i, cmax[j])
+                    @.. integrator.k[j + 2] += weight * z[i]
+                end
             end
         end
     end
