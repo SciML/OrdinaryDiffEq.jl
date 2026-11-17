@@ -25,13 +25,52 @@ _tagged_autodiff(u, ::Val{0}) = _tagged_autodiff(u, Val(1))
 function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
     return AutoForwardDiff{CS}(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
 end
+_untagged_autodiff(::Val{nothing}) = _untagged_autodiff(Val(1))
+_untagged_autodiff(::Val{0}) = _untagged_autodiff(Val(1))
+_untagged_autodiff(::Val{CS} = Val(1)) where {CS} = AutoForwardDiff(; chunksize = CS)
+
+# Which ForwardDiff tag the init solve should use. `BrownFullBasicInit` and
+# `ShampineCollocationInit` build `FullSpecialize` residuals that call the ODE function,
+# whose FunctionWrappers were compiled for `OrdinaryDiffEqTag` duals, so they need that tag.
+# An init problem handed over through `OverrideInitData` is a separate function though. If it
+# is `AutoSpecialize` (the default), NonlinearSolveBase wraps it for `NonlinearSolveTag` duals
+# and only swaps that tag into an *untagged* backend, so ours would hit
+# `NoFunctionWrapperFoundError` on the first Jacobian. Leave the tag to NonlinearSolve there.
+_needs_ode_tag(prob) = SciMLBase.specialization(prob.f) === SciMLBase.FullSpecialize
+function _needs_ode_tag(prob::SciMLBase.SCCNonlinearProblem)
+    return all(p -> !(p isa AbstractNonlinearProblem) || _needs_ode_tag(p), prob.probs)
+end
+function _init_autodiff(u, prob, autodiff, chunksize)
+    autodiff || return AutoFiniteDiff()
+    return _needs_ode_tag(prob) ? _tagged_autodiff(u, chunksize) : _untagged_autodiff(chunksize)
+end
+
+# `FastShortcutNonlinearPolyalg` only starts at NewtonRaphson (instead of Broyden) when it
+# is told the system is small (`u0_len <= 25`), which is what `solve(prob, nothing)` does in
+# NonlinearSolve. Without it, a good initial guess can still send Broyden off to a distant
+# root that also reports `Success` (SciML/OrdinaryDiffEq.jl#5005).
+#
+# The size has to come from the problem rather than from `u`: `BrownFullBasicInit` passes
+# the full state as `u` but only solves for the algebraic variables.
+_init_u0_len(prob) = _init_u0_len_of(SciMLBase.state_values(prob))
+_init_u0_len_of(::Nothing) = nothing
+_init_u0_len_of(u0) = length(u0)
+# The SCC solve hands the same algorithm to every block, so size it by the largest block.
+# That keeps the Newton start whenever NonlinearSolve's own default would pick it for all
+# of the blocks. Blocks without a state (e.g. `LinearProblem`s) don't use the polyalg.
+function _init_u0_len(prob::SciMLBase.SCCNonlinearProblem)
+    return maximum(prob.probs; init = 0) do p
+        p isa AbstractNonlinearProblem ? something(_init_u0_len(p), 0) : 0
+    end
+end
 
 function default_nlsolve(
-        ::Nothing, isinplace::Val{true}, u, ::AbstractNonlinearProblem,
+        ::Nothing, isinplace::Val{true}, u, nlprob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize),
+        u0_len = _init_u0_len(nlprob)
     )
 end
 function default_nlsolve(
@@ -43,11 +82,12 @@ function default_nlsolve(
     )
 end
 function default_nlsolve(
-        ::Nothing, isinplace::Val{false}, u, ::AbstractNonlinearProblem,
+        ::Nothing, isinplace::Val{false}, u, nlprob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize),
+        u0_len = _init_u0_len(nlprob)
     )
 end
 function default_nlsolve(
@@ -156,7 +196,8 @@ function default_nlsolve(
     )
     any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, prob, autodiff, chunksize),
+        u0_len = _init_u0_len(prob)
     )
 end
 function default_nlsolve(
@@ -165,7 +206,8 @@ function default_nlsolve(
     )
     any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, prob, autodiff, chunksize),
+        u0_len = _init_u0_len(prob)
     )
 end
 function default_nlsolve(
