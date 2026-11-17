@@ -211,7 +211,7 @@ const ET = OrdinaryDiffEqExplicitTableaus
     @time @testset "ODE Tableau Convergence Tests" begin
         include("ode_tableau_convergence_tests.jl")
     end
-        @testset "Tableau consistency: c equals row sums of A" begin
+    @testset "Tableau consistency: c equals row sums of A" begin
         for tab in [
                 ET.Feagin12(BigFloat),
                 ET.Feagin14(BigFloat),
