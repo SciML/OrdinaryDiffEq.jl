@@ -435,6 +435,13 @@ function stepsize_controller!(
         terk = cache.terkm1
     end
 
+    if k == 1 && step_order == 1 &&
+            (cache.iters_from_event >= 1 || _fbdf_has_first_step_estimate(integrator, cache))
+        # At order 1, `terk` is ‖h y′‖, not a local error, and sizing from it shrinks dt
+        # until the state barely moves. Size from EEst = ‖terkp1‖ / 2 (terkp1 ≈ h² y″).
+        terk = 2 * OrdinaryDiffEqCore.get_EEst(integrator)
+    end
+
     if iszero(terk)
         q = inv(get_current_qmax(integrator, get_qmax(integrator)))
     else
@@ -447,6 +454,15 @@ function stepsize_controller!(
     end
     return q
 end
+
+# Whether the first step after a (re)start gets the h² y″ estimate `_fbdf_first_step_terkp1(!)`.
+_fbdf_has_first_step_estimate(integrator, cache::FBDFCache) =
+    integrator.f.mass_matrix === I || isnewton(cache.nlsolver)
+_fbdf_has_first_step_estimate(integrator, cache::FBDFConstantCache) =
+    integrator.f.mass_matrix === I
+_fbdf_use_first_step_estimate(integrator, cache) =
+    cache.iters_from_event == 0 && integrator.opts.adaptive &&
+    _fbdf_has_first_step_estimate(integrator, cache)
 
 function step_accept_controller!(integrator, alg::FBDF, q)
     return step_accept_controller!(integrator, integrator.cache, alg, q)

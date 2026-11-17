@@ -1313,7 +1313,9 @@ function perform_step!(
         end
         u₀ = _eval_lagrange_oop(one(t), pred_thetas, u_history, n_pred)
     else
-        u₀ = u
+        # First step after a (re)start. `integrator.u` is not reset on a rejected step,
+        # so it may hold the rejected trial solution: predict from `uprev`.
+        u₀ = uprev
     end
     markfirststage!(nlsolver)
 
@@ -1370,9 +1372,13 @@ function perform_step!(
         end
     end
 
-    terkp1 = (u - u₀)
-    for j in 1:(k + 1)
-        terkp1 *= j * dt / (tdt - ts[j])
+    if _fbdf_use_first_step_estimate(integrator, cache)
+        terkp1 = _fbdf_first_step_terkp1(integrator, u)
+    else
+        terkp1 = (u - u₀)
+        for j in 1:(k + 1)
+            terkp1 *= j * dt / (tdt - ts[j])
+        end
     end
 
     lte = -1 / (1 + k)
@@ -1555,7 +1561,9 @@ function perform_step!(
         end
         _eval_lagrange_iip!(u₀, one(t), equi_ts, u_history, n_pred)
     else
-        @.. broadcast = false u₀ = u
+        # First step after a (re)start. `integrator.u` is not reset on a rejected step,
+        # so it may hold the rejected trial solution: predict from `uprev`.
+        @.. broadcast = false u₀ = uprev
     end
     markfirststage!(nlsolver)
     @.. broadcast = false nlsolver.z = u₀
@@ -1602,9 +1610,13 @@ function perform_step!(
     end
 
     #for terkp1, we could use corrector and predictor to make an estimation.
-    @.. broadcast = false terkp1_tmp = (u - u₀)
-    for j in 1:(k + 1)
-        @.. broadcast = false terkp1_tmp *= j * dt / (tdt - ts[j])
+    if _fbdf_use_first_step_estimate(integrator, cache)
+        _fbdf_first_step_terkp1!(integrator, cache)
+    else
+        @.. broadcast = false terkp1_tmp = (u - u₀)
+        for j in 1:(k + 1)
+            @.. broadcast = false terkp1_tmp *= j * dt / (tdt - ts[j])
+        end
     end
 
     lte = -1 / (1 + k)

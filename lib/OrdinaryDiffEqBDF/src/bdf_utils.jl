@@ -388,6 +388,38 @@ function _resample_at_chebyshev_direct_iip!(k, u, u_history, thetas, n)
     return
 end
 
+# terkp1 ≈ h² y″ for the first step after a (re)start, which is backward Euler and has no
+# history: r = M (u - uprev) - h f(uprev) ≈ h² y″ on the differential rows, filtered with
+# Newton's matrix as (M - h γ J)⁻¹ r. The filter damps stiff components and gives index-1
+# algebraic rows (zero rows of M) the error their differential rows imply. EEst =
+# ‖terkp1‖ / 2 as on later order-1 steps, and it does not depend on the absolute time.
+# With a Krylov linsolve the filter costs one extra iterative solve per (re)start.
+function _fbdf_first_step_terkp1!(integrator, cache)
+    (; nlsolver, terkp1_tmp, tmp) = cache
+    (; u, uprev, dt, fsalfirst) = integrator
+    @.. broadcast = false tmp = u - uprev
+    mul!(terkp1_tmp, integrator.f.mass_matrix, tmp)
+    @.. broadcast = false terkp1_tmp = terkp1_tmp - dt * fsalfirst
+    if isnewton(nlsolver)
+        # Newton's matrix is W = J - M / W_γdt, so (M - W_γdt J)⁻¹ r = -W⁻¹ r / W_γdt.
+        est = nlsolver.cache.dz
+        dolinsolve(
+            integrator, nlsolver.cache.linsolve; b = _vec(terkp1_tmp), linu = _vec(est)
+        )
+        integrator.stats.nsolve += 1
+        c = -inv(nlsolver.cache.W_γdt)
+        @.. broadcast = false terkp1_tmp = c * est
+    end
+    return nothing
+end
+
+# Out-of-place version, for M = I only and unfiltered. Out-of-place mass-matrix problems
+# keep the history-based first-step estimate.
+function _fbdf_first_step_terkp1(integrator, u)
+    (; uprev, dt, fsalfirst) = integrator
+    return @.. u - uprev - dt * fsalfirst
+end
+
 function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order}
     #calculate hᵏ⁻¹yᵏ⁻¹
     (; ts_tmp, terk_tmp, u_history, fd_weights) = cache
