@@ -5,7 +5,9 @@ function _ode_interpolant(
         cache::RK_WITH_SPECIAL_INTERPOLATIONS,
         idxs, T::Type{Val{D}}, differential_vars
     ) where {D}
-    throw(DerivativeOrderNotPossibleError())
+    differential_vars isa AbstractArray{Bool} && all(differential_vars) ||
+        throw(DerivativeOrderNotPossibleError())
+    return _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, nothing)
 end
 
 function _ode_interpolant!(
@@ -13,7 +15,9 @@ function _ode_interpolant!(
         cache::RK_WITH_SPECIAL_INTERPOLATIONS,
         idxs, T::Type{Val{D}}, differential_vars
     ) where {D}
-    throw(DerivativeOrderNotPossibleError())
+    differential_vars isa AbstractArray{Bool} && all(differential_vars) ||
+        throw(DerivativeOrderNotPossibleError())
+    return _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T, nothing)
 end
 
 """
