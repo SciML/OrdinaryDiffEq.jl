@@ -52,7 +52,7 @@ function RadauIIA3(;
         concrete_jac = nothing,
         linsolve = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
-        new_W_γdt_cutoff = 1 // 5,
+        new_W_γdt_cutoff = 0 // 1,
         κ = nothing, maxiters = 10,
         step_limiter! = trivial_limiter!
     )
@@ -99,7 +99,7 @@ function RadauIIA5(;
         concrete_jac = nothing,
         linsolve = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
-        new_W_γdt_cutoff = 1 // 5,
+        new_W_γdt_cutoff = 0 // 1,
         κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
@@ -148,7 +148,7 @@ function RadauIIA9(;
         concrete_jac = nothing,
         linsolve = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
-        new_W_γdt_cutoff = 1 // 5,
+        new_W_γdt_cutoff = 0 // 1,
         κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
@@ -200,7 +200,7 @@ function AdaptiveRadau(;
         min_order = 5, max_order = 13, threading = false,
         linsolve = nothing,
         extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
-        new_W_γdt_cutoff = 1 // 5,
+        new_W_γdt_cutoff = 0 // 1,
         κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!
     )
