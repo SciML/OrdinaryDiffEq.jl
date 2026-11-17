@@ -41,16 +41,30 @@ end
     @test start_index(default_nlsolve(nothing, Val(false), [0.0], big_oop)) == 1
 end
 
-@testset "SCCNonlinearProblem is sized by its largest block" begin
+@testset "SCCNonlinearProblem default is not changed here" begin
+    # SCC init problems keep their current Broyden-first default for now; see the note next
+    # to `_init_u0_len` in src/initialize_dae.jl.
     explicit = (Returns(nothing), Returns(nothing))
-    scc_small = SCCNonlinearProblem((small_oop, small_oop), explicit, nothing, Val(true))
-    scc_mixed = SCCNonlinearProblem((small_oop, big_oop), explicit, nothing, Val(true))
+    scc = SCCNonlinearProblem((small_oop, small_oop), explicit, nothing, Val(true))
     for iip in (Val(true), Val(false))
-        # 2 + 2 unknowns, each block small
-        @test start_index(default_nlsolve(nothing, iip, zeros(4), scc_small)) == 3
-        # one block is above the cutoff, so behave like NonlinearSolve does on that block
-        @test start_index(default_nlsolve(nothing, iip, zeros(28), scc_mixed)) == 1
+        @test start_index(default_nlsolve(nothing, iip, zeros(4), scc)) == 1
     end
+end
+
+# Stand-in for a GPU array: anything that says scalar indexing is slow. Newton would need a
+# dense ForwardDiff Jacobian of it up front, so those keep the Broyden-first order.
+struct SlowIndexVector{T} <: AbstractVector{T}
+    x::Vector{T}
+end
+Base.size(v::SlowIndexVector) = size(v.x)
+Base.getindex(v::SlowIndexVector, i::Int) = v.x[i]
+OrdinaryDiffEqNonlinearSolve.ArrayInterface.fast_scalar_indexing(::Type{<:SlowIndexVector}) = false
+
+@testset "arrays without fast scalar indexing keep the old order" begin
+    slow = NonlinearProblem((u, p) -> u .^ 2 .- 4, SlowIndexVector([1.5, 1.5]))
+    @test start_index(default_nlsolve(nothing, Val(false), slow.u0, slow)) == 1
+    # a slow `u` alone is enough, e.g. Brown's full state living on the GPU
+    @test start_index(default_nlsolve(nothing, Val(false), SlowIndexVector(zeros(4)), small_oop)) == 1
 end
 
 @testset "least-squares default is untouched" begin
@@ -84,12 +98,6 @@ tagof(::AutoForwardDiff{CS, T}) where {CS, T} = T
     @test _init_autodiff(u, auto, true, Val(nothing)) isa AutoForwardDiff{1}
     @test _init_autodiff(u, auto, true, Val(0)) isa AutoForwardDiff{1}
     @test _init_autodiff(u, auto, true, Val(2)) isa AutoForwardDiff{2}
-
-    explicit = (Returns(nothing), Returns(nothing))
-    scc_full = SCCNonlinearProblem((full, full), explicit, nothing, Val(true))
-    scc_auto = SCCNonlinearProblem((full, auto), explicit, nothing, Val(true))
-    @test tagof(_init_autodiff(zeros(4), scc_full, true, Val(1))) <: ForwardDiff.Tag
-    @test tagof(_init_autodiff(zeros(4), scc_auto, true, Val(1))) === Nothing
 
     # and the default solver actually goes through Newton's Jacobian on the wrapped problem
     for prob in (auto, full)

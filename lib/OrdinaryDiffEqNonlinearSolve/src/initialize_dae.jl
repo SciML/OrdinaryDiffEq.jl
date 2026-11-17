@@ -36,13 +36,10 @@ _untagged_autodiff(::Val{CS} = Val(1)) where {CS} = AutoForwardDiff(; chunksize 
 # is `AutoSpecialize` (the default), NonlinearSolveBase wraps it for `NonlinearSolveTag` duals
 # and only swaps that tag into an *untagged* backend, so ours would hit
 # `NoFunctionWrapperFoundError` on the first Jacobian. Leave the tag to NonlinearSolve there.
-_needs_ode_tag(prob) = SciMLBase.specialization(prob.f) === SciMLBase.FullSpecialize
-function _needs_ode_tag(prob::SciMLBase.SCCNonlinearProblem)
-    return all(p -> !(p isa AbstractNonlinearProblem) || _needs_ode_tag(p), prob.probs)
-end
-function _init_autodiff(u, prob, autodiff, chunksize)
+_needs_ode_tag(nlprob) = SciMLBase.specialization(nlprob.f) === SciMLBase.FullSpecialize
+function _init_autodiff(u, nlprob, autodiff, chunksize)
     autodiff || return AutoFiniteDiff()
-    return _needs_ode_tag(prob) ? _tagged_autodiff(u, chunksize) : _untagged_autodiff(chunksize)
+    return _needs_ode_tag(nlprob) ? _tagged_autodiff(u, chunksize) : _untagged_autodiff(chunksize)
 end
 
 # `FastShortcutNonlinearPolyalg` only starts at NewtonRaphson (instead of Broyden) when it
@@ -52,16 +49,19 @@ end
 #
 # The size has to come from the problem rather than from `u`: `BrownFullBasicInit` passes
 # the full state as `u` but only solves for the algebraic variables.
-_init_u0_len(prob) = _init_u0_len_of(SciMLBase.state_values(prob))
-_init_u0_len_of(::Nothing) = nothing
-_init_u0_len_of(u0) = length(u0)
-# The SCC solve hands the same algorithm to every block, so size it by the largest block.
-# That keeps the Newton start whenever NonlinearSolve's own default would pick it for all
-# of the blocks. Blocks without a state (e.g. `LinearProblem`s) don't use the polyalg.
-function _init_u0_len(prob::SciMLBase.SCCNonlinearProblem)
-    return maximum(prob.probs; init = 0) do p
-        p isa AbstractNonlinearProblem ? something(_init_u0_len(p), 0) : 0
-    end
+#
+# GPU arrays are left out on purpose. Newton needs a Jacobian straight away, and building a
+# dense ForwardDiff Jacobian of a GPU array scalar-indexes it, while Broyden gets going
+# without one. So for those we keep the old Broyden-first order (`u0_len = nothing`).
+#
+# The `SCCNonlinearProblem` methods further down are not sized yet and still start with
+# Broyden. They hand one algorithm to every block, and switching them moves the init results
+# of SCC-split models around inside the solve tolerance, so that is left for its own change.
+function _init_u0_len(u, nlprob)
+    u0 = nlprob.u0
+    u0 === nothing && return nothing
+    fast = ArrayInterface.fast_scalar_indexing(u) && ArrayInterface.fast_scalar_indexing(u0)
+    return fast ? length(u0) : nothing
 end
 
 function default_nlsolve(
@@ -70,7 +70,7 @@ function default_nlsolve(
     )
     return FastShortcutNonlinearPolyalg(;
         autodiff = _init_autodiff(u, nlprob, autodiff, chunksize),
-        u0_len = _init_u0_len(nlprob)
+        u0_len = _init_u0_len(u, nlprob)
     )
 end
 function default_nlsolve(
@@ -87,7 +87,7 @@ function default_nlsolve(
     )
     return FastShortcutNonlinearPolyalg(;
         autodiff = _init_autodiff(u, nlprob, autodiff, chunksize),
-        u0_len = _init_u0_len(nlprob)
+        u0_len = _init_u0_len(u, nlprob)
     )
 end
 function default_nlsolve(
@@ -196,8 +196,7 @@ function default_nlsolve(
     )
     any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
     return FastShortcutNonlinearPolyalg(;
-        autodiff = _init_autodiff(u, prob, autodiff, chunksize),
-        u0_len = _init_u0_len(prob)
+        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
     )
 end
 function default_nlsolve(
@@ -206,8 +205,7 @@ function default_nlsolve(
     )
     any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
     return FastShortcutNonlinearPolyalg(;
-        autodiff = _init_autodiff(u, prob, autodiff, chunksize),
-        u0_len = _init_u0_len(prob)
+        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
     )
 end
 function default_nlsolve(
