@@ -158,3 +158,13 @@ end
     @test threaded[1].u[end] ≈ serial.u[end] rtol = 1.0e-6
     @test threaded[1].stats.nf == serial.stats.nf
 end
+
+@testset "RadauIIA3 GMRES uses a vector reltol" begin
+    f!(du, u, p, t) = (du[1] = 1.0e-10; nothing)
+    prob = ODEProblem(f!, [0.0], (0.0, 1.0))
+    for reltol in (1.0e-13, [1.0e-13]), abstol in (1.0e-15, [1.0e-15])
+        sol = solve(prob, RadauIIA3(linsolve = KrylovJL_GMRES()); reltol, abstol)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end][1] ≈ 1.0e-10 rtol = 1.0e-8
+    end
+end

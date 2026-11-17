@@ -158,7 +158,7 @@ function initialize!(integrator, cache::RadauIIA3Cache)
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(2 / 3) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^(2 / 3) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
@@ -197,7 +197,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(2 / 3) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^(2 / 3) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
@@ -240,7 +240,7 @@ function initialize!(integrator, cache::RadauIIA9Cache)
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^(3 / 5) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^(3 / 5) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
@@ -2051,7 +2051,7 @@ end
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^((num_stages + 1) / (2 * num_stages)) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^((num_stages + 1) / (2 * num_stages)) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
@@ -2424,7 +2424,7 @@ function initialize!(integrator, cache::GaussLegendreCache)
         (; abstol, reltol) = integrator.opts
         if reltol isa Number
             cache.rtol = reltol^((cache.num_stages + 1) / (2 * cache.num_stages)) / 10
-            cache.atol = cache.rtol * (abstol / reltol)
+            @.. cache.atol = cache.rtol * (abstol / reltol)
         else
             @.. cache.rtol = reltol^((cache.num_stages + 1) / (2 * cache.num_stages)) / 10
             @.. cache.atol = cache.rtol * (abstol / reltol)
