@@ -2,7 +2,7 @@
 
 ABM32, ABM43, and ABM54 use their Adams–Bashforth predictors in steady steps; their numerical results change.
 
-FBDF sizes order-1 steps from the local error estimate, and the first step after a (re)start gets a backward-Euler error estimate that does not depend on the absolute time (#5003); its step sequences and numerical results change.
+FBDF sizes order-1 steps from the local error estimate, the first step after a (re)start gets a backward-Euler error estimate that does not depend on the absolute time, and step growth is limited to `qmax` per step (`qmax_first_step` after the first step), as the `IController` does (#5003); its step sequences and numerical results change.
 
 # OrdinaryDiffEq.jl v7 / DifferentialEquations.jl v8 Breaking Changes
 

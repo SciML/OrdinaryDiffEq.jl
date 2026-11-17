@@ -1,4 +1,4 @@
-using OrdinaryDiffEqBDF, LinearAlgebra, Test
+using OrdinaryDiffEqBDF, LinearAlgebra, Test, ODEProblemLibrary
 using OrdinaryDiffEqNonlinearSolve: NLFunctional
 import OrdinaryDiffEqCore
 
@@ -60,6 +60,23 @@ dts0 = diff(sol0.t)
         @test diff(sol.t)[1:10] ≈ dts0[1:10] rtol = 1.0e-3
         @test abs(sol.stats.naccept - sol0.stats.naccept) <= 3
         @test sol.u[end] ≈ rlc_exact(1.0e-4) rtol = 1.0e-5
+    end
+end
+
+@testset "Step growth is limited by qmax" begin
+    # Stiff Van der Pol starts from a tiny initial dt; without a limit the second step grew
+    # by about 1e10. Growth is limited to qmax_first_step after the first step and to qmax
+    # per step after that. The last step is clipped to tspan and left out.
+    prob = ODEProblemLibrary.prob_ode_vanderpol_stiff
+    qmax_first = OrdinaryDiffEqCore.qmax_first_step_default(FBDF())
+    for qmax in (10 // 1, 5 // 1)   # 10 // 1 is the default; Rational like the qsteady defaults
+        sol = solve(prob, FBDF(; qmax); reltol = 1.0e-6, abstol = 1.0e-6)
+        @test sol.retcode == ReturnCode.Success
+        d = diff(sol.t)[1:(end - 1)]
+        growth = d[2:end] ./ d[1:(end - 1)]
+        # diff(sol.t) carries the rounding of t, hence the 1e-4 margin.
+        @test growth[1] <= qmax_first * (1 + 1.0e-4)
+        @test maximum(growth[2:end]) <= qmax * (1 + 1.0e-4)
     end
 end
 

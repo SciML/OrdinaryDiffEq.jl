@@ -393,24 +393,34 @@ end
 # Newton's matrix as (M - h γ J)⁻¹ r. The filter damps stiff components and gives index-1
 # algebraic rows (zero rows of M) the error their differential rows imply. EEst =
 # ‖terkp1‖ / 2 as on later order-1 steps, and it does not depend on the absolute time.
-# With a Krylov linsolve the filter costs one extra iterative solve per (re)start.
+# With a Krylov linsolve the filter costs one extra iterative solve per (re)start; if that
+# solve fails, the unfiltered r is used.
 function _fbdf_first_step_terkp1!(integrator, cache)
     (; nlsolver, terkp1_tmp, tmp) = cache
-    (; u, uprev, dt, fsalfirst) = integrator
-    @.. broadcast = false tmp = u - uprev
-    mul!(terkp1_tmp, integrator.f.mass_matrix, tmp)
-    @.. broadcast = false terkp1_tmp = terkp1_tmp - dt * fsalfirst
-    if isnewton(nlsolver)
-        # Newton's matrix is W = J - M / W_γdt, so (M - W_γdt J)⁻¹ r = -W⁻¹ r / W_γdt.
-        est = nlsolver.cache.dz
-        dolinsolve(
-            integrator, nlsolver.cache.linsolve; b = _vec(terkp1_tmp), linu = _vec(est)
-        )
-        integrator.stats.nsolve += 1
+    @.. broadcast = false tmp = integrator.u - integrator.uprev
+    _fbdf_first_step_residual!(terkp1_tmp, tmp, integrator)
+    isnewton(nlsolver) || return nothing
+    # Newton's matrix is W = J - M / W_γdt, so (M - W_γdt J)⁻¹ r = -W⁻¹ r / W_γdt.
+    est = nlsolver.cache.dz
+    linres = dolinsolve(
+        integrator, nlsolver.cache.linsolve; b = vec(terkp1_tmp), linu = vec(est)
+    )
+    SciMLBase.has_stats(integrator) && (integrator.stats.nsolve += 1)
+    if SciMLBase.successful_retcode(linres.retcode) ||
+            linres.retcode == SciMLBase.ReturnCode.Default
         c = -inv(nlsolver.cache.W_γdt)
         @.. broadcast = false terkp1_tmp = c * est
+    else
+        _fbdf_first_step_residual!(terkp1_tmp, tmp, integrator)   # b may be overwritten
     end
     return nothing
+end
+
+# r = M (u - uprev) - h f(uprev), with `Δu` = u - uprev.
+function _fbdf_first_step_residual!(r, Δu, integrator)
+    mul!(r, integrator.f.mass_matrix, Δu)
+    @.. broadcast = false r = r - integrator.dt * integrator.fsalfirst
+    return r
 end
 
 # Out-of-place version, for M = I only and unfiltered. Out-of-place mass-matrix problems
