@@ -126,7 +126,7 @@ end
 Return a lightweight copy of `cache` for `SciMLBase.strip_interpolation`, which
 drops function information and working buffers from a solution's interpolation
 object before serialization. Fields are set to `nothing` except the tableau
-(`tab`, `tabs`), numbers and fields whose type cannot hold `nothing`,
+(`tab`, `tabs`, `B_interp`), numbers and fields whose type cannot hold `nothing`,
 since the interpolant reads these; kept arrays of non-numbers are emptied.
 [`DefaultCache`](@ref) and `CompositeCache` strip each of their sub-caches.
 
@@ -143,7 +143,7 @@ function strip_cache(cache)
     keep = map(1:fieldcount(T)) do i
         isdefined(cache, i) || return !_accepts_nothing(declared[i])
         value = getfield(cache, i)
-        return fieldname(T, i) in (:tab, :tabs) || value isa Number ||
+        return fieldname(T, i) in (:tab, :tabs, :B_interp) || value isa Number ||
             !(_accepts_nothing(declared[i]) || eltypevars[i] !== nothing)
     end
     while true

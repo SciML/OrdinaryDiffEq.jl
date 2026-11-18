@@ -3,6 +3,8 @@ using OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqBDF: QNDF
 using OrdinaryDiffEqFIRK: RadauIIA5, AdaptiveRadau
 using OrdinaryDiffEqLowOrderRK: BS5
+using OrdinaryDiffEqExplicitRK: ExplicitRK, constructTsit5ExplicitRK
+using OrdinaryDiffEqExtrapolation: ImplicitEulerExtrapolation
 import SciMLBase
 
 function lorenz!(du, u, p, t)
@@ -70,6 +72,7 @@ end
         Rosenbrock23(), Rodas5P(), FBDF(), QNDF(), RadauIIA5(), AdaptiveRadau(),
         BS5(lazy = false), DefaultODEAlgorithm(lazy = Val(false)),
         AutoTsit5(Rosenbrock23()), AutoVern7(Rodas5P(); lazy = false),
+        ExplicitRK(tableau = constructTsit5ExplicitRK()),
     )
     for f in (lorenz!, lorenz), alg in algs
         sol = solve(ODEProblem(f, u0, tspan), alg)
@@ -108,6 +111,7 @@ roundtrip_rhs(u, p, t) = -p.rate(t) .* u
         (ODEProblem{true, SciMLBase.FullSpecialize}(roundtrip_rhs!, [1.0], (0.0, 1.0), p), DefaultODEAlgorithm(lazy = Val(false))),
         (ODEProblem(roundtrip_rhs, [1.0], (0.0, 1.0), p), DefaultODEAlgorithm(lazy = Val(false))),
         (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), AdaptiveRadau()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), ImplicitEulerExtrapolation()),
         (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), RadauIIA5()),
         (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), Rodas5P()),
         (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), FBDF()),
@@ -121,7 +125,7 @@ roundtrip_rhs(u, p, t) = -p.rate(t) .* u
         sol
     end
     script = """
-    using OrdinaryDiffEq, OrdinaryDiffEqFIRK, Serialization
+    using OrdinaryDiffEq, OrdinaryDiffEqFIRK, OrdinaryDiffEqExtrapolation, Serialization
     for i in 1:$(length(cases))
         result = try
             sol = deserialize(joinpath($(repr(dir)), "\$i.jls"))
