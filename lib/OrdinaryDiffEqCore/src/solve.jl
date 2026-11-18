@@ -37,7 +37,7 @@ end
 
 parameter_values(z::zero_func_struct) = z.p
 
-# The zero function is reached through a `FunctionWrapper`, whose payload is untyped;
+# The zero function may be reached through a `FunctionWrapper`, whose payload is untyped;
 # loading the step state through one typed call keeps the field writes off the
 # dynamic `setproperty!` path.
 function _load_disco_state!(z::zero_func_struct, dt, uprev, u, k, tprev, p)
@@ -51,7 +51,25 @@ function _load_disco_state!(z::zero_func_struct, dt, uprev, u, k, tprev, p)
 end
 _set_disco_index!(z::zero_func_struct, ind) = (z.ind = ind; nothing)
 
-function (z::zero_func_struct)(θ, p)
+_disco_zero(z::zero_func_struct) = z
+_disco_zero(w::FunctionWrapper) = w.obj.x
+
+function _disco_problem(::Type{F}, ::Type{T}, i, u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p) where {F, T}
+    u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
+    out, out_low, out_high = if i isa VectorContinuousCallback
+        arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
+        arr, similar(arr), similar(arr)
+    else
+        nothing, zeros(Float64, 1), zeros(Float64, 1)
+    end
+    zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
+    return IntervalNonlinearProblem{false}(F(zero_func), [zero(T), one(T)], SciMLBase.NullParameters())
+end
+
+# Float64 in and out, as through the `FunctionWrapper`, also when a problem holds the zero function directly.
+(z::zero_func_struct)(θ, p) = convert(Float64, _disco_zero_value(z, convert(Float64, θ)))
+
+function _disco_zero_value(z::zero_func_struct, θ)
     iszero(θ) && return z.out_low[z.ind]
     isone(θ) && return z.out_high[z.ind]
     u = _disco_interpolant(z, θ)
@@ -973,24 +991,23 @@ Base.@constprop :aggressive function _ode_init(
         IntervalNonlinearProblem{false}, disco_zero_wrapper, Vector{tType},
         SciMLBase.NullParameters
     )
+    # Under `FullSpecialize` the problems hold the zero function itself, typed by its callback.
+    cbs = callbacks_internal.continuous_callbacks
+    direct = !(cbs isa Tuple{}) && f isa SciMLBase.AbstractSciMLFunction &&
+        SciMLBase.specialization(f) === SciMLBase.FullSpecialize
+    make_f = direct ? SciMLBase.IntervalNonlinearFunction{false, SciMLBase.FullSpecialize} : disco_zero_wrapper
+    args = (u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p)
+    if direct
+        disco_prob_type = isconcretetype(eltype(cbs)) ?
+            Base.promote_op(_disco_problem, Type{make_f}, Type{tType}, eltype(cbs), map(typeof, args)...) :
+            IntervalNonlinearProblem
+    end
     isconcretetype(disco_prob_type) || (disco_prob_type = IntervalNonlinearProblem)
     disco_probs = Vector{disco_prob_type}(undef, num_probs)
     idx = 1
     for i in callbacks_internal.continuous_callbacks
         if i.maybe_discontinuity::Bool
-            u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
-            out, out_low, out_high = if i isa VectorContinuousCallback
-                arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
-                arr, similar(arr), similar(arr)
-            else
-                nothing, zeros(Float64, 1), zeros(Float64, 1)
-            end
-            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
-            zero_func_wrapped = disco_zero_wrapper(zero_func)
-            disco_prob = IntervalNonlinearProblem{false}(
-                zero_func_wrapped, [zero(tType), one(tType)], SciMLBase.NullParameters()
-            )
-            disco_probs[idx] = disco_prob
+            disco_probs[idx] = _disco_problem(make_f, tType, i, args...)
             idx += 1
         end
     end

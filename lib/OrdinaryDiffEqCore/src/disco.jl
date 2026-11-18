@@ -46,7 +46,7 @@ function find_discontinuity(integrator)
             continue
         end
         disco_prob = disco_probs[idx]
-        disco_zero = disco_prob.f.f.obj.x
+        disco_zero = _disco_zero(disco_prob.f.f)
         _load_disco_state!(disco_zero, dt, uprev, u, k, t, p)
         if (i isa VectorContinuousCallback)
             len_cb = i.len::Int

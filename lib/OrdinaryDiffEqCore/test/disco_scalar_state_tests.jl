@@ -4,18 +4,23 @@ noop!(integrator) = nothing
 disco_controller(alg) = OrdinaryDiffEqCore.PIController(alg; discontinuity_detection = true)
 
 @testset "Discontinuity detection with non-mutable states" begin
-    @testset "find_discontinuity with a scalar out-of-place state" begin
-        prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 2.0))
-        cb = ContinuousCallback((u, t, integrator) -> t - 0.3, noop!)
+    @testset "find_discontinuity with a scalar out-of-place state ($spec)" for spec in (SciMLBase.FullSpecialize, SciMLBase.AutoSpecialize)
+        prob = ODEProblem{false, spec}((u, p, t) -> 1.0, 0.0, (0.0f0, 2.0f0))
+        cb = ContinuousCallback((u, t, integrator) -> t - 0.3f0, noop!)
         integrator = init(
-            prob, Tsit5(); callback = cb, dt = 0.1, adaptive = false,
+            prob, Tsit5(); callback = cb, dt = 0.1f0, adaptive = false,
             controller = disco_controller(Tsit5())
         )
-        integrator.dt = 1.0
+        integrator.dt = 1.0f0
         integrator.u = 1.0
         θ = OrdinaryDiffEqCore.find_discontinuity(integrator)
-        @test θ ≈ 0.3 atol = 1.0e-8
+        @test θ ≈ 0.3f0 atol = 1.0f-7
         @test integrator.is_disco_step
+        probs = OrdinaryDiffEqCore.get_disco_probs(integrator.controller_cache)
+        @test isconcretetype(eltype(probs))
+        disco = only(probs)
+        @test disco.f.f isa (spec === SciMLBase.FullSpecialize ? OrdinaryDiffEqCore.zero_func_struct : OrdinaryDiffEqCore.FunctionWrapper)
+        @test disco.f(0.1f0, disco.p) === Float64(0.1f0) - Float64(0.3f0)
     end
 
     # u' = 2u below u = 1 and u' = 5 - 3u above it, from u(0) = 0.1: the crossing is at
