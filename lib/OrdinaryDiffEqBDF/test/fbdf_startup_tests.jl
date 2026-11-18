@@ -64,6 +64,27 @@ dts0 = diff(sol0.t)
     end
 end
 
+@testset "Start-up far from t = 0 (rounding of t + dt)" begin
+    # Far from t = 0, eps(t) is a sizable part of the first step (~2.6e-10); the solve must
+    # still succeed with the same start-up.
+    for t0 in (256.0, 1000.0, 1.0e4)
+        sol = rlc_solve(rlc_prob(t0))
+        @test abs(sol.stats.naccept - sol0.stats.naccept) <= 3
+        @test sol.u[end] ≈ rlc_exact(1.0e-4) rtol = 1.0e-5
+    end
+    # Out of place, M = I, from dt = 1e-11: the same step sequence at any t0.
+    decay_solve(t0) = solve(
+        ODEProblem(decay, [1.0], (t0, t0 + 1.0)), FBDF();
+        dt = 1.0e-11, reltol = 1.0e-8, abstol = 1.0e-10
+    )
+    ref = decay_solve(0.0)
+    for t0 in (1.0e3, 1.0e4)
+        sol = decay_solve(t0)
+        @test sol.stats.naccept == ref.stats.naccept
+        @test sol.u[end][1] ≈ exp(-1.0) rtol = 1.0e-6
+    end
+end
+
 @testset "Step growth is limited by qmax" begin
     # Stiff Van der Pol starts from a tiny initial dt; without a limit the second step grew
     # by about 1e10. Growth is limited to qmax_first_step after the first step and to qmax

@@ -1297,7 +1297,8 @@ function perform_step!(
         ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver,
         ts_tmp, iters_from_event, nconsteps,
     ) = cache
-    (; t, dt, u, f, p, uprev) = integrator
+    (; t, u, f, p, uprev) = integrator
+    dt = _fbdf_step_dt!(integrator)
 
     tdt = t + dt
     k = order
@@ -1546,7 +1547,8 @@ function perform_step!(
     ) where {max_order}
     reinitFBDF!(integrator, cache)
     (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
-    (; t, dt, u, f, p, uprev) = integrator
+    (; t, u, f, p, uprev) = integrator
+    dt = _fbdf_step_dt!(integrator)
 
     k = order
     tdt = t + dt

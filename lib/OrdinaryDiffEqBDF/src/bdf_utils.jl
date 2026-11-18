@@ -388,6 +388,17 @@ function _resample_at_chebyshev_direct_iip!(k, u, u_history, thetas, n)
     return
 end
 
+# Use the step that the stored time t + dt represents: far from t = 0, rounding of t + dt is a
+# sizable part of a small dt, and the history would disagree with the BDF formula (#5003).
+# `calc_dt_propose!` snaps the same way, but against the time before the step is applied.
+function _fbdf_step_dt!(integrator)
+    (; t, dt) = integrator
+    (integrator.opts.adaptive && t isa AbstractFloat && dt isa AbstractFloat) || return dt
+    h = (t + dt) - t
+    iszero(h) && return dt
+    return integrator.dt = h
+end
+
 # terkp1 ≈ h² y″ for the first step after a (re)start, which is backward Euler and has no
 # history: r = M (u - uprev) - h f(uprev) ≈ h² y″ on the differential rows, filtered with
 # Newton's matrix as (M - h γ J)⁻¹ r. The filter damps stiff components and gives index-1
