@@ -354,21 +354,20 @@ end
     N = length(a)
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
-    # Stage 1: drift using kuprev from FSAL
+    # Stage 1: drift using kuprev from FSAL. Each kick is evaluated at the time
+    # the position has reached, t + (b[1] + ... + b[i]) * dt.
     u = uprev + dt * b[1] * kuprev
-    kdu = f.f1(duprev, u, p, t)
+    tnew = t + b[1] * dt
+    kdu = f.f1(duprev, u, p, tnew)
     du = duprev + dt * a[1] * kdu
-    tnew = t + a[1] * dt
 
     # Stages 2 through N
     for i in 2:N
         ku = f.f2(du, u, p, tnew)
         u = u + dt * b[i] * ku
+        tnew = tnew + b[i] * dt
         kdu = f.f1(du, u, p, tnew)
         du = du + dt * a[i] * kdu
-        if i < N
-            tnew = tnew + a[i] * dt
-        end
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu
@@ -392,21 +391,20 @@ end
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
-    # Stage 1: drift using kuprev from FSAL
+    # Stage 1: drift using kuprev from FSAL. Each kick is evaluated at the time
+    # the position has reached, t + (b[1] + ... + b[i]) * dt.
     @.. broadcast = false u = uprev + dt * b[1] * kuprev
-    f.f1(kdu, duprev, u, p, t)
+    tnew = t + b[1] * dt
+    f.f1(kdu, duprev, u, p, tnew)
     @.. broadcast = false du = duprev + dt * a[1] * kdu
-    tnew = t + a[1] * dt
 
     # Stages 2 through N
     for i in 2:N
         f.f2(ku, du, u, p, tnew)
         @.. broadcast = false u = u + dt * b[i] * ku
+        tnew = tnew + b[i] * dt
         f.f1(kdu, du, u, p, tnew)
         @.. broadcast = false du = du + dt * a[i] * kdu
-        if i < N
-            tnew = tnew + a[i] * dt
-        end
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu

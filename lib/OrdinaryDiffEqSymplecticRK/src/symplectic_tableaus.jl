@@ -60,7 +60,8 @@ function McAte4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     b2 = convert(T, -0.224819803079420806)
     b3 = convert(T, 0.756320000515668291)
     b4 = convert(T, 0.334003603286321425)
-    return SymplecticTableau((a1, a2, a3, a4), (b1, b2, b3, b4))
+    # kick with b, then drift with a: K(b1) D(a1) K(b2) D(a2) ...
+    return SymplecticTableau((b1, b2, b3, b4, zero(T)), (zero(T), a1, a2, a3, a4))
 end
 
 function McAte4ConstantCache(T::Type, T2::Type)
@@ -72,7 +73,8 @@ function McAte4ConstantCache(T::Type, T2::Type)
     b2 = convert(T, big"-0.224819803079420806")
     b3 = convert(T, big" 0.756320000515668291")
     b4 = convert(T, big" 0.334003603286321425")
-    return SymplecticTableau((a1, a2, a3, a4), (b1, b2, b3, b4))
+    # kick with b, then drift with a: K(b1) D(a1) K(b2) D(a2) ...
+    return SymplecticTableau((b1, b2, b3, b4, zero(T)), (zero(T), a1, a2, a3, a4))
 end
 
 function CalvoSanz4ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
@@ -86,38 +88,32 @@ function CalvoSanz4ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     b3 = convert(T, 0.61479130717558)
     b4 = -convert(T, 0.14054801465937)
     b5 = convert(T, 0.12501982279453)
-    return SymplecticTableau((a1, a2, a3, a4, a5), (b1, b2, b3, b4, b5))
+    # kick with b, then drift with a: K(b1) D(a1) K(b2) D(a2) ...
+    return SymplecticTableau((b1, b2, b3, b4, b5, zero(T)), (zero(T), a1, a2, a3, a4, a5))
 end
 
-# Broken
 # http://epubs.siam.org/doi/pdf/10.1137/0916010
 # On the numerical integration of ordinary differential equations by symmetric composition methods
 function McAte42ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     a1 = convert(T, 0.40518861839525227722)
     a2 = convert(T, -0.287144040816524089)
-    a3 = 1 - 2a1 - 2a2
-    a4 = a2
-    a5 = a1
+    a3 = 1 // 2 - a1 - a2
     b1 = convert(T, -3 // 73)
     b2 = convert(T, 17 // 59)
     b3 = 1 - 2b1 - 2b2
-    b4 = b2
-    b5 = b1
-    return SymplecticTableau((a1, a2, a3, a4, a5), (b1, b2, b3, b4, b5))
+    # six drifts (a1, a2, a3, a3, a2, a1) and six kicks (b1, b2, b3, b2, b1, 0),
+    # the layout of Boost.Odeint's symplectic_rkn_sb3a_mclachlan
+    return SymplecticTableau((b1, b2, b3, b2, b1, zero(T)), (a1, a2, a3, a3, a2, a1))
 end
 
 function McAte42ConstantCache(T::Type, T2::Type)
     a1 = convert(T, big"0.40518861839525227722")
     a2 = convert(T, big"-0.28714404081652408900")
-    a3 = 1 - 2a1 - 2a2
-    a4 = a2
-    a5 = a1
+    a3 = 1 // 2 - a1 - a2
     b1 = convert(T, -3 // 73)
     b2 = convert(T, 17 // 59)
     b3 = 1 - 2b1 - 2b2
-    b4 = b2
-    b5 = b1
-    return SymplecticTableau((a1, a2, a3, a4, a5), (b1, b2, b3, b4, b5))
+    return SymplecticTableau((b1, b2, b3, b2, b1, zero(T)), (a1, a2, a3, a3, a2, a1))
 end
 
 function McAte5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -133,7 +129,8 @@ function McAte5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloat
     b4 = convert(T, 0.401269502251353448)
     b5 = convert(T, 0.010705081848235984)
     b6 = convert(T, -0.0589796254980311632)
-    return SymplecticTableau((a1, a2, a3, a4, a5, a6), (b1, b2, b3, b4, b5, b6))
+    # kick with b, then drift with a: K(b1) D(a1) K(b2) D(a2) ...
+    return SymplecticTableau((b1, b2, b3, b4, b5, b6, zero(T)), (zero(T), a1, a2, a3, a4, a5, a6))
 end
 
 function McAte5ConstantCache(T::Type, T2::Type)
@@ -149,7 +146,8 @@ function McAte5ConstantCache(T::Type, T2::Type)
     b4 = convert(T, big"0.4012695022513534480")
     b5 = convert(T, big"0.0107050818482359840")
     b6 = convert(T, big"-0.0589796254980311632")
-    return SymplecticTableau((a1, a2, a3, a4, a5, a6), (b1, b2, b3, b4, b5, b6))
+    # kick with b, then drift with a: K(b1) D(a1) K(b2) D(a2) ...
+    return SymplecticTableau((b1, b2, b3, b4, b5, b6, zero(T)), (zero(T), a1, a2, a3, a4, a5, a6))
 end
 
 function Yoshida6ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
