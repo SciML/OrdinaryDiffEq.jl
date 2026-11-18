@@ -81,13 +81,17 @@ The tableau methods (`PseudoVerletLeapfrog`, `McAte2`, `Ruth3`, `McAte3`, `Candy
 `SofSpa10`) evaluate kick `i` of a step from `t` to `t + dt` at the time the position has
 reached, `t + (b[1] + ... + b[i]) * dt`, and drift `i` at the time the velocity has reached,
 `t + (a[1] + ... + a[i-1]) * dt`; the last evaluations of a step are at `t + dt`. This keeps
-the order of the method for time-dependent forces and drifts.
+the order of the method for time-dependent forces. A time-dependent drift (`f2` depending
+on `t`) is outside the quadratic-kinetic-energy assumption of `McAte4`, `CalvoSanz4` and
+`McAte5`, which then drop to third order; the package tests check the stated order with a
+time-dependent drift for `PseudoVerletLeapfrog`, `McAte2`, `Ruth3`, `McAte3`, `CandyRoz4`
+and `McAte42`.
 
 Methods with negative coefficients evaluate some stages outside `[t, t + dt]`, so on the
 first or last step outside the integration interval:
 
   - the force `f1` (kick) for `Ruth3` (up to `t + 25/24 dt`) and `CandyRoz4` (from
-    `t - 0.352 dt` to `t + 1.352 dt`);
+    about `t - 0.351207 dt` to `t + 1.351207 dt`);
   - the drift `f2` for `McAte4`, `CalvoSanz4`, `McAte42`, `McAte5`, `Yoshida6` and
     `McAte8`, which matters only when `f2` depends on `t`.
 
