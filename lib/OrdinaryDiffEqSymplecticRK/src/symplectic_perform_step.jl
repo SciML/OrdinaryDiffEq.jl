@@ -354,27 +354,31 @@ end
     N = length(a)
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
-    # Stage 1: drift using kuprev from FSAL. Each kick is evaluated at the time
-    # the position has reached, t + (b[1] + ... + b[i]) * dt.
+    # Stage 1: drift using kuprev from FSAL. Two clocks: kick i (f1) is evaluated
+    # at the time the position has reached, tq = t + (b[1] + ... + b[i]) * dt, and
+    # drift i (f2) at the time the velocity has reached, tp = t + (a[1] + ... + a[i-1]) * dt.
+    tend = t + dt
     u = uprev + dt * b[1] * kuprev
-    tnew = t + b[1] * dt
-    kdu = f.f1(duprev, u, p, tnew)
+    tq = N == 1 ? tend : t + b[1] * dt
+    kdu = f.f1(duprev, u, p, tq)
     du = duprev + dt * a[1] * kdu
+    tp = t + a[1] * dt
 
     # Stages 2 through N
     for i in 2:N
-        ku = f.f2(du, u, p, tnew)
+        ku = f.f2(du, u, p, tp)
         u = u + dt * b[i] * ku
-        tnew = tnew + b[i] * dt
-        kdu = f.f1(du, u, p, tnew)
+        tq = i == N ? tend : tq + b[i] * dt
+        kdu = f.f1(du, u, p, tq)
         du = du + dt * a[i] * kdu
+        tp = tp + a[i] * dt
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu
     if !iszero(a[N])
-        kdu = f.f1(du, u, p, tnew)
+        kdu = f.f1(du, u, p, tend)
     end
-    ku = f.f2(du, u, p, tnew)
+    ku = f.f2(du, u, p, tend)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, N + (!iszero(a[N]) ? 1 : 0))
     integrator.stats.nf2 += N
@@ -393,25 +397,28 @@ end
 
     # Stage 1: drift using kuprev from FSAL. Each kick is evaluated at the time
     # the position has reached, t + (b[1] + ... + b[i]) * dt.
+    tend = t + dt
     @.. broadcast = false u = uprev + dt * b[1] * kuprev
-    tnew = t + b[1] * dt
-    f.f1(kdu, duprev, u, p, tnew)
+    tq = N == 1 ? tend : t + b[1] * dt
+    f.f1(kdu, duprev, u, p, tq)
     @.. broadcast = false du = duprev + dt * a[1] * kdu
+    tp = t + a[1] * dt
 
     # Stages 2 through N
     for i in 2:N
-        f.f2(ku, du, u, p, tnew)
+        f.f2(ku, du, u, p, tp)
         @.. broadcast = false u = u + dt * b[i] * ku
-        tnew = tnew + b[i] * dt
-        f.f1(kdu, du, u, p, tnew)
+        tq = i == N ? tend : tq + b[i] * dt
+        f.f1(kdu, du, u, p, tq)
         @.. broadcast = false du = du + dt * a[i] * kdu
+        tp = tp + a[i] * dt
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu
     if !iszero(a[N])
-        f.f1(kdu, du, u, p, tnew)
+        f.f1(kdu, du, u, p, tend)
     end
-    f.f2(ku, du, u, p, tnew)
+    f.f2(ku, du, u, p, tend)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, N + (!iszero(a[N]) ? 1 : 0))
     integrator.stats.nf2 += N
