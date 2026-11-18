@@ -138,7 +138,7 @@ struct CandyRoz4 <: OrdinaryDiffEqPartitionedAlgorithm end
 struct McAte4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 @doc generic_solver_docstring(
-    "Optimized efficiency 4th order explicit symplectic integrator.",
+    "Optimized efficiency 4th order explicit symplectic integrator. Requires quadratic kinetic energy.",
     "CalvoSanz4",
     "Symplectic Runge-Kutta Methods",
     """@article{sanz1993symplectic,
@@ -155,7 +155,7 @@ struct McAte4 <: OrdinaryDiffEqPartitionedAlgorithm end
 struct CalvoSanz4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 @doc generic_solver_docstring(
-    "4th order explicit symplectic integrator. BROKEN",
+    "4th order explicit symplectic integrator (McLachlan 1995, symmetric type SB3A with m = 5). Requires quadratic kinetic energy.",
     "McAte42",
     "Symplectic Runge-Kutta Methods",
     mclachlan1992, "", ""

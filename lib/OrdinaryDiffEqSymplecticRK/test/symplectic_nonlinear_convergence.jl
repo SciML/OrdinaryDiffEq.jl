@@ -60,3 +60,52 @@ end
     solve(prob, alg; dt = 0.2, adaptive = false)
     @test seen[end] == 1.2
 end
+
+# Kick i is evaluated at t + (b[1] + ... + b[i]) * dt, the last one at t + dt exactly.
+# Methods with negative coefficients evaluate some kicks outside [t, t + dt]; this is
+# documented in docs/src/dynamicalodeexplicit/SymplecticRK.md.
+@testset "kick times, iip = $iip, $(nameof(typeof(alg)))" for iip in (false, true),
+        (alg, _) in ALGS
+
+    tab = OrdinaryDiffEqSymplecticRK._symplectic_tableau(alg, Float64, Float64)
+    N = length(tab.a)
+    expected = [cumsum(collect(tab.b))[1:(N - 1)]; 1.0]
+    iszero(tab.a[N]) || push!(expected, 1.0)
+    seen = Float64[]
+    f1(v, u, t) = (push!(seen, t); zero(v))
+    f2(v, u, t) = v
+    integrator = init(
+        make_problem(f1, f2, iip, [0.0], [0.0], (0.0, 1.0)), alg; dt = 1.0, adaptive = false
+    )
+    empty!(seen)
+    step!(integrator)
+    @test seen ≈ expected atol = 1.0e-14
+    @test seen[end] == 1.0
+end
+
+# Force and drift callback times over a whole solve on [0, 1] with dt = 1/4. Ruth3 and
+# CandyRoz4 evaluate the force outside the interval (documented); the methods the
+# documentation suggests instead stay inside it for both callbacks.
+@testset "callback times at the boundaries, iip = $iip" for iip in (false, true)
+    function callback_times(alg)
+        kicks, drifts = Float64[], Float64[]
+        f1(v, u, t) = (push!(kicks, t); -sin.(u))
+        f2(v, u, t) = (push!(drifts, t); v)
+        solve(
+            make_problem(f1, f2, iip, [0.3], [1.1], (0.0, 1.0)), alg;
+            dt = 0.25, adaptive = false
+        )
+        return kicks, drifts
+    end
+    kicks, _ = callback_times(Ruth3())
+    @test maximum(kicks) ≈ 0.75 + 0.25 * 25 / 24
+    @test minimum(kicks) >= 0
+    kicks, _ = callback_times(CandyRoz4())
+    @test minimum(kicks) ≈ -0.25 * 0.35120719195965777
+    @test maximum(kicks) ≈ 0.75 + 0.25 * 1.3512071919596578
+    for alg in (PseudoVerletLeapfrog(), McAte2(), McAte3(), KahanLi6(), KahanLi8(), SofSpa10())
+        kicks, drifts = callback_times(alg)
+        @test all(t -> 0 <= t <= 1, kicks)
+        @test all(t -> 0 <= t <= 1, drifts)
+    end
+end
