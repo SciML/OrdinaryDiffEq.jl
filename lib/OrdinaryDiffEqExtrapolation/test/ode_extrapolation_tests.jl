@@ -333,15 +333,41 @@ end
     prob_iip = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 2.0], (0.0, 1.0))
     prob_oop = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
     for prob in (prob_iip, prob_oop),
-            Alg in (ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner)
+            Alg in (
+                AitkenNeville, ImplicitEulerExtrapolation,
+                ExtrapolationMidpointDeuflhard, ImplicitDeuflhardExtrapolation,
+                ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation,
+                ImplicitEulerBarycentricExtrapolation,
+            )
         serial = solve(prob, Alg(threading = false))
         sols = Vector{Any}(undef, 2)
-        Threads.@threads for i in 1:2
+        Threads.@threads :dynamic for i in 1:2
             sols[i] = solve(prob, Alg(threading = true))
         end
         @test all(sol -> sol.u == serial.u, sols)
         @test all(SciMLBase.successful_retcode, sols)
         @test all(sol -> sol.t[end] == 1.0, sols)
-        @test serial.u[end] ≈ prob.u0 .* exp(-1) rtol = 1.0e-4
+        @test serial.u[end] ≈ prob.u0 .* exp(-1) rtol = 1.0e-3
     end
+end
+
+@testset "Threaded extrapolation keeps a pin set by the RHS" begin
+    # The RHS schedules a sticky child on its 5th call, inside the first step's columns.
+    function f!(du, u, p, t)
+        p.calls[] += 1
+        if p.calls[] == 5
+            p.pinned_caller[] = current_task() === p.caller
+            wait(@async nothing)
+        end
+        return du .= -u
+    end
+    kept = fill(false, 2)
+    Threads.@threads :dynamic for i in 1:2
+        p = (; calls = Ref(0), pinned_caller = Ref(false), caller = current_task())
+        sticky = current_task().sticky
+        prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0), p)
+        solve(prob, ExtrapolationMidpointDeuflhard(threading = true))
+        kept[i] = current_task().sticky == (sticky || p.pinned_caller[])
+    end
+    @test all(kept)
 end

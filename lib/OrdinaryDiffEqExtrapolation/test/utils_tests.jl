@@ -30,36 +30,30 @@ const ODEX = OrdinaryDiffEqExtrapolation
         Threads.nthreads(:default) + Threads.nthreads(:interactive)
 end
 
-@testset "Nested threaded fallback keeps caller migration state" begin
-    for throws in (false, true)
-        before = fill(true, 2)
-        after = fill(false, 2)
-        stable = fill(false, 2)
-        pinned = fill(false, 2)
-        caught = fill(false, 2)
-        Threads.@threads :dynamic for i in 1:2
-            task = current_task()
-            before[i] = task.sticky
-            ids = Int[]
-            flags = Bool[]
-            try
-                ODEX._threaded_foreach(true, 1:4) do j
-                    push!(flags, current_task().sticky)
-                    push!(ids, Threads.threadid())
-                    yield()
-                    push!(ids, Threads.threadid())
-                    throws && j == 3 && error("body failed")
-                end
-            catch
-                caught[i] = true
+@testset "Threaded foreach gives each chunk its own slot" begin
+    for range in (1:2, 0:1, 0:2, 0:5), nested in (false, true)
+        nchunks = min(length(range), Threads.nthreads())
+        outer = nested ? 2 : 1
+        slots = [zeros(Int, length(range)) for _ in 1:outer]
+        visits = [zeros(Int, length(range)) for _ in 1:outer]
+        busy = [fill(false, nchunks) for _ in 1:outer]
+        clash = fill(false, outer)
+        Threads.@threads :dynamic for k in 1:outer
+            ODEX._threaded_foreach(true, range) do i, slot
+                clash[k] |= busy[k][slot]
+                busy[k][slot] = true
+                yield()
+                slots[k][i - first(range) + 1] = slot
+                visits[k][i - first(range) + 1] += 1
+                busy[k][slot] = false
             end
-            after[i] = task.sticky
-            stable[i] = allequal(ids)
-            pinned[i] = all(flags)
         end
-        @test before == after == [false, false]
-        @test all(stable)
-        @test all(pinned)
-        @test caught == [throws, throws]
+        for k in 1:outer
+            sizes = [count(==(c), slots[k]) for c in 1:nchunks]
+            @test all(==(1), visits[k])
+            @test issorted(slots[k])
+            @test all(>(0), sizes) && maximum(sizes) - minimum(sizes) <= 1
+            @test !clash[k]
+        end
     end
 end

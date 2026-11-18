@@ -19,21 +19,21 @@
 @inline _controller_scalar_type(overrides::NamedTuple) =
     _float_controller_type(promote_type(map(typeof, values(overrides))...))
 
+# Splits `range` the way `@threads :static` does; chunk `c` owns scratch slot `c`.
+@inline _nchunks(range) = min(length(range), Threads.nthreads())
+
+@inline function _chunk(range, c, nchunks)
+    len, rem = divrem(length(range), nchunks)
+    first = (c - 1) * len + min(c - 1, rem) + 1
+    return range[first:(first + len - (c > rem))]
+end
+
 @inline function _threaded_foreach(f, ::Union{Bool, BaseThreads}, range)
-    if ccall(:jl_in_threaded_region, Cint, ()) != 0
-        # Bodies index buffers by threadid, so pin the serial loop to one thread.
-        task = current_task()
-        sticky = task.sticky
-        task.sticky = true
-        try
-            foreach(f, range)
-        finally
-            task.sticky = sticky
+    nchunks = _nchunks(range)
+    return Threads.@threads :dynamic for c in 1:nchunks
+        for i in _chunk(range, c, nchunks)
+            f(i, c)
         end
-        return nothing
-    end
-    return Threads.@threads :static for i in range
-        f(i)
     end
 end
 
@@ -50,18 +50,29 @@ end
 end
 
 macro threaded(option, ex)
+    return _threaded_loop(option, gensym(:slot), ex)
+end
+
+macro threaded(option, slot, ex)
+    return _threaded_loop(option, slot, ex)
+end
+
+function _threaded_loop(option, slot, ex)
     ex.head === :for || error("@threaded expects a for loop")
     loop_var = esc(ex.args[1].args[1])
     range_expr = esc(ex.args[1].args[2])
     body = esc(ex.args[2])
+    slot = esc(slot)
     return quote
         option = $(esc(option))
         if isthreaded(option)
-            _threaded_foreach(option, $range_expr) do $loop_var
+            _threaded_foreach(option, $range_expr) do $loop_var, $slot
                 $body
             end
         else
-            $(esc(ex))
+            let $slot = 1
+                $(esc(ex))
+            end
         end
     end
 end
