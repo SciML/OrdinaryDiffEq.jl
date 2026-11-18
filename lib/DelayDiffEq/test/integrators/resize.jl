@@ -171,4 +171,8 @@ end
     solve!(integ)
     @test integ.sol.retcode == ReturnCode.Success
     @test integ.u[1] ≈ exp(-0.5) rtol = 1.0e-6
+
+    integ = init(prob, alg; reltol = 1.0e-8, abstol = 1.0e-10)
+    step!(integ)
+    @test_throws ArgumentError resize!(integ, 2)
 end
