@@ -93,3 +93,32 @@ end
             1.0e-6
     end
 end
+
+# The matrix-free Newton test measures the Krylov residual through `Pl` applied by `ldiv!`.
+# Under `ldiv = false`, with Krylov.jl's own `M`, `W` or `atol`, with DQGMRES, which
+# LinearSolve calls without preconditioners, or with MINRES, which measures
+# `sqrt(r' * (Pl \ r))`, the solve tests another norm, and `ldiv = false` returned
+# `Success` with `u = u0`.
+function swapped!(res, du, u, p, t)
+    res[1] = du[2] + 2u[1] - sin(t)
+    res[2] = du[1] + 2u[2] - cos(t)
+    return nothing
+end
+
+@testset "Krylov solvers on the matrix-free DAE path" begin
+    prob = DAEProblem(swapped!, [0.0, 0.0], [0.0, 0.5], (0.0, 1.0); differential_vars = [true, true])
+    opts = (; abstol = 1.0e-8, reltol = 1.0e-8)
+    reference = solve(prob, DFBDF(); opts...)
+    for linsolve in (
+            KrylovJL_GMRES(; ldiv = false), KrylovJL(; KrylovAlg = LinearSolve.Krylov.dqgmres!),
+            KrylovJL_MINRES(), KrylovJL_GMRES(; W = 1.0e-20I), KrylovJL_GMRES(; M = 1.0e20I),
+            KrylovJL_GMRES(; atol = 1.0e20),
+        )
+        @test_throws ArgumentError solve(prob, DFBDF(; linsolve); opts...)
+    end
+    for linsolve in (KrylovJL_GMRES(), KrylovJL_FGMRES(), KrylovJL_BICGSTAB())
+        sol = solve(prob, DFBDF(; linsolve); opts...)
+        @test successful_retcode(sol)
+        @test sol.u[end] ≈ reference.u[end] rtol = 1.0e-5
+    end
+end

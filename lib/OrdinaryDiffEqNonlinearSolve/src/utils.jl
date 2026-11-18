@@ -312,6 +312,43 @@ struct DAEJacobiansConstantCache{JduType, ufuType, ufduType}
     uf_du::ufduType
 end
 
+# The matrix-free DAE Newton test measures the Krylov residual as `norm(Pl \ r)`, applying
+# the left preconditioner with `ldiv!` (see `compute_step!`). Of the Krylov.jl methods,
+# GMRES, FGMRES and BiCGStab measure it that way, unless a `W` weights their inner product.
+# `ldiv = false` applies `Pl` with `mul!`, LinearSolve calls the likes of DQGMRES without
+# `Pl`, and CG and MINRES measure `sqrt(r' * (Pl \ r))`; tested against that tolerance,
+# any of them can accept a zero correction.
+const DAE_KRYLOV_METHODS = (:gmres!, :fgmres!, :bicgstab!)
+# Krylov.jl keywords that override what that test relies on: the preconditioners, the
+# inner product and the tolerances.
+const DAE_KRYLOV_OWN_KWARGS = (:M, :N, :W, :atol, :rtol)
+
+function check_dae_krylov(linsolver)
+    linsolver isa LinearSolve.KrylovJL || return nothing
+    kwargs = linsolver.kwargs
+    keeps_defaults = get(kwargs, :ldiv, true) &&
+        !any(k -> haskey(kwargs, k), DAE_KRYLOV_OWN_KWARGS)
+    keeps_defaults || throw(
+        ArgumentError(
+            "A matrix-free Krylov solve of a DAE Newton system sets the preconditioners " *
+                "and tolerances its convergence test is measured in, so `KrylovJL` " *
+                "cannot take `ldiv = false` or the Krylov.jl keywords " *
+                "$(join(map(k -> "`$k`", DAE_KRYLOV_OWN_KWARGS), ", ")): pass " *
+                "preconditioners through `precs` and tolerances to `solve`."
+        )
+    )
+    method = nameof(linsolver.KrylovAlg)
+    method in DAE_KRYLOV_METHODS || throw(
+        ArgumentError(
+            "`Krylov.$method` is not supported for a matrix-free Krylov solve of a DAE " *
+                "Newton system: it does not measure its residual as `norm(Pl \\ r)`, the " *
+                "norm the Newton convergence test sets its tolerance in. Use " *
+                "KrylovJL_GMRES, KrylovJL_FGMRES or KrylovJL_BICGSTAB."
+        )
+    )
+    return nothing
+end
+
 function _nlalg_with_linsolve(inner_alg, linsolve)
     linsolve === nothing && return inner_alg
     !hasfield(typeof(inner_alg), :descent) && return inner_alg
@@ -946,6 +983,7 @@ function build_nlsolver(
             # `compute_step!` sets its Krylov `abstol` relative to each step's residual;
             # a fixed one would be in the units of `F`, which the user can scale freely.
             matrix_free_dae = isdae && J isa AbstractSciMLOperator
+            matrix_free_dae && check_dae_krylov(linsolver)
             linabstol = matrix_free_dae ? (; abstol = zero(uTolType)) : (;)
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);
