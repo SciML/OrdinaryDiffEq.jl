@@ -4,23 +4,63 @@ noop!(integrator) = nothing
 disco_controller(alg) = OrdinaryDiffEqCore.PIController(alg; discontinuity_detection = true)
 
 @testset "Discontinuity detection with non-mutable states" begin
-    @testset "find_discontinuity with a scalar out-of-place state ($spec)" for spec in (SciMLBase.FullSpecialize, SciMLBase.AutoSpecialize)
-        prob = ODEProblem{false, spec}((u, p, t) -> 1.0, 0.0, (0.0f0, 2.0f0))
-        cb = ContinuousCallback((u, t, integrator) -> t - 0.3f0, noop!)
+    @testset "find_discontinuity with a scalar out-of-place state ($T, $spec)" for T in (Float64, Float32),
+            spec in (SciMLBase.FullSpecialize, SciMLBase.AutoSpecialize)
+        prob = ODEProblem{false, spec}((u, p, t) -> 1.0, 0.0, (zero(T), T(2)))
+        cb = ContinuousCallback((u, t, integrator) -> t - T(0.3), noop!)
         integrator = init(
-            prob, Tsit5(); callback = cb, dt = 0.1f0, adaptive = false,
+            prob, Tsit5(); callback = cb, dt = T(0.1), adaptive = false,
             controller = disco_controller(Tsit5())
         )
-        integrator.dt = 1.0f0
+        integrator.dt = one(T)
         integrator.u = 1.0
         θ = OrdinaryDiffEqCore.find_discontinuity(integrator)
-        @test θ ≈ 0.3f0 atol = 1.0f-7
+        @test θ ≈ T(0.3) atol = (T === Float64 ? 1.0e-8 : 4eps(0.3f0))
         @test integrator.is_disco_step
         probs = OrdinaryDiffEqCore.get_disco_probs(integrator.controller_cache)
         @test isconcretetype(eltype(probs))
         disco = only(probs)
         @test disco.f.f isa (spec === SciMLBase.FullSpecialize ? OrdinaryDiffEqCore.zero_func_struct : OrdinaryDiffEqCore.FunctionWrapper)
-        @test disco.f(0.1f0, disco.p) === Float64(0.1f0) - Float64(0.3f0)
+        @test disco.f(T(0.1), disco.p) === Float64(T(0.1)) - Float64(T(0.3))
+    end
+
+    # `maybe_discontinuity` does not change a callback's type, so a scan with every root skipped
+    # runs the same code without the root solves. Each solve must then cost the same in a mixed
+    # set as for one scalar callback (nothing, once the bracketing solver does not splat the
+    # bracket). The roots decrease along each set (vector 3/8 and 1/4, then 0.2, then 0.1), so
+    # every bracket encloses its root and each crossing is solved once.
+    scalar(md) = ContinuousCallback((u, t, integrator) -> t - 0.2, noop!; maybe_discontinuity = md)
+    scalar2(md) = ContinuousCallback((u, t, integrator) -> t - 0.1, noop!; maybe_discontinuity = md)
+    vector(md) = VectorContinuousCallback(
+        (out, u, t, integrator) -> (out[1] = t - 3 / 8; out[2] = t - 1 / 4; nothing),
+        (integrator, idx) -> nothing, 2; maybe_discontinuity = md
+    )
+    function scan(cb)
+        integrator = init(
+            ODEProblem{true, SciMLBase.FullSpecialize}((du, u, p, t) -> (du[1] = 1.0; nothing), [0.0], (0.0, 2.0)),
+            Tsit5(); callback = cb, dt = 0.5, adaptive = false
+        )
+        integrator.dt = 1.0
+        integrator.u .= integrator.uprev .+ 1.0
+        θ = OrdinaryDiffEqCore.find_discontinuity(integrator)
+        return θ, @allocated OrdinaryDiffEqCore.find_discontinuity(integrator)
+    end
+    function solve_allocations(cbs)
+        θ, solved = scan(cbs(true))
+        θ_skipped, skipped = scan(cbs(false))
+        @test θ_skipped == 1
+        return θ, solved - skipped
+    end
+    @testset "Discontinuity scan allocations under FullSpecialize: $name" for (name, cbs, root, nsolves) in (
+            ("one vector callback", vector, 0.25, 2),
+            ("vector and an ineligible scalar callback", md -> CallbackSet(vector(md), scalar(false)), 0.25, 2),
+            ("vector and two scalar callbacks", md -> CallbackSet(vector(md), scalar(md), scalar2(md)), 0.1, 4),
+        )
+        θ_scalar, per_solve = solve_allocations(scalar)
+        @test θ_scalar ≈ 0.2 atol = 1.0e-8
+        θ, allocations = solve_allocations(cbs)
+        @test θ ≈ root atol = 1.0e-8
+        @test allocations == nsolves * per_solve
     end
 
     # u' = 2u below u = 1 and u' = 5 - 3u above it, from u(0) = 0.1: the crossing is at

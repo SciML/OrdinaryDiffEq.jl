@@ -26,6 +26,9 @@ _discontinuity_detection_enabled(cache::DummyControllerCache) =
 _discontinuity_detection_enabled(cache::CompositeControllerCache) =
     _discontinuity_detection_enabled(first(cache.caches))
 
+# Only isbits values leave the solve, so a `Union` of problem types does not box the solution.
+_disco_solve(prob) = (sol = solve(prob); (sol[], sol.retcode))
+
 function find_discontinuity(integrator)
     cb = integrator.opts.callback
     dt = integrator.dt
@@ -46,7 +49,7 @@ function find_discontinuity(integrator)
             continue
         end
         disco_prob = disco_probs[idx]
-        disco_zero = _disco_zero(disco_prob.f.f)
+        disco_zero = _disco_zero(disco_prob)
         _load_disco_state!(disco_zero, dt, uprev, u, k, t, p)
         if (i isa VectorContinuousCallback)
             len_cb = i.len::Int
@@ -63,9 +66,8 @@ function find_discontinuity(integrator)
                     end
                     _set_disco_index!(disco_zero, j)
                     disco_prob.tspan[2] = breakpointθ
-                    sol = solve(disco_prob)
-                    tmp = sol[]
-                    if (sol.retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
+                    tmp, retcode = _disco_solve(disco_prob)
+                    if (retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
                         breakpointθ = tmp
                         integrator.is_disco_step = true
                         integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step too far past this
@@ -84,9 +86,8 @@ function find_discontinuity(integrator)
                     )
                 end
                 disco_prob.tspan[2] = breakpointθ
-                sol = solve(disco_prob)
-                tmp = sol[]
-                if (sol.retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
+                tmp, retcode = _disco_solve(disco_prob)
+                if (retcode != ReturnCode.InitialFailure && !isnan(tmp) && tmp < breakpointθ)
                     breakpointθ = tmp
                     integrator.is_disco_step = true
                     integrator.disco_checkpoint = integrator.t + dt #our prev rejected step, we shouldn't step past this

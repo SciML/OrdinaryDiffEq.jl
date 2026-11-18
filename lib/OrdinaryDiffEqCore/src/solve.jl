@@ -51,6 +51,7 @@ function _load_disco_state!(z::zero_func_struct, dt, uprev, u, k, tprev, p)
 end
 _set_disco_index!(z::zero_func_struct, ind) = (z.ind = ind; nothing)
 
+_disco_zero(prob::IntervalNonlinearProblem) = _disco_zero(prob.f.f)
 _disco_zero(z::zero_func_struct) = z
 _disco_zero(w::FunctionWrapper) = w.obj.x
 
@@ -65,6 +66,11 @@ function _disco_problem(::Type{F}, ::Type{T}, i, u, _dt, uprev, k, cache, save_i
     zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
     return IntervalNonlinearProblem{false}(F(zero_func), [zero(T), one(T)], SciMLBase.NullParameters())
 end
+
+# One problem type per callback type in the set: `maybe_discontinuity` is a run-time field, so this
+# also covers ineligible callbacks; a few callback types give a small `Union` that calls split on.
+_disco_problem_type(::Type{F}, ::Type{T}, cbs::Tuple, args) where {F, T} =
+    Union{map(cb -> Base.promote_op(_disco_problem, Type{F}, Type{T}, typeof(cb), map(typeof, args)...), cbs)...}
 
 # Float64 in and out, as through the `FunctionWrapper`, also when a problem holds the zero function directly.
 (z::zero_func_struct)(θ, p) = convert(Float64, _disco_zero_value(z, convert(Float64, θ)))
@@ -998,11 +1004,9 @@ Base.@constprop :aggressive function _ode_init(
     make_f = direct ? SciMLBase.IntervalNonlinearFunction{false, SciMLBase.FullSpecialize} : disco_zero_wrapper
     args = (u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p)
     if direct
-        disco_prob_type = isconcretetype(eltype(cbs)) ?
-            Base.promote_op(_disco_problem, Type{make_f}, Type{tType}, eltype(cbs), map(typeof, args)...) :
-            IntervalNonlinearProblem
+        disco_prob_type = cbs isa Tuple ? _disco_problem_type(make_f, tType, cbs, args) : IntervalNonlinearProblem
     end
-    isconcretetype(disco_prob_type) || (disco_prob_type = IntervalNonlinearProblem)
+    isconcretetype(disco_prob_type) || disco_prob_type isa Union || (disco_prob_type = IntervalNonlinearProblem)
     disco_probs = Vector{disco_prob_type}(undef, num_probs)
     idx = 1
     for i in callbacks_internal.continuous_callbacks
