@@ -4,7 +4,7 @@ using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqVerner
 using OrdinaryDiffEqLowOrderRK
 using OrdinaryDiffEqRosenbrock
-using SciMLBase: ReturnCode
+using SciMLBase: ReturnCode, MatrixOperator
 using ADTypes: AutoFiniteDiff
 using LinearSolve: KrylovJL_GMRES
 using DiffEqBase: full_cache
@@ -157,4 +157,18 @@ end
     u_modified!(integ, true)
     solve!(integ)
     @test integ.sol.retcode == ReturnCode.Success
+end
+
+@testset "same-size resize! with a MatrixOperator jac_prototype" begin
+    f!(du, u, h, p, t) = (du .= -u; nothing)
+    jac!(J, u, h, p, t) = (J[1, 1] = -1; nothing)
+    f = DDEFunction(f!; jac = jac!, jac_prototype = MatrixOperator(fill(-1.0, 1, 1)))
+    prob = DDEProblem(f, [1.0], (p, t) -> [1.0], (0.0, 0.5); constant_lags = [1.0])
+    alg = MethodOfSteps(CompositeAlgorithm((Tsit5(), Rosenbrock23()), _ -> 1))
+    integ = init(prob, alg; reltol = 1.0e-8, abstol = 1.0e-10)
+    step!(integ)
+    resize!(integ, 1)
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
+    @test integ.u[1] ≈ exp(-0.5) rtol = 1.0e-6
 end

@@ -1528,13 +1528,18 @@ function resize_J_W!(cache, integrator, i, alg = integrator.alg)
         nf = nlsolve_f(f, alg)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
-            if cache.J isa AbstractSciMLOperator
+            if cache.J isa JVPCache
                 resize_JVPCache!(
                     cache.J, f, cache.du1, integrator.u, alg_autodiff(alg)
                 )
-            elseif f.jac_prototype !== nothing
-                J = similar(f.jac_prototype, i, i)
-                J = MatrixOperator(J; update_func! = f.jac)
+            elseif cache.J isa AbstractSciMLOperator
+                size(cache.J, 1) == i || throw(
+                    ArgumentError(
+                        "cannot resize a user-supplied $(nameof(typeof(cache.J))) jac_prototype from size $(size(cache.J, 1)) to $i"
+                    )
+                )
+            elseif cache.J isa AbstractMatrix
+                cache.J = similar(cache.J, i, i)
             end
             if cache.W.jacvec isa AbstractSciMLOperator
                 resize_JVPCache!(
