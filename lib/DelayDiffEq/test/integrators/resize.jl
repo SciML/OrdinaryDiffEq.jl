@@ -6,6 +6,7 @@ using OrdinaryDiffEqLowOrderRK
 using OrdinaryDiffEqRosenbrock
 using SciMLBase: ReturnCode
 using ADTypes: AutoFiniteDiff
+using LinearSolve: KrylovJL_GMRES
 using DiffEqBase: full_cache
 using OrdinaryDiffEqCore: CompositeAlgorithm
 
@@ -132,7 +133,9 @@ end
     f!(du, u, h, p, t) = (du .= -1000 .* (u .- 0.5); nothing)
     prob = DDEProblem(f!, [1.0], (p, t) -> [0.5], (0.0, 0.1); constant_lags = [1.0])
     fd = Rosenbrock23(autodiff = AutoFiniteDiff())
-    for algs in ((fd, Rosenbrock23()), (Rosenbrock23(), fd))
+    fdk = Rosenbrock23(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES())
+    adk = Rosenbrock23(linsolve = KrylovJL_GMRES())
+    for algs in ((fd, Rosenbrock23()), (Rosenbrock23(), fd), (fdk, adk), (adk, fdk))
         integ = init(prob, MethodOfSteps(CompositeAlgorithm(algs, _ -> 1)))
         step!(integ)
         resize!(integ, 2)
@@ -142,4 +145,16 @@ end
         @test integ.sol.retcode == ReturnCode.Success
         @test integ.u ≈ [0.5, 0.5]
     end
+end
+
+@testset "resize! with a matrix-free Rosenbrock member of AutoTsit5" begin
+    f!(du, u, h, p, t) = (du .= -1.0 .* (u .- 0.5); nothing)
+    prob = DDEProblem(f!, [1.0], (p, t) -> [0.5], (0.0, 0.5); constant_lags = [1.0])
+    integ = init(prob, MethodOfSteps(AutoTsit5(Rosenbrock23(linsolve = KrylovJL_GMRES()))))
+    step!(integ)
+    resize!(integ, 2)
+    integ.u[2] = 1.0
+    u_modified!(integ, true)
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
 end
