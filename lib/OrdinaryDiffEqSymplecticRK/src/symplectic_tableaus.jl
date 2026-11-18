@@ -82,14 +82,13 @@ function CalvoSanz4ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     a2 = convert(T, 0.40302128160421)
     a3 = -convert(T, 0.12092087633891)
     a4 = convert(T, 0.51272193319241)
-    a5 = convert(T, 0.0)
     b1 = convert(T, 0.061758858135626)
     b2 = convert(T, 0.33897802655364)
     b3 = convert(T, 0.61479130717558)
     b4 = -convert(T, 0.14054801465937)
     b5 = convert(T, 0.12501982279453)
-    # kick with b, then drift with a: K(b1) D(a1) K(b2) D(a2) ...
-    return SymplecticTableau((b1, b2, b3, b4, b5, zero(T)), (zero(T), a1, a2, a3, a4, a5))
+    # kick with b, then drift with a: K(b1) D(a1) ... D(a4) K(b5); the last drift is zero
+    return SymplecticTableau((b1, b2, b3, b4, b5), (zero(T), a1, a2, a3, a4))
 end
 
 # http://epubs.siam.org/doi/pdf/10.1137/0916010
