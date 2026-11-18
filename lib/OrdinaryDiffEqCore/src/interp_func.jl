@@ -139,25 +139,36 @@ depend on cache fields and their serialized representation.
 function strip_cache(cache)
     T = typeof(cache)
     declared = _declared_fieldtypes(T)
+    eltypevars = map(i -> isdefined(cache, i) ? _nothing_eltype(declared[i], getfield(cache, i)) : nothing, 1:fieldcount(T))
     keep = map(1:fieldcount(T)) do i
         isdefined(cache, i) || return !_accepts_nothing(declared[i])
         value = getfield(cache, i)
-        return fieldname(T, i) in (:tab, :tabs) ||
-            value isa Number || !_accepts_nothing(declared[i])
+        return fieldname(T, i) in (:tab, :tabs) || value isa Number ||
+            !(_accepts_nothing(declared[i]) || eltypevars[i] !== nothing)
     end
     while true
-        pinned = findfirst(
-            j -> !keep[j] && declared[j] isa TypeVar &&
-                any(i -> keep[i] && _mentions(declared[i], declared[j]), eachindex(keep)),
-            eachindex(keep)
-        )
+        pinned = findfirst(eachindex(keep)) do j
+            var = declared[j] isa TypeVar ? declared[j] : eltypevars[j]
+            return !keep[j] && var !== nothing &&
+                any(i -> keep[i] && _mentions(declared[i], var), eachindex(keep))
+        end
         pinned === nothing && break
         keep[pinned] = true
     end
-    return ConstructionBase.constructorof(T)(
-        (keep[i] && isdefined(cache, i) ? _strip_kept(fieldname(T, i), getfield(cache, i)) : nothing for i in 1:fieldcount(T))...
-    )
+    fields = map(1:fieldcount(T)) do i
+        keep[i] && isdefined(cache, i) && return _strip_kept(fieldname(T, i), getfield(cache, i))
+        eltypevars[i] === nothing && return nothing
+        return Array{Nothing}(undef, map(zero, size(getfield(cache, i))))
+    end
+    return ConstructionBase.constructorof(T)(fields...)
 end
+
+# A field declared `Array{E}` holding non-numbers, with `E` a parameter that admits `nothing`,
+# can become an empty `Array{Nothing}` so that `E` no longer names user function types.
+_nothing_eltype(declared, value) = value isa Array && !(eltype(value) <: Number) &&
+    declared isa DataType && declared.name.wrapper === Array &&
+    declared.parameters[1] isa TypeVar && _accepts_nothing(declared.parameters[1]) ?
+    declared.parameters[1] : nothing
 
 # Arrays the interpolant does not read, such as per-stage linear solvers, are emptied.
 _strip_kept(name, value) = name in (:tab, :tabs) || !(value isa Array) || eltype(value) <: Number ?
@@ -181,7 +192,7 @@ _mentions(declared, var) = declared === var ||
 function strip_cache(cache::DefaultCache)
     names = (:cache1, :cache2, :cache3, :cache4, :cache5, :cache6)
     caches = map(n -> isdefined(cache, n) ? strip_cache(getfield(cache, n)) : nothing, names)
-    types = map((c, n) -> isdefined(cache, n) ? typeof(c) : fieldtype(typeof(cache), n), caches, names)
+    types = map((c, n) -> isdefined(cache, n) ? typeof(c) : Nothing, caches, names)
     stripped = DefaultCache{types..., Nothing, Nothing}(nothing, nothing, cache.current, nothing)
     foreach((c, n) -> isdefined(cache, n) && setfield!(stripped, n, c), caches, names)
     return stripped

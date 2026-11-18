@@ -97,3 +97,45 @@ end
     sol = SciMLBase.strip_solution(solve(growth, DefaultODEAlgorithm(lazy = Val(false)); reltol = 1.0e-10, abstol = 1.0e-10))
     @test maximum(t -> abs(sol(t)[1] - exp(t)), ts) < 1.0e-11
 end
+
+using Serialization
+roundtrip_rate(t) = 1.0
+roundtrip_rhs!(du, u, p, t) = (du .= -p.rate(t) .* u)
+roundtrip_rhs(u, p, t) = -p.rate(t) .* u
+@testset "Stripped solutions deserialize without the RHS or p defined" begin
+    p = (rate = roundtrip_rate,)
+    cases = (
+        (ODEProblem{true, SciMLBase.FullSpecialize}(roundtrip_rhs!, [1.0], (0.0, 1.0), p), DefaultODEAlgorithm(lazy = Val(false))),
+        (ODEProblem(roundtrip_rhs, [1.0], (0.0, 1.0), p), DefaultODEAlgorithm(lazy = Val(false))),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), AdaptiveRadau()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), RadauIIA5()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), Rodas5P()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), FBDF()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), Tsit5()),
+    )
+    ts = range(0.013, 0.987; length = 20)
+    dir = mktempdir()
+    sols = map(enumerate(cases)) do (i, (prob, alg))
+        sol = solve(prob, alg)
+        serialize(joinpath(dir, "$i.jls"), SciMLBase.strip_solution(sol; strip_alg = true))
+        sol
+    end
+    script = """
+    using OrdinaryDiffEq, OrdinaryDiffEqFIRK, Serialization
+    for i in 1:$(length(cases))
+        result = try
+            sol = deserialize(joinpath($(repr(dir)), "\$i.jls"))
+            [sol(t) for t in $(repr(collect(ts)))]
+        catch err
+            sprint(showerror, err)
+        end
+        serialize(joinpath($(repr(dir)), "\$i.out"), result)
+    end
+    """
+    run(`$(Base.julia_cmd()) --project=$(Base.active_project()) -e $script`)
+    for (i, sol) in enumerate(sols)
+        result = deserialize(joinpath(dir, "$i.out"))
+        @test result isa Vector
+        @test result ≈ sol.(ts) rtol = 1.0e-12
+    end
+end
