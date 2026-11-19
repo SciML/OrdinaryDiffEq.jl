@@ -309,6 +309,9 @@ end
 
         if u isa Number
             utilde = dto6 * f.mass_matrix[1, 1] * (k₁ - 2 * k₂ + k₃)
+        elseif integrator.differential_vars === nothing
+            # Ordinary ODEs have no algebraic-variable mask.
+            utilde = @.. dto6 * (k₁ - 2 * k₂ + k₃)
         else
             # Match the in-place cache: the error estimate is a state-space
             # defect, not a mass-matrix-scaled residual. Exclude algebraic
@@ -323,7 +326,7 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        if mass_matrix !== I
+        if mass_matrix !== I && integrator.differential_vars !== nothing
             atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) /
                 integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))

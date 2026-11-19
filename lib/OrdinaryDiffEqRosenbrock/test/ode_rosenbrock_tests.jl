@@ -736,6 +736,7 @@ end
 
     f_oop(u, p, t) = t^2
     f_iip(du, u, p, t) = (du[1] = t^2; nothing)
+    f_oop_vec(u, p, t) = [t^2]
 
     function first_step_EEst(prob)
         integ = init(
@@ -745,15 +746,16 @@ end
         return integ.EEst
     end
 
-    # Out-of-place: Rosenbrock23ConstantCache
+    # Out-of-place scalar and vector states use Rosenbrock23ConstantCache.
     @test first_step_EEst(ODEProblem(f_oop, 0.0, (t0, 1.0))) ≈ expected rtol = 1.0e-6
+    # An ordinary vector ODE has no differential_vars mask.
+    @test first_step_EEst(ODEProblem(f_oop_vec, [0.0], (t0, 1.0))) ≈ expected rtol = 1.0e-6
     # In-place: Rosenbrock23Cache
     @test first_step_EEst(ODEProblem(f_iip, [0.0], (t0, 1.0))) ≈ expected rtol = 1.0e-6
 
     # A non-identity mass matrix must not change the cache-dependent
     # normalization of the state-space error estimate.
     M = Diagonal([2.0])
-    f_oop_vec(u, p, t) = [t^2]
     prob_iip_M = ODEProblem(ODEFunction{true}(f_iip; mass_matrix = M), [0.0], (t0, 1.0))
     prob_oop_M = ODEProblem(ODEFunction{false}(f_oop_vec; mass_matrix = M), [0.0], (t0, 1.0))
     @test first_step_EEst(prob_iip_M) ≈ expected / 2 rtol = 1.0e-6
