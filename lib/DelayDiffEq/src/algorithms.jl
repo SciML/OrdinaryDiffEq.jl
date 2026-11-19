@@ -13,9 +13,9 @@ Construct an algorithm that solves delay differential equations by the method of
 where `alg` is an ODE algorithm from OrdinaryDiffEq.jl upon which the calculation of
 steps is based.
 
-If the algorithm is `constrained` only steps of size at most the minimal delay will be
-taken. If it is unconstrained, fixed-point iteration `fpsolve` is applied for step sizes
-that exceed the minimal delay.
+If the algorithm is `constrained`, steps are at most the smallest nonzero constant lag, both for adaptive and fixed time steps.
+Fixed-point iteration `fpsolve` is applied to every step that needs the solution after the start of the step, for example a step longer than a dependent lag.
+`fpsolve` can be `NLFunctional()` or `NLAnderson()`.
 
 
 Citations:
