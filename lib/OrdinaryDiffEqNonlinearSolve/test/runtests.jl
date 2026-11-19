@@ -36,6 +36,7 @@ end
 if TEST_GROUP ∉ ("QA", "ModelingToolkit")
     @time @safetestset "Developer API Tests" include("developer_api_tests.jl")
     @time @safetestset "NLAnderson Resize Tests" include("anderson_resize_tests.jl")
+    @time @safetestset "Composite Resize Tests" include("composite_resize_tests.jl")
     @time @safetestset "Newton Tests" include("newton_tests.jl")
     @time @safetestset "NLNewton always_new Tests" include("always_new_tests.jl")
     @time @safetestset "Callable Predictor Tests" include("predictor_tests.jl")

@@ -1358,9 +1358,21 @@ end
 ## resize
 
 function resize_nlsolver!(integrator::SciMLBase.DEIntegrator, i::Int)
-    isdefined(integrator.cache, :nlsolver) || return
+    return resize_nlsolver_cache!(integrator, integrator.cache, i)
+end
 
-    (; nlsolver) = integrator.cache
+function resize_nlsolver_cache!(integrator, cache::OrdinaryDiffEqCore.CompositeCache, i)
+    for (subcache, alg) in zip(cache.caches, integrator.alg.algs)
+        context = (; alg, integrator.u, integrator.f, integrator.sol, integrator.dt)
+        resize_nlsolver_cache!(context, subcache, i)
+    end
+    return nothing
+end
+
+function resize_nlsolver_cache!(integrator, cache, i)
+    isdefined(cache, :nlsolver) || return
+
+    (; nlsolver) = cache
 
     for nls in (nlsolver isa AbstractArray ? nlsolver : (nlsolver,))
         resize!(nls, integrator, i)
