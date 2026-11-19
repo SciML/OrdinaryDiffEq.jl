@@ -39,9 +39,10 @@ prob = ODEProblem(jump_rhs!, vcat(ones(NPAIRS), zeros(NPAIRS)), (0.0, tend))
     integ = init(prob, alg; abstol, reltol, tstops)
     accepted_over_tolerance = 0
     while integ.t < tend
-        step!(integ)
+        step!(integ) == ReturnCode.Success || break
         accepted_over_tolerance += OrdinaryDiffEqCore.get_EEst(integ) > 1
     end
+    @test integ.t == tend
     solve!(integ)
     sol = integ.sol
 
