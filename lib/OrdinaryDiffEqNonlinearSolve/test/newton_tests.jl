@@ -47,7 +47,8 @@ end
         end
         expected = 2expected / (1 + sqrt(1 + 40dt * expected))
     end
-    @test SciMLBase.successful_retcode(integ.sol)
+    @test integ.t ≈ 0.5
+    @test integ.stats.nreject == 0
     @test nsteps == 50
     @test integ.u ≈ expected atol = 1.0e-6
 end
