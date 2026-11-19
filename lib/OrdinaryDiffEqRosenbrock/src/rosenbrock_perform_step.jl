@@ -316,8 +316,9 @@ end
             # Match the in-place cache: the error estimate is a state-space
             # defect, not a mass-matrix-scaled residual. Exclude algebraic
             # components before applying the state tolerances.
+            zero_state = zero(eltype(u))
             utilde = @.. ifelse(
-                integrator.differential_vars, dto6 * (k₁ - 2 * k₂ + k₃), false
+                integrator.differential_vars, dto6 * (k₁ - 2 * k₂ + k₃), zero_state
             )
         end
         atmp = calculate_residuals(
@@ -327,7 +328,8 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I && integrator.differential_vars !== nothing
-            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) /
+            zero_du = zero(eltype(integrator.fsallast))
+            atmp = @. ifelse(integrator.differential_vars, zero_du, integrator.fsallast) /
                 integrator.opts.abstol
             OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
         end
