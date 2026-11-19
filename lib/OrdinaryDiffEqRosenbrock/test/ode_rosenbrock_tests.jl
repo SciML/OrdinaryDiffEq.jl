@@ -749,4 +749,11 @@ end
     @test first_step_EEst(ODEProblem(f_oop, 0.0, (t0, 1.0))) ≈ expected rtol = 1.0e-6
     # In-place: Rosenbrock23Cache
     @test first_step_EEst(ODEProblem(f_iip, [0.0], (t0, 1.0))) ≈ expected rtol = 1.0e-6
+
+    # A non-identity mass matrix must not change the cache-dependent
+    # normalization of the state-space error estimate.
+    M = Diagonal([2.0])
+    prob_iip_M = ODEProblem(ODEFunction{true}(f_iip; mass_matrix = M), [0.0], (t0, 1.0))
+    prob_oop_M = ODEProblem(ODEFunction{false}(f_oop; mass_matrix = M), [0.0], (t0, 1.0))
+    @test first_step_EEst(prob_iip_M) ≈ first_step_EEst(prob_oop_M) rtol = 1.0e-6
 end
