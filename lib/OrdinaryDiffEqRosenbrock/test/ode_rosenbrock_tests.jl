@@ -756,5 +756,7 @@ end
     f_oop_vec(u, p, t) = [t^2]
     prob_iip_M = ODEProblem(ODEFunction{true}(f_iip; mass_matrix = M), [0.0], (t0, 1.0))
     prob_oop_M = ODEProblem(ODEFunction{false}(f_oop_vec; mass_matrix = M), [0.0], (t0, 1.0))
+    @test first_step_EEst(prob_iip_M) ≈ expected / 2 rtol = 1.0e-6
+    @test first_step_EEst(prob_oop_M) ≈ expected / 2 rtol = 1.0e-6
     @test first_step_EEst(prob_iip_M) ≈ first_step_EEst(prob_oop_M) rtol = 1.0e-6
 end
