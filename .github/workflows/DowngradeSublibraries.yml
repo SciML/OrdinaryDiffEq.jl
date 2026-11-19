@@ -21,6 +21,10 @@ jobs:
     secrets: "inherit"
     with:
       julia-version: "1.11"
+      # libxml2: old GR_jll artifacts (DiffEqDevTools test-dep Plots) link
+      # libxml2.so.2, absent on ubuntu-26.04 (= ubuntu-latest). Setting
+      # apt-packages pins the reusable workflow to ubuntu-24.04, which ships it.
+      apt-packages: "libxml2"
       skip: "Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation"
       group-env-name: "GROUP"
       group-env-value: "Core"
