@@ -155,7 +155,7 @@ struct McAte4 <: OrdinaryDiffEqPartitionedAlgorithm end
 struct CalvoSanz4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 @doc generic_solver_docstring(
-    "4th order explicit symplectic integrator (McLachlan 1995, symmetric type SB3A with m = 5). Requires quadratic kinetic energy.",
+    "4th order explicit symplectic integrator for separable Hamiltonians (McLachlan 1995, symmetric type SB3A with m = 5; at order 4 this is a general symmetric splitting method).",
     "McAte42",
     "Symplectic Runge-Kutta Methods",
     mclachlan1992, "", ""

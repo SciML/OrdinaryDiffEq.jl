@@ -56,7 +56,7 @@ For a Hamiltonian system with energy `H(p,q)`, symplectic integrators preserve t
   - **`CandyRoz4`**: Fourth-order method
   - **`McAte4`**: Fourth-order McLachlan-Atela (requires quadratic kinetic energy)
   - **`CalvoSanz4`**: Optimized fourth-order method (requires quadratic kinetic energy)
-  - **`McAte42`**: Alternative fourth-order method (requires quadratic kinetic energy)
+  - **`McAte42`**: Alternative fourth-order method (McLachlan 1995)
 
 ### Higher-order methods
 
