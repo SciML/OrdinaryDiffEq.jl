@@ -583,12 +583,12 @@ end
             )
         end
 
+        drain_jvp_count!(integrator, alg, W1)
+        integrator.stats.nsolve += 1
         if _linsolve_failed(linres)
             cache.status = Divergence
             break
         end
-        drain_jvp_count!(integrator, alg, W1)
-        integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
 
@@ -1026,12 +1026,12 @@ end
             )
         end
 
+        drain_jvp_count!(integrator, alg, W2)
+        integrator.stats.nsolve += 2
         if _linsolve_failed(linres1) || _linsolve_failed(linres2)
             cache.status = Divergence
             break
         end
-        drain_jvp_count!(integrator, alg, W2)
-        integrator.stats.nsolve += 2
         dw2 = z2
         dw3 = z3
         @.. dw2 = real(dw23)
@@ -1712,13 +1712,13 @@ end
                 integrator, linsolve3; A = nothing, b = _vec(cubuff2), linu = _vec(dw45)
             )
         end
+        drain_jvp_count!(integrator, alg, W2)
+        drain_jvp_count!(integrator, alg, W3)
+        integrator.stats.nsolve += 3
         if _linsolve_failed(linres1) || _linsolve_failed(linres2) || _linsolve_failed(linres3)
             cache.status = Divergence
             break
         end
-        drain_jvp_count!(integrator, alg, W2)
-        drain_jvp_count!(integrator, alg, W3)
-        integrator.stats.nsolve += 3
         dw2 = z2
         dw3 = z3
         @.. dw2 = real(dw23)
@@ -2353,15 +2353,15 @@ end
             linsolve_failed |= any_failed[]
         end
 
-        if linsolve_failed
-            cache.status = Divergence
-            break
-        end
-
         for i in 1:((num_stages - 1) ÷ 2)
             drain_jvp_count!(integrator, alg, W2[i])
         end
         integrator.stats.nsolve += (num_stages + 1) / 2
+
+        if linsolve_failed
+            cache.status = Divergence
+            break
+        end
 
         for i in 1:((num_stages - 1) ÷ 2)
             @.. dw[2 * i - 1] = real(dw2[i])
@@ -2795,11 +2795,11 @@ end
         end
         set_linear_reltol!(linsolve, integrator.opts.reltol)
         linres = LinearSolve.solve!(linsolve)
+        integrator.stats.nsolve += 1
         if _linsolve_failed(linres)
             cache.status = Divergence
             break
         end
-        integrator.stats.nsolve += 1
 
         for i in 1:num_stages
             @views copyto!(_vec(dw[i]), ubuff[((i - 1) * n + 1):(i * n)])
