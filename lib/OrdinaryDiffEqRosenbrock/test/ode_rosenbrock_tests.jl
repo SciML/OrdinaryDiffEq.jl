@@ -723,3 +723,28 @@ end
         @test SciMLBase.successful_retcode(solve(prob, Rosenbrock32()))
     end
 end
+
+# Every stage of a Rosenbrock step performs one linear solve, so `nsolve` must
+# agree between the out-of-place and in-place implementations.
+@testset "nsolve matches between OOP and IIP" begin
+    f_oop(u, p, t) = [-u[1] + u[2], -2 * u[2]]
+    function f_iip(du, u, p, t)
+        du[1] = -u[1] + u[2]
+        du[2] = -2 * u[2]
+        return nothing
+    end
+    u0 = [1.0, 1.0]
+    tspan = (0.0, 1.0)
+    prob_oop = ODEProblem(f_oop, u0, tspan)
+    prob_iip = ODEProblem(f_iip, u0, tspan)
+    for alg in (
+            Rosenbrock23(), Rosenbrock32(), ROS2(), ROS3(), ROS3P(), Rodas3(),
+            Rodas4(), Rodas4P(), Rodas5P(), GRK4A(), ROS34PW1a(), Rodas23W(),
+        )
+        stats_oop = solve(prob_oop, alg; adaptive = false, dt = 0.1).stats
+        stats_iip = solve(prob_iip, alg; adaptive = false, dt = 0.1).stats
+        @test stats_oop.naccept == stats_iip.naccept == 10
+        @test stats_oop.nsolve == stats_iip.nsolve
+    end
+    @test solve(prob_oop, Rodas4(); adaptive = false, dt = 0.1).stats.nsolve == 60
+end
