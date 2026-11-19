@@ -57,3 +57,27 @@ sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt, save_everystep =
 @test c3[] == 1
 @test c4[] == 1
 @test c5[] == 1
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/4991
+# A bounce whose flight is shorter than `dt * repeat_nudge` must not be skipped.
+function bounce!(du, u, p, t)
+    du[1] = u[2]
+    du[2] = -9.81
+    return
+end
+@testset "Short flights near the Zeno time, $(nameof(typeof(alg))), e = $e" for alg in (Tsit5(), Vern9()),
+        (e, h0) in ((0.8, 1.0), (0.7, 10.0))
+
+    tz = sqrt(2h0 / 9.81) * (1 + e) / (1 - e)
+    bounces = Ref(0)
+    bounce_cb = ContinuousCallback(
+        (u, t, integrator) -> u[1], nothing,
+        integrator -> (bounces[] += 1; integrator.u[2] *= -e)
+    )
+    sol = solve(
+        ODEProblem(bounce!, [h0, 0.0], (0.0, tz + 1)), alg;
+        callback = bounce_cb, abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    @test bounces[] > 40
+    @test minimum(first, sol.(range(0, tz - 1.0e-3, length = 10^4))) > -1.0e-8
+end

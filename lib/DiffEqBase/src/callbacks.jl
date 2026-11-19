@@ -381,18 +381,23 @@ per-component event mask. The event time is found by rootfinding on the callback
         # Find the condition value closest to zero across all triggered events
         min_condition_val = zero(eltype(bottom_condition))
         min_abs_condition = typemax(eltype(bottom_condition))
+        min_idx = 1
         for idx in 1:callback.len
             if prev_simultaneous_events[idx]
                 cond_val = ArrayInterface.allowed_getindex(bottom_condition, idx)
                 if abs(cond_val) < min_abs_condition
                     min_abs_condition = abs(cond_val)
                     min_condition_val = cond_val
+                    min_idx = idx
                 end
             end
         end
 
         # Evaluate condition slightly in future
-        nudged_t = nudge_tprev(integrator, callback, min_condition_val)
+        nudged_t = nudge_tprev(
+            integrator, callback, min_condition_val,
+            t -> ArrayInterface.allowed_getindex(get_condition(integrator, callback, t), min_idx)
+        )
         tmp_condition = get_condition(integrator, callback, nudged_t)
 
         for idx in 1:callback.len
@@ -519,16 +524,32 @@ Return a nudged (if necessary) value of `integrator.tprev` to avoid repeat event
 - `integrator`
 - `callback`: Last occurring callback
 - `condition_tprev`: Condition of last occurring callback evaluated at `integrator.tprev`
+- `condition_at`: Scalar condition of that callback as a function of time
 """
-function nudge_tprev(integrator, callback, condition_tprev)
+function nudge_tprev(
+        integrator, callback, condition_tprev,
+        condition_at = t -> get_condition(integrator, callback, t)
+    )
     # Assume the previous event might affect the condition/root
-    return if abs(condition_tprev - integrator.last_event_error) <= callback.abstol
-        # We are still close to the root
-        right_t = integrator.tprev + integrator.dt * callback.repeat_nudge
-    else
+    if abs(condition_tprev - integrator.last_event_error) > callback.abstol
         # We are far away from the root, keep the current sign
-        right_t = integrator.tprev
+        return integrator.tprev
     end
+    # We are still close to the root
+    right_t = integrator.tprev + integrator.dt * callback.repeat_nudge
+    right_sign = sign(condition_at(right_t))
+    # The condition can cross zero again before `right_t` (e.g. a short excursion right
+    # after the event). Sample closer to `tprev` until the condition is back near the root.
+    offset = integrator.dt * callback.repeat_nudge
+    while true
+        offset /= 10
+        t = integrator.tprev + offset
+        t == integrator.tprev && break
+        condition = condition_at(t)
+        abs(condition) <= abs(integrator.last_event_error) + callback.abstol && break
+        sign(condition) != right_sign && return t
+    end
+    return right_t
 end
 
 """
