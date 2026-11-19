@@ -1246,7 +1246,7 @@ function Kvaerno3ESDIRKIMEXTableau(T, T2)
 
     c_vec = zeros(T2, s)
     c_vec[1] = zero(T2)
-    c_vec[2] = convert(T2, 0.4358665215)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[2] = convert(T2, 2) * convert(T2, 0.4358665215)  # = 2γ = Ai[2,1] + Ai[2,2]
     c_vec[3] = c3
     c_vec[4] = one(T2)
 
@@ -1331,7 +1331,7 @@ function Kvaerno4ESDIRKIMEXTableau(T, T2)
 
     c_vec = zeros(T2, s)
     c_vec[1] = zero(T2)
-    c_vec[2] = convert(T2, 0.4358665215)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[2] = convert(T2, 2) * convert(T2, 0.4358665215)  # = 2γ = Ai[2,1] + Ai[2,2]
     c_vec[3] = c3
     c_vec[4] = c4
     c_vec[5] = one(T2)
@@ -1451,7 +1451,7 @@ function Kvaerno5ESDIRKIMEXTableau(T, T2)
 
     c_vec = zeros(T2, s)
     c_vec[1] = zero(T2)
-    c_vec[2] = convert(T2, 0.26)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[2] = convert(T2, 2) * convert(T2, 0.26)  # = 2γ = Ai[2,1] + Ai[2,2]
     c_vec[3] = c3
     c_vec[4] = c4
     c_vec[5] = c5
