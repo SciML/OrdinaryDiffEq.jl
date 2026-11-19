@@ -310,7 +310,7 @@ end
         if u isa Number
             utilde = dto6 * f.mass_matrix[1, 1] * (k₁ - 2 * k₂ + k₃)
         elseif integrator.differential_vars === nothing
-            # Ordinary ODEs have no algebraic-variable mask.
+            # Identity-mass ODEs have no algebraic-variable mask.
             utilde = @.. dto6 * (k₁ - 2 * k₂ + k₃)
         else
             # Match the in-place cache: the error estimate is a state-space
