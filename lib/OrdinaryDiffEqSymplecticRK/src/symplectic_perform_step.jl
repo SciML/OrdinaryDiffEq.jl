@@ -359,19 +359,24 @@ end
     # drift i (f2) at the time the velocity has reached, tp = t + (a[1] + ... + a[i-1]) * dt.
     tend = t + dt
     u = uprev + dt * b[1] * kuprev
-    tq = N == 1 ? tend : t + b[1] * dt
+    # coefficient sums; each stage time is formed from t, so rounding cannot accumulate
+    sq = b[1]
+    tq = N == 1 ? tend : t + sq * dt
     kdu = f.f1(duprev, u, p, tq)
     du = duprev + dt * a[1] * kdu
-    tp = t + a[1] * dt
+    sp = a[1]
+    tp = t + sp * dt
 
     # Stages 2 through N
     for i in 2:N
         ku = f.f2(du, u, p, tp)
         u = u + dt * b[i] * ku
-        tq = i == N ? tend : tq + b[i] * dt
+        sq += b[i]
+        tq = i == N ? tend : t + sq * dt
         kdu = f.f1(du, u, p, tq)
         du = du + dt * a[i] * kdu
-        tp = tp + a[i] * dt
+        sp += a[i]
+        tp = t + sp * dt
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu
@@ -399,19 +404,24 @@ end
     # the position has reached, t + (b[1] + ... + b[i]) * dt.
     tend = t + dt
     @.. broadcast = false u = uprev + dt * b[1] * kuprev
-    tq = N == 1 ? tend : t + b[1] * dt
+    # coefficient sums; each stage time is formed from t, so rounding cannot accumulate
+    sq = b[1]
+    tq = N == 1 ? tend : t + sq * dt
     f.f1(kdu, duprev, u, p, tq)
     @.. broadcast = false du = duprev + dt * a[1] * kdu
-    tp = t + a[1] * dt
+    sp = a[1]
+    tp = t + sp * dt
 
     # Stages 2 through N
     for i in 2:N
         f.f2(ku, du, u, p, tp)
         @.. broadcast = false u = u + dt * b[i] * ku
-        tq = i == N ? tend : tq + b[i] * dt
+        sq += b[i]
+        tq = i == N ? tend : t + sq * dt
         f.f1(kdu, du, u, p, tq)
         @.. broadcast = false du = du + dt * a[i] * kdu
-        tp = tp + a[i] * dt
+        sp += a[i]
+        tp = t + sp * dt
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu

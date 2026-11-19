@@ -1,8 +1,5 @@
-# Order on nonlinear problems, with and without a time-dependent force or drift,
-# for out-of-place and in-place functions.
-# The harmonic oscillator in symplectic_convergence.jl is linear and autonomous, so it
-# does not detect a wrong time for the kicks (#5014) or a drift/kick swap that only
-# matters when the force is nonlinear (McAte4, CalvoSanz4, McAte5, McAte42 #85).
+# Nonlinear, time-dependent problems: the harmonic oscillator in
+# symplectic_convergence.jl cannot detect wrong stage times or a drift/kick swap.
 using OrdinaryDiffEqSymplecticRK, OrdinaryDiffEqTsit5, Test
 
 const ALGS = (
@@ -10,12 +7,10 @@ const ALGS = (
     (CandyRoz4(), 4), (McAte4(), 4), (CalvoSanz4(), 4), (McAte42(), 4), (McAte5(), 5),
 )
 
-# McAte4, CalvoSanz4 and McAte5 are Runge-Kutta-Nystrom methods (McLachlan & Atela
-# 1992, section 3.2): their order needs u' = v, so they are left out of the
-# time-dependent drift problem.
+# Runge-Kutta-Nystrom methods: their order needs u' = v (McLachlan & Atela 1992, 3.2).
 const RKN_ONLY = (McAte4, CalvoSanz4, McAte5)
 
-# (name, kick v' = f1, drift u' = f2, needs u' = v)
+# (name, kick f1, drift f2, drift depends on t)
 const PROBLEMS = (
     ("pendulum", (v, u, t) -> -sin.(u), (v, u, t) -> v, false),
     ("forced pendulum", (v, u, t) -> -sin.(u) .+ cos(2t + 0.7) / 2, (v, u, t) -> v, false),
@@ -49,7 +44,6 @@ end
     @test log2(e[1] / e[2]) ≈ order atol = 0.3
 end
 
-# The step ends exactly at t + dt, so the cached derivatives are evaluated there.
 @testset "endpoint time, iip = $iip, $(nameof(typeof(alg)))" for iip in (false, true),
         (alg, _) in ALGS
 
@@ -61,9 +55,7 @@ end
     @test seen[end] == 1.2
 end
 
-# Kick i is evaluated at t + (b[1] + ... + b[i]) * dt, the last one at t + dt exactly.
-# Methods with negative coefficients evaluate some kicks outside [t, t + dt]; this is
-# documented in docs/src/dynamicalodeexplicit/SymplecticRK.md.
+# Stage-clock invariant: kick i at t + (b[1] + ... + b[i]) * dt, the last at t + dt.
 @testset "kick times, iip = $iip, $(nameof(typeof(alg)))" for iip in (false, true),
         (alg, _) in ALGS
 
@@ -83,9 +75,8 @@ end
     @test seen[end] == 1.0
 end
 
-# Force and drift callback times over a whole solve on [0, 1] with dt = 1/4. Ruth3 and
-# CandyRoz4 evaluate the force outside the interval (documented); the methods the
-# documentation suggests instead stay inside it for both callbacks.
+# Ruth3 and CandyRoz4 evaluate the force outside the step (documented); the
+# suggested alternatives stay inside it.
 @testset "callback times at the boundaries, iip = $iip" for iip in (false, true)
     function callback_times(alg)
         kicks, drifts = Float64[], Float64[]
@@ -107,5 +98,21 @@ end
         kicks, drifts = callback_times(alg)
         @test all(t -> 0 <= t <= 1, kicks)
         @test all(t -> 0 <= t <= 1, drifts)
+    end
+end
+
+# Stage times are formed from t, not accumulated, so rounding cannot push an
+# in-range stage outside a tiny step.
+@testset "tiny step stays inside tspan, iip = $iip" for iip in (false, true)
+    tspan = (1.0, nextfloat(1.0, 8))
+    inside(t) = tspan[1] <= t <= tspan[2] || throw(DomainError(t))
+    f1(v, u, t) = (inside(t); zero(v))
+    f2(v, u, t) = (inside(t); v)
+    for alg in (PseudoVerletLeapfrog(), McAte2(), McAte3(), KahanLi6(), KahanLi8(), SofSpa10())
+        sol = solve(
+            make_problem(f1, f2, iip, [0.0], [1.0], tspan), alg;
+            dt = 8 * eps(1.0), adaptive = false
+        )
+        @test sol.t[end] == tspan[2]
     end
 end

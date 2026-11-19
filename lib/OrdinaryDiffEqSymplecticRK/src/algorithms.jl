@@ -69,6 +69,19 @@ default_linear_interpolation(prob, alg::LeapfrogDriftKickDrift) = true
 )
 struct PseudoVerletLeapfrog <: OrdinaryDiffEqPartitionedAlgorithm end
 
+mclachlan1995 = """
+@article{mclachlan1995numerical,
+title={On the numerical integration of ordinary differential equations by symmetric composition methods},
+author={McLachlan, Robert I},
+journal={SIAM Journal on Scientific Computing},
+volume={16},
+number={1},
+pages={151--168},
+year={1995},
+publisher={SIAM}
+}
+"""
+
 mclachlan1992 = """
 @article{mclachlan1992accuracy,
 title={The accuracy of symplectic integrators},
@@ -158,7 +171,7 @@ struct CalvoSanz4 <: OrdinaryDiffEqPartitionedAlgorithm end
     "4th order explicit symplectic integrator for separable Hamiltonians (McLachlan 1995, symmetric type SB3A with m = 5; at order 4 this is a general symmetric splitting method).",
     "McAte42",
     "Symplectic Runge-Kutta Methods",
-    mclachlan1992, "", ""
+    mclachlan1995, "", ""
 )
 struct McAte42 <: OrdinaryDiffEqPartitionedAlgorithm end
 
