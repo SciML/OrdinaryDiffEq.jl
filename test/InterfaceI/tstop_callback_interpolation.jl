@@ -121,3 +121,32 @@ end
         @test u ≈ [1 + t]
     end
 end
+
+@testset "Dense output after a callback interpolates (#4967)" begin
+    off = DiscreteCallback((u, t, i) -> t == 1.0, i -> (i.opts.save_on = false); save_positions = (false, false))
+    on = DiscreteCallback((u, t, i) -> t == 2.0, i -> (i.opts.save_on = true); save_positions = (false, false))
+    never = ContinuousCallback((u, t, i) -> u[1] + 1, i -> nothing; save_positions = (false, false))
+    interpolates = DiscreteCallback(
+        (u, t, i) -> true, i -> (SciMLBase.addsteps!(i); derivative_discontinuity!(i, false));
+        save_positions = (false, false)
+    )
+    for f in ((u, p, t) -> -u, (du, u, p, t) -> (du .= -u)), alg in (Vern7(), Vern9()),
+            callback in (CallbackSet(never, off, on), interpolates)
+
+        sol = solve(
+            ODEProblem(f, [1.0], (0.0, 3.0)), alg; callback, tstops = [1.0, 2.0], saveat = 2.05:0.05:3.0
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t == collect(2.05:0.05:3.0)
+        @test maximum(abs(u[1] - exp(-t)) / exp(-t) for (t, u) in zip(sol.t, sol.u)) < 1.0e-6
+    end
+    ball(du, u, p, t) = (du[1] = u[2]; du[2] = -9.81; nothing)
+    hit = ContinuousCallback((u, t, i) -> u[1], i -> (i.u[2] = -0.9 * i.u[2]))
+    for alg in (Vern7(), Vern9())
+        sol = solve(
+            ODEProblem(ball, [1.0, 0.0], (0.0, 1.0)), alg; callback = CallbackSet(hit, interpolates),
+            abstol = 1.0e-10, reltol = 1.0e-10
+        )
+        @test sol.t[findfirst(i -> i > 1 && sol.t[i] == sol.t[i - 1], eachindex(sol.t))] ≈ sqrt(2 / 9.81) rtol = 1.0e-8
+    end
+end
