@@ -372,6 +372,19 @@ OrdinaryDiffEqCore.DEOptions
 OrdinaryDiffEqCore.DummyController
 ```
 
+### Progress reporting
+
+Packages that build `DEOptions` or implement their own `reinit!` use these to set up
+and reset the progress state. See `maybe_log_progress!` for when updates are sent.
+
+```@docs
+OrdinaryDiffEqCore.DEFAULT_PROGRESS_TSPAN
+OrdinaryDiffEqCore.progress_min_interval_ns
+OrdinaryDiffEqCore.check_progress_tspan
+OrdinaryDiffEqCore.check_progress_min_interval
+OrdinaryDiffEqCore.reset_progress!
+```
+
 ### Time-stop and saving queues
 
 Custom integrator initialization and stepping loops use these hooks to preserve

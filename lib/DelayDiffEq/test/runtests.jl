@@ -87,6 +87,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Reinitialization Tests" begin
         include("integrators/reinit.jl")
     end
+    @time @safetestset "Progress Tests" begin
+        include("integrators/progress.jl")
+    end
     @time @safetestset "Residual Control Tests" begin
         include("integrators/residual_control.jl")
     end

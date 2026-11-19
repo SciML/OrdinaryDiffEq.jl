@@ -208,7 +208,7 @@ function _sde_init(
         timeseries_errors = true, dense_errors = false,
         advance_to_tstop = false, stop_at_next_tstop = false,
         initialize_save = true,
-        progress = false, progress_steps = 1000, progress_name = "SDE",
+        progress = false, progress_steps = 1, progress_name = "SDE",
         progress_message = ODE_DEFAULT_PROG_MESSAGE,
         progress_id = :StochasticDiffEq,
         userdata = nothing,
