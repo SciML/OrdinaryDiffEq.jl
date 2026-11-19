@@ -1370,7 +1370,10 @@ function build_J_W(
         W = similar(J)
         if is_sparse(J)
             set_all_nzval!(J, one(eltype(J)))
-            set_all_nzval!(W, one(eltype(W)))
+            # LinearSolve inspects sparse stored values during initialization to
+            # decide whether it can remove explicit zeros. Keep W zero-filled so
+            # that decision is made from the computed matrix, not placeholder ones.
+            set_all_nzval!(W, zero(eltype(W)))
         else
             fill_stored!(J, one(eltype(J)))
             fill_stored!(W, one(eltype(W)))
