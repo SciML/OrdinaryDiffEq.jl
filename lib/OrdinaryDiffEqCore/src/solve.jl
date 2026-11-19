@@ -69,8 +69,13 @@ end
 
 # One problem type per callback type in the set: `maybe_discontinuity` is a run-time field, so this
 # also covers ineligible callbacks; a few callback types give a small `Union` that calls split on.
+# A callback vector gives its element type's problem type when that is concrete.
 _disco_problem_type(::Type{F}, ::Type{T}, cbs::Tuple, args) where {F, T} =
     Union{map(cb -> Base.promote_op(_disco_problem, Type{F}, Type{T}, typeof(cb), map(typeof, args)...), cbs)...}
+_disco_problem_type(::Type{F}, ::Type{T}, ::AbstractVector{C}, args) where {F, T, C} =
+    isconcretetype(C) ? Base.promote_op(_disco_problem, Type{F}, Type{T}, C, map(typeof, args)...) :
+    IntervalNonlinearProblem
+_disco_problem_type(F, T, cbs, args) = IntervalNonlinearProblem
 
 # Float64 in and out, as through the `FunctionWrapper`, also when a problem holds the zero function directly.
 (z::zero_func_struct)(θ, p) = convert(Float64, _disco_zero_value(z, convert(Float64, θ)))
@@ -1004,7 +1009,7 @@ Base.@constprop :aggressive function _ode_init(
     make_f = direct ? SciMLBase.IntervalNonlinearFunction{false, SciMLBase.FullSpecialize} : disco_zero_wrapper
     args = (u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p)
     if direct
-        disco_prob_type = cbs isa Tuple ? _disco_problem_type(make_f, tType, cbs, args) : IntervalNonlinearProblem
+        disco_prob_type = _disco_problem_type(make_f, tType, cbs, args)
     end
     isconcretetype(disco_prob_type) || disco_prob_type isa Union || (disco_prob_type = IntervalNonlinearProblem)
     disco_probs = Vector{disco_prob_type}(undef, num_probs)

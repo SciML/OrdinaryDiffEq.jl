@@ -53,6 +53,7 @@ disco_controller(alg) = OrdinaryDiffEqCore.PIController(alg; discontinuity_detec
     end
     @testset "Discontinuity scan allocations under FullSpecialize: $name" for (name, cbs, root, nsolves) in (
             ("one vector callback", vector, 0.25, 2),
+            ("vector-backed callback set", md -> CallbackSet([vector(md)], DiscreteCallback[]), 0.25, 2),
             ("vector and an ineligible scalar callback", md -> CallbackSet(vector(md), scalar(false)), 0.25, 2),
             ("vector and two scalar callbacks", md -> CallbackSet(vector(md), scalar(md), scalar2(md)), 0.1, 4),
         )
