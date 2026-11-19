@@ -590,7 +590,7 @@ Assumes that:
  - `tup[1] > tup[2]` for a backward integration
  - The nonlinear solver return left/right roots in the same order as `tup[1]`/`tup[2]`
 """
-function find_root(f, tup, rootfind::SciMLBase.RootfindOpt; kwargs...)
+function find_root(f::F, tup, rootfind::SciMLBase.RootfindOpt; kwargs...) where {F}
     sol = solve(
         IntervalNonlinearProblem{false}(f, tup),
         ModAB(); abstol = 0.0, reltol = 0.0, kwargs...
