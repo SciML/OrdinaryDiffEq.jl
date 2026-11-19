@@ -684,10 +684,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 6)
     if integrator.alg isa CompositeAlgorithm
         g7 = u
-        # Hairer II, page 22 modified to use the Inf norm
-        integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.((k7 .- k6) ./ (g7 .- g6))), t
-        )
+        integrator.eigen_est = eigen_est_from_stages(k7, k6, g7, g6)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -758,11 +755,7 @@ end
     if integrator.alg isa CompositeAlgorithm
         g6 = tmp
         g7 = u
-        # Hairer II, page 22 modified to use Inf norm
-        @.. broadcast = false thread = thread utilde = abs((k7 - k6) / (g7 - g6))
-        integrator.eigen_est = integrator.opts.internalnorm(
-            norm(utilde, Inf) * oneunit(t), t
-        )
+        integrator.eigen_est = eigen_est_from_stages(k7, k6, g7, g6)
     end
     if integrator.opts.adaptive
         @.. broadcast = false thread = thread utilde = dt * (

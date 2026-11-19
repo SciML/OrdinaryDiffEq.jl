@@ -36,8 +36,6 @@ macro cache(expr)
     end
 end
 
-# Nest one layer of value in order to get rid of possible Dual{Complex} or Complex{Dual} issues
-# value should recurse for anything else.
 """
     constvalue(x)
 
@@ -47,12 +45,39 @@ compared/used unambiguously. Used e.g. for eigenvalue estimates.
 """
 function constvalue(::Type{T}) where {T}
     _T = SciMLBase.value(T)
-    return _T <: Complex ? SciMLBase.value(real(_T)) : SciMLBase.value(_T)
+    _T = _T <: Complex ? real(_T) : _T
+    return _T === T ? T : constvalue(_T)
 end
 function constvalue(x)
     _x = SciMLBase.value(x)
     return _x isa Complex ? SciMLBase.value(real(_x)) : SciMLBase.value(_x)
 end
+
+"""
+    eigen_est_from_stages(k, kprev, g, gprev)
+
+Estimate the magnitude of the dominant eigenvalue as `maxᵢ |(kᵢ - kprevᵢ) / (gᵢ - gprevᵢ)|`,
+where `k`, `kprev` are the derivatives at the stage values `g`, `gprev`. This is a
+componentwise variant of the estimate `‖k - kprev‖ / ‖g - gprev‖` in Hairer & Wanner,
+Solving Ordinary Differential Equations II, Section IV.2.
+
+Only primal values are used. Components with identical stage values are skipped.
+"""
+function eigen_est_from_stages(k, kprev, g, gprev)
+    bc = Broadcast.instantiate(Broadcast.broadcasted(_eigen_est_quotient, k, kprev, g, gprev))
+    init = zero(_eigen_est_quotient(map(oneunit ∘ recursive_unitless_bottom_eltype, (k, kprev, g, gprev))...))
+    return maximum(bc; init)
+end
+
+function _eigen_est_quotient(k, kprev, g, gprev)
+    Δk = abs(_value(k) - _value(kprev))
+    Δg = abs(_value(g) - _value(gprev))
+    return iszero(Δk) && iszero(Δg) ? zero(Δk / oneunit(Δg)) : Δk / Δg
+end
+
+# `SciMLBase.value` does not strip `Complex{<:Dual}`
+_value(x) = SciMLBase.value(x)
+_value(x::Complex) = complex(SciMLBase.value(real(x)), SciMLBase.value(imag(x)))
 
 """
     diffdir(integrator) -> Int
