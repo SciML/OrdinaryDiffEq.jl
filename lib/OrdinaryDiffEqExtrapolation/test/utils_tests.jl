@@ -35,25 +35,29 @@ end
         nchunks = min(length(range), Threads.nthreads())
         outer = nested ? 2 : 1
         slots = [zeros(Int, length(range)) for _ in 1:outer]
-        visits = [zeros(Int, length(range)) for _ in 1:outer]
-        busy = [fill(false, nchunks) for _ in 1:outer]
-        clash = fill(false, outer)
-        Threads.@threads :dynamic for k in 1:outer
-            ODEX._threaded_foreach(true, range) do i, slot
-                clash[k] |= busy[k][slot]
-                busy[k][slot] = true
-                yield()
-                slots[k][i - first(range) + 1] = slot
-                visits[k][i - first(range) + 1] += 1
-                busy[k][slot] = false
+        visits = [[Threads.Atomic{Int}(0) for _ in range] for _ in 1:outer]
+        busy = [[Threads.Atomic{Bool}(false) for _ in 1:nchunks] for _ in 1:outer]
+        clash = [Threads.Atomic{Bool}(false) for _ in 1:outer]
+        each_slot(k) = ODEX._threaded_foreach(true, range) do i, slot
+            Threads.atomic_cas!(busy[k][slot], false, true) && (clash[k][] = true)
+            yield()
+            slots[k][i - first(range) + 1] = slot
+            Threads.atomic_add!(visits[k][i - first(range) + 1], 1)
+            busy[k][slot][] = false
+        end
+        if nested
+            Threads.@threads :dynamic for k in 1:outer
+                each_slot(k)
             end
+        else
+            each_slot(1)
         end
         for k in 1:outer
             sizes = [count(==(c), slots[k]) for c in 1:nchunks]
-            @test all(==(1), visits[k])
+            @test all(v -> v[] == 1, visits[k])
             @test issorted(slots[k])
             @test all(>(0), sizes) && maximum(sizes) - minimum(sizes) <= 1
-            @test !clash[k]
+            @test !clash[k][]
         end
     end
 end

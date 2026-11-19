@@ -1,6 +1,6 @@
 # Import packages
 using OrdinaryDiffEqExtrapolation, DiffEqDevTools, Test, Random
-using CommonSolve: solve
+using CommonSolve: init, solve, solve!
 using SciMLBase: SciMLBase, ODEFunction, ODEProblem
 
 # Define test problems
@@ -347,27 +347,34 @@ end
         @test all(sol -> sol.u == serial.u, sols)
         @test all(SciMLBase.successful_retcode, sols)
         @test all(sol -> sol.t[end] == 1.0, sols)
-        @test serial.u[end] ≈ prob.u0 .* exp(-1) rtol = 1.0e-3
+        rtol = Alg === ImplicitEulerExtrapolation ? 1.0e-3 : 1.0e-4
+        @test serial.u[end] ≈ prob.u0 .* exp(-1) rtol = rtol
     end
 end
 
 @testset "Threaded extrapolation keeps a pin set by the RHS" begin
-    # The RHS schedules a sticky child on its 5th call, inside the first step's columns.
+    # Once armed, the first RHS call on the caller task schedules a sticky child.
     function f!(du, u, p, t)
-        p.calls[] += 1
-        if p.calls[] == 5
-            p.pinned_caller[] = current_task() === p.caller
+        if p.armed[] && current_task() === p.caller &&
+                !Threads.atomic_cas!(p.fired, false, true)
             wait(@async nothing)
         end
         return du .= -u
     end
-    kept = fill(false, 2)
+    fired = fill(false, 2)
+    pinned = fill(false, 2)
     Threads.@threads :dynamic for i in 1:2
-        p = (; calls = Ref(0), pinned_caller = Ref(false), caller = current_task())
-        sticky = current_task().sticky
+        p = (;
+            armed = Threads.Atomic{Bool}(false), fired = Threads.Atomic{Bool}(false),
+            caller = current_task(),
+        )
         prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0), p)
-        solve(prob, ExtrapolationMidpointDeuflhard(threading = true))
-        kept[i] = current_task().sticky == (sticky || p.pinned_caller[])
+        integrator = init(prob, ExtrapolationMidpointDeuflhard(threading = true))
+        p.armed[] = true
+        solve!(integrator)
+        fired[i] = p.fired[]
+        pinned[i] = current_task().sticky
     end
-    @test all(kept)
+    @test all(fired)
+    @test all(pinned)
 end

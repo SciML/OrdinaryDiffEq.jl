@@ -46,7 +46,12 @@ function _polyester_foreach(args...)
 end
 
 @inline function _threaded_foreach(f, ::PolyesterThreads, range)
-    return _polyester_foreach(f, range)
+    nchunks = _nchunks(range)
+    return _polyester_foreach(1:nchunks) do c
+        for i in _chunk(range, c, nchunks)
+            f(i, c)
+        end
+    end
 end
 
 macro threaded(option, ex)
