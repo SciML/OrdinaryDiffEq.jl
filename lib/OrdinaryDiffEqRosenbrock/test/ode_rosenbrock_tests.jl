@@ -748,7 +748,7 @@ end
 
     # Out-of-place scalar and vector states use Rosenbrock23ConstantCache.
     @test first_step_EEst(ODEProblem(f_oop, 0.0, (t0, 1.0))) ≈ expected rtol = 1.0e-6
-    # An ordinary vector ODE has no differential_vars mask.
+    # An identity-mass vector ODE has no differential_vars mask.
     @test first_step_EEst(ODEProblem(f_oop_vec, [0.0], (t0, 1.0))) ≈ expected rtol = 1.0e-6
     # In-place: Rosenbrock23Cache
     @test first_step_EEst(ODEProblem(f_iip, [0.0], (t0, 1.0))) ≈ expected rtol = 1.0e-6
