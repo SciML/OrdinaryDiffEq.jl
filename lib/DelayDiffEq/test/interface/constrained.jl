@@ -64,3 +64,23 @@ end
         @test sol.t ≈ sol_unconstrained.t && sol.u ≈ sol_unconstrained.u
     end
 end
+
+# Fixed steps longer than the lag
+@testset "fixed steps" begin
+    sol = solve(prob_dde_constant_1delay_scalar, alg; adaptive = false, dt = 1.5)
+
+    @test maximum(diff(sol.t)) ≈ 1
+    @test sol.stats.nfpiter == 0
+
+    # without `dt`, fixed steps would run from one tstop to the next
+    sol = solve(prob_dde_constant_1delay_scalar, alg; adaptive = false)
+
+    @test maximum(diff(sol.t)) ≈ 1
+    @test sol.stats.nfpiter == 0
+
+    # a user `dtmax` does not limit fixed steps
+    sol = solve(prob_dde_constant_1delay_scalar, alg; adaptive = false, dt = 0.5, dtmax = 0.2)
+
+    @test maximum(diff(sol.t)) ≈ 0.5
+end
+

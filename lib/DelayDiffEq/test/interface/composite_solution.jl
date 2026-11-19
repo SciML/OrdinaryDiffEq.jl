@@ -52,6 +52,8 @@ end
 
         sol = solve(prob_exp, MethodOfSteps(alg; constrained = true); adaptive = false, dt = 0.3)
         @test SciMLBase.successful_retcode(sol)
+        @test maximum(diff(sol.t)) ≈ τ
+        @test sol.stats.nfpiter == 0
     end
 end
 

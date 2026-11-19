@@ -155,8 +155,7 @@ function SciMLBase.__init(
     # Allow positive dtmax, but auto-convert
     dtmax > zero(dtmax) && tdir < zero(tdir) && (dtmax *= tdir)
 
-    # no fixed-point iterations for constrained algorithms,
-    # and thus `dtmax` should match minimal lag
+    # constrained algorithms take steps no longer than the minimal lag
     if isconstrained(alg) && has_constant_lags(prob)
         min_lag = minimum(abs, Iterators.filter(!iszero, constant_lags); init = abs(dtmax))
         old_dtmax = abs(dtmax)
@@ -166,6 +165,21 @@ function SciMLBase.__init(
                 lazy"Constrained algorithm: limiting dtmax from $old_dtmax to $min_lag (minimum lag)",
                 verbose_spec, :constrained_step
             )
+        end
+
+        # fixed steps are taken from `dt` and are not limited by `dtmax`,
+        # and without `dt` they run from one tstop to the next
+        nonzero_lags = Iterators.filter(!iszero, constant_lags)
+        if !adaptive && !isempty(nonzero_lags)
+            old_dt = abs(dt)
+            dt_lag = minimum(abs, nonzero_lags)
+            if iszero(old_dt) || dt_lag < old_dt
+                dt = tdir * dt_lag
+                @SciMLMessage(
+                    lazy"Constrained algorithm: setting dt from $old_dt to $dt_lag (minimum lag)",
+                    verbose_spec, :constrained_step
+                )
+            end
         end
     end
 
