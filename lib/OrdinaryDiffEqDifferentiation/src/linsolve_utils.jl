@@ -36,11 +36,12 @@ function set_linear_reltol!(linsolve, reltol; default_algorithm = false)
 end
 
 """
-    dolinsolve(integrator, linsolve; alg = unwrap_alg(integrator, true), A = nothing, linu = nothing, b = nothing, reltol = …) -> linres
+    dolinsolve(integrator, linsolve; alg = unwrap_alg(integrator, true), A = nothing, linu = nothing, b = nothing, reltol = …, abstol = nothing) -> linres
 
 Solve the linear system with the LinearSolve.jl cache `linsolve`, optionally
-resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerance
-`reltol` (see `set_linear_reltol!`). `alg` is the integrator's concrete member
+resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerances
+`reltol` (see `set_linear_reltol!`) and `abstol` (left unchanged when `nothing`; set only
+for an iterative solver). `alg` is the integrator's concrete member
 algorithm; callers holding a cache that stores it (e.g. `cache.alg`) should
 pass it so the call stays a static dispatch. Charges `stats.nf` for the
 Jacobian-vector products the solve applied (see `drain_jvp_count!`) and
@@ -50,14 +51,15 @@ function dolinsolve(
         integrator, linsolve;
         alg = integrator === nothing ? nothing : unwrap_alg(integrator, true),
         A = nothing, linu = nothing, b = nothing,
-        reltol = integrator === nothing ? nothing : integrator.opts.reltol
+        reltol = integrator === nothing ? nothing : integrator.opts.reltol,
+        abstol = nothing
     )
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
-    return _dolinsolve(alg, integrator, linsolve, A, reltol)
+    return _dolinsolve(alg, integrator, linsolve, A, reltol, abstol)
 end
 
-function _dolinsolve(_alg, integrator, linsolve, A, reltol)
+function _dolinsolve(_alg, integrator, linsolve, A, reltol, abstol)
     if !isnothing(A)
         if integrator isa DEIntegrator
             (; u, p, t) = integrator
@@ -71,6 +73,9 @@ function _dolinsolve(_alg, integrator, linsolve, A, reltol)
         linsolve, reltol;
         default_algorithm = hasproperty(_alg, :linsolve) && isnothing(_alg.linsolve)
     )
+    if abstol !== nothing && !LinearSolve.needs_concrete_A(linsolve.alg)
+        LinearSolve.update_tolerances!(linsolve; abstol)
+    end
     linres = solve!(linsolve)
 
     # TODO: this ignores the add of the `f` count for add_steps!
@@ -115,16 +120,40 @@ end
 Attach a diagonal (`weight`-based) left/right preconditioner to `linsolver` when it
 supports `precs` and none was supplied, returning the reconfigured solver;
 otherwise return `linsolver` unchanged.
+
+For a DAE Newton matrix `W` (a `JVPCache` or `DAEWOperator`), a user `precs` is wrapped in
+the weights instead: the left preconditioner applies `weight .* (Pl \\ x)` and the right one
+`Pr \\ (x ./ weight)`. The Krylov solve then measures the weighted norm of the
+preconditioned residual, as IDA does, with or without a user `precs`.
 """
 function wrapprecs(linsolver, W, weight)
-    if hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
-        Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
-        Pr = Diagonal(_vec(weight))
+    hasproperty(linsolver, :precs) || return linsolver
+    w = _vec(weight)
+    if isnothing(linsolver.precs)
+        Pl = LinearSolve.InvPreconditioner(Diagonal(w))
+        Pr = Diagonal(w)
         precs = Returns((Pl, Pr))
+        return remake(linsolver; precs)
+    elseif W isa Union{JVPCache, DAEWOperator}
+        user_precs = linsolver.precs
+        precs = function (A, p)
+            Pl, Pr = user_precs(A, p)
+            return weight_left(Pl, w), weight_right(Pr, w)
+        end
         return remake(linsolver; precs)
     else
         return linsolver
     end
 end
+
+_isidentity(P) = P isa UniformScaling && isone(P.λ)
+
+function weight_left(Pl, w)
+    weight = LinearSolve.InvPreconditioner(Diagonal(w))
+    return _isidentity(Pl) ? weight : LinearSolve.ComposePreconditioner(Pl, weight)
+end
+
+weight_right(Pr, w) = _isidentity(Pr) ? Diagonal(w) :
+    LinearSolve.ComposePreconditioner(Diagonal(w), Pr)
 
 Base.resize!(p::LinearSolve.LinearCache, i) = p
