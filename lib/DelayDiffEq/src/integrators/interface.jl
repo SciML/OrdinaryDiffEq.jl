@@ -56,11 +56,11 @@ function DiffEqBase.savevalues!(
             # distance_to_tstop)` but the step is then snapped to the tstop
             # in fixed_t_for_tstop_error!. That can leave `ode_integrator.t`
             # = `tprev + dt` behind by up to `tstop_tol` from
-            # `integrator.t = tstop_target`. Match that bound on the largest
-            # of the two times so the check tracks the snap-back budget
-            # rather than just the integer-1-ULP gap of the previous
-            # (no-snap) regime.
-            tol = 100 * eps(max(abs(integrator.t), abs(ode_integrator.t)))
+            # `integrator.t = tstop_target`. `tstop_tol` is computed from the
+            # time at the start of the step, so include `tprev` in the bound.
+            # Near `t = 0` the two end times alone give a far smaller bound
+            # than the snap-back budget.
+            tol = 100 * eps(max(abs(integrator.t), abs(ode_integrator.t), abs(ode_integrator.tprev)))
             abs(integrator.t - ode_integrator.t) <= tol ||
                 error("unexpected time discrepancy detected")
 

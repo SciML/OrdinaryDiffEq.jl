@@ -84,3 +84,16 @@ end
     @test maximum(diff(sol.t)) ≈ 0.5
 end
 
+# Time spans that end at zero
+@testset "tspan ending at zero" begin
+    @testset "tdir = $tdir" for tdir in (1, -1)
+        prob = DDEProblem(
+            (u, h, p, t) -> -h(p, t - tdir * 0.1), 1.0, (p, t) -> 1.0, (-tdir * 1.0, 0.0);
+            constant_lags = [tdir * 0.1]
+        )
+        sol = solve(prob, MethodOfSteps(DP5(); constrained = true))
+
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 0
+    end
+end
