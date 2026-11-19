@@ -310,7 +310,12 @@ end
         if u isa Number
             utilde = dto6 * f.mass_matrix[1, 1] * (k₁ - 2 * k₂ + k₃)
         else
-            utilde = f.mass_matrix * (@.. dto6 * (k₁ - 2 * k₂ + k₃))
+            # Match the in-place cache: the error estimate is a state-space
+            # defect, not a mass-matrix-scaled residual. Exclude algebraic
+            # components before applying the state tolerances.
+            utilde = @.. ifelse(
+                integrator.differential_vars, dto6 * (k₁ - 2 * k₂ + k₃), false
+            )
         end
         atmp = calculate_residuals(
             utilde, uprev, u, integrator.opts.abstol,
