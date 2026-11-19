@@ -64,6 +64,24 @@ disco_controller(alg) = OrdinaryDiffEqCore.PIController(alg; discontinuity_detec
         @test allocations == nsolves * per_solve
     end
 
+    # A callback vector whose element type gives no concrete problem type keeps the wrapper, so the
+    # storage stays concrete rather than abstract.
+    @testset "Abstract callback vector under FullSpecialize: $name" for (name, cbs, root) in (
+            ("one vector callback", SciMLBase.AbstractContinuousCallback[vector(true)], 0.25),
+            ("vector and scalar callbacks", SciMLBase.AbstractContinuousCallback[vector(true), scalar(true)], 0.2),
+        )
+        integrator = init(
+            ODEProblem{true, SciMLBase.FullSpecialize}((du, u, p, t) -> (du[1] = 1.0; nothing), [0.0], (0.0, 2.0)),
+            Tsit5(); callback = CallbackSet(cbs, DiscreteCallback[]), dt = 0.5, adaptive = false
+        )
+        integrator.dt = 1.0
+        integrator.u .= integrator.uprev .+ 1.0
+        @test OrdinaryDiffEqCore.find_discontinuity(integrator) ≈ root atol = 1.0e-8
+        probs = OrdinaryDiffEqCore.get_disco_probs(integrator.controller_cache)
+        @test isconcretetype(eltype(probs))
+        @test all(prob -> prob.f.f isa OrdinaryDiffEqCore.FunctionWrapper, probs)
+    end
+
     # u' = 2u below u = 1 and u' = 5 - 3u above it, from u(0) = 0.1: the crossing is at
     # τ = log(10)/2 and u(t) = 5/3 - (2/3)exp(-3(t - τ)) afterwards.
     kink(u) = u < 1 ? 2u : 5 - 3u

@@ -69,7 +69,8 @@ end
 
 # One problem type per callback type in the set: `maybe_discontinuity` is a run-time field, so this
 # also covers ineligible callbacks; a few callback types give a small `Union` that calls split on.
-# A callback vector gives its element type's problem type when that is concrete.
+# A callback vector gives its element type's problem type when that is concrete; other sets give
+# the abstract type, and their problems keep the `FunctionWrapper`.
 _disco_problem_type(::Type{F}, ::Type{T}, cbs::Tuple, args) where {F, T} =
     Union{map(cb -> Base.promote_op(_disco_problem, Type{F}, Type{T}, typeof(cb), map(typeof, args)...), cbs)...}
 _disco_problem_type(::Type{F}, ::Type{T}, ::AbstractVector{C}, args) where {F, T, C} =
@@ -1002,15 +1003,20 @@ Base.@constprop :aggressive function _ode_init(
         IntervalNonlinearProblem{false}, disco_zero_wrapper, Vector{tType},
         SciMLBase.NullParameters
     )
-    # Under `FullSpecialize` the problems hold the zero function itself, typed by its callback.
+    # Under `FullSpecialize` the problems hold the zero function itself, typed by its callback,
+    # when the callback types give a concrete problem type or a small `Union`; otherwise they keep
+    # the wrapper, so the storage stays concrete.
     cbs = callbacks_internal.continuous_callbacks
+    direct_f = SciMLBase.IntervalNonlinearFunction{false, SciMLBase.FullSpecialize}
+    args = (u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p)
     direct = !(cbs isa Tuple{}) && f isa SciMLBase.AbstractSciMLFunction &&
         SciMLBase.specialization(f) === SciMLBase.FullSpecialize
-    make_f = direct ? SciMLBase.IntervalNonlinearFunction{false, SciMLBase.FullSpecialize} : disco_zero_wrapper
-    args = (u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p)
     if direct
-        disco_prob_type = _disco_problem_type(make_f, tType, cbs, args)
+        direct_prob_type = _disco_problem_type(direct_f, tType, cbs, args)
+        direct = isconcretetype(direct_prob_type) || direct_prob_type isa Union
+        direct && (disco_prob_type = direct_prob_type)
     end
+    make_f = direct ? direct_f : disco_zero_wrapper
     isconcretetype(disco_prob_type) || disco_prob_type isa Union || (disco_prob_type = IntervalNonlinearProblem)
     disco_probs = Vector{disco_prob_type}(undef, num_probs)
     idx = 1
