@@ -1302,11 +1302,12 @@ end
 
 # The stored values of a freshly allocated sparse W are undefined. LinearSolve
 # inspects them at init to decide whether to drop stored zeros, so leaving them
-# uninitialized makes results depend on previous memory contents. Fill with ones,
-# as the `jac_prototype` branch of `build_J_W` does.
+# uninitialized makes results depend on previous memory contents. Fill with zeros
+# (not ones) so LinearSolve defers that decision until it sees the computed matrix
+# and can still drop stored zeros of an overestimated sparsity pattern.
 function _similar_W(J)
     W = similar(J)
-    is_sparse(W) && set_all_nzval!(W, one(eltype(W)))
+    is_sparse(W) && set_all_nzval!(W, zero(eltype(W)))
     return W
 end
 
