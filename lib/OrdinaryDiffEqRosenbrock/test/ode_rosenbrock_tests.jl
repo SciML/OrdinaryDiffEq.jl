@@ -723,3 +723,30 @@ end
         @test SciMLBase.successful_retcode(solve(prob, Rosenbrock32()))
     end
 end
+
+# Regression test for #4988: the Rosenbrock23 stage-3 right-hand side must use
+# dt*d*dT (as in Shampine & Reichelt's ode23s), not dt*dT. This only affects the
+# adaptive error estimate, and only for non-autonomous problems.
+@testset "Rosenbrock23 error estimate with explicit time dependence (#4988)" begin
+    # u' = t^2 from t0 = 0.5. With h = 1/128 the exact step gives
+    # EEst = h^3 / 12 when abstol = 1 and reltol = 0 (so EEst is the raw error estimate).
+    t0 = 0.5
+    h = 1 / 128
+    expected = h^3 / 12
+
+    f_oop(u, p, t) = t^2
+    f_iip(du, u, p, t) = (du[1] = t^2; nothing)
+
+    function first_step_EEst(prob)
+        integ = init(
+            prob, Rosenbrock23(); dt = h, abstol = 1.0, reltol = 0.0, save_everystep = false
+        )
+        step!(integ)
+        return integ.EEst
+    end
+
+    # Out-of-place: Rosenbrock23ConstantCache
+    @test first_step_EEst(ODEProblem(f_oop, 0.0, (t0, 1.0))) ≈ expected rtol = 1.0e-6
+    # In-place: Rosenbrock23Cache
+    @test first_step_EEst(ODEProblem(f_iip, [0.0], (t0, 1.0))) ≈ expected rtol = 1.0e-6
+end
