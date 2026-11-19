@@ -1300,6 +1300,16 @@ as-is.
 end
 @inline _dtgamma_prototype(t, dt, ::Type{T}) where {T} = promote(t, dt)[2]
 
+# The stored values of a freshly allocated sparse W are undefined. LinearSolve
+# inspects them at init to decide whether to drop stored zeros, so leaving them
+# uninitialized makes results depend on previous memory contents. Fill with ones,
+# as the `jac_prototype` branch of `build_J_W` does.
+function _similar_W(J)
+    W = similar(J)
+    is_sparse(W) && set_all_nzval!(W, one(eltype(W)))
+    return W
+end
+
 """
     build_J_W(alg, u, uprev, p, t, dt, f, jac_config, ::Type{uEltypeNoUnits}, ::Val{iip}) -> (J, W)
 
@@ -1438,14 +1448,14 @@ function build_J_W(
             # DAE W is not built from J - M/(dt·γ) (calc_W returns J or a
             # cj-scaled combination), so no dtgamma promotion applies.
             if IIP
-                similar(J)
+                _similar_W(J)
             elseif J isa StaticMatrix
                 StaticWOperator(J, false)
             else
                 ArrayInterface.lu_instance(J)
             end
         elseif IIP
-            similar(J)
+            _similar_W(J)
         elseif J isa StaticMatrix
             StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
         elseif f.mass_matrix isa MatrixOperator
