@@ -171,7 +171,14 @@ solve(sparseodeprob, KenCarp47(linsolve = KrylovJL_GMRES()));
     integ = init(prob, Rodas5P())
 
     @test all(==(1), nonzeros(integ.cache.J))
-    @test all(==(1), nonzeros(integ.cache.W))
+    @test nnz(integ.cache.W) == nnz(jac_prototype)
+    @test integ.cache.W.colptr == jac_prototype.colptr
+    @test rowvals(integ.cache.W) == rowvals(jac_prototype)
+    @test all(iszero, nonzeros(integ.cache.W))
+
+    sol = solve(prob, Rodas5P(); reltol = 1.0e-10, abstol = 1.0e-12)
+    @test sol.retcode == ReturnCode.Success
+    @test maximum(abs.(sol.u[end] .- exp(sol.t[end]))) < 1.0e-8
 end
 
 # Regression test for #4992: with `sparsity` given but no `jac_prototype`, the in-place W
