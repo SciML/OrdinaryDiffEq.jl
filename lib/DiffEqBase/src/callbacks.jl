@@ -534,17 +534,18 @@ function nudge_tprev(integrator, callback, condition_tprev, conditions_tprev = c
     right_sign = nudge_sign(integrator, callback, right_t)
     # The condition can cross zero again before `right_t` (e.g. a short excursion right
     # after the event). Sample closer to `tprev` until the condition is back near the root.
-    # Below `tol` the condition is rounding noise of the state, not a crossing.
-    tol = abs(integrator.last_event_error) + callback.abstol +
-        4 * eps(float(value(ODE_DEFAULT_NORM(integrator.u, integrator.t))))
+    # A flip seen at one sample only can be rounding noise, so it must hold at the next.
+    tol = abs(integrator.last_event_error) + callback.abstol
     offset = integrator.dt * callback.repeat_nudge
+    crossed_before = false
     while true
         offset /= 10
         t = integrator.tprev + offset
         t == integrator.tprev && break
         crossed = nudge_crossed(integrator, callback, t, right_sign, tol, conditions_tprev)
         crossed === nothing && break
-        crossed && return t
+        crossed && crossed_before && return t
+        crossed_before = crossed
     end
     return right_t
 end

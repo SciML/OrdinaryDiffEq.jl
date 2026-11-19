@@ -63,6 +63,7 @@ sol = solve(prob, Tsit5(); adaptive = false, callback = cb, dt, save_everystep =
 function bounce!(du, u, p, t)
     du[1] = u[2]
     du[2] = -9.81
+    du[3:end] .= 0
     return
 end
 @testset "Short flights near the Zeno time, $(nameof(typeof(alg))), e = $e" for alg in (Tsit5(), Vern9()),
@@ -79,6 +80,19 @@ end
         callback = bounce_cb, abstol = 1.0e-10, reltol = 1.0e-10
     )
     @test bounces[] > 40
+    @test minimum(first, sol.(range(0, tz - 1.0e-3, length = 10^4))) > -1.0e-8
+end
+
+# A large state component that the condition does not read must not hide short flights
+@testset "Short flights near the Zeno time with a large unrelated state" begin
+    tz = sqrt(2 / 9.81) * 9
+    bounce_cb = ContinuousCallback(
+        (u, t, integrator) -> u[1], nothing, integrator -> (integrator.u[2] *= -0.8)
+    )
+    sol = solve(
+        ODEProblem(bounce!, [1.0, 0.0, 1.0e10], (0.0, tz + 1)), Tsit5();
+        callback = bounce_cb, abstol = 1.0e-10, reltol = 1.0e-10
+    )
     @test minimum(first, sol.(range(0, tz - 1.0e-3, length = 10^4))) > -1.0e-8
 end
 
