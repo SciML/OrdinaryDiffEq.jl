@@ -1044,17 +1044,22 @@ function relax!(
             res = resid(z)
             return res
         end
-        function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
-        end
+        normdz = norm(dz, Inf)
+        ϵ = iszero(normdz) ? cbrt(eps()) : clamp(
+                sqrt(eps()) * norm(z, Inf) / normdz, cbrt(eps()), 0.1
+            )
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
-            ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, ∂ϕ∂α
+            ϕα = ϕ(α)
+            h = ϵ
+            slope = (ϕ(α + h) - ϕα) / h
+            # Resolve curvature at a smaller forward step before rejecting descent.
+            while slope > 0 && h > sqrt(eps())
+                h = max(h / 10, sqrt(eps()))
+                slope = (ϕ(α + h) - ϕα) / h
+            end
+            return ϕα, slope
         end
+        dϕ(α) = last(ϕdϕ(α))
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
@@ -1112,17 +1117,22 @@ function relax(
             local z = @.. nlsolver.z - dz * α
             return resid(z)
         end
-        function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
-        end
+        normdz = norm(dz, Inf)
+        ϵ = iszero(normdz) ? cbrt(eps()) : clamp(
+                sqrt(eps()) * norm(z, Inf) / normdz, cbrt(eps()), 0.1
+            )
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
-            ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, ∂ϕ∂α
+            ϕα = ϕ(α)
+            h = ϵ
+            slope = (ϕ(α + h) - ϕα) / h
+            # Resolve curvature at a smaller forward step before rejecting descent.
+            while slope > 0 && h > sqrt(eps())
+                h = max(h / 10, sqrt(eps()))
+                slope = (ϕ(α + h) - ϕα) / h
+            end
+            return ϕα, slope
         end
+        dϕ(α) = last(ϕdϕ(α))
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
