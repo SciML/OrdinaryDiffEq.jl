@@ -48,3 +48,23 @@ end
         @test restart_orders == [1, 1]
     end
 end
+
+# Shrinking a vector with `resize!` keeps its trailing memory, so growing it back exposes the old
+# values. QNDF keeps its difference history across a resize when the derivative discontinuity is
+# cleared, so the rows a resize adds to that history must not carry such values.
+@testset "QNDF history rows added by a resize" begin
+    prob = ODEProblem(f!, [U0; UNEW], (0.0, TF))
+    integrator = init(prob, QNDF(); reltol = 1.0e-10, abstol = 1.0e-12)
+    for _ in 1:10
+        step!(integrator)
+    end
+    history = (integrator.cache.D, integrator.cache.Dtmp, integrator.cache.prevD)
+    foreach(d -> foreach(x -> x[3] = NaN, d), history)
+    resize!(integrator, 2)
+    resize!(integrator, 3)
+    derivative_discontinuity!(integrator, false)
+    @test all(x[3] == 0 for d in history for x in d)
+    solve!(integrator)
+    @test integrator.sol.retcode == ReturnCode.Success
+    @test integrator.u ≈ exp(A * TF) * [U0; UNEW] rtol = 1.0e-7
+end
