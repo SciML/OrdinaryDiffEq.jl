@@ -8,9 +8,9 @@ end
 function resize_bdf_buffers_zeroed!(buffers, i)
     for buffer in buffers
         buffer isa AbstractArray && ArrayInterface.ismutable(buffer) || continue
-        n = length(buffer)
+        last = lastindex(buffer)
         resize!(buffer, i)
-        i > n && fill!(view(buffer, (n + 1):i), zero(eltype(buffer)))
+        fill!(view(buffer, (last + 1):lastindex(buffer)), zero(eltype(buffer)))
     end
     return nothing
 end
