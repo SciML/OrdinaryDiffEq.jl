@@ -1,4 +1,4 @@
-using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqCore, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
 using RecursiveArrayTools: ArrayPartition
 import ODEProblemLibrary: prob_ode_linear,
     prob_ode_2Dlinear,
@@ -743,7 +743,7 @@ end
             prob, Rosenbrock23(); dt = h, abstol = 1.0, reltol = 0.0, save_everystep = false
         )
         step!(integ)
-        return integ.EEst
+        return OrdinaryDiffEqCore.get_EEst(integ)
     end
 
     # Out-of-place scalar and vector states use Rosenbrock23ConstantCache.
