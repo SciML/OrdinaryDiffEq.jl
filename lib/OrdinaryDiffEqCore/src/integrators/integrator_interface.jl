@@ -662,6 +662,7 @@ function SciMLBase.reinit!(
     end
     integrator.iter = 0
     integrator.success_iter = 0
+    reset_progress!(integrator)
     integrator.derivative_discontinuity = false
 
     # full re-initialize the controller in timestepping
