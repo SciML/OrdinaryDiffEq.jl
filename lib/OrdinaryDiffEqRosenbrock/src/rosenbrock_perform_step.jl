@@ -265,6 +265,7 @@ end
     end
 
     mass_matrix = integrator.f.mass_matrix
+    zero_uniform_scaling = mass_matrix isa UniformScaling && iszero(mass_matrix.λ)
 
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
@@ -309,8 +310,12 @@ end
 
         if u isa Number
             utilde = dto6 * f.mass_matrix[1, 1] * (k₁ - 2 * k₂ + k₃)
+        elseif zero_uniform_scaling
+            # A zero UniformScaling has no differential variables, even though
+            # Core represents UniformScaling mass matrices without a mask.
+            utilde = zero.(u)
         elseif integrator.differential_vars === nothing
-            # Identity-mass ODEs have no algebraic-variable mask.
+            # Nonzero UniformScaling and identity-mass ODEs have no algebraic mask.
             utilde = @.. dto6 * (k₁ - 2 * k₂ + k₃)
         else
             # Match the in-place cache: the error estimate is a state-space
@@ -327,11 +332,17 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        if mass_matrix !== I && integrator.differential_vars !== nothing
-            zero_du = zero(eltype(integrator.fsallast))
-            atmp = @. ifelse(integrator.differential_vars, zero_du, integrator.fsallast) /
-                integrator.opts.abstol
-            OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
+        if mass_matrix !== I
+            if integrator.differential_vars !== nothing
+                zero_du = zero(eltype(integrator.fsallast))
+                atmp = @. ifelse(integrator.differential_vars, zero_du, integrator.fsallast) /
+                    integrator.opts.abstol
+                OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
+            elseif zero_uniform_scaling
+                # With a zero UniformScaling every equation is algebraic.
+                atmp = @. integrator.fsallast / integrator.opts.abstol
+                OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
+            end
         end
     end
     integrator.k[1] = k₁
