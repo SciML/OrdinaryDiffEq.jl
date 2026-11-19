@@ -762,3 +762,31 @@ end
     @test first_step_EEst(prob_oop_M) ≈ expected / 2 rtol = 1.0e-6
     @test first_step_EEst(prob_iip_M) ≈ first_step_EEst(prob_oop_M) rtol = 1.0e-6
 end
+
+
+@testset "Rosenbrock23 with zero UniformScaling mass matrix" begin
+    # A zero UniformScaling has no differential variables, just like a zero
+    # diagonal mass matrix. Core represents UniformScaling without a mask, so
+    # the error estimator must still include the algebraic residual.
+    rhs(z, p, t) = [z[1] - (5t^2 - 6t^3)]
+    prob_uniform = ODEProblem(
+        ODEFunction{false}(rhs; mass_matrix = 0.0I), [0.0], (0.0, 1.0)
+    )
+    prob_diagonal = ODEProblem(
+        ODEFunction{false}(rhs; mass_matrix = Diagonal([0.0])), [0.0], (0.0, 1.0)
+    )
+
+    function solve_zero_mass(prob)
+        return solve(
+            prob, Rosenbrock23(); initializealg = SciMLBase.NoInit(),
+            dt = 1.0, abstol = 1.0e-6, reltol = 0.0
+        )
+    end
+
+    sol_uniform = solve_zero_mass(prob_uniform)
+    sol_diagonal = solve_zero_mass(prob_diagonal)
+    @test SciMLBase.successful_retcode(sol_uniform)
+    @test SciMLBase.successful_retcode(sol_diagonal)
+    @test sol_uniform.u[end][1] ≈ -1.0 atol = 1.0e-6
+    @test sol_uniform.u[end][1] ≈ sol_diagonal.u[end][1] atol = 1.0e-6
+end
