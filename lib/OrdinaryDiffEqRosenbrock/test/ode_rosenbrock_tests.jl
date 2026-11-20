@@ -783,10 +783,21 @@ end
         )
     end
 
+    function rhs_iip(du, z, p, t)
+        du[1] = z[1] - (5t^2 - 6t^3)
+        return nothing
+    end
+    prob_uniform_iip = ODEProblem(
+        ODEFunction{true}(rhs_iip; mass_matrix = 0.0I), [0.0], (0.0, 1.0)
+    )
+
     sol_uniform = solve_zero_mass(prob_uniform)
     sol_diagonal = solve_zero_mass(prob_diagonal)
+    sol_uniform_iip = solve_zero_mass(prob_uniform_iip)
     @test SciMLBase.successful_retcode(sol_uniform)
     @test SciMLBase.successful_retcode(sol_diagonal)
+    @test SciMLBase.successful_retcode(sol_uniform_iip)
     @test sol_uniform.u[end][1] ≈ -1.0 atol = 1.0e-6
     @test sol_uniform.u[end][1] ≈ sol_diagonal.u[end][1] atol = 1.0e-6
+    @test sol_uniform_iip.u[end][1] ≈ sol_uniform.u[end][1] atol = 1.0e-6
 end
