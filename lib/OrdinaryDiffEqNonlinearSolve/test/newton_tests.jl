@@ -36,8 +36,13 @@ end
         previous_iterations = integ.stats.nnonliniter
         step!(integ)
 
-        # Bound the loop so a failed step cannot leave the test stuck at one time.
-        @test integ.accept_step
+        # Stop after the first rejected step so a failed solve cannot leave the
+        # test repeating at the same time.
+        if !integ.accept_step
+            @test integ.accept_step
+            break
+        end
+
         @test integ.t > previous_t
         @test integ.t ≈ n * dt
 
