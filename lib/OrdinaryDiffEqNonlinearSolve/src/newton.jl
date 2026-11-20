@@ -1044,16 +1044,13 @@ function relax!(
             res = resid(z)
             return res
         end
+        # ϕ is rounding-limited at small α near convergence; a central difference allows a larger step.
         function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
+            ϵ = cbrt(eps())
+            return (ϕ(α + ϵ) - ϕ(α - ϵ)) / (2 * ϵ)
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
-            ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, ∂ϕ∂α
+            return ϕ(α), dϕ(α)
         end
         α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))

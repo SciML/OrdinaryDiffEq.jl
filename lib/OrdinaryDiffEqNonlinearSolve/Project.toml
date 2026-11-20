@@ -92,3 +92,14 @@ ConstructionBase = "1.5.8"
 
 [targets]
 test = ["DiffEqDevTools", "LineSearch", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqPDIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "SparseConnectivityTracer", "StaticArrays", "Statistics", "Test", "Pkg", "SciMLTesting"]
+
+[sources]
+DiffEqBase = {path = "../DiffEqBase"}
+DiffEqDevTools = {path = "../DiffEqDevTools"}
+OrdinaryDiffEqBDF = {path = "../OrdinaryDiffEqBDF"}
+OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
+OrdinaryDiffEqDifferentiation = {path = "../OrdinaryDiffEqDifferentiation"}
+OrdinaryDiffEqFIRK = {path = "../OrdinaryDiffEqFIRK"}
+OrdinaryDiffEqPDIRK = {path = "../OrdinaryDiffEqPDIRK"}
+OrdinaryDiffEqRosenbrock = {path = "../OrdinaryDiffEqRosenbrock"}
+OrdinaryDiffEqSDIRK = {path = "../OrdinaryDiffEqSDIRK"}
