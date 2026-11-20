@@ -116,8 +116,9 @@ end
 
         integrator.stats.nsolve += 1
 
-        if cache.algebraic_vars === nothing
-            # Identity mass matrices have no algebraic mask.
+        has_algebraic_vars = cache.algebraic_vars !== nothing && any(cache.algebraic_vars)
+        if !has_algebraic_vars
+            # Avoid the mask path when every component is differential.
             @.. broadcast = false tmp = dto6 * (k₁ - 2 * k₂ + k₃)
         else
             veck₁ = _vec(k₁)
@@ -135,9 +136,8 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        # Guard on the field rather than `mass_matrix !== I` so inference can drop
-        # this branch (and the `reshape`) when `algebraic_vars` is statically `nothing`.
-        if cache.algebraic_vars !== nothing
+        # Only add the algebraic residual when at least one component is algebraic.
+        if has_algebraic_vars
             algvar = reshape(cache.algebraic_vars, size(u))
             # Divide in-place so vector abstol does not allocate a temporary reciprocal.
             @.. atmp = ifelse(algvar, fsallast, false) / integrator.opts.abstol
