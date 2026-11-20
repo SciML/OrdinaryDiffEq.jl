@@ -761,6 +761,20 @@ end
     @test first_step_EEst(prob_iip_M) ≈ expected / 2 rtol = 1.0e-6
     @test first_step_EEst(prob_oop_M) ≈ expected / 2 rtol = 1.0e-6
     @test first_step_EEst(prob_iip_M) ≈ first_step_EEst(prob_oop_M) rtol = 1.0e-6
+
+    # Nonzero UniformScaling matrices also have no algebraic mask. The
+    # in-place cache must treat them like other ODEs, not pass nothing to
+    # ifelse while masking algebraic components.
+    M_uniform = 2.0I
+    prob_iip_uniform_M = ODEProblem(
+        ODEFunction{true}(f_iip; mass_matrix = M_uniform), [0.0], (t0, 1.0)
+    )
+    prob_oop_uniform_M = ODEProblem(
+        ODEFunction{false}(f_oop_vec; mass_matrix = M_uniform), [0.0], (t0, 1.0)
+    )
+    @test first_step_EEst(prob_iip_uniform_M) ≈ expected / 2 rtol = 1.0e-6
+    @test first_step_EEst(prob_oop_uniform_M) ≈ expected / 2 rtol = 1.0e-6
+    @test first_step_EEst(prob_iip_uniform_M) ≈ first_step_EEst(prob_oop_uniform_M) rtol = 1.0e-6
 end
 
 
