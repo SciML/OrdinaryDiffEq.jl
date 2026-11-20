@@ -265,7 +265,7 @@ function alg_cache(
     elseif mass_matrix isa UniformScaling
         # UniformScaling has no explicit size, so derive its algebraic mask
         # from its scalar value rather than passing it to find_algebraic_vars_eqs.
-        fill(iszero(mass_matrix.λ), length(u))
+        iszero(mass_matrix.λ) ? fill(true, length(u)) : nothing
     else
         find_algebraic_vars_eqs(mass_matrix)[1]
     end
