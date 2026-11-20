@@ -117,7 +117,7 @@ end
         integrator.stats.nsolve += 1
 
         if cache.algebraic_vars === nothing
-            # Identity and nonzero UniformScaling mass matrices have no algebraic variables.
+            # Identity mass matrices have no algebraic mask.
             @.. broadcast = false tmp = dto6 * (k₁ - 2 * k₂ + k₃)
         else
             veck₁ = _vec(k₁)
