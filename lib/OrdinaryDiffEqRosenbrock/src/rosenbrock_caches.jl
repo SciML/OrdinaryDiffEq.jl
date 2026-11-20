@@ -260,11 +260,9 @@ function alg_cache(
     )
 
     mass_matrix = f.mass_matrix
-    algebraic_vars = if mass_matrix === I
-        nothing
-    elseif mass_matrix isa UniformScaling
-        # UniformScaling has no explicit size, so derive its algebraic mask
-        # from its scalar value rather than passing it to find_algebraic_vars_eqs.
+    algebraic_vars = if mass_matrix isa UniformScaling
+        # A nonzero UniformScaling has no algebraic variables; zero scaling
+        # makes every equation algebraic. Keep the mask type stable for inference.
         fill(iszero(mass_matrix.λ), length(u))
     else
         find_algebraic_vars_eqs(mass_matrix)[1]
