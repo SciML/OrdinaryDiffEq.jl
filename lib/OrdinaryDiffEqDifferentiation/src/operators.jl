@@ -133,27 +133,29 @@ function base_evals_per_jvp_point(ad)
 end
 
 """
-    drain_jvp_count!(integrator, alg, W) -> nothing
+    drain_jvp_count!(integrator, alg, W; stats_sink = nothing) -> nothing
 
 Add the Jacobian-vector products accumulated in `W`'s JVP operator to `integrator.stats.nf`
 and reset the tally, so each product is counted once no matter how many `W`s share the
-operator.
+operator. A `StatsDelta` passed as `stats_sink` receives the count in place of
+`integrator.stats`.
 
 Nothing is counted when no `JVPCache` is involved: a `W` whose Jacobian is a concrete
 matrix or a user-supplied `MatrixOperator` applies a stored matrix and evaluates `f` zero
 times.
 """
-function drain_jvp_count!(integrator, alg, W)
+function drain_jvp_count!(integrator, alg, W; stats_sink = nothing)
     J = jvp_counter(W)
     (J === nothing || !(integrator isa SciMLBase.DEIntegrator)) && return nothing
     n, nbase = J.njvps, J.nbase_evals
     J.njvps, J.nbase_evals = 0, 0
     (n == 0 && nbase == 0) && return nothing
-    OrdinaryDiffEqCore.increment_nf!(
-        integrator.stats, rhs_evals_per_jvp(alg_autodiff(alg)) * n + nbase
-    )
+    charge_jvp_nf!(integrator, stats_sink, rhs_evals_per_jvp(alg_autodiff(alg)) * n + nbase)
     return nothing
 end
+
+charge_jvp_nf!(integrator, ::Nothing, amt) = OrdinaryDiffEqCore.increment_nf!(integrator.stats, amt)
+charge_jvp_nf!(integrator, sink, amt) = charge_nf!(integrator, sink, amt)
 
 """
     jvp_counter(W) -> JVPCache or nothing

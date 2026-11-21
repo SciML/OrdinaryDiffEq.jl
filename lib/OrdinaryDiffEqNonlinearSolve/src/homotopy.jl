@@ -177,7 +177,7 @@ function nlsolve!(
     # The continuation solutions do not carry stats, so `f` calls are counted by the
     # residual itself; inner Jacobian/linear-solve counts are not tracked.
     if SciMLBase.has_stats(integrator)
-        integrator.stats.nf += nlcache.nf[]
+        charge_nf!(integrator, nlcache, nlcache.nf[])
     end
 
     return postamble!(nlsolver, integrator)
