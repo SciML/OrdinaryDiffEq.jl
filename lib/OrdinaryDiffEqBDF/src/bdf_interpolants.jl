@@ -1,6 +1,9 @@
 ### Type unions for dispatch
 const QNDF_CACHES = Union{QNDFConstantCache, QNDFCache}
-const FBDF_CACHES = Union{FBDFConstantCache, FBDFCache, DFBDFConstantCache, DFBDFCache}
+const FBDF_CACHES = Union{
+    FBDFConstantCache, FBDFCache, DFBDFConstantCache, DFBDFCache,
+    MOOSE234ConstantCache, MOOSE234Cache,
+}
 const BDF_CACHES_WITH_INTERPOLATIONS = Union{QNDF_CACHES, FBDF_CACHES}
 
 ### Fallbacks to capture unsupported derivative orders
