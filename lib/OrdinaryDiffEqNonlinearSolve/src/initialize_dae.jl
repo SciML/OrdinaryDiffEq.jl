@@ -25,13 +25,52 @@ _tagged_autodiff(u, ::Val{0}) = _tagged_autodiff(u, Val(1))
 function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
     return AutoForwardDiff{CS}(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
 end
+_untagged_autodiff(::Val{nothing}) = _untagged_autodiff(Val(1))
+_untagged_autodiff(::Val{0}) = _untagged_autodiff(Val(1))
+_untagged_autodiff(::Val{CS} = Val(1)) where {CS} = AutoForwardDiff(; chunksize = CS)
+
+# Which ForwardDiff tag the init solve should use. `BrownFullBasicInit` and
+# `ShampineCollocationInit` build `FullSpecialize` residuals that call the ODE function,
+# whose FunctionWrappers were compiled for `OrdinaryDiffEqTag` duals, so they need that tag.
+# An init problem handed over through `OverrideInitData` is a separate function though. If it
+# is `AutoSpecialize` (the default), NonlinearSolveBase wraps it for `NonlinearSolveTag` duals
+# and only swaps that tag into an *untagged* backend, so ours would hit
+# `NoFunctionWrapperFoundError` on the first Jacobian. Leave the tag to NonlinearSolve there.
+_needs_ode_tag(nlprob) = SciMLBase.specialization(nlprob.f) === SciMLBase.FullSpecialize
+function _init_autodiff(u, nlprob, autodiff, chunksize)
+    autodiff || return AutoFiniteDiff()
+    return _needs_ode_tag(nlprob) ? _tagged_autodiff(u, chunksize) : _untagged_autodiff(chunksize)
+end
+
+# `FastShortcutNonlinearPolyalg` only starts at NewtonRaphson (instead of Broyden) when it
+# is told the system is small (`u0_len <= 25`), which is what `solve(prob, nothing)` does in
+# NonlinearSolve. Without it, a good initial guess can still send Broyden off to a distant
+# root that also reports `Success` (SciML/OrdinaryDiffEq.jl#5005).
+#
+# The size has to come from the problem rather than from `u`: `BrownFullBasicInit` passes
+# the full state as `u` but only solves for the algebraic variables.
+#
+# GPU arrays are left out on purpose. Newton needs a Jacobian straight away, and building a
+# dense ForwardDiff Jacobian of a GPU array scalar-indexes it, while Broyden gets going
+# without one. So for those we keep the old Broyden-first order (`u0_len = nothing`).
+#
+# The `SCCNonlinearProblem` methods further down are not sized yet and still start with
+# Broyden. They hand one algorithm to every block, and switching them moves the init results
+# of SCC-split models around inside the solve tolerance, so that is left for its own change.
+function _init_u0_len(u, nlprob)
+    u0 = nlprob.u0
+    u0 === nothing && return nothing
+    fast = ArrayInterface.fast_scalar_indexing(u) && ArrayInterface.fast_scalar_indexing(u0)
+    return fast ? length(u0) : nothing
+end
 
 function default_nlsolve(
-        ::Nothing, isinplace::Val{true}, u, ::AbstractNonlinearProblem,
+        ::Nothing, isinplace::Val{true}, u, nlprob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize),
+        u0_len = _init_u0_len(u, nlprob)
     )
 end
 function default_nlsolve(
@@ -43,11 +82,12 @@ function default_nlsolve(
     )
 end
 function default_nlsolve(
-        ::Nothing, isinplace::Val{false}, u, ::AbstractNonlinearProblem,
+        ::Nothing, isinplace::Val{false}, u, nlprob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize),
+        u0_len = _init_u0_len(u, nlprob)
     )
 end
 function default_nlsolve(
