@@ -701,7 +701,7 @@ function SciMLBase.reinit!(
         initialize!(integrator, integrator.cache)
     end
 
-    if reset_dt && iszero(integrator.dt) && !isempty(integrator.opts.tstops)
+    if reset_dt && iszero(integrator.dt)
         auto_dt_reset!(integrator)
     end
 
@@ -736,6 +736,7 @@ function _determine_initdt(integrator)
 end
 
 function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
+    has_tstop(integrator) || return nothing  # terminated: no step left to size
     integrator.dt = _determine_initdt(integrator)
     integrator.dtpropose = integrator.dt
     return increment_nf!(integrator.stats, 2)
