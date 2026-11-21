@@ -746,6 +746,7 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
     p = get_concrete_p(prob, kwargs)
     tspan = get_concrete_tspan(prob, isadapt, kwargs, p)
     u0 = get_concrete_u0(prob, isadapt, tspan[1], kwargs)
+    tspan = promote_tspan_tstops(tspan, kwargs)
     u0_promote = promote_u0(u0, p, tspan[1])
     tspan_promote = promote_tspan(u0_promote, p, tspan, prob, kwargs)
     f_promote, p_promote = _promote_f(
@@ -801,6 +802,7 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
     u0 = get_concrete_u0(prob, isadapt, tspan[1], kwargs)
     du0 = get_concrete_du0(prob, isadapt, tspan[1], kwargs)
 
+    tspan = promote_tspan_tstops(tspan, kwargs)
     u0_promote = promote_u0(u0, p, tspan[1])
     du0_promote = promote_u0(du0, p, tspan[1])
     tspan_promote = promote_tspan(u0_promote, p, tspan, prob, kwargs)
@@ -841,6 +843,7 @@ function get_concrete_problem(prob::DDEProblem, isadapt; kwargs...)
         constant_lags = prob.constant_lags
     end
 
+    tspan = promote_tspan_tstops(tspan, kwargs)
     u0 = promote_u0(u0, p, tspan[1])
     tspan = promote_tspan(u0, p, tspan, prob, kwargs)
 
@@ -850,6 +853,7 @@ end
 
 # Most are extensions
 promote_tspan(u0, p, tspan, prob, kwargs) = _promote_tspan(tspan, kwargs)
+promote_tspan_tstops(tspan, kwargs) = tspan
 function _promote_tspan(tspan, kwargs)
     if (dt = get(kwargs, :dt, nothing)) !== nothing
         tspan1, tspan2, _ = promote(tspan..., dt)

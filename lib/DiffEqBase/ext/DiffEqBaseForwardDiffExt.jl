@@ -7,7 +7,7 @@ using DiffEqBase: Void, FunctionWrappersWrappers, OrdinaryDiffEqTag,
     RecursiveArrayTools, _promote_tspan, has_continuous_callback
 import DiffEqBase: hasdualpromote, wrapfun_oop, wrapfun_iip, wrapfun_dae_iip,
     wrapfun_iip_opaque,
-    prob2dtmin, promote_tspan, ODE_DEFAULT_NORM
+    prob2dtmin, promote_tspan, promote_tspan_tstops, ODE_DEFAULT_NORM
 import SciMLBase: isdualtype, DualEltypeChecker, sse, __sum
 import RespecializeParams
 import RespecializeParams: OpaqueVoid
@@ -212,6 +212,17 @@ function promote_tspan(
         tspan::Tuple{<:ForwardDiff.Dual, <:ForwardDiff.Dual}, prob, kwargs
     )
     return _promote_tspan(tspan, kwargs)
+end
+_tstops_eltype(ts::Union{AbstractArray, Tuple}) = eltype(ts)
+_tstops_eltype(ts::Number) = typeof(ts)
+_tstops_eltype(::Any) = Nothing   # callable tstops: not handled yet
+
+function promote_tspan_tstops(tspan::Tuple, kwargs)
+    Tts = _tstops_eltype(get(kwargs, :tstops, nothing))
+    Tts <: ForwardDiff.Dual || return tspan
+    any(t -> t isa ForwardDiff.Dual, tspan) && return tspan
+    T = promote_type(Tts, typeof.(tspan)...)
+    return map(t -> convert(T, t), tspan)
 end
 # Copy of the other prob2dtmin dispatch, just for optionality
 function prob2dtmin(tspan, ::ForwardDiff.Dual, use_end_time)
