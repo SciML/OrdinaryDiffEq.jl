@@ -100,6 +100,18 @@ function _erase_callback_types(callback)
     )
 end
 
+function _merge_erased_callbacks(
+        pcb::CallbackSet{Vector{Any}, Vector{Any}},
+        callback
+    )
+    Base.@nospecialize callback
+    erased = _erase_callback_types(callback)
+    return CallbackSet(
+        vcat(pcb.continuous_callbacks, erased.continuous_callbacks),
+        vcat(pcb.discrete_callbacks, erased.discrete_callbacks)
+    )
+end
+
 rightfloat(t, tdir) = isone(tdir) ? nextfloat(t) : prevfloat(t)
 
 # Callback handling

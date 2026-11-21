@@ -41,31 +41,30 @@ and need to manually handle kwargs merging that would normally be done by `solve
 or `init_call`.
 """
 function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
+    erases = _erases_callback_types(prob)
 
     # Special handling for callback merging
     if has_kwargs(prob)
         if merge_callbacks && haskey(prob.kwargs, :callback) && haskey(kwargs, :callback)
+            pcb = prob.kwargs[:callback]
             kwargs_temp = NamedTuple{
                 Base.diff_names(
                     Base._nt_names(values(kwargs)),
                     (:callback,)
                 ),
             }(values(kwargs))
-            callbacks = NamedTuple{(:callback,)}(
-                (
-                    CallbackSet(
-                        prob.kwargs[:callback],
-                        values(kwargs).callback
-                    ),
-                )
-            )
-            kwargs = merge(kwargs_temp, callbacks)
+            merged_callback = if erases && pcb isa CallbackSet{Vector{Any}, Vector{Any}}
+                _merge_erased_callbacks(pcb, values(kwargs).callback)
+            else
+                CallbackSet(pcb, values(kwargs).callback)
+            end
+            kwargs = merge(kwargs_temp, NamedTuple{(:callback,)}((merged_callback,)))
         end
         kwargs = isempty(prob.kwargs) ? kwargs : merge(values(prob.kwargs), kwargs)
     end
 
 
-    if _erases_callback_types(prob)
+    if erases
         callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
         kwargs = merge(
             (; kwargs...),
@@ -106,6 +105,9 @@ function _erase_problem_callback_types(prob)
     if !_erases_callback_types(prob) || !has_kwargs(prob)
         return prob
     end
+    # Always write an erased callback kwarg — including an empty set when the
+    # problem had none — so Auto/NoSpecialize problems share one concrete type
+    # (and therefore one integrator type) as callbacks change.
     callback = haskey(prob.kwargs, :callback) ? prob.kwargs[:callback] : nothing
     callback = _erase_callback_types(callback)
     return @set prob.kwargs = merge((; prob.kwargs...), (; callback))
