@@ -171,5 +171,32 @@ solve(sparseodeprob, KenCarp47(linsolve = KrylovJL_GMRES()));
     integ = init(prob, Rodas5P())
 
     @test all(==(1), nonzeros(integ.cache.J))
-    @test all(==(1), nonzeros(integ.cache.W))
+    @test nnz(integ.cache.W) == nnz(jac_prototype)
+    @test integ.cache.W.colptr == jac_prototype.colptr
+    @test rowvals(integ.cache.W) == rowvals(jac_prototype)
+    @test all(iszero, nonzeros(integ.cache.W))
+
+    sol = solve(prob, Rodas5P(); reltol = 1.0e-10, abstol = 1.0e-12)
+    @test sol.retcode == ReturnCode.Success
+    @test maximum(abs.(sol.u[end] .- exp(sol.t[end]))) < 1.0e-8
+end
+
+# Regression test for #4992: with `sparsity` given but no `jac_prototype`, the in-place W
+# is allocated in `build_J_W` via `similar`, whose stored values are undefined. Check only
+# that the solve succeeds and is accurate, not any particular placeholder value.
+@testset "Sparse W built from sparsity without jac_prototype" begin
+    N = 4
+    decay!(du, u, p, t) = (du .= -u)
+    sparsity = sparse(1:N, 1:N, trues(N), N, N)
+    prob = ODEProblem(
+        ODEFunction(decay!; sparsity),
+        ones(BigFloat, N),
+        (BigFloat(0), BigFloat(1) / 8)
+    )
+    sol = solve(
+        prob, Rodas5P(linsolve = PureKLUFactorization());
+        reltol = 1.0e-10, abstol = 1.0e-12
+    )
+    @test sol.retcode == ReturnCode.Success
+    @test maximum(abs.(sol.u[end] .- exp(-sol.t[end]))) < 1.0e-8
 end
