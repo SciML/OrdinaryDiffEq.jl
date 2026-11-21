@@ -401,10 +401,13 @@ function stepsize_controller!(
         max_order,
     }
     cache.prev_order = cache.order
+    # Growth per step is limited to qmax (qmax_first_step after the first step), as the
+    # IController does.
+    q_growth_limit = inv(get_current_qmax(integrator, get_qmax(integrator)))
     if cache.filter_order > 0
         stald_reset!(cache.stald)
         q = get_gamma(integrator) / _filt_step_ratio(OrdinaryDiffEqCore.get_EEst(integrator), cache.filter_order)
-        return clamp(q, inv(get_current_qmax(integrator, get_qmax(integrator))), inv(get_qmin(integrator)))
+        return clamp(q, q_growth_limit, inv(get_qmin(integrator)))
     end
 
     # CVODE-style Stability Limit Detection (STALD)
@@ -435,18 +438,30 @@ function stepsize_controller!(
         terk = cache.terkm1
     end
 
-    if iszero(terk)
-        q = inv(get_current_qmax(integrator, get_qmax(integrator)))
-    else
-        # CVODE-style step size formula: eta = 1 / (BIAS2 * dsm)^(1/(k+1))
-        # where dsm = terk / (alpha0 * (k+1)) and alpha0 is the BDF leading coefficient.
-        # FBDF uses fixed leading coefficients, so alpha0 = bdf_coeffs[k, 1].
-        # BIAS2 = 6 matches CVODE (cvode_impl.h).
-        alpha0 = cache.bdf_coeffs[k, 1]
-        q = ((6 * terk / (alpha0 * (k + 1)))^(1 / (k + 1)))
+    if k == 1 && step_order == 1 &&
+            (cache.iters_from_event >= 1 || _fbdf_has_first_step_estimate(integrator, cache))
+        # At order 1, `terk` is ‖h y′‖, not a local error, and sizing from it shrinks dt
+        # until the state barely moves. Size from EEst = ‖terkp1‖ / 2 (terkp1 ≈ h² y″).
+        terk = 2 * OrdinaryDiffEqCore.get_EEst(integrator)
     end
-    return q
+
+    # CVODE-style step size formula: eta = 1 / (BIAS2 * dsm)^(1/(k+1))
+    # where dsm = terk / (alpha0 * (k+1)) and alpha0 is the BDF leading coefficient.
+    # FBDF uses fixed leading coefficients, so alpha0 = bdf_coeffs[k, 1].
+    # BIAS2 = 6 matches CVODE (cvode_impl.h).
+    alpha0 = cache.bdf_coeffs[k, 1]
+    q = ((6 * terk / (alpha0 * (k + 1)))^(1 / (k + 1)))
+    return max(q, q_growth_limit)   # terk = 0 gives q = 0: the full growth limit
 end
+
+# Whether the first step after a (re)start gets the h² y″ estimate `_fbdf_first_step_terkp1(!)`.
+_fbdf_has_first_step_estimate(integrator, cache::FBDFCache) =
+    integrator.f.mass_matrix === I || isnewton(cache.nlsolver)
+_fbdf_has_first_step_estimate(integrator, cache::FBDFConstantCache) =
+    integrator.f.mass_matrix === I
+_fbdf_use_first_step_estimate(integrator, cache) =
+    cache.iters_from_event == 0 && integrator.opts.adaptive &&
+    _fbdf_has_first_step_estimate(integrator, cache)
 
 function step_accept_controller!(integrator, alg::FBDF, q)
     return step_accept_controller!(integrator, integrator.cache, alg, q)

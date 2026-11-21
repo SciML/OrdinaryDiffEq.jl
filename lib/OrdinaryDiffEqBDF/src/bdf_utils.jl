@@ -388,6 +388,70 @@ function _resample_at_chebyshev_direct_iip!(k, u, u_history, thetas, n)
     return
 end
 
+# Use the step that the stored time t + dt represents: far from t = 0, rounding of t + dt is a
+# sizable part of a small dt, and the history would disagree with the BDF formula (#5003).
+# `calc_dt_propose!` snaps the same way, but against the time before the step is applied.
+function _fbdf_step_dt!(integrator)
+    (; t, dt) = integrator
+    (integrator.opts.adaptive && t isa AbstractFloat && dt isa AbstractFloat) || return dt
+    h = (t + dt) - t
+    iszero(h) && return dt
+    return integrator.dt = h
+end
+
+# terkp1 ≈ h² y″ for the first step after a (re)start, which is backward Euler and has no
+# history: r = M (u - uprev) - h f(uprev) ≈ h² y″ on the differential rows, filtered with
+# Newton's matrix as (M - h γ J)⁻¹ r. The filter damps stiff components and gives index-1
+# algebraic rows (zero rows of M) the error their differential rows imply. EEst =
+# ‖terkp1‖ / 2 as on later order-1 steps, and it does not depend on the absolute time.
+# With a Krylov linsolve the filter costs one extra iterative solve per (re)start.
+function _fbdf_first_step_terkp1!(integrator, cache)
+    (; nlsolver, terkp1_tmp, tmp) = cache
+    @.. broadcast = false tmp = integrator.u - integrator.uprev
+    _fbdf_first_step_residual!(terkp1_tmp, tmp, integrator)
+    isnewton(nlsolver) || return nothing
+    # Newton's matrix is W = J - M / W_γdt, so (M - W_γdt J)⁻¹ r = -W⁻¹ r / W_γdt.
+    est = nlsolver.cache.dz
+    linres = dolinsolve(
+        integrator, nlsolver.cache.linsolve; b = vec(terkp1_tmp), linu = vec(est)
+    )
+    SciMLBase.has_stats(integrator) && (integrator.stats.nsolve += 1)
+    rc = linres.retcode
+    ok = (SciMLBase.successful_retcode(rc) || rc == SciMLBase.ReturnCode.Default) &&
+        all(isfinite, est)
+    if ok
+        c = -inv(nlsolver.cache.W_γdt)
+        @.. broadcast = false terkp1_tmp = c * est
+    elseif integrator.f.mass_matrix === I
+        # r is already a state error; recompute it, since the solve may overwrite b
+        _fbdf_first_step_residual!(terkp1_tmp, tmp, integrator)
+    else
+        # r is in the units of M (rescaling the equations rescales it): reject the step
+        integrator.force_stepfail = true
+    end
+    return nothing
+end
+
+# r = M (u - uprev) - h f(uprev), with `Δu` = u - uprev.
+function _fbdf_first_step_residual!(r, Δu, integrator)
+    (; dt, fsalfirst) = integrator
+    mass_matrix = integrator.f.mass_matrix
+    if mass_matrix === I
+        @.. broadcast = false r = Δu - dt * fsalfirst
+    else
+        mul!(vec(r), mass_matrix, vec(Δu))
+        @.. broadcast = false r = r - dt * fsalfirst
+    end
+    return r
+end
+
+# Out-of-place version, for M = I only and unfiltered. Out-of-place mass-matrix problems
+# keep the history-based first-step estimate.
+function _fbdf_first_step_terkp1(integrator, u)
+    (; uprev, dt, fsalfirst) = integrator
+    return @.. u - uprev - dt * fsalfirst
+end
+
 function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order}
     #calculate hᵏ⁻¹yᵏ⁻¹
     (; ts_tmp, terk_tmp, u_history, fd_weights) = cache

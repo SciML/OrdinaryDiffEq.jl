@@ -2,6 +2,8 @@
 
 ABM32, ABM43, and ABM54 use their Adams–Bashforth predictors in steady steps; their numerical results change.
 
+FBDF sizes order-1 steps from the local error estimate, the first step after a (re)start gets a backward-Euler error estimate that does not depend on the absolute time, and step growth is limited to `qmax` per step (`qmax_first_step` after the first step), as the `IController` does (#5003); its step sequences and numerical results change. With adaptive steps, FBDF also uses `dt = (t + dt) - t`, so integrations that start far from `t = 0` no longer stop with retcode `Unstable`.
+
 # OrdinaryDiffEq.jl v7 / DifferentialEquations.jl v8 Breaking Changes
 
 This release bumps to **SciMLBase v3**, **RecursiveArrayTools v4**, and includes breaking changes across **DiffEqBase**, **OrdinaryDiffEqCore**, and all solver sublibraries. It also coincides with the **DifferentialEquations.jl v8** umbrella release, which is itself a breaking change to the user-facing meta-package.
