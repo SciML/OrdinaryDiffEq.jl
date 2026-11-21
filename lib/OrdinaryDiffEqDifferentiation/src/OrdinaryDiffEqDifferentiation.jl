@@ -59,6 +59,10 @@ import DiffEqBase: OrdinaryDiffEqTag
 is_sparse(::Any) = false
 is_sparse_csc(::Any) = false
 
+# Allocate a Jacobian with `pattern`'s structure. A known pattern may hold stored zeros,
+# which are structural entries the coloring decompresses into, but broadcasting drops them.
+jac_from_pattern(::Type{T}, pattern) where {T} = convert.(T, pattern)
+
 # Seeding a sparsity pattern from the mass matrix uses `findall`/`getindex`, which a
 # SciMLOperator does not support. `convert` reads the operator's currently-cached array
 # rather than re-evaluating it, which is what is wanted here: only the structural
