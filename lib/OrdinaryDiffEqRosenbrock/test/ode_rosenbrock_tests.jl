@@ -1,4 +1,4 @@
-using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqCore, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
 using RecursiveArrayTools: ArrayPartition
 import ODEProblemLibrary: prob_ode_linear,
     prob_ode_2Dlinear,
@@ -722,4 +722,96 @@ end
         )
         @test SciMLBase.successful_retcode(solve(prob, Rosenbrock32()))
     end
+end
+
+# Regression test for #4988: the Rosenbrock23 stage-3 right-hand side must use
+# dt*d*dT (as in Shampine & Reichelt's ode23s), not dt*dT. This only affects the
+# adaptive error estimate, and only for non-autonomous problems.
+@testset "Rosenbrock23 error estimate with explicit time dependence (#4988)" begin
+    # u' = t^2 from t0 = 0.5. With h = 1/128 the exact step gives
+    # EEst = h^3 / 12 when abstol = 1 and reltol = 0 (so EEst is the raw error estimate).
+    t0 = 0.5
+    h = 1 / 128
+    expected = h^3 / 12
+
+    f_oop(u, p, t) = t^2
+    f_iip(du, u, p, t) = (du[1] = t^2; nothing)
+    f_oop_vec(u, p, t) = [t^2]
+
+    function first_step_EEst(prob)
+        integ = init(
+            prob, Rosenbrock23(); dt = h, abstol = 1.0, reltol = 0.0, save_everystep = false
+        )
+        step!(integ)
+        return OrdinaryDiffEqCore.get_EEst(integ)
+    end
+
+    # Out-of-place scalar and vector states use Rosenbrock23ConstantCache.
+    @test first_step_EEst(ODEProblem(f_oop, 0.0, (t0, 1.0))) ≈ expected rtol = 1.0e-6
+    # An identity-mass vector ODE has no differential_vars mask.
+    @test first_step_EEst(ODEProblem(f_oop_vec, [0.0], (t0, 1.0))) ≈ expected rtol = 1.0e-6
+    # In-place: Rosenbrock23Cache
+    @test first_step_EEst(ODEProblem(f_iip, [0.0], (t0, 1.0))) ≈ expected rtol = 1.0e-6
+
+    # A non-identity mass matrix must not change the cache-dependent
+    # normalization of the state-space error estimate.
+    M = Diagonal([2.0])
+    prob_iip_M = ODEProblem(ODEFunction{true}(f_iip; mass_matrix = M), [0.0], (t0, 1.0))
+    prob_oop_M = ODEProblem(ODEFunction{false}(f_oop_vec; mass_matrix = M), [0.0], (t0, 1.0))
+    @test first_step_EEst(prob_iip_M) ≈ expected / 2 rtol = 1.0e-6
+    @test first_step_EEst(prob_oop_M) ≈ expected / 2 rtol = 1.0e-6
+    @test first_step_EEst(prob_iip_M) ≈ first_step_EEst(prob_oop_M) rtol = 1.0e-6
+
+    # Nonzero UniformScaling matrices also have no algebraic mask. The
+    # in-place cache must treat them like other ODEs, not pass nothing to
+    # ifelse while masking algebraic components.
+    M_uniform = 2.0I
+    prob_iip_uniform_M = ODEProblem(
+        ODEFunction{true}(f_iip; mass_matrix = M_uniform), [0.0], (t0, 1.0)
+    )
+    prob_oop_uniform_M = ODEProblem(
+        ODEFunction{false}(f_oop_vec; mass_matrix = M_uniform), [0.0], (t0, 1.0)
+    )
+    @test first_step_EEst(prob_iip_uniform_M) ≈ expected / 2 rtol = 1.0e-6
+    @test first_step_EEst(prob_oop_uniform_M) ≈ expected / 2 rtol = 1.0e-6
+    @test first_step_EEst(prob_iip_uniform_M) ≈ first_step_EEst(prob_oop_uniform_M) rtol = 1.0e-6
+end
+
+
+@testset "Rosenbrock23 with zero UniformScaling mass matrix" begin
+    # A zero UniformScaling has no differential variables, just like a zero
+    # diagonal mass matrix. Core represents UniformScaling without a mask, so
+    # the error estimator must still include the algebraic residual.
+    rhs(z, p, t) = [z[1] - (5t^2 - 6t^3)]
+    prob_uniform = ODEProblem(
+        ODEFunction{false}(rhs; mass_matrix = 0.0I), [0.0], (0.0, 1.0)
+    )
+    prob_diagonal = ODEProblem(
+        ODEFunction{false}(rhs; mass_matrix = Diagonal([0.0])), [0.0], (0.0, 1.0)
+    )
+
+    function solve_zero_mass(prob)
+        return solve(
+            prob, Rosenbrock23(); initializealg = SciMLBase.NoInit(),
+            dt = 1.0, abstol = 1.0e-6, reltol = 0.0
+        )
+    end
+
+    function rhs_iip(du, z, p, t)
+        du[1] = z[1] - (5t^2 - 6t^3)
+        return nothing
+    end
+    prob_uniform_iip = ODEProblem(
+        ODEFunction{true}(rhs_iip; mass_matrix = 0.0I), [0.0], (0.0, 1.0)
+    )
+
+    sol_uniform = solve_zero_mass(prob_uniform)
+    sol_diagonal = solve_zero_mass(prob_diagonal)
+    sol_uniform_iip = solve_zero_mass(prob_uniform_iip)
+    @test SciMLBase.successful_retcode(sol_uniform)
+    @test SciMLBase.successful_retcode(sol_diagonal)
+    @test SciMLBase.successful_retcode(sol_uniform_iip)
+    @test sol_uniform.u[end][1] ≈ -1.0 atol = 1.0e-6
+    @test sol_uniform.u[end][1] ≈ sol_diagonal.u[end][1] atol = 1.0e-6
+    @test sol_uniform_iip.u[end][1] ≈ sol_uniform.u[end][1] atol = 1.0e-6
 end
