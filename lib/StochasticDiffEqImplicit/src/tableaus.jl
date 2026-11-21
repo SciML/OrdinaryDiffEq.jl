@@ -93,7 +93,7 @@ function SKenCarpTableau(::Type{T}, ::Type{T2}) where {
     )
 end
 
-function SKenCarpTableau(T, T2)
+function SKenCarpTableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 1767732205903 // 4055673282236)
     a31 = convert(T, 2746238789719 // 10658868560708)
     a32 = -convert(T, 640167445237 // 6845629431997)

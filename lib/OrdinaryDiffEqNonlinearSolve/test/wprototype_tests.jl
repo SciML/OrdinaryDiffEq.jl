@@ -49,20 +49,21 @@ for prob in (prob_ode_vanderpol_stiff,)
         end
 
         # Run solves
-        sol = solve(prob, alg)
-        sol_J = solve(prob_J, alg) # note: direct linsolve in this case is broken, see #1998
-        sol_W = solve(prob_W, alg)
+        sol = solve(prob, alg; abstol = 1.0e-7, reltol = 1.0e-4)
+        sol_J = solve(prob_J, alg; abstol = 1.0e-7, reltol = 1.0e-4) # note: direct linsolve in this case is broken, see #1998
+        sol_W = solve(prob_W, alg; abstol = 1.0e-7, reltol = 1.0e-4)
 
         rtol = 1.0e-2
 
         @test prob_J.f.sparsity.A == prob_W.f.sparsity.A
 
-        @test all(isapprox.(sol_J.t, sol_W.t; rtol))
-        @test all(isapprox.(sol_J.u, sol_W.u; rtol))
+        solutions = (sol, sol_J, sol_W)
+        @test all(s -> first(s.t) == first(prob.tspan) && last(s.t) == last(prob.tspan), solutions)
 
-        @test all(isapprox.(sol_J.t, sol.t; rtol))
-        @test all(isapprox.(sol_J.u, sol.u; rtol))
-        @test all(isapprox.(sol_W.t, sol.t; rtol))
-        @test all(isapprox.(sol_W.u, sol.u; rtol))
+        # Adaptive solutions can select distinct grids, so compare every saved time from their union.
+        sample_times = sort!(unique!(vcat(sol.t, sol_J.t, sol_W.t)))
+        for (left, right) in ((sol_J, sol_W), (sol_J, sol), (sol_W, sol))
+            @test all(t -> isapprox(left(t), right(t); rtol), sample_times)
+        end
     end
 end

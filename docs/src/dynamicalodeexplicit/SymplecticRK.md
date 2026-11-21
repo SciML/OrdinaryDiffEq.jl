@@ -99,9 +99,9 @@ you will need to install some of the other libraries listed in the navigation ba
 using OrdinaryDiffEqSymplecticRK
 function HH_acceleration!(dv, v, u, p, t)
     x, y = u
-    dx, dy = dv
-    dv[1] = -x - 2 * x * y
-    dv[2] = y^2 - y - x^2
+    dv[1] = dx = -x - 2 * x * y
+    dv[2] = dy = y^2 - y - x^2
+    return
 end
 initial_positions = [0.0, 0.1]
 initial_velocities = [0.5, 0.0]

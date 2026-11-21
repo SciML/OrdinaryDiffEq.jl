@@ -85,6 +85,47 @@ function _assemble_amf_operator(factors)
     return -(factor_product) * transform_op
 end
 
+"""
+    build_amf_function(f!; jac, split = nothing, amf_factors = nothing,
+        jac_cache = nothing, w_cache = nothing, sparsity = nothing)
+
+Build an [`SciMLBase.ODEFunction`](@ref) whose Jacobian and Rosenbrock-W
+operator use an approximate matrix factorization (AMF).
+
+# Arguments
+
+- `f!`: In-place right-hand-side function with signature `f!(du, u, p, t)`.
+
+# Keywords
+
+- `jac`: Square [`SciMLOperators.AbstractSciMLOperator`](@ref) representing
+  the Jacobian.
+- `split`: Optional tuple or vector of square Jacobian operators. The AMF
+  operator is assembled from these factors.
+- `amf_factors`: Optional tuple or vector of pre-built AMF factors. This is
+  mutually exclusive with `split` unless both collections have the same
+  length.
+- `jac_cache`: Optional storage passed to `cache_operator` for `jac`.
+- `w_cache`: Optional storage passed to `cache_operator` for the AMF operator.
+- `sparsity`: Optional sparsity pattern. When omitted, it is inferred from
+  `jac`.
+
+# Returns
+
+An `ODEFunction` with `jac_prototype`, `W_prototype`, and `sparsity` populated
+for use by an AMF Rosenbrock-W algorithm.
+
+# Examples
+
+```julia
+using OrdinaryDiffEqAMF, SciMLOperators, SciMLBase
+
+f!(du, u, p, t) = (du .= -u)
+jac = MatrixOperator(-I(2))
+func = build_amf_function(f!; jac)
+prob = ODEProblem(func, ones(2), (0.0, 1.0))
+```
+"""
 function build_amf_function(
         f!;
         jac,

@@ -14,3 +14,7 @@ OrdinaryDiffEq.jl in the standard way:
 import Pkg;
 Pkg.add("OrdinaryDiffEq");
 ```
+
+```@docs
+OrdinaryDiffEq
+```

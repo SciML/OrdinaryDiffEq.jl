@@ -1,3 +1,9 @@
+"""
+    OrdinaryDiffEqTag
+
+Tag type used by DiffEqBase's no-recompile wrappers for OrdinaryDiffEq-family
+solver dispatch.
+"""
 struct OrdinaryDiffEqTag end
 
 const NORECOMPILE_ARGUMENT_MESSAGE = """
@@ -30,6 +36,14 @@ end
 
 # 3-arg fallback: when ForwardDiff extension is not loaded, ignore chunk size
 wrapfun_iip(ff, inputs, ::Val) = wrapfun_iip(ff, inputs)
+
+function wrapfun_dae_iip(ff, inputs)
+    return FunctionWrappersWrappers.FunctionWrappersWrapper(
+        Void(ff), (typeof(inputs),), (Nothing,)
+    )
+end
+
+wrapfun_dae_iip(ff, inputs, ::Val) = wrapfun_dae_iip(ff, inputs)
 
 function wrapfun_oop(ff, inputs)
     return FunctionWrappersWrappers.FunctionWrappersWrapper(

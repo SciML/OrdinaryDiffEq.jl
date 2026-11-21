@@ -78,20 +78,16 @@ using OrdinaryDiffEqMultirate, OrdinaryDiffEqLowOrderRK, DiffEqDevTools, Test, L
     end
 
     @testset "Stats tracking" begin
-        # For MREEF(m, order, seq=:harmonic): ns[j] = j
-        # f1 evals per step = m * sum(1:order)
-        # f2 evals per step = sum(1:order)
-        # So nf / nf2 ≈ m (the extra init eval shifts it slightly)
         f1!(du, u, p, t) = (du .= -0.9 .* u)
         f2!(du, u, p, t) = (du .= -0.1 .* u)
         prob = SplitODEProblem(f1!, f2!, [1.0], (0.0, 0.5))
-        m_val = 5
-        sol = solve(prob, MREEF(m = m_val, order = 3), dt = 0.1, adaptive = false)
+        m_val, order = 5, 3
+        sol = solve(prob, MREEF(m = m_val, order = order), dt = 0.1, adaptive = false)
+        nsteps = length(sol.t) - 1
 
-        @test sol.stats.nf > 0
-        @test sol.stats.nf2 > 0
         @test sol.stats.nf > sol.stats.nf2
-        @test sol.stats.nf ≈ m_val * sol.stats.nf2 atol = m_val
+        @test sol.stats.nf == (m_val * sum(1:order) + 1) * nsteps + 1
+        @test sol.stats.nf2 == (sum(1:order) + 1) * nsteps + 1
     end
 
     @testset "Complex numbers" begin
@@ -111,5 +107,35 @@ using OrdinaryDiffEqMultirate, OrdinaryDiffEqLowOrderRK, DiffEqDevTools, Test, L
         prob = ODEProblem(ff, [1.0, 2.0], (0.0, 1.0))
         sol = solve(prob, MREEF(m = 10, order = 4), dt = 0.1, adaptive = false)
         @test norm(sol.u[end] - [1.0, 2.0] .* exp(-1.0)) < 1.0e-6
+    end
+end
+
+@testset "Dense output tracks node accuracy" begin
+    w, e = 50.0, 0.1
+    exact(t) = exp(-e * t) * [cos(w * t), sin(w * t)]
+    f1!(du, u, p, t) = (du[1] = -w * u[2]; du[2] = w * u[1]; nothing)
+    f2!(du, u, p, t) = (du .= -e .* u; nothing)
+    f1(u, p, t) = [-w * u[2], w * u[1]]
+    f2(u, p, t) = -e .* u
+
+    probs = (
+        SplitODEProblem(f1!, f2!, [1.0, 0.0], (0.0, 1.0)),
+        SplitODEProblem(f1, f2, [1.0, 0.0], (0.0, 1.0)),
+    )
+    algs = (MREEF(m = 8, order = 4), MRAB(k = 2, m = 8), MRIGARKERK45a(m = 8), MIS(m = 8))
+
+    for prob in probs, alg in algs
+        sol = solve(prob, alg, dt = 1.0e-3, adaptive = false)
+        node = maximum(
+            norm(sol.u[i] - exact(sol.t[i])) / norm(exact(sol.t[i]))
+                for i in 2:length(sol.t)
+        )
+        interp = maximum(
+            begin
+                tm = (sol.t[i] + sol.t[i + 1]) / 2
+                norm(sol(tm) - exact(tm)) / norm(exact(tm))
+            end for i in 1:(length(sol.t) - 1)
+        )
+        @test interp < max(100 * node, 1.0e-7)
     end
 end

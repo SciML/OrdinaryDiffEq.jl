@@ -90,7 +90,7 @@ end
 # Inplace Versions
 
 """
-    DiffEqBase.calculate_residuals!(out, ũ, u₀, u₁, α, ρ, thread=Serial())
+    DiffEqBase.calculate_residuals!(out, ũ, u₀, u₁, α, ρ, thread = Serial())
 
 Save element-wise residuals
 ```math
@@ -124,8 +124,21 @@ end
     return nothing
 end
 
+@inline function calculate_residuals!(
+        out::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
+        ũ::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
+        u₀::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
+        u₁::RecursiveArrayTools.ArrayPartition{<:Any, <:Tuple{Vararg{Array{<:AbstractFloat}}}},
+        α::Number, ρ::Number, internalnorm, t, thread::Union{Serial, Threaded} = Serial()
+    )
+    map(out.x, ũ.x, u₀.x, u₁.x) do o, e, a, b
+        calculate_residuals!(o, e, a, b, α, ρ, internalnorm, t, thread)
+    end
+    return nothing
+end
+
 """
-    calculate_residuals!(out, u₀, u₁, α, ρ, thread=Serial())
+    calculate_residuals!(out, u₀, u₁, α, ρ, thread = Serial())
 
 Save element-wise residuals
 ```math
@@ -147,7 +160,7 @@ with multiple threads.
 end
 
 """
-    calculate_residuals!(out, E₁, E₂, u₀, u₁, α, ρ, δ, scalarnorm, thread=Serial())
+    calculate_residuals!(out, E₁, E₂, u₀, u₁, α, ρ, δ, scalarnorm, thread = Serial())
 
 Calculate element-wise residuals
 ```math

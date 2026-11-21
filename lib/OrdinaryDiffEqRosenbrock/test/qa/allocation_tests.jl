@@ -2,6 +2,7 @@ using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqCore
 using SciMLBase: FullSpecialize
 using AllocCheck
+using StaticArrays
 using Test
 
 @testset "Rosenbrock Allocation Tests" begin
@@ -15,7 +16,7 @@ using Test
 
     rosenbrock_solvers = [
         Rosenbrock23(), Rosenbrock32(), RosShamp4(), Veldd4(), Velds4(), GRK4T(), GRK4A(),
-        Rodas3(), Rodas23W(), Rodas3P(), Rodas4(), Rodas42(), Rodas4P(), Rodas4P2(), Rodas5(),
+        Rodas3(), Rodas3d(), Rodas23W(), Rodas3P(), Rodas4(), Rodas42(), Rodas4P(), Rodas4P2(), Rodas5(),
         Rodas5P(), Rodas5Pe(), Rodas5Pr(), Rodas6P(),
     ]
 
@@ -45,6 +46,26 @@ using Test
                         "$(typeof(solver)) perform_step! appears allocation-free with AllocCheck"
                     )
                 end
+            end
+        end
+    end
+
+    @testset "Out-of-place StaticArrays step! allocations" begin
+        simple_system(u, p, t) = SA[-0.5 * u[1], -1.5 * u[2]]
+        oop_prob = ODEProblem(simple_system, SA[1.0, 1.0], (0.0, 1.0))
+
+        function step_allocations(integrator)
+            step!(integrator)
+            return @allocated step!(integrator)
+        end
+
+        for solver in rosenbrock_solvers
+            @testset "$(typeof(solver))" begin
+                integrator = init(
+                    oop_prob, solver, dt = 0.1, save_everystep = false,
+                    abstol = 1.0e-6, reltol = 1.0e-6
+                )
+                @test step_allocations(integrator) == 0
             end
         end
     end

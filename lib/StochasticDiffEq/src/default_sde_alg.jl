@@ -10,7 +10,7 @@ function get_alg_hints(o)
 end
 
 function default_algorithm(
-        prob::DiffEqBase.AbstractSDEProblem{uType, tType, isinplace, ND};
+        prob::SciMLBase.AbstractSDEProblem{uType, tType, isinplace, ND};
         kwargs...
     ) where {uType, tType, isinplace, ND}
     o = Dict{Symbol, Any}(kwargs)
@@ -68,18 +68,16 @@ end
 
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractSDEProblem, ::Nothing) = true
 
-# Dispatch for __init with Nothing algorithm - use default
-function DiffEqBase.__init(
-        prob::DiffEqBase.AbstractSDEProblem, ::Nothing, args...; kwargs...
+function SciMLBase.__init(
+        prob::SciMLBase.AbstractSDEProblem, ::Nothing, args...; kwargs...
     )
     alg = default_algorithm(prob; kwargs...)
-    return DiffEqBase.__init(prob, alg, args...; kwargs...)
+    return SciMLBase.__init(prob, alg, args...; kwargs...)
 end
 
-# Dispatch for __solve with Nothing algorithm - use default
-function DiffEqBase.__solve(
-        prob::DiffEqBase.AbstractSDEProblem, ::Nothing, args...; kwargs...
+function SciMLBase.__solve(
+        prob::SciMLBase.AbstractSDEProblem, ::Nothing, args...; kwargs...
     )
     alg = default_algorithm(prob; kwargs...)
-    return DiffEqBase.__solve(prob, alg, args...; kwargs...)
+    return SciMLBase.__solve(prob, alg, args...; kwargs...)
 end

@@ -19,7 +19,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
         else
             fz = fsalfirst
             z = f(fz, p, t)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            increment_nf!(integrator.stats, 1)
         end
     else
         z = cache.zprev
@@ -56,7 +56,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
             tmp = fz - cache.du₂
         else
             fz = f(z, p, t)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            increment_nf!(integrator.stats, 1)
             tmp = fz - fsalfirst
         end
         Δ = integrator.opts.internalnorm(tmp, t)
@@ -66,7 +66,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
         if integrator.alg isa IRKCAlgs # To match the constants given in the paper
             if iter >= 2 &&
                     abs(eig_prev - integrator.eigen_est) <
-                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
+                    max(integrator.eigen_est, 1.0 / abs(integrator.opts.dtmax)) * 0.01
                 integrator.eigen_est *= 1.2
                 # Store the eigenvector
                 cache.zprev = z - uprev
@@ -122,7 +122,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         else
             @.. broadcast = false fz = fsalfirst
             f(z, fz, p, t)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            increment_nf!(integrator.stats, 1)
         end
     else
         @.. broadcast = false z = ccache.zprev
@@ -159,7 +159,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
             @.. broadcast = false atmp = fz - cache.du₂
         else
             f(fz, z, p, t)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            increment_nf!(integrator.stats, 1)
             @.. broadcast = false atmp = fz - fsalfirst
         end
         Δ = integrator.opts.internalnorm(atmp, t)
@@ -169,7 +169,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         if integrator.alg isa IRKCAlgs # To match the constants given in the paper
             if iter >= 2 &&
                     abs(eig_prev - integrator.eigen_est) <
-                    max(integrator.eigen_est, 1.0 / integrator.opts.dtmax) * 0.01
+                    max(integrator.eigen_est, 1.0 / abs(integrator.opts.dtmax)) * 0.01
                 integrator.eigen_est *= 1.2
                 # Store the eigenvector
                 @.. broadcast = false ccache.zprev = z - uprev

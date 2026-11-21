@@ -1,16 +1,34 @@
-using Pkg
+using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "SciMLBase reexport" begin
+        using OrdinaryDiffEqExtrapolation, Test
+        exported = (
+            :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
+            :remake, :ReturnCode, :CallbackSet, :ContinuousCallback, :terminate!,
+            :u_modified!, :add_tstop!, :get_du, :EnsembleProblem,
+        )
+        @test all(Base.isexported.(Ref(OrdinaryDiffEqExtrapolation), exported))
+        internal = (
+            :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
+            :StandardODEProblem, :UJacobianWrapper, :LinearProblem,
+            :ConvexOptimizationProblem,
+        )
+        @test !any(Base.isexported.(Ref(OrdinaryDiffEqExtrapolation), internal))
+    end
+    @time @safetestset "Extrapolation Utility Tests" include("utils_tests.jl")
     @time @safetestset "Extrapolation Tests" include("ode_extrapolation_tests.jl")
+    @time @safetestset "Extrapolation In-place Consistency Tests" include("extrapolation_inplace_consistency_tests.jl")
+    @time @safetestset "Extrapolation Time Reversal Tests" include("extrapolation_time_reversal_tests.jl")
+    @time @safetestset "Threading Linear Solver Tests" include("threading_linsolve_tests.jl")
 end
 
 if TEST_GROUP == "Multithreading"

@@ -1,5 +1,3 @@
-import OrdinaryDiffEqCore: nlsolve_f
-
 # nlsolve_f override for ImplicitTauLeaping: return TauLeapingDrift wrapper
 # Uses ODEIntegrator{A} directly since parameterized type aliases don't work.
 function OrdinaryDiffEqCore.nlsolve_f(integrator::OrdinaryDiffEqCore.ODEIntegrator{A}) where {A <: ImplicitTauLeaping}

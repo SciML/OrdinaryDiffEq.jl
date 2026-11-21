@@ -72,6 +72,7 @@ Rosenbrock23
 Rosenbrock32
 ROS3P
 Rodas3
+Rodas3d
 Rodas23W
 Rodas3P
 Rodas4
@@ -82,6 +83,8 @@ Rodas5
 Rodas5P
 Rodas5Pe
 Rodas5Pr
+Rodas4PW
+Rodas6P
 RosenbrockW6S4OS
 ROS2
 ROS2PR

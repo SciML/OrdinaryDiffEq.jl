@@ -27,6 +27,12 @@ for (Alg, desc, refs, is_W) in [
             false,
         ),
         (
+            :Rodas3d,
+            "3rd order L-stable stiffly accurate Rosenbrock method with a 2nd order embedded method,\nconstructed with damping parameter γ = 0.57281606 so that R(±∞) = 0 (damps both stable and\nunstable modes). Since this γ is a root of the 4th-order linear order condition, the method\nis 4th order on linear problems. Designed for steady-state focused DAE integration such as\nthe semi-implicit continuous Newton method, where fast damping toward the equilibrium\nmatters more than trajectory accuracy.",
+            "- Yu, R., Gu, W., Xu, Y., Lu, S. (2024). Semi-implicit Continuous Newton Method\n  for Power Flow Analysis. arXiv:2312.02809. https://arxiv.org/abs/2312.02809",
+            false,
+        ),
+        (
             :Rodas23W,
             "An Order 2/3 L-Stable Rosenbrock-W method for stiff ODEs and DAEs in mass matrix form. 2nd order stiff-aware interpolation and additional error test for interpolation.",
             "- Steinebach G., Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -\n  Preprint 2024. Proceedings of the JuliaCon Conferences.\n  https://proceedings.juliacon.org/papers/eb04326e1de8fa819a3595b376508a40",
@@ -60,6 +66,12 @@ for (Alg, desc, refs, is_W) in [
             :Rodas4P2,
             "A 4th order L-stable stiffly stable Rosenbrock method with a stiff-aware 3rd order interpolant. 4th order\non linear parabolic problems and 3rd order accurate on nonlinear parabolic problems. It is an improvement\nof Rodas4P and in case of inexact Jacobians a second order W method.",
             "- Steinebach G., Improvement of Rosenbrock-Wanner Method RODASP, In: Reis T., Grundel S., Schöps S. (eds) \n  Progress in Differential-Algebraic Equations II. Differential-Algebraic Equations Forum. Springer, Cham., 165-184, 2020.",
+            false,
+        ),
+        (
+            :Rodas4PW,
+            "An adaptation of Rodas4P 4th order L-stable Rosenbrock method into a W-method.",
+            "- Steinebach G., in preparation, 2026.",
             true,
         ),
         (
@@ -72,25 +84,25 @@ for (Alg, desc, refs, is_W) in [
             :Rodas5P,
             "A 5th order A-stable stiffly stable Rosenbrock method with a stiff-aware 4th order interpolant.\nHas improved stability in the adaptive time stepping embedding.",
             "- Steinebach G. Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks\n  within the Julia Differential Equations package.\n  In: BIT Numerical Mathematics, 63(2), 2023. doi:10.1007/s10543-023-00967-x",
-            true,
+            false,
         ),
         (
             :Rodas5Pe,
             "Variant of Rodas5P with modified embedded scheme.",
             "- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -\n  Preprint 2024. Proceedings of the JuliaCon Conferences.\n  https://proceedings.juliacon.org/papers/eb04326e1de8fa819a3595b376508a40",
-            true,
+            false,
         ),
         (
             :Rodas5Pr,
             "Variant of Rodas5P with additional residual control.",
             "- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -\n  Preprint 2024. Proceedings of the JuliaCon Conferences.\n  https://proceedings.juliacon.org/papers/eb04326e1de8fa819a3595b376508a40",
-            true,
+            false,
         ),
         (
             :Rodas6P,
             "A 6th order A-stable stiffly stable Rosenbrock method with a stiff-aware 5th order interpolant.",
             "- Steinebach G. Construction of Rosenbrock–Wanner method Rodas6P.\n  to prepare, 2025",
-            true,
+            false,
         ),
     ]
     # Rosenbrock23/32 are low-order methods typically used on small/warm-up
@@ -98,8 +110,8 @@ for (Alg, desc, refs, is_W) in [
     # Default them to max_jac_age = 1 which effectively disables reuse (the
     # age check in _rosenbrock_jac_reuse_decision triggers every step).
     # Users can still opt into reuse with an explicit max_jac_age kwarg.
-    # Higher-order W-methods (Rodas23W, ROS34PW*, Rodas4P2, Rodas5P/Pe/Pr,
-    # Rodas6P) keep the full reuse default which wins on PDE workloads.
+    # Higher-order W-methods (Rodas23W, ROS34PW*, Rodas4PW)
+    # keep the full reuse default which wins on PDE workloads.
     default_max_jac_age = (Alg === :Rosenbrock23 || Alg === :Rosenbrock32) ? 1 : 20
     @eval begin
         @doc $(
@@ -331,6 +343,55 @@ end
 # HybridExplicitImplicitRK — generic tableau-based hybrid explicit/linear-implicit method
 ################################################################################
 
+"""
+    HybridExplicitImplicitRK(
+        tab; order, autodiff = AutoForwardDiff(),
+        concrete_jac = nothing, linsolve = nothing,
+        step_limiter! = trivial_limiter!, stage_limiter! = trivial_limiter!,
+        max_jac_age = 20, jac_reuse_gamma_tol = 0.03
+    )
+
+Generic tableau-based hybrid explicit/linear-implicit Runge-Kutta method for
+semi-explicit index-1 DAEs. Differential variables are advanced with explicit
+Runge-Kutta stages while algebraic variables are handled by Rosenbrock-type
+linear-implicit stages, so only the algebraic Jacobian block needs
+factorization. For pure ODEs (no algebraic constraints), the method reduces to
+the underlying explicit Runge-Kutta scheme. The tableau `tab` supplies the
+coefficients and `order` the classical order of the pair; `Tsit5DA` is the
+provided instantiation based on the Tsit5 tableau.
+
+The concrete method is determined by the tableau `tab` (e.g. `Tsit5DATableau`)
+together with its adaptive `order`; `Tsit5DA` is the provided instance of this
+algorithm.
+
+# Arguments
+
+  - `tab`: tableau constructor `(T, T2) -> tableau` holding the explicit
+    coefficients, the linear-implicit (Gamma) coefficients, the embedded-error
+    weights, and the dense output coefficients.
+  - `order`: the order of accuracy of the method described by `tab`, used for
+    adaptive time stepping.
+
+# Keyword Arguments
+
+  - `autodiff`: AD backend used for the Jacobian of the algebraic block, an
+    `ADTypes.AbstractADType` (defaults to `AutoForwardDiff()`).
+  - `concrete_jac`: whether a concrete Jacobian is materialized for the linear
+    solver (defaults to `nothing`, letting the linear solver decide).
+  - `linsolve`: LinearSolve.jl algorithm for the linear-implicit stages
+    (defaults to `nothing`, i.e. the default linear solver).
+  - `step_limiter!`, `stage_limiter!`: limiter functions applied after each step
+    / explicit stage (default `trivial_limiter!`).
+  - `max_jac_age`, `jac_reuse_gamma_tol`: Jacobian-reuse tuning knobs shared
+    with the other Rosenbrock algorithm constructors. Jacobian reuse currently
+    activates only for W-methods on non-mass-matrix problems, so for this
+    method the Jacobian is recomputed every step regardless of these values.
+
+References:
+
+  - Steinebach G., Rodas6P and Tsit5DA - two new Rosenbrock-type methods for
+    DAEs. arXiv:2511.21252, 2025.
+"""
 struct HybridExplicitImplicitRK{TabType, AD, F, StepLimiter, StageLimiter, CJ} <:
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
     tab::TabType
@@ -393,3 +454,13 @@ References:
   arXiv:2511.21252, 2025.
 """
 Tsit5DA(; kwargs...) = HybridExplicitImplicitRK(Tsit5DATableau; order = 5, kwargs...)
+
+OrdinaryDiffEqCore.has_stage_limiter(
+    ::Union{
+        GRK4A, GRK4T, ROK4a, ROS2, ROS2PR, ROS2S, ROS3, ROS34PRw, ROS34PW1a, ROS34PW1b,
+        ROS34PW2, ROS34PW3, ROS3P, ROS3PR, ROS3PRL, ROS3PRL2, Rodas23W, Rodas3, Rodas3P,
+        Rodas3d, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas4PW, Rodas5, Rodas5P, Rodas5Pe,
+        Rodas5Pr, Rodas6P, Ros4LStab, RosShamp4, Rosenbrock23, Rosenbrock32,
+        RosenbrockW6S4OS, Scholz4_7, Veldd4, Velds4,
+    },
+) = true

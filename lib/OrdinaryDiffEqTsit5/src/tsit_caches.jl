@@ -1,7 +1,4 @@
-@cache struct Tsit5Cache{
-        uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
-        Thread,
-    } <: OrdinaryDiffEqMutableCache
+@cache mutable struct Tsit5Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -18,6 +15,20 @@
     step_limiter!::StepLimiter
     thread::Thread
 end
+
+# `@cache struct` expands to the struct plus a `full_cache` method, which a docstring
+# on the macrocall cannot wrap, so the docstring attaches to the type binding here.
+"""
+    Tsit5Cache <: OrdinaryDiffEqMutableCache
+
+In-place solver cache for the Tsitouras 5(4) method (`Tsit5`), holding its stage
+buffers `k1`…`k7`, temporaries, embedded-error buffer, and the stage/step limiters
+and threading option. Declared public so other sublibraries can reuse the `Tsit5`
+step.
+"""
+Tsit5Cache
+
+@truncate_stacktrace Tsit5Cache 1
 
 function alg_cache(
         alg::Tsit5, u, rate_prototype, ::Type{uEltypeNoUnits},

@@ -1,3 +1,10 @@
+"""
+    Wiktorsson()
+
+Wiktorsson's Fourier-series Lévy-area approximation with a Gaussian tail-sum
+correction. Its truncation error has convergence order ``1`` in the number of
+retained Fourier terms.
+"""
 struct Wiktorsson <: AbstractIteratedIntegralAlgorithm end
 
 convorder(::Wiktorsson) = 1 // 1

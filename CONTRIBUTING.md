@@ -39,7 +39,30 @@ which relies on OrdinaryDiffEqCore.
 Each sublibrary declares its CI jobs through `test/test_groups.toml`. Groups listed there
 (e.g. `Core`, `QA`, `GPU`, `ModelingToolkit`) become matrix entries dispatched by
 `.github/scripts/compute_affected_sublibraries.jl`. The group name is passed to the
-sublibrary's `test/runtests.jl` via `ENV["ODEDIFFEQ_TEST_GROUP"]`.
+sublibrary's `test/runtests.jl` via `ENV["GROUP"]`.
+
+### Skipping a group on dependency-graph triggers (`local_only`)
+
+By default, when an upstream sublibrary's source changes, every reverse-dependent
+sublibrary is added to the matrix and its full set of test groups runs (on Julia 1
+only). For groups that are too expensive to justify running on every upstream change —
+for example the weak-convergence Monte-Carlo tests in `StochasticDiffEqWeak`,
+`StochasticDiffEq`, and `StochasticDiffEqROCK` — set `local_only = true` in the
+group's entry:
+
+```toml
+[WeakConvergence2]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "high-memory"]
+timeout = 300
+local_only = true
+```
+
+`local_only` groups still run whenever any file under this sublibrary's own
+`lib/<pkg>/` directory is edited (a "direct" trigger). They are skipped only when
+the sublibrary lands in the matrix transitively because an upstream dependency
+changed. Use this for groups whose value scales with this sublibrary's solvers,
+not with upstream behavior.
 
 ### Per-group test environments
 
@@ -49,8 +72,7 @@ activates that environment before running the group's tests:
 
 ```julia
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = dirname(@__DIR__))
 end
 
 if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
@@ -61,7 +83,7 @@ if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
 end
 ```
 
-This pattern is the standard for the `QA` (JET + Aqua + AllocCheck) and `GPU` groups.
+This pattern is the standard for the `QA` (JET + Aqua + AllocCheck) group.
 Use it for any new group whose dependencies shouldn't leak into the main test env or
 into reverse-dependency resolution.
 
@@ -70,6 +92,6 @@ Two conventions that keep this working:
  1. Heavy test-only deps (JET, Aqua, AllocCheck, CUDA, MTK, …) live **only** in
     `test/<group>/Project.toml`, not in the sublibrary's `[extras]`. Do not rely on
     `Pkg.add` from inside a test file.
- 2. `test/<group>/Project.toml` uses relative `[sources]` paths (e.g.
-    `path = "../.."` for the sublibrary itself, `path = "../../../OrdinaryDiffEqCore"`
-    for internal deps) so that the isolated env resolves against the in-tree sources.
+  2. `test/<group>/Project.toml` declares the group-specific dependencies. The QA
+     environment itself is developed by `activate_group_env`, so it does not need
+     a self-source entry for the sublibrary under test.

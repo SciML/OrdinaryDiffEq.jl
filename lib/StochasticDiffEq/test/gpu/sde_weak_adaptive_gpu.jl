@@ -7,8 +7,8 @@ function weak_error(
         abstol = 1, reltol = 0, ensemblealg = EnsembleCPUArray()
     )
     sol = @time solve(
-        prob, alg, ensemblealg,
-        dt = 0.01f0, adaptive = true, abstol = abstol, reltol = reltol,
+        prob, alg, ensemblealg;
+        dt = 0.01f0, adaptive = true, abstol, reltol,
         trajectories = numtraj, batch_size = batchsize,
         saveat = trange
     )
@@ -17,7 +17,8 @@ function weak_error(
     return sum((computed_exp - true_exp) .^ 2) / length(trange)
 end
 
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     #(i%50000 == 0) && @show i
     return remake(prob, seed = seeds[i])
 end
@@ -26,7 +27,8 @@ function reduction(u, batch, I)
     return u .+ sum(batch), false
 end
 
-function output_func(sol, i)
+function output_func(sol, ctx)
+    i = ctx.sim_id
     #h1(asinh(sol.u[end][1])),false
     return h1.(asinh.(sol)), false
 end
@@ -55,9 +57,9 @@ f_true1(t) = t^3 - 3 * t^2 + 2 * t
 prob1 = SDEProblem(f1!, g1!, u₀, tspan)
 ensemble_prob1 = EnsembleProblem(
     prob1;
-    output_func = output_func,
-    prob_func = prob_func,
-    reduction = reduction,
+    output_func,
+    prob_func,
+    reduction,
     u_init = Vector{eltype(prob1.u0)}([0.0]),
     safetycopy = false
 )
@@ -86,9 +88,9 @@ h2(z) = z #z^2
 prob2 = SDEProblem(f2!, g2!, u₀, tspan)
 ensemble_prob2 = EnsembleProblem(
     prob2;
-    output_func = (sol, i) -> (h2.(sol), false),
-    prob_func = prob_func,
-    reduction = reduction,
+    output_func = (sol, ctx) -> (h2.(sol), false),
+    prob_func,
+    reduction,
     u_init = Vector{eltype(prob2.u0)}([0.0, 0.0]),
     safetycopy = false
 )

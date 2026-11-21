@@ -1,6 +1,11 @@
+using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
+
+function activate_qa_env()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
+end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
     @time @safetestset "Module loads and constructors" begin
@@ -87,6 +92,12 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "IRI1WeakConvergence"
     end
 end
 
+if TEST_GROUP == "ALL" || TEST_GROUP == "WeakOOPRegression"
+    @time @safetestset "Out-of-place weak SDE regression" begin
+        include("weak_convergence/oop_weak_regression.jl")
+    end
+end
+
 if TEST_GROUP == "ALL" || TEST_GROUP == "WeakAdaptiveCPU"
     @time @safetestset "CPU Weak adaptive" begin
         include("adaptive/sde_weak_adaptive.jl")
@@ -94,4 +105,10 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "WeakAdaptiveCPU"
     @time @safetestset "CPU Weak adaptive step size Brusselator" begin
         include("adaptive/sde_weak_brusselator_adaptive.jl")
     end
+end
+
+# Run QA tests (Aqua, JET) - skip on pre-release Julia
+if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
+    activate_qa_env()
+    @time @safetestset "QA (Aqua and JET)" include("qa/qa.jl")
 end

@@ -1,8 +1,7 @@
-using OrdinaryDiffEqSymplecticRK
-using Aqua
+using SciMLTesting, OrdinaryDiffEqSymplecticRK, Test
 
-@testset "Aqua" begin
-    Aqua.test_all(
-        OrdinaryDiffEqSymplecticRK
-    )
-end
+run_qa(
+    OrdinaryDiffEqSymplecticRK;
+    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
+    explicit_imports = true,
+)

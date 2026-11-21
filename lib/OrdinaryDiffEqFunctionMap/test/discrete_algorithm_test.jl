@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqFunctionMap: FunctionMap
+using OrdinaryDiffEqLowOrderRK: Euler
 using SciMLBase: DiscreteProblem, DiscreteFunction
 using ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
@@ -60,4 +62,18 @@ end
     sol3 = solve(prob3, FunctionMap())
 
     @test sol3.u == [[0, 0], [1, 1], [2, 3], [3, 6], [4, 10], [5, 15]]
+end
+
+@testset "FunctionMap keyword validation" begin
+    current_limiter!(u, integrator, p, t) = nothing
+    legacy_limiter!(u, integrator, p, t) = nothing
+
+    @test FunctionMap(step_limiter = current_limiter!).step_limiter! === current_limiter!
+    @test FunctionMap(; step_limiter! = legacy_limiter!).step_limiter! === legacy_limiter!
+    @test_throws ArgumentError("Unsupported keyword argument(s): (:unsupported,)") FunctionMap(
+        unsupported = true
+    )
+    @test_throws ArgumentError(
+        "Unsupported keyword argument(s): (:unsupported, :also_unsupported)"
+    ) FunctionMap(unsupported = true, also_unsupported = true)
 end

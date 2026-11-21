@@ -83,7 +83,8 @@ sol = solve(prob, DynamicSS(Tsit5()))
 
 using NonlinearSolve
 function unsat(du, u, p)
-    return du[1] = 1
+    du[1] = 1
+    return
 end
 unsat_f = NonlinearFunction(unsat; resid_prototype = zeros(1))
 unsatprob = NonlinearLeastSquaresProblem(unsat_f, nothing)

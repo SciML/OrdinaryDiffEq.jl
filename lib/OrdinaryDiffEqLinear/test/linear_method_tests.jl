@@ -1,6 +1,7 @@
 using OrdinaryDiffEqLinear, Test, DiffEqDevTools
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqVerner, OrdinaryDiffEqTsit5
-using LinearAlgebra, Random
+using LinearAlgebra, Random, SparseArrays, Unitful
+using SciMLOperators: MatrixOperator
 
 # Linear exponential solvers
 A = MatrixOperator([2.0 -1.0; -1.0 2.0])
@@ -19,14 +20,35 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 @test isapprox(sol3, sol_analytic, rtol = 1.0e-10)
 @test isapprox(sol4, sol_analytic, rtol = 1.0e-8)
 
+# Adaptive LinearExponential must not require `opnorm` on the operator: it feeds
+# ExponentialUtilities an explicit abstol and initial tau instead. Wrap the
+# operator in a type whose `opnorm` throws to guard against regressions (some
+# operator types, e.g. sparse GPU matrices, do not support `opnorm`).
+struct BrokenOpnormMatrix{T, M <: AbstractMatrix{T}} <: AbstractMatrix{T}
+    A::M
+end
+Base.size(A::BrokenOpnormMatrix) = size(A.A)
+Base.getindex(A::BrokenOpnormMatrix, I...) = getindex(A.A, I...)
+LinearAlgebra.mul!(y::AbstractVecOrMat, A::BrokenOpnormMatrix, x::AbstractVecOrMat) =
+    mul!(y, A.A, x)
+LinearAlgebra.ishermitian(A::BrokenOpnormMatrix) = ishermitian(A.A)
+LinearAlgebra.opnorm(::BrokenOpnormMatrix, ::Real) =
+    error("opnorm intentionally unsupported")
+
+A_broken = MatrixOperator(BrokenOpnormMatrix([2.0 -1.0; -1.0 2.0]))
+prob_broken = ODEProblem(A_broken, copy(u0), (0.0, 1.0))
+sol_broken = solve(prob_broken, LinearExponential(krylov = :adaptive))(1.0)
+@test isapprox(sol_broken, sol_analytic, rtol = 1.0e-6)
+
 # u' = A(t)u solvers
 function update_func!(A, u, p, t)
     A[1, 1] = 0
     A[2, 1] = sin(u[1])
     A[1, 2] = -1
-    return A[2, 2] = 0
+    A[2, 2] = 0
+    return
 end
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (10, 50.0))
 sol1 = solve(prob, Vern9(), dt = 1 / 4)
 sol2 = solve(prob, RKMK2(), dt = 1 / 4)
@@ -35,7 +57,7 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, RKMK2(), test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0, 30.0))
 sol1 = solve(prob, Vern9(), dt = 1 / 4)
 sol2 = solve(prob, RKMK4(), dt = 1 / 4)
@@ -44,7 +66,7 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, RKMK4(), test_setup)
 @test sim.𝒪est[:l2] ≈ 4 atol = 0.22
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0, 30.0))
 sol1 = solve(prob, Vern9(), dt = 1 / 4)
 sol2 = solve(prob, LieRK4(), dt = 1 / 4)
@@ -53,7 +75,7 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, LieRK4(), test_setup)
 @test sim.𝒪est[:l2] ≈ 5 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0, 30.0))
 sol1 = solve(prob, Vern9(), dt = 1 / 4)
 sol2 = solve(prob, CG2(), dt = 1 / 4)
@@ -62,7 +84,7 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, CG2(), test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0, 20.0))
 sol1 = solve(prob, Vern6(), dt = 1 / 8)
 sol2 = solve(prob, CG3(), dt = 1 / 8)
@@ -71,22 +93,40 @@ test_setup = Dict(:alg => Vern6(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, CG3(), test_setup)
 @test sim.𝒪est[:l2] ≈ 3 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
-prob = ODEProblem(A, ones(2), (0, 30.0))
-sol1 = solve(prob, Vern9(), dt = 1 / 4)
-sol2 = solve(prob, CG4a(), dt = 1 / 4)
-dts = (0.38) .^ (6:-1:1)
+# CG4a is a commutator-free Magnus method, derived for `u' = A(t) u`. It is fourth order
+# there, and this measures that on a non-commuting `A(t)`.
+function cg4a_time_dependent!(A, u, p, t)
+    A[1, 1] = 0
+    A[2, 1] = sin(t)
+    A[1, 2] = -1
+    A[2, 2] = 0
+    return
+end
+A = MatrixOperator(ones(2, 2); update_func! = cg4a_time_dependent!)
+prob = ODEProblem(A, ones(2), (0, 5.0))
+dts = 1 ./ 2 .^ (7:-1:2)
 test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 sim = analyticless_test_convergence(dts, prob, CG4a(), test_setup)
-@test sim.𝒪est[:l2] ≈ 4 atol = 0.28
+@test sim.𝒪est[:l2] ≈ 4 atol = 0.1
+
+# On the state-dependent `A(u)` above it drops to third order, which is the usual order
+# reduction for a Lie group method outside the problem class it was derived for. This grid is
+# inside the asymptotic regime; the previous one reached dt = 0.38, where the error is 24 and
+# the least-squares slope is a fit to the pre-asymptotic tail rather than an order (#3466).
+A = MatrixOperator(ones(2, 2); update_func!)
+prob = ODEProblem(A, ones(2), (0, 30.0))
+dts = 1 ./ 2 .^ (11:-1:8)
+sim = analyticless_test_convergence(dts, prob, CG4a(), test_setup)
+@test sim.𝒪est[:l2] ≈ 3 atol = 0.1
 
 function update_func!(A, u, p, t)
     A[1, 1] = 0
     A[2, 1] = 1
     A[1, 2] = -2 * (1 - cos(u[2]) - u[2] * sin(u[2]))
-    return A[2, 2] = 0
+    A[2, 2] = 0
+    return
 end
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (30, 150.0))
 dts = 1 ./ 2 .^ (7:-1:1)
 test_setup = Dict(:alg => Tsit5(), :reltol => 1.0e-14, :abstol => 1.0e-14)
@@ -97,9 +137,10 @@ function update_func!(A, u, p, t)
     A[1, 1] = cos(t)
     A[2, 1] = sin(t)
     A[1, 2] = -sin(t)
-    return A[2, 2] = cos(t)
+    A[2, 2] = cos(t)
+    return
 end
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0.0, 5.0))
 dts = 1 ./ 2 .^ (10:-1:1)
 sol = solve(prob, MagnusMidpoint(), dt = 1 / 4)
@@ -111,7 +152,7 @@ sim = analyticless_test_convergence(dts, prob, MagnusMidpoint(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusMidpoint(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0.0, 5.0))
 dts = 1 ./ 2 .^ (10:-1:1)
 sol = solve(prob, MagnusLeapfrog(), dt = 1 / 4)
@@ -123,7 +164,7 @@ sim = analyticless_test_convergence(dts, prob, MagnusLeapfrog(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusLeapfrog(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0.5, 5.0))
 dts = 1 ./ 2 .^ (10:-1:1)
 sol = solve(prob, LieEuler(), dt = 1 / 4)
@@ -135,7 +176,7 @@ sim = analyticless_test_convergence(dts, prob, LieEuler(), test_setup)
 sim = analyticless_test_convergence(dts, prob, LieEuler(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (1.0, 6.0))
 dts = 1 ./ 2 .^ (10:-1:1)
 sol = solve(prob, MagnusGauss4(), dt = 1 / 4)
@@ -147,7 +188,33 @@ sim = analyticless_test_convergence(dts, prob, MagnusGauss4(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusGauss4(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 4 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+# The A(t) = cos(t) I + sin(t) J above commutes with itself, so it cannot see the sign of
+# MagnusGauss4's commutator term (#4965). A(t) = R(t) A0 R(t)ᵀ with R(t) = exp(tJ) and
+# A0 = [1 0; 0 -1] does not commute; in the frame rotating with R(t) the generator is the
+# nilpotent A0 - J, so u(t) = R(t) (I + t (A0 - J)) u0. Dense operators use the preallocated
+# stages and `Tridiagonal`/sparse ones the out-of-place path.
+function gauss4_noncommuting!(A, u, p, t)
+    A[1, 1] = cos(2t)
+    A[2, 1] = sin(2t)
+    A[1, 2] = sin(2t)
+    A[2, 2] = -cos(2t)
+    return
+end
+gauss4_analytic(u0, p, t) = [cos(t) -sin(t); sin(t) cos(t)] * [1 + t t; -t 1 - t] * u0
+dts = 1 ./ 2 .^ (6:-1:2)
+@testset "MagnusGauss4 order, non-commuting A(t), $(nameof(M)) krylov=$(alg.krylov)" for (M, alg) in (
+        (Matrix, MagnusGauss4()),
+        (Matrix, MagnusGauss4(krylov = true)),
+        (Tridiagonal, MagnusGauss4()),
+        (sparse, MagnusGauss4(krylov = true)),
+    )
+    A = MatrixOperator(M(ones(2, 2)); update_func! = gauss4_noncommuting!)
+    prob = ODEProblem(ODEFunction(A; analytic = gauss4_analytic), ones(2), (0.0, 2.0))
+    sim = test_convergence(dts, prob, alg)
+    @test sim.𝒪est[:l2] ≈ 4 atol = 0.1
+end
+
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (1.0, 6.0))
 dts = 1 ./ 2 .^ (4:-1:1)
 test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
@@ -156,7 +223,7 @@ sim = analyticless_test_convergence(dts, prob, MagnusNC6(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusNC6(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 6 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (1.0, 6.0))
 sol = solve(prob, MagnusGL6(), dt = 1 / 10)
 dts = 1 ./ 2 .^ (4:-1:1)
@@ -166,7 +233,7 @@ sim = analyticless_test_convergence(dts, prob, MagnusGL6(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusGL6(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 6 atol = 0.3
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0.0, 100.0))
 dts = 1.775 .^ (5:-1:0)
 test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
@@ -175,7 +242,7 @@ sim = analyticless_test_convergence(dts, prob, MagnusGL8(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusGL8(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 8 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0.0, 100.0))
 dts = 1.773 .^ (5:-1:0)
 test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
@@ -184,7 +251,7 @@ sim = analyticless_test_convergence(dts, prob, MagnusNC8(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusNC8(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 8 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (1.0, 6.0))
 dts = 1 ./ 2 .^ (7:-1:1)
 test_setup = Dict(:alg => Vern6(), :reltol => 1.0e-14, :abstol => 1.0e-14)
@@ -193,7 +260,7 @@ sim = analyticless_test_convergence(dts, prob, MagnusGL4(), test_setup)
 sim = analyticless_test_convergence(dts, prob, MagnusGL4(krylov = true), test_setup)
 @test sim.𝒪est[:l2] ≈ 4 atol = 0.2
 
-A = MatrixOperator(ones(2, 2), update_func! = update_func!)
+A = MatrixOperator(ones(2, 2); update_func!)
 prob = ODEProblem(A, ones(2), (0, 20.0))
 sol1 = solve(prob, Vern6(), dt = 1 / 8)
 sol2 = solve(prob, CG3(), dt = 1 / 8)
@@ -234,8 +301,8 @@ end
 
 η = diagm([1.0, 2, 3, 4, 5])
 A = MatrixOperator(
-    Matrix{eltype(η)}(I(size(η, 1))), update_func = update_func,
-    update_func! = update_func!
+    Matrix{eltype(η)}(I(size(η, 1))); update_func,
+    update_func!
 )
 dts = 1 ./ 2 .^ (10:-1:2)
 tspan = (0.0, 20.0)
@@ -267,3 +334,41 @@ test_setup = Dict(:alg => Vern9(), :reltol => 1.0e-14, :abstol => 1.0e-14)
 
 sim = analyticless_test_convergence(dts, prob, CayleyEuler(), test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol = 0.2
+
+@testset "MagnusNC6 and MagnusGauss4 operator matrix types" begin
+    Au = [-0.1 0.0; 0.0 -0.2]
+    prob_unitful = ODEProblem(MatrixOperator(Au), [1.0, 2.0]u"m", (0.0, 1.0))
+    @testset "unitful state, $(nameof(typeof(alg)))" for alg in (MagnusNC6(), MagnusGauss4())
+        sol = solve(prob_unitful, alg; dt = 0.1, adaptive = false)
+        @test sol.retcode == ReturnCode.Success
+        @test ustrip.(u"m", sol.u[end]) ≈ exp(Au) * [1.0, 2.0]
+    end
+
+    function tridiag_update!(A, u, p, t)
+        for j in axes(A, 2), i in max(1, j - 1):min(size(A, 1), j + 1)
+            A[i, j] = i == j ? -0.1 * i : (i < j ? 0.01 : 0.01 * sin(t))
+        end
+        return nothing
+    end
+    N = 300
+    pattern = spdiagm(-1 => ones(N - 1), 0 => ones(N), 1 => ones(N - 1))
+    tridiag_prob(A) = ODEProblem(
+        MatrixOperator(A; update_func! = tridiag_update!), ones(N), (0.0, 0.1)
+    )
+    prob_dense = tridiag_prob(Matrix(pattern))
+    @testset "$(nameof(typeof(A))) operator, $(nameof(typeof(alg))) krylov=$(alg.krylov)" for (A, alg) in (
+            (pattern, MagnusNC6(krylov = true)),
+            (pattern, MagnusGauss4(krylov = true)),
+            (Tridiagonal(Matrix(pattern)), MagnusNC6()),
+            (Tridiagonal(Matrix(pattern)), MagnusGauss4()),
+        )
+        integrator = init(tridiag_prob(A), alg; dt = 0.01, adaptive = false)
+        if A isa SparseMatrixCSC
+            # The cache already holds one dense N×N matrix (`W`); the stages must not add more.
+            @test Base.summarysize(integrator.cache) < 2 * N^2 * sizeof(Float64)
+        end
+        solve!(integrator)
+        sol_dense = solve(prob_dense, alg; dt = 0.01, adaptive = false)
+        @test integrator.sol.u[end] ≈ sol_dense.u[end] rtol = 1.0e-12
+    end
+end

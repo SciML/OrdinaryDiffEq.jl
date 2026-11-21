@@ -20,10 +20,10 @@ qsteady_max_default(alg::QNDF1) = 2 // 1
 qsteady_max_default(alg::FBDF) = 2 // 1
 
 get_current_alg_order(alg::QNDF, cache) = cache.order
-get_current_alg_order(alg::FBDF, cache) = cache.order
+get_current_alg_order(alg::FBDF, cache) = cache.filter_order > 0 ? cache.filter_order : cache.order
 
 get_current_adaptive_order(alg::QNDF, cache) = cache.order
-get_current_adaptive_order(alg::FBDF, cache) = cache.order
+get_current_adaptive_order(alg::FBDF, cache) = cache.filter_order > 0 ? cache.filter_order : cache.order
 
 isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
@@ -47,3 +47,19 @@ alg_order(alg::DFBDF) = 1 #dummy value
 isfsal(alg::DImplicitEuler) = false
 
 has_stiff_interpolation(::Union{QNDF, FBDF, DFBDF}) = true
+
+############################################ NordsieckBDF / DNordsieckBDF
+alg_order(alg::NordsieckBDF) = 1  # dummy: the running order lives in the cache
+alg_order(alg::DNordsieckBDF) = 1
+isadaptive(alg::DNordsieckBDF) = true
+get_current_alg_order(alg::NordsieckBDFAlgs, cache) = cache.order
+get_current_adaptive_order(alg::NordsieckBDFAlgs, cache) = cache.order
+has_stiff_interpolation(::NordsieckBDFAlgs) = true
+
+# The Newton increment norm is scaled by tq[2], which converts it into the units of
+# the local error test. That makes `NLNewton(κ = ...)` mean CVODE's NLSCOEF: the
+# fraction of the error-test budget the corrector may consume.
+has_special_newton_error(alg::NordsieckBDFAlgs) = true
+
+
+# The step-size logic is CVODE's (`cvSetEta` keeps h unless eta >= 1.5), so the

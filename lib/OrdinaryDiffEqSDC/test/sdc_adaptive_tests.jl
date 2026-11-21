@@ -1,0 +1,125 @@
+using OrdinaryDiffEqSDC
+using SciMLBase
+using Test
+
+rotation!(du, u, p, t) = (du[1] = -u[2]; du[2] = u[1]; nothing)
+const ROTATION = ODEProblem(rotation!, [1.0, 0.0], (0.0, 2 * π))
+rotation_exact(t) = [cos(t), sin(t)]
+
+final_error(sol) = maximum(abs.(sol.u[end] .- rotation_exact(sol.t[end])))
+
+@testset "SDC adaptive order bookkeeping" begin
+    # The embedded solution is the step update one sweep earlier.
+    for K in 1:5
+        alg = SDC(num_nodes = 4, num_sweeps = K)
+        @test OrdinaryDiffEqSDC.alg_adaptive_order(alg) ==
+            max(1, OrdinaryDiffEqSDC.alg_order(alg) - 1)
+        @test SciMLBase.isadaptive(alg)
+    end
+    @test !SciMLBase.isadaptive(SDC(num_sweeps = 0))
+    @test_throws ArgumentError solve(ROTATION, SDC(num_sweeps = 0))
+    # With a `dt`, zero sweeps is forward Euler.
+    @test solve(ROTATION, SDC(num_sweeps = 0); dt = 0.1).u[2] ≈ [1.0, 0.1]
+end
+
+@testset "SDC honours the requested tolerance" begin
+    alg = SDC(num_nodes = 3, num_sweeps = 3)
+    errors = Float64[]
+    steps = Int[]
+    for tol in (1.0e-4, 1.0e-6, 1.0e-8)
+        sol = solve(ROTATION, alg; abstol = tol, reltol = tol)
+        @test SciMLBase.successful_retcode(sol)
+        push!(errors, final_error(sol))
+        push!(steps, length(sol.t) - 1)
+        # A factor of 100 leaves room for the estimator being a local one while
+        # the measurement is a global error.
+        @test errors[end] < 100 * tol
+    end
+    @test issorted(errors, rev = true)
+    @test issorted(steps)
+end
+
+@testset "SDC adaptive reuses Jacobians across sweeps" begin
+    # Fixed step size makes the library refactorise on every nonlinear solve
+    # (`do_newJW`: `!integrator.opts.adaptive && return true, true`), which for
+    # SDC is one per node per sweep; adaptive steps reuse instead.
+    alg = SDC(num_nodes = 3, num_sweeps = 3)
+    adaptive = solve(ROTATION, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+    nsteps = length(adaptive.t) - 1
+    fixed = solve(ROTATION, alg; dt = (2 * π) / nsteps, adaptive = false)
+
+    @test fixed.stats.njacs == nsteps * alg.num_nodes * alg.num_sweeps
+    @test adaptive.stats.njacs < nsteps
+    @test adaptive.stats.nw < fixed.stats.nw / 10
+end
+
+@testset "SDC adaptive reuses W across the sweeps of a step" begin
+    # With `fast_convergence_cutoff = 0` W is rebuilt exactly when a solve is marked
+    # as the first stage, and the first step rebuilds on every solve.
+    vdp(u, p, t) = [u[2], p * ((1 - u[1]^2) * u[2]) - u[1]]
+    vdp!(du, u, p, t) = (du .= vdp(u, p, t); nothing)
+    alg = SDC(
+        num_nodes = 3, num_sweeps = 4,
+        nlsolve = OrdinaryDiffEqSDC.NLNewton(fast_convergence_cutoff = 0)
+    )
+    for f in (vdp, vdp!)
+        prob = ODEProblem(f, [2.0, 0.0], (0.0, 3.0), 1000.0)
+        sol = solve(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6)
+        @test SciMLBase.successful_retcode(sol)
+        attempts = sol.stats.naccept + sol.stats.nreject
+        @test sol.stats.nw <= alg.num_nodes * (attempts + alg.num_sweeps)
+    end
+end
+
+@testset "SDC adaptive out-of-place" begin
+    prob = ODEProblem((u, p, t) -> [-u[2], u[1]], [1.0, 0.0], (0.0, 2 * π))
+    sol = solve(prob, SDC(num_nodes = 3, num_sweeps = 3); abstol = 1.0e-8, reltol = 1.0e-8)
+    @test SciMLBase.successful_retcode(sol)
+    @test maximum(abs.(sol.u[end] .- rotation_exact(sol.t[end]))) < 1.0e-6
+end
+
+@testset "SDC adaptive on a stiff problem needs a converged iteration" begin
+    # The estimate is the difference between two sweeps, so it measures how far
+    # the iteration is from the collocation solution rather than how far that
+    # solution is from the truth. On a stiff problem the iteration converges
+    # slowly, so too few sweeps make the estimate — not the accuracy — set the
+    # step size. Enough sweeps and the step size is accuracy limited again.
+    prothero_robinson = ODEProblem(
+        (u, p, t) -> -1.0e4 * (u - cos(t)) - sin(t), 1.0, (0.0, 1.0)
+    )
+    solve_with(K) = solve(
+        prothero_robinson,
+        SDC(num_nodes = 3, num_sweeps = K, sweeper = SDCSweeper.LU);
+        abstol = 1.0e-8, reltol = 1.0e-8
+    )
+    few, many = solve_with(3), solve_with(8)
+    for sol in (few, many)
+        @test SciMLBase.successful_retcode(sol)
+        @test maximum(abs(u - cos(t)) for (u, t) in zip(sol.u, sol.t)) < 1.0e-6
+    end
+    @test length(many.t) < length(few.t) / 10
+    @test many.stats.nsolve < few.stats.nsolve / 10
+end
+
+@testset "SDC rejects a step whose node solve failed" begin
+    # Only defined for u > -1000, which a diverged Newton iterate leaves far behind.
+    f!(du, u, p, t) = (du[1] = -100 * u[1]^3 + 1.0e-3 * sqrt(u[1] + 1000); nothing)
+    prob = ODEProblem(f!, [2.0], (0.0, 1.0))
+    for sweeper in (SDCSweeper.LU, SDCSweeper.BE)
+        sol = solve(prob, SDC(num_nodes = 3, num_sweeps = 4, sweeper = sweeper); dt = 0.1)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.stats.nnonlinconvfail > 0
+        @test sol.u[end][1] ≈ 0.08253 rtol = 1.0e-3
+    end
+    # The explicit part is only defined for u < 10, which a failed iterate passes.
+    split = SplitODEProblem(
+        (du, u, p, t) -> (du[1] = -100 * u[1]^3; nothing),
+        (du, u, p, t) -> (du[1] = 1.0e-3 * sqrt(10 - u[1]); nothing), [2.0], (0.0, 1.0)
+    )
+    for sweeper in (SDCSweeper.LU, SDCSweeper.MIN_SR_S)
+        sol = solve(split, SDC(num_nodes = 3, num_sweeps = 4, sweeper = sweeper); dt = 0.1)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.stats.nnonlinconvfail > 0
+        @test sol.u[end][1] ≈ 0.07192 rtol = 1.0e-3
+    end
+end

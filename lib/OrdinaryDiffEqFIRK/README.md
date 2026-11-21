@@ -6,7 +6,7 @@
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor%27s%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
-OrdinaryDiffEqFIRK.jl is a component of the [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl) monorepo. Fully Implicit Runge-Kutta methods (Radau IIA family) for stiff problems.
+OrdinaryDiffEqFIRK.jl is a component of the [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl) monorepo. It provides fully implicit Runge-Kutta (FIRK) methods, including the Radau IIA family for stiff problems and Gauss–Legendre methods for conservative problems
 While completely independent and usable on its own, users wanting the full ODE solver suite should use [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl).
 
 ## Solvers
@@ -15,5 +15,6 @@ While completely independent and usable on its own, users wanting the full ODE s
 - `RadauIIA5`
 - `RadauIIA9`
 - `AdaptiveRadau`
+- `GaussLegendre`
 
 For a full description of the solvers and their options, see the [ODE solver documentation](https://docs.sciml.ai/DiffEqDocs/stable/).

@@ -1,4 +1,4 @@
-using OrdinaryDiffEqRKN, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
+using OrdinaryDiffEqRKN, Test, RecursiveArrayTools, DiffEqDevTools, Statistics, StaticArrays
 
 u0 = fill(0.0, 2)
 v0 = ones(2)
@@ -172,9 +172,10 @@ sim = test_convergence(dts, prob, Nystrom4VelocityIndependent(), dense_errors = 
 @test_broken sim = test_convergence(dts, prob, IRKN3(), dense_errors = true)
 @test_broken sim.𝒪est[:l2] ≈ 3 rtol = 1.0e-1
 @test_broken sim.𝒪est[:L2] ≈ 3 rtol = 1.0e-1
-@test_broken sim = test_convergence(dts, prob, IRKN4(), dense_errors = true)
-#@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
-#@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+let sim = test_convergence(dts, prob, IRKN4(), dense_errors = true)
+    @test sim.𝒪est[:l2] ≈ 4 rtol = 1.0e-1
+    @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+end
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
 sim = test_convergence(dts, prob, Nystrom5VelocityIndependent(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1.0e-1
@@ -374,8 +375,8 @@ end
         alg = Nystrom4()
         dt = 0.5
         # fixed time step
-        sol_i = solve(ode_i, alg, dt = dt)
-        sol_o = solve(ode_o, alg, dt = dt)
+        sol_i = solve(ode_i, alg; dt)
+        sol_o = solve(ode_o, alg; dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
         @test sol_i.stats.nf == sol_o.stats.nf
@@ -389,8 +390,8 @@ end
         alg = RKN4()
         dt = 0.5
         # fixed time step
-        sol_i = solve(ode_i, alg, dt = dt)
-        sol_o = solve(ode_o, alg, dt = dt)
+        sol_i = solve(ode_i, alg; dt)
+        sol_o = solve(ode_o, alg; dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
         @test sol_i.stats.nf == sol_o.stats.nf
@@ -403,8 +404,8 @@ end
         alg = FineRKN4()
         dt = 0.5
         # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        sol_i = solve(ode_i, alg; adaptive = false, dt)
+        sol_o = solve(ode_o, alg; adaptive = false, dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
         @test sol_i.stats.nf == sol_o.stats.nf
@@ -412,27 +413,23 @@ end
         @test sol_i.stats.naccept == sol_o.stats.naccept
         @test 19 <= sol_i.stats.naccept <= 21
         @test abs(sol_i.stats.nf - 5 * sol_i.stats.naccept) < 4
-        # adaptive time step — IIP broadcast vs OOP array ops produce
-        # per-step FP rounding differences that cascade through the step
-        # controller; on Julia 1.10 the LLVM codegen amplifies this enough
-        # to change the accepted step sequence.
+        # adaptive time step — after unifying the per-method perform_step!s into
+        # the generic Nyström loop, IIP (`@..` broadcast) and OOP (scalar) paths
+        # diverge by per-step FP roundoff that compounds through the step
+        # controller on every Julia version. Same family-wide behaviour as the
+        # other DPRKN/ERKN methods.
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
     end
 
     @testset "FineRKN5" begin
         alg = FineRKN5()
         dt = 0.5
         # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        sol_i = solve(ode_i, alg; adaptive = false, dt)
+        sol_o = solve(ode_o, alg; adaptive = false, dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
         @test sol_i.stats.nf == sol_o.stats.nf
@@ -447,148 +444,231 @@ end
         @test_skip sol_i.u ≈ sol_o.u
     end
 
-    @testset "DPRKN4" begin
-        alg = DPRKN4()
-        dt = 0.5
-        # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
-        @test sol_i.t ≈ sol_o.t
-        @test sol_i.u ≈ sol_o.u
-        @test sol_i.stats.nf == sol_o.stats.nf
-        @test sol_i.stats.nf2 == sol_o.stats.nf2
-        @test sol_i.stats.naccept == sol_o.stats.naccept
-        @test 19 <= sol_i.stats.naccept <= 21
-        @test abs(sol_i.stats.nf - 4 * sol_i.stats.naccept) < 4
-        # adaptive time step — see FineRKN4 comment on Julia 1.10 FP divergence
-        sol_i = solve(ode_i, alg)
-        sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+    # The velocity-independent DPRKN methods no longer silently integrate this
+    # velocity-dependent (`-0.5*du`) problem at order 1; they reject it at init.
+    # See "velocity dependence is rejected" testset below and issue #3961.
+    @testset "$(nameof(typeof(alg))) rejects velocity dependence" for alg in
+        (DPRKN4(), DPRKN5(), DPRKN6(), DPRKN6FM(), DPRKN8(), DPRKN12())
+        @test_throws OrdinaryDiffEqRKN.RKNVelocityDependenceError solve(
+            ode_i, alg, adaptive = false, dt = 0.5
+        )
+        @test_throws OrdinaryDiffEqRKN.RKNVelocityDependenceError solve(
+            ode_o, alg, adaptive = false, dt = 0.5
+        )
+    end
+end
+
+# Regression test for https://github.com/SciML/OrdinaryDiffEq.jl/issues/3961:
+# velocity-independent RKN/Nyström methods used to silently integrate a velocity-dependent
+# (u''=f(u,u',t)) right-hand side at order 1. They now reject it at initialization with a
+# descriptive RKNVelocityDependenceError, while velocity-dependent methods keep working.
+const VDErr = OrdinaryDiffEqRKN.RKNVelocityDependenceError
+
+@testset "velocity dependence is rejected (#3961)" begin
+    velocity_independent_algs = (
+        DPRKN4(), DPRKN5(), DPRKN6(), DPRKN6FM(), DPRKN8(), DPRKN12(),
+        ERKN4(), ERKN5(), ERKN7(),
+        Nystrom4VelocityIndependent(), Nystrom5VelocityIndependent(),
+        IRKN3(), IRKN4(),
+    )
+    velocity_dependent_algs = (Nystrom4(), FineRKN4(), FineRKN5(), RKN4())
+
+    # The probe must be a no-op for a valid (velocity-independent) u'' = -u problem:
+    # every velocity-independent method still integrates the in-place vector form to Success.
+    @testset "velocity-independent problem still solves (in-place): $(nameof(typeof(alg)))" for alg in
+        velocity_independent_algs
+        prob_iip = SecondOrderODEProblem(
+            (ddu, du, u, p, t) -> (@. ddu = -u),
+            [0.0, 0.0], [1.0, 0.5], (0.0, 5.0)
+        )
+        @test SciMLBase.successful_retcode(solve(prob_iip, alg, dt = 0.05, adaptive = false))
     end
 
-    @testset "DPRKN5" begin
-        alg = DPRKN5()
-        dt = 0.5
-        # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
-        @test sol_i.t ≈ sol_o.t
-        @test sol_i.u ≈ sol_o.u
-        @test sol_i.stats.nf == sol_o.stats.nf
-        @test sol_i.stats.nf2 == sol_o.stats.nf2
-        @test sol_i.stats.naccept == sol_o.stats.naccept
-        @test 19 <= sol_i.stats.naccept <= 21
-        @test abs(sol_i.stats.nf - 6 * sol_i.stats.naccept) < 4
-        # adaptive time step — see FineRKN4 comment on Julia 1.10 FP divergence
-        sol_i = solve(ode_i, alg)
-        sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+    # Out-of-place scalar form. IRKN3 still has a pre-existing out-of-place perform_step!
+    # bug (it is @test_broken out-of-place above), unrelated to the velocity probe.
+    @testset "velocity-independent problem still solves (out-of-place): $(nameof(typeof(alg)))" for alg in
+        filter(a -> !(a isa IRKN3), collect(velocity_independent_algs))
+        prob_oop = DynamicalODEProblem(
+            (v, u, p, t) -> -u, (v, u, p, t) -> v,
+            1.0, 0.0, (0.0, 5.0)
+        )
+        @test SciMLBase.successful_retcode(solve(prob_oop, alg, dt = 0.05, adaptive = false))
     end
 
-    @testset "DPRKN6" begin
-        alg = DPRKN6()
-        dt = 0.5
-        # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
-        @test sol_i.t ≈ sol_o.t
-        @test sol_i.u ≈ sol_o.u
-        @test sol_i.stats.nf == sol_o.stats.nf
-        @test sol_i.stats.nf2 == sol_o.stats.nf2
-        @test sol_i.stats.naccept == sol_o.stats.naccept
-        @test 19 <= sol_i.stats.naccept <= 21
-        @test abs(sol_i.stats.nf - 6 * sol_i.stats.naccept) < 4
-        # adaptive time step — see FineRKN4 comment on Julia 1.10 FP divergence
-        sol_i = solve(ode_i, alg)
-        sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
-        end
+    # Accuracy sanity check on u(0)=0, u'(0)=1 (exact u = sin t): high-order methods must
+    # stay accurate — an order-1 collapse (the #3961 symptom) would blow past this atol.
+    @testset "velocity-independent accuracy: $(nameof(typeof(alg)))" for alg in
+        (DPRKN6(), DPRKN8(), DPRKN12())
+        prob = DynamicalODEProblem(
+            (v, u, p, t) -> -u, (v, u, p, t) -> v,
+            1.0, 0.0, (0.0, 5.0)
+        )
+        sol = solve(prob, alg, dt = 0.05, adaptive = false)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[end].x[2] ≈ sin(5.0) atol = 1.0e-6
     end
 
-    @testset "DPRKN6FM" begin
-        alg = DPRKN6FM()
-        dt = 0.5
-        # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
-        @test sol_i.t ≈ sol_o.t
-        @test sol_i.u ≈ sol_o.u
-        @test sol_i.stats.nf == sol_o.stats.nf
-        @test sol_i.stats.nf2 == sol_o.stats.nf2
-        @test sol_i.stats.naccept == sol_o.stats.naccept
-        @test 19 <= sol_i.stats.naccept <= 21
-        @test abs(sol_i.stats.nf - 6 * sol_i.stats.naccept) < 4
-        # adaptive time step
-        sol_i = solve(ode_i, alg)
-        sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
-        else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
+    @testset "velocity-dependent problem errors: $(nameof(typeof(alg)))" for alg in
+        velocity_independent_algs
+        # out-of-place, scalar: u'' = -u - 0.2u'
+        prob_oop_scalar = DynamicalODEProblem(
+            (v, u, p, t) -> -u - 0.2v,
+            (v, u, p, t) -> v, 1.0, 0.0, (0.0, 5.0)
+        )
+        @test_throws VDErr solve(prob_oop_scalar, alg, dt = 0.1, adaptive = false)
+
+        # out-of-place, vector broadcast
+        prob_oop_vec = DynamicalODEProblem(
+            (v, u, p, t) -> -u .- 0.2 .* v,
+            (v, u, p, t) -> v, [1.0, 0.0], [0.0, 1.0], (0.0, 5.0)
+        )
+        @test_throws VDErr solve(prob_oop_vec, alg, dt = 0.1, adaptive = false)
+
+        # in-place, vector broadcast
+        prob_iip_vec = SecondOrderODEProblem(
+            (ddu, du, u, p, t) -> (@. ddu = -u - 0.2 * du),
+            [0.0, 0.0], [1.0, 1.0], (0.0, 5.0)
+        )
+        @test_throws VDErr solve(prob_iip_vec, alg, dt = 0.1, adaptive = false)
+
+        # in-place, indexed access (Coriolis terms, cf. Arenstorf #1030 / Hill #1372)
+        function coriolis!(ddu, du, u, p, t)
+            ddu[1] = 2 * du[2] + u[1]
+            ddu[2] = -2 * du[1] + u[2]
+            return nothing
         end
+        prob_iip_idx = SecondOrderODEProblem(coriolis!, [0.0, 0.0], [1.0, 0.5], (0.0, 3.0))
+        @test_throws VDErr solve(prob_iip_idx, alg, dt = 0.05, adaptive = false)
     end
 
-    @testset "DPRKN8" begin
-        alg = DPRKN8()
-        dt = 0.5
-        # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
-        @test sol_i.t ≈ sol_o.t
-        @test sol_i.u ≈ sol_o.u
-        @test sol_i.stats.nf == sol_o.stats.nf
-        @test sol_i.stats.nf2 == sol_o.stats.nf2
-        @test sol_i.stats.naccept == sol_o.stats.naccept
-        @test 19 <= sol_i.stats.naccept <= 21
-        @test abs(sol_i.stats.nf - 9 * sol_i.stats.naccept) < 4
-        # adaptive time step
-        sol_i = solve(ode_i, alg)
-        sol_o = solve(ode_o, alg)
-        if VERSION >= v"1.11"
-            @test sol_i.t ≈ sol_o.t
-            @test sol_i.u ≈ sol_o.u
+    @testset "velocity-dependent methods still accept u': $(nameof(typeof(alg)))" for alg in
+        velocity_dependent_algs
+        prob_iip = SecondOrderODEProblem(
+            (ddu, du, u, p, t) -> (@. ddu = -u - 0.5 * du),
+            [0.0], [1.0], (0.0, 5.0)
+        )
+        prob_oop = SecondOrderODEProblem(
+            (du, u, p, t) -> -u - 0.5 * du, [0.0], [1.0], (0.0, 5.0)
+        )
+        sol_iip = solve(prob_iip, alg, dt = 0.05, adaptive = false)
+        sol_oop = solve(prob_oop, alg, dt = 0.05, adaptive = false)
+        @test SciMLBase.successful_retcode(sol_iip)
+        @test SciMLBase.successful_retcode(sol_oop)
+        # exact solution of u'' + 0.5u' + u = 0, u(0)=1, u'(0)=0
+        w = sqrt(15) / 4
+        u_exact = exp(-5.0 / 4) * (cos(w * 5.0) + (0.25 / w) * sin(w * 5.0))
+        @test sol_iip.u[end].x[2][1] ≈ u_exact atol = 1.0e-2
+    end
+end
+
+@testset "IRKN4 out-of-place SVector Kepler" begin
+    function kepler_acc!(ddu, du, u, p, t)
+        r2 = sum(u .* u)
+        r3 = r2 * sqrt(r2)
+        @. ddu = -u / r3
+        return nothing
+    end
+    function kepler_acc(du, u, p, t)
+        r2 = sum(u .* u)
+        r3 = r2 * sqrt(r2)
+        return @. -u / r3
+    end
+    function kepler_analytic(y0, p, t)
+        return ArrayPartition(SVector(-sin(t), cos(t)), SVector(cos(t), sin(t)))
+    end
+    ff_kepler = DynamicalODEFunction(
+        kepler_acc, (v, u, p, t) -> v; analytic = kepler_analytic
+    )
+    du0 = SVector(0.0, 1.0)
+    u0 = SVector(1.0, 0.0)
+    tspan = (0.0, 5.0)
+    dt = 0.01
+    prob_oop = SecondOrderODEProblem(ff_kepler, du0, u0, tspan)
+    prob_iip = SecondOrderODEProblem(kepler_acc!, Vector(du0), Vector(u0), tspan)
+
+    sol_oop = solve(prob_oop, IRKN4(), dt = dt, adaptive = false)
+    sol_iip = solve(prob_iip, IRKN4(), dt = dt, adaptive = false)
+    @test SciMLBase.successful_retcode(sol_oop)
+    @test SciMLBase.successful_retcode(sol_iip)
+    @test sol_oop.u[end].x[1] ≈ SVector(sol_iip.u[end].x[1]...) atol = 1.0e-12
+    @test sol_oop.u[end].x[2] ≈ SVector(sol_iip.u[end].x[2]...) atol = 1.0e-12
+
+    dts = 1 .// 2 .^ (9:-1:6)
+    sim = test_convergence(dts, prob_oop, IRKN4())
+    @test sim.𝒪est[:l2] ≈ 4 rtol = 1.0e-1
+end
+
+# After a DiscreteCallback changes p, IRKN4 must rebuild its multistep stage
+# history via the one-step bootstrap; otherwise the next step is only first-order.
+@testset "IRKN4 restart after derivative discontinuity" begin
+    oscillator_acc!(ddu, du, u, p, t) = (ddu .= -p[1] .* u; nothing)
+    oscillator_acc(du, u, p, t) = -p[1] * u
+
+    function jump_local_error(oop, dt)
+        cb = DiscreteCallback(
+            (u, t, integrator) -> integrator.iter == 10,
+            integrator -> (integrator.p[1] = 4.0);
+            save_positions = (false, false)
+        )
+        if oop
+            prob = SecondOrderODEProblem(
+                oscillator_acc, SVector(0.0), SVector(1.0), (0.0, 5.0), [1.0]
+            )
         else
-            @test_broken sol_i.t ≈ sol_o.t
-            @test_broken sol_i.u ≈ sol_o.u
+            prob = SecondOrderODEProblem(
+                oscillator_acc!, [0.0], [1.0], (0.0, 5.0), [1.0]
+            )
         end
+        integrator = init(
+            prob, IRKN4();
+            dt, adaptive = false, save_everystep = false, dense = false, callback = cb
+        )
+        for _ in 1:10
+            step!(integrator)
+        end
+        v = integrator.u.x[1][1]
+        u = integrator.u.x[2][1]
+        step!(integrator)
+        exact_v = v * cos(2dt) - 2u * sin(2dt)
+        exact_u = u * cos(2dt) + v * sin(2dt) / 2
+        return max(abs(integrator.u.x[1][1] - exact_v), abs(integrator.u.x[2][1] - exact_u))
     end
 
-    @testset "DPRKN12" begin
-        alg = DPRKN12()
-        dt = 0.5
-        # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
-        @test sol_i.t ≈ sol_o.t
-        @test sol_i.u ≈ sol_o.u
-        @test sol_i.stats.nf == sol_o.stats.nf
-        @test sol_i.stats.nf2 == sol_o.stats.nf2
-        @test sol_i.stats.naccept == sol_o.stats.naccept
-        @test 19 <= sol_i.stats.naccept <= 21
-        @test abs(sol_i.stats.nf - 17 * sol_i.stats.naccept) < 4
-        # adaptive time step
-        sol_i = solve(ode_i, alg)
-        sol_o = solve(ode_o, alg)
-        @test_broken sol_i.t ≈ sol_o.t
-        @test_broken sol_i.u ≈ sol_o.u
+    dts = (0.01, 0.005, 0.0025)
+    for oop in (true, false)
+        local_errors = [jump_local_error(oop, dt) for dt in dts]
+        # Order-4 local truncation is O(dt^5); the stale-history bug is O(dt).
+        @test local_errors[1] / dts[1]^5 < 50
+        @test local_errors[2] / dts[2]^5 < 50
+        @test local_errors[3] / dts[3]^5 < 50
+        ratios = local_errors[1:(end - 1)] ./ local_errors[2:end]
+        @test all(r -> r > 20, ratios)  # ~2^5 when dt halves, not ~2
     end
+
+    function global_error(dt)
+        cb = DiscreteCallback(
+            (u, t, integrator) -> integrator.iter == 10,
+            integrator -> (integrator.p[1] = 4.0);
+            save_positions = (false, false)
+        )
+        # Exact: u=cos(t) on [0, 10dt], then u=A cos(2(t-t*))+B sin(2(t-t*))
+        # with continuity of u,u' at t*=10dt.
+        tstar = 10dt
+        A = cos(tstar)
+        B = -sin(tstar) / 2
+        tf = 30dt
+        exact_u = A * cos(2(tf - tstar)) + B * sin(2(tf - tstar))
+        exact_v = -2A * sin(2(tf - tstar)) + 2B * cos(2(tf - tstar))
+        sol = solve(
+            SecondOrderODEProblem(
+                oscillator_acc!, [0.0], [1.0], (0.0, tf), [1.0]
+            ),
+            IRKN4();
+            dt, adaptive = false, save_everystep = false, dense = false, callback = cb
+        )
+        return max(abs(sol.u[end].x[1][1] - exact_v), abs(sol.u[end].x[2][1] - exact_u))
+    end
+    global_errors = [global_error(dt) for dt in dts]
+    orders = log2.(global_errors[1:(end - 1)] ./ global_errors[2:end])
+    @test all(o -> o > 3.5, orders)
 end

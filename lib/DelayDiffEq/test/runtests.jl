@@ -1,8 +1,8 @@
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
-if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
+if TEST_GROUP == "ALL" || TEST_GROUP == "Core" || TEST_GROUP == "Interface"
     @time @safetestset "AD Tests" begin
         include("interface/ad.jl")
     end
@@ -30,6 +30,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
     @time @safetestset "Fixed-point Iteration Tests" begin
         include("interface/fpsolve.jl")
     end
+    @time @safetestset "Limiter Tests" begin
+        include("interface/limiters.jl")
+    end
     @time @safetestset "History Function Tests" begin
         include("interface/history_function.jl")
     end
@@ -51,6 +54,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
     @time @safetestset "save_idxs Tests" begin
         include("interface/save_idxs.jl")
     end
+    @time @safetestset "Symbolic Interpolation Tests" begin
+        include("interface/symbolic_interpolation.jl")
+    end
     @time @safetestset "Unconstrained Time Steps Tests" begin
         include("interface/unconstrained.jl")
     end
@@ -68,6 +74,9 @@ end
 if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Cache Tests" begin
         include("integrators/cache.jl")
+    end
+    @time @safetestset "Resize Tests" begin
+        include("integrators/resize.jl")
     end
     @time @safetestset "Event Tests" begin
         include("integrators/events.jl")
@@ -87,6 +96,12 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Rosenbrock Tests" begin
         include("integrators/rosenbrock.jl")
     end
+    @time @safetestset "Nordsieck Tests" begin
+        include("integrators/nordsieck.jl")
+    end
+    @time @safetestset "FBDF Tests" begin
+        include("integrators/fbdf.jl")
+    end
     @time @safetestset "SDIRK Tests" begin
         include("integrators/sdirk.jl")
     end
@@ -99,9 +114,15 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "Initialization" begin
         include("integrators/initialization.jl")
     end
+    @time @safetestset "save_discretes" begin
+        include("integrators/save_discretes.jl")
+    end
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
+    @time @safetestset "DDE clock alignment" begin
+        include("regression/clock_alignment.jl")
+    end
     @time @safetestset "Allocation Tests" begin
         include("regression/allocations.jl")
     end
@@ -110,6 +131,15 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
     end
     @time @safetestset "Waltman Problem Tests" begin
         include("regression/waltman.jl")
+    end
+    @time @safetestset "Issue #3636: DDE tstop overshoot" begin
+        include("regression/issue_3636_dde_tstop_overshoot.jl")
+    end
+    @time @safetestset "DDE/SDIRK stage-1 tmp aliasing" begin
+        include("regression/dde_sdirk_stage1_tmp_aliasing.jl")
+    end
+    @time @safetestset "Tracked discontinuity coalescing" begin
+        include("regression/tracked_discontinuity_coalescing.jl")
     end
 end
 

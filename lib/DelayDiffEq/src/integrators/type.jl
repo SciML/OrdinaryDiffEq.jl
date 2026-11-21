@@ -80,6 +80,8 @@ mutable struct DDEIntegrator{
     force_stepfail::Bool
     last_stepfail::Bool
     just_hit_tstop::Bool
+    next_step_tstop::Bool
+    tstop_target::tType
     do_error_check::Bool
     event_last_time::Int
     vector_event_last_time::Int
@@ -98,6 +100,8 @@ mutable struct DDEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     initializealg::IA
+    is_disco_step::Bool
+    disco_checkpoint::tType
     # SDE/RODE noise fields: populated for SDDEProblem, Nothing for DDEProblem.
     W::WType
     P::PType
@@ -105,14 +109,17 @@ mutable struct DDEIntegrator{
     c::CType  # Jump rate function (Nothing for non-jump problems)
 end
 
-function (integrator::DDEIntegrator)(t, deriv::Type = Val{0}; idxs = nothing)
+function (integrator::DDEIntegrator)(t, deriv::Type{D} = Val{0}; idxs = nothing) where {D}
+    if SciMLBase.has_symbolic_idxs(idxs)
+        return SciMLBase.symbolic_interpolation(integrator, t, idxs, deriv)
+    end
     return OrdinaryDiffEqCore.current_interpolant(t, integrator, idxs, deriv)
 end
 
 function (integrator::DDEIntegrator)(
         val::AbstractArray, t::Union{Number, AbstractArray},
-        deriv::Type = Val{0}; idxs = nothing
-    )
+        deriv::Type{D} = Val{0}; idxs = nothing
+    ) where {D}
     return OrdinaryDiffEqCore.current_interpolant!(val, t, integrator, idxs, deriv)
 end
 

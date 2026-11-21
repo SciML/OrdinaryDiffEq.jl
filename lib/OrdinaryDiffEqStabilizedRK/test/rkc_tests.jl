@@ -1,5 +1,6 @@
 using OrdinaryDiffEqStabilizedRK, DiffEqDevTools, Test, LinearAlgebra, Random
 using OrdinaryDiffEqStabilizedRK: maxeig!
+using SciMLBase: ReturnCode, step!
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 probArr = Vector{ODEProblem}(undef, 2)
 probArr[1] = prob_ode_linear
@@ -8,7 +9,7 @@ probArr[2] = prob_ode_2Dlinear
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
     Random.seed!(123)
     eigen_est = (integrator) -> integrator.eigen_est = 1.5e2
-    for iip in [true, false], alg in [ROCK4(), ROCK4(eigen_est = eigen_est)]
+    for iip in [true, false], alg in [ROCK4(), ROCK4(; eigen_est)]
         println(typeof(alg))
         A = randn(20, 20)
         test_f(u, p, t) = A * u
@@ -18,7 +19,7 @@ probArr[2] = prob_ode_2Dlinear
         eigm = maximum(abs.(eigvals(A)))
         maxeig!(integrator, integrator.cache)
         eigest = integrator.eigen_est
-        @test eigest ≈ eigm rtol = 0.1eigm
+        @test eigest ≈ eigm rtol = 0.35
 
         A = A - 1.0e2I
         test_stiff(u, p, t) = A * u
@@ -26,9 +27,52 @@ probArr[2] = prob_ode_2Dlinear
         prob = ODEProblem{iip}(test_stiff, ones(20), (0, 1.0))
         @test_nowarn solve(prob, alg)
     end
+
+    # RKL methods use the same path for the eigenvalue tieratin
+    @testset "RKL power iteration" begin
+        Random.seed!(456)
+        eigen_est = (integrator) -> integrator.eigen_est = 1.5e2
+        for iip in [true, false], alg in [
+                    RKL2(), RKL2(; eigen_est),
+                    RKL1(), RKL1(; eigen_est),
+                ]
+            println(typeof(alg))
+            A = randn(20, 20)
+            A = A - maximum(abs.(eigvals(A))) * I   # negative definite to test parabolic stability
+            test_f(u, p, t) = A * u
+            test_f(du, u, p, t) = mul!(du, A, u)
+            prob = ODEProblem{iip}(test_f, randn(20), (0.0, 1.0))
+            integrator = init(prob, alg)
+            eigm = maximum(abs.(eigvals(A)))
+            maxeig!(integrator, integrator.cache)
+            eigest = integrator.eigen_est
+            @test eigest ≈ eigm rtol = 0.35
+        end
+    end
+
+    @testset "RKG power iteration" begin
+        Random.seed!(789)
+        eigen_est = (integrator) -> integrator.eigen_est = 1.5e2
+        for iip in [true, false], alg in [
+                    RKG2(), RKG2(; eigen_est),
+                    RKG1(), RKG1(; eigen_est),
+                ]
+            println(typeof(alg))
+            A = randn(20, 20)
+            A = A - maximum(abs.(eigvals(A))) * I
+            test_f(u, p, t) = A * u
+            test_f(du, u, p, t) = mul!(du, A, u)
+            prob = ODEProblem{iip}(test_f, randn(20), (0.0, 1.0))
+            integrator = init(prob, alg)
+            eigm = maximum(abs.(eigvals(A)))
+            maxeig!(integrator, integrator.cache)
+            eigest = integrator.eigen_est
+            @test eigest ≈ eigm rtol = 0.35
+        end
+    end
 end
 
-@testset "Runge-Kutta-Chebyshev Convergence Tests" begin
+@testset "Runge-Kutta-Chebyshev, Runge-Kutta-Legendre, and Runge-Kutta-Gegenbauer Convergence Tests" begin
     dts = 1 .// 2 .^ (8:-1:4)
     testTol = 0.1
     for prob in probArr
@@ -57,23 +101,43 @@ end
 
         println("RKC")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, RKC(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKC(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, RKC(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKC(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
-        sim = test_convergence(dts, prob, RKC(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, RKC(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        println("RKMC2")
+        eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
+        sim = test_convergence(dts, prob, RKMC2(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
+        sim = test_convergence(dts, prob, RKMC2(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
+        sim = test_convergence(dts, prob, RKMC2(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        println("TSRKC2")
+        eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
+        sim = test_convergence(dts, prob, TSRKC2(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
+        sim = test_convergence(dts, prob, TSRKC2(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
+        sim = test_convergence(dts, prob, TSRKC2(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
         println("TSRKC3")
         eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
-        sim = test_convergence(dts, prob, TSRKC3(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, TSRKC3(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 3 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
-        sim = test_convergence(dts, prob, TSRKC3(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, TSRKC3(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 3 atol = testTol
         eigen_est = (integrator) -> integrator.eigen_est = 10000 / integrator.dt
-        sim = test_convergence(dts, prob, TSRKC3(eigen_est = eigen_est))
+        sim = test_convergence(dts, prob, TSRKC3(; eigen_est))
         @test sim.𝒪est[:l∞] ≈ 3 atol = testTol
         println("SERK2")
         sim = test_convergence(dts, prob, SERK2())
@@ -81,6 +145,49 @@ end
         println("ESERK4")
         sim = test_convergence(dts, prob, ESERK4())
         @test sim.𝒪est[:l∞] ≈ 4 atol = testTol
+
+        println("RKL1")
+        eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
+        sim = test_convergence(dts, prob, RKL1(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
+        sim = test_convergence(dts, prob, RKL1(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
+
+        println("RKL2")
+        eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
+        sim = test_convergence(dts, prob, RKL2(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
+        sim = test_convergence(dts, prob, RKL2(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
+        sim = test_convergence(dts, prob, RKL2(; min_stages = 3, eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        sim = test_convergence(dts, prob, RKL2(; min_stages = 5, eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        sim = test_convergence(dts, prob, RKL2(; min_stages = 11, eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+
+        println("RKG1")
+        eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
+        sim = test_convergence(dts, prob, RKG1(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
+        sim = test_convergence(dts, prob, RKG1(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
+
+        println("RKG2")
+        eigen_est = (integrator) -> integrator.eigen_est = 1 / integrator.dt
+        sim = test_convergence(dts, prob, RKG2(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        eigen_est = (integrator) -> integrator.eigen_est = 100 / integrator.dt
+        sim = test_convergence(dts, prob, RKG2(; eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        sim = test_convergence(dts, prob, RKG2(; min_stages = 3, eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+        sim = test_convergence(dts, prob, RKG2(; min_stages = 5, eigen_est))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
     end
     dts = 1 .// 2 .^ (6:-1:2)
     for prob in probArr
@@ -88,6 +195,217 @@ end
         sim = test_convergence(dts, prob, ESERK5())
         @test sim.𝒪est[:l∞] ≈ 5 atol = testTol
     end
+end
+
+@testset "In-place and out-of-place agree in the stiff high-stage regime" begin
+    # Stiff forced heat equation stepped at fixed dt with dt*λ ≈ 217 so that the
+    # stage counts are high enough to exercise the deep recurrences (e.g. SERK2's
+    # inner stage loop only runs once mdeg >= 20).
+    N = 32
+    dx = 1.0 / (N + 1)
+    xs = collect(range(dx, 1 - dx; length = N))
+    A = Tridiagonal(fill(1 / dx^2, N - 1), fill(-2 / dx^2, N), fill(1 / dx^2, N - 1))
+    lam = 4 / dx^2
+    g(t) = cos(10t)
+    f_oop(u, p, t) = A * u .+ g(t)
+    f_iip(du, u, p, t) = (mul!(du, A, u); du .+= g(t); nothing)
+    u0 = sin.(pi .* xs)
+    tspan = (0.0, 0.5)
+    prob_oop = ODEProblem{false}(f_oop, u0, tspan)
+    prob_iip = ODEProblem{true}(f_iip, u0, tspan)
+    eigen_est = (integrator) -> integrator.eigen_est = lam
+
+    algs = [
+        ROCK2(; eigen_est), ROCK4(; eigen_est),
+        RKC(; eigen_est), RKMC2(; eigen_est),
+        TSRKC2(; eigen_est), TSRKC3(; eigen_est),
+        SERK2(; eigen_est), ESERK4(; eigen_est),
+        ESERK5(; eigen_est), RKL1(; eigen_est),
+        RKL2(; eigen_est), RKG1(; eigen_est),
+        RKG2(; eigen_est),
+    ]
+    @testset "$alg" for alg in algs
+        sol_oop = solve(
+            prob_oop, alg, adaptive = false, dt = 0.05,
+            save_everystep = false
+        )
+        sol_iip = solve(
+            prob_iip, alg, adaptive = false, dt = 0.05,
+            save_everystep = false
+        )
+        @test norm(sol_oop.u[end] .- sol_iip.u[end], Inf) < 1.0e-6
+    end
+end
+
+@testset "RKL non-autonomous convergence" begin
+    # Prothero-Robinson-type problem: uᵢ' = -λᵢ*(uᵢ - cos(t)) - sin(t), exact uᵢ = cos(t).
+    # Catches wrong or missing stage times, which autonomous problems cannot see.
+    lams = [1.0, 5.0, 20.0, 50.0]
+    f_na_oop(u, p, t) = @. -p * (u - cos(t)) - sin(t)
+    f_na_iip(du, u, p, t) = (@. du = -p * (u - cos(t)) - sin(t); nothing)
+    na_analytic(u0, p, t) = cos(t) .* ones(length(p))
+    prob_na_oop = ODEProblem(
+        ODEFunction{false}(f_na_oop, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    prob_na_iip = ODEProblem(
+        ODEFunction{true}(f_na_iip, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    # pure quadrature: u' = cos(t), any correct second-order method gets order 2
+    fq_oop(u, p, t) = fill(cos(t), 2)
+    fq_iip(du, u, p, t) = (du .= cos(t); nothing)
+    q_analytic(u0, p, t) = u0 .+ sin(t)
+    prob_q_oop = ODEProblem(
+        ODEFunction{false}(fq_oop, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+    prob_q_iip = ODEProblem(
+        ODEFunction{true}(fq_iip, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+
+    dts = 1 .// 2 .^ (10:-1:5)
+    testTol = 0.25
+    # fixed estimate exercises the classical dt -> 0 regime; the 1/dt-scaled
+    # estimate keeps the stage count constant (stiff regime)
+    fixed_eig = (integrator) -> integrator.eigen_est = 55.0
+    scaled_eig = (integrator) -> integrator.eigen_est = 500 / abs(integrator.dt)
+    for prob in [prob_na_oop, prob_na_iip, prob_q_oop, prob_q_iip],
+            eig in [fixed_eig, scaled_eig]
+
+        sim = test_convergence(dts, prob, RKL1(eigen_est = eig))
+        @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
+        sim = test_convergence(dts, prob, RKL2(eigen_est = eig))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+    end
+end
+
+@testset "RKG non-autonomous convergence" begin
+    # Prothero-Robinson-type problem: uᵢ' = -λᵢ*(uᵢ - cos(t)) - sin(t), exact uᵢ = cos(t).
+    # Catches wrong or missing stage times, which autonomous problems cannot see.
+    lams = [1.0, 5.0, 20.0, 50.0]
+    f_na_oop(u, p, t) = @. -p * (u - cos(t)) - sin(t)
+    f_na_iip(du, u, p, t) = (@. du = -p * (u - cos(t)) - sin(t); nothing)
+    na_analytic(u0, p, t) = cos(t) .* ones(length(p))
+    prob_na_oop = ODEProblem(
+        ODEFunction{false}(f_na_oop, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    prob_na_iip = ODEProblem(
+        ODEFunction{true}(f_na_iip, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    # pure quadrature: u' = cos(t), any correct second-order method gets order 2
+    fq_oop(u, p, t) = fill(cos(t), 2)
+    fq_iip(du, u, p, t) = (du .= cos(t); nothing)
+    q_analytic(u0, p, t) = u0 .+ sin(t)
+    prob_q_oop = ODEProblem(
+        ODEFunction{false}(fq_oop, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+    prob_q_iip = ODEProblem(
+        ODEFunction{true}(fq_iip, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+
+    dts = 1 .// 2 .^ (10:-1:5)
+    testTol = 0.25
+    # fixed estimate exercises the classical dt -> 0 regime; the 1/dt-scaled
+    # estimate keeps the stage count constant (stiff regime)
+    fixed_eig = (integrator) -> integrator.eigen_est = 55.0
+    scaled_eig = (integrator) -> integrator.eigen_est = 500 / abs(integrator.dt)
+    for prob in [prob_na_oop, prob_na_iip, prob_q_oop, prob_q_iip],
+            eig in [fixed_eig, scaled_eig]
+
+        sim = test_convergence(dts, prob, RKG1(eigen_est = eig))
+        @test sim.𝒪est[:l∞] ≈ 1 atol = testTol
+        sim = test_convergence(dts, prob, RKG2(eigen_est = eig))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+    end
+end
+
+@testset "SERK2 non-autonomous convergence" begin
+    # Prothero-Robinson-type problem: uᵢ' = -λᵢ*(uᵢ - cos(t)) - sin(t), exact uᵢ = cos(t).
+    # Catches wrong or missing stage times, which autonomous problems cannot see.
+    lams = [1.0, 5.0, 20.0, 50.0]
+    f_na_oop(u, p, t) = @. -p * (u - cos(t)) - sin(t)
+    f_na_iip(du, u, p, t) = (@. du = -p * (u - cos(t)) - sin(t); nothing)
+    na_analytic(u0, p, t) = cos(t) .* ones(length(p))
+    prob_na_oop = ODEProblem(
+        ODEFunction{false}(f_na_oop, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    prob_na_iip = ODEProblem(
+        ODEFunction{true}(f_na_iip, analytic = na_analytic), ones(4), (0.0, 1.0), lams
+    )
+    # pure quadrature: u' = cos(t), any correct second-order method gets order 2
+    fq_oop(u, p, t) = fill(cos(t), 2)
+    fq_iip(du, u, p, t) = (du .= cos(t); nothing)
+    q_analytic(u0, p, t) = u0 .+ sin(t)
+    prob_q_oop = ODEProblem(
+        ODEFunction{false}(fq_oop, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+    prob_q_iip = ODEProblem(
+        ODEFunction{true}(fq_iip, analytic = q_analytic), zeros(2), (0.0, 1.0)
+    )
+
+    dts = 1 .// 2 .^ (10:-1:5)
+    testTol = 0.25
+    # fixed estimate exercises the classical dt -> 0 regime; the 1/dt-scaled
+    # estimate keeps the stage count constant (stiff regime)
+    fixed_eig = (integrator) -> integrator.eigen_est = 55.0
+    scaled_eig = (integrator) -> integrator.eigen_est = 500 / abs(integrator.dt)
+    for prob in [prob_na_oop, prob_na_iip, prob_q_oop, prob_q_iip],
+            eig in [fixed_eig, scaled_eig]
+
+        sim = test_convergence(dts, prob, SERK2(eigen_est = eig))
+        @test sim.𝒪est[:l∞] ≈ 2 atol = testTol
+    end
+end
+
+@testset "SERK2 stage times are internally consistent" begin
+    # Each f evaluation must sit at the row-sum time of the stage it is evaluated
+    # at. Reconstruct the c vector by running the integrator on u' = 1, where the
+    # stage value directly reports its own row sum.
+    seen = Tuple{Float64, Float64}[]
+    f_probe(u, p, t) = (push!(seen, (u[1], t)); [one(u[1])])
+    prob = ODEProblem(ODEFunction{false}(f_probe), [0.0], (0.0, 1.0))
+    eig = (integrator) -> integrator.eigen_est = 500 / abs(integrator.dt)
+    solve(prob, SERK2(eigen_est = eig), dt = 1 // 32, adaptive = false)
+    @test length(seen) > 10
+    for (uval, tval) in seen
+        @test uval ≈ tval atol = 1.0e-10
+    end
+end
+
+@testset "eigen_est_interval" begin
+    # Stiff parabolic problem solved with the internal power iteration. The default
+    # sparse recompute interval (25) must stay accurate while spending fewer f
+    # evaluations than recomputing the spectral radius on every step.
+    N = 40
+    dx = 1.0 / (N + 1)
+    xs = collect(range(dx, 1 - dx; length = N))
+    D2 = Tridiagonal(fill(1 / dx^2, N - 1), fill(-2 / dx^2, N), fill(1 / dx^2, N - 1))
+    u0 = sin.(pi .* xs)
+    tspan = (0.0, 0.5)
+    prob = ODEProblem((du, u, p, t) -> mul!(du, D2, u), u0, tspan)
+    exact = exp(-pi^2 * tspan[2]) .* sin.(pi .* xs)
+
+    # default interval is 25; compare against recomputing every step (interval = 1)
+    @test ROCK2().eigen_est_interval == 25
+    @test ROCK4().eigen_est_interval == 25
+    @test RKC().eigen_est_interval == 25
+    for (alg_every, alg_default) in [
+            (ROCK2(eigen_est_interval = 1), ROCK2()),
+            (ROCK4(eigen_est_interval = 1), ROCK4()),
+            (RKC(eigen_est_interval = 1), RKC()),
+        ]
+        sol_every = solve(prob, alg_every, abstol = 1.0e-6, reltol = 1.0e-6)
+        sol_default = solve(prob, alg_default, abstol = 1.0e-6, reltol = 1.0e-6)
+        @test sol_default.retcode == ReturnCode.Success
+        @test norm(sol_default.u[end] - exact) <
+            10 * max(norm(sol_every.u[end] - exact), 1.0e-6)
+        @test sol_default.stats.nf < sol_every.stats.nf
+    end
+
+    # convergence order is unaffected by sparse recomputes (default interval)
+    dts = 1 .// 2 .^ (8:-1:4)
+    sim = test_convergence(dts, prob_ode_2Dlinear, ROCK2())
+    @test sim.𝒪est[:l∞] ≈ 2 atol = 0.2
+    sim = test_convergence(dts, prob_ode_2Dlinear, ROCK4())
+    @test sim.𝒪est[:l∞] ≈ 4 atol = 0.2
 end
 
 @testset "Number of function evaluations" begin
@@ -107,13 +425,19 @@ end
     @testset "$prob" for prob in [probop, probip]
         eigen_est = (integrator) -> integrator.eigen_est = 500
         algs = [
-            ROCK2(), ROCK2(eigen_est = eigen_est),
-            ROCK4(), ROCK4(eigen_est = eigen_est),
-            RKC(), RKC(eigen_est = eigen_est),
-            TSRKC3(), TSRKC3(eigen_est = eigen_est),
-            SERK2(), SERK2(eigen_est = eigen_est),
-            ESERK4(), ESERK4(eigen_est = eigen_est),
-            ESERK5(), ESERK5(eigen_est = eigen_est),
+            ROCK2(), ROCK2(; eigen_est),
+            ROCK4(), ROCK4(; eigen_est),
+            RKC(), RKC(; eigen_est),
+            RKMC2(), RKMC2(; eigen_est),
+            TSRKC2(), TSRKC2(; eigen_est),
+            TSRKC3(), TSRKC3(; eigen_est),
+            SERK2(), SERK2(; eigen_est),
+            ESERK4(), ESERK4(; eigen_est),
+            ESERK5(), ESERK5(; eigen_est),
+            RKL1(), RKL1(; eigen_est),
+            RKL2(), RKL2(; eigen_est),
+            RKG1(), RKG1(; eigen_est),
+            RKG2(), RKG2(; eigen_est),
         ]
         @testset "$alg" for alg in algs
             x[] = 0
@@ -133,13 +457,19 @@ end
 
     eigen_est = (integrator) -> integrator.eigen_est = 500
     algs = [
-        ROCK2(), ROCK2(eigen_est = eigen_est),
-        ROCK4(), ROCK4(eigen_est = eigen_est),
-        RKC(), RKC(eigen_est = eigen_est),
-        TSRKC3(), TSRKC3(eigen_est = eigen_est),
-        SERK2(), SERK2(eigen_est = eigen_est),
-        ESERK4(), ESERK4(eigen_est = eigen_est),
-        ESERK5(), ESERK5(eigen_est = eigen_est),
+        ROCK2(), ROCK2(; eigen_est),
+        ROCK4(), ROCK4(; eigen_est),
+        RKC(), RKC(; eigen_est),
+        RKMC2(), RKMC2(; eigen_est),
+        TSRKC2(), TSRKC2(; eigen_est),
+        TSRKC3(), TSRKC3(; eigen_est),
+        SERK2(), SERK2(; eigen_est),
+        ESERK4(), ESERK4(; eigen_est),
+        ESERK5(), ESERK5(; eigen_est),
+        RKL1(), RKL1(; eigen_est),
+        RKL2(), RKL2(; eigen_est),
+        RKG1(), RKG1(; eigen_est),
+        RKG2(), RKG2(; eigen_est),
     ]
     @testset "$alg" for alg in algs
         # compile once
@@ -151,5 +481,110 @@ end
         # sizehint! calls in _postamble! add allocations to release excess memory
         expected_allocs = VERSION >= v"1.11" ? 7 : 6
         @test allocs <= expected_allocs
+    end
+end
+
+# RKL specific tests
+@testset "RKL-specific tests" begin
+
+    @testset "Constructor enforces odd stages" begin
+        @test RKL1(min_stages = 4).min_stages == 5
+        @test RKL2(min_stages = 4).min_stages == 5
+        @test RKL1(min_stages = 3).min_stages == 3
+        @test RKL2(min_stages = 3).min_stages == 3
+        @test RKL1(max_stages = 200).max_stages == 199
+        @test RKL2(max_stages = 200).max_stages == 199
+        @test RKL1(max_stages = 199).max_stages == 199
+        @test RKL2(max_stages = 199).max_stages == 199
+        @test RKL1(min_stages = 7, max_stages = 5).max_stages >= 7
+        @test RKL2(min_stages = 7, max_stages = 5).max_stages >= 7
+    end
+
+
+    @testset "Stiff Parabolic Problem" begin
+        N = 20
+        α = 0.1
+        dx = 1.0 / (N + 1)
+        xs = collect(range(dx, 1 - dx; length = N))
+        D2 = Tridiagonal(fill(α / dx^2, N - 1), fill(-2α / dx^2, N), fill(α / dx^2, N - 1))
+        u0 = sin.(π .* xs)
+        tspan = (0.0, 0.5)
+        prob = ODEProblem((du, u, p, t) -> mul!(du, D2, u), u0, tspan)
+
+        for alg in [RKL1(), RKL2()]
+            sol = solve(prob, alg, abstol = 1.0e-4, reltol = 1.0e-4)
+            @test sol.retcode == ReturnCode.Success
+            exact = exp(-π^2 * α * tspan[2]) .* sin.(π .* xs)
+            @test norm(sol.u[end] - exact) < 0.02
+        end
+    end
+
+    @testset "Odd Stage Counts" begin
+        stages_seen = Int[]
+        u0 = ones(5)
+        tspan = (0.0, 0.1)
+        prob = ODEProblem((du, u, p, t) -> (@. du = -100 * u), u0, tspan)
+        eigen_est = (integrator) -> (integrator.eigen_est = 100.0)
+        integrator = init(prob, RKL2(; eigen_est); save_everystep = false)
+        while integrator.t < tspan[2] - 100 * eps(typeof(tspan[2]))
+            step!(integrator)
+            cc = integrator.cache
+            mdeg = hasproperty(cc, :constantcache) ? cc.constantcache.mdeg : cc.mdeg
+            push!(stages_seen, mdeg)
+        end
+        @test all(isodd, stages_seen)
+        @test all(s -> s >= 3, stages_seen)
+    end
+end
+
+@testset "RKG-specific tests" begin
+    @testset "RKG on stiff parabolic problem" begin
+        N = 20
+        α = 0.1
+        dx = 1.0 / (N + 1)
+        xs = collect(range(dx, 1 - dx; length = N))
+        D2 = Tridiagonal(
+            fill(α / dx^2, N - 1),
+            fill(-2α / dx^2, N),
+            fill(α / dx^2, N - 1)
+        )
+        u0 = sin.(π .* xs)
+        tspan = (0.0, 0.5)
+        prob = ODEProblem((du, u, p, t) -> mul!(du, D2, u), u0, tspan)
+        exact = exp(-π^2 * α * tspan[2]) .* sin.(π .* xs)
+        for alg in [RKG1(), RKG2()]
+            sol = solve(prob, alg, abstol = 1.0e-4, reltol = 1.0e-4)
+            @test sol.retcode == ReturnCode.Success
+            @test norm(sol.u[end] - exact) < 0.05
+        end
+    end
+
+    @testset "RKG monotone near Dirichlet boundary" begin
+        # Looking for bounded solution that is non-negative on a heat diffusion problem with Dirichlet BCs
+        N = 50
+        α = 1.166
+        dx = 1.0 / (N + 1)
+        xs = collect(range(dx, 1 - dx; length = N))
+
+        # spike near left boundary, zero elsewhere
+        u0 = zeros(N)
+        u0[2] = 100.0
+
+        # Dirichlet BCs
+        D2 = Tridiagonal(
+            fill(α / dx^2, N - 1),
+            fill(-2α / dx^2, N),
+            fill(α / dx^2, N - 1)
+        )
+
+        tspan = (0.0, 1.0e-4)
+        prob = ODEProblem((du, u, p, t) -> mul!(du, D2, u), u0, tspan)
+
+        # RKG2 should remain non negative due to Convex Monotone Property even with Dirichlet BCs
+        sol_rkg = solve(prob, RKG2(), abstol = 1.0e-8, reltol = 1.0e-8)
+        @test sol_rkg.retcode == ReturnCode.Success
+        @test all(sol_rkg.u[end] .>= -1.0e-10)   # allow tiny floating point negatives
+        sol_rkl = solve(prob, RKL2(), abstol = 1.0e-8, reltol = 1.0e-8)
+        @test sol_rkl.retcode == ReturnCode.Success
     end
 end

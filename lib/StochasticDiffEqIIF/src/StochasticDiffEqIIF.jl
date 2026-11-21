@@ -1,10 +1,11 @@
 module StochasticDiffEqIIF
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using StochasticDiffEqCore
+using StochasticDiffEqCore: StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!, issplit,
+import OrdinaryDiffEqCore: perform_step!, issplit,
     current_extrapolant, current_extrapolant!
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
@@ -15,14 +16,15 @@ import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     determine_chunksize, unwrap_alg,
     @cache
 
-import DiffEqBase: is_diagonal_noise, @..
-import DiffEqBase: full_cache, rand_cache, ratenoise_cache
+import DiffEqBase
+import DiffEqBase: initialize!, full_cache, rand_cache, ratenoise_cache
+import SciMLBase: is_diagonal_noise
+import FastBroadcast: @..
 
 import MuladdMacro: @muladd
 import SciMLBase
 
-using LinearAlgebra
-using RecursiveArrayTools
+using LinearAlgebra: mul!, rmul!
 
 include("algorithms.jl")
 include("alg_utils.jl")

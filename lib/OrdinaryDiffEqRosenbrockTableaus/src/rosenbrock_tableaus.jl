@@ -1,3 +1,13 @@
+"""
+    RodasTableau
+
+Coefficient tableau for Rosenbrock methods: the stage coefficient matrices `A`
+and `C`, the diagonal coefficient `gamma`, the abscissae `c`, the
+time-derivative coefficients `d`, the dense-output interpolation matrix `H`
+(empty for methods without stiff-aware interpolation), the solution weights
+`b`, and the embedded error-estimate weights `btilde` (a vector for adaptive
+methods, `nothing` for fixed-step methods).
+"""
 struct RodasTableau{T, T2, btType}
     A::Matrix{T}
     C::Matrix{T}
@@ -45,7 +55,14 @@ const RODAS5H = [
     -44.0988150021747 -5.755396159656812e-13 -181.26175034586677 56.99302194811676 183.21182741427398 -7.480257918273637 -5.792426076169686 -5.32503859794143
 ]
 
-function Rodas5Tableau(T, T2)
+"""
+    Rodas5Tableau(T, T2)
+
+The tableau for the 5th order stiffly accurate Rosenbrock method Rodas5.
+It is an 8-stage method with a built-in error estimate.
+Reference: Di Marzo, G. (1993). RODAS5(4) - Méthodes de Rosenbrock d'ordre 5(4) adaptées aux problèmes différentiels-algébriques.
+"""
+function Rodas5Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = 0.19
     s = size(RODAS5A, 1)
     b = T[RODAS5A[s, i] for i in 1:(s - 1)]
@@ -86,7 +103,7 @@ The tableau for the 4th order L-stable Rosenbrock method Rodas4.
 It is a 6-stage method with a built-in error estimate.
 Reference: Hairer, E., Nørsett, S. P., & Wanner, G. (1996). Solving Ordinary Differential Equations II.
 """
-function Rodas4Tableau(T, T2)
+function Rodas4Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = 0.25
     b = T[RODAS4A[6, 1], RODAS4A[6, 2], RODAS4A[6, 3], RODAS4A[6, 4], RODAS4A[6, 5], one(T)]
     btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T)]
@@ -122,7 +139,7 @@ A 4th order L-stable Rosenbrock method with 6 stages, often used as an alternati
 Reference: Hairer, E., & Wanner, G. (1996). Solving Ordinary Differential Equations II:
     Stiff and Differential-Algebraic Problems. Springer-Verlag, 2nd Edition.
 """
-function Rodas42Tableau(T, T2)
+function Rodas42Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = 0.25
     b = T[RODAS42A[6, 1], RODAS42A[6, 2], RODAS42A[6, 3], RODAS42A[6, 4], RODAS42A[6, 5], one(T)]
     btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T)]
@@ -158,7 +175,7 @@ A 4th order L-stable Rosenbrock method with 6 stages, emphasizing stability for 
 Reference: Steinebach, G. (1995). Order-reduction of ROW-methods for DAEs and
     method of lines applications. Preprint-Nr. 1741, FB Mathematik, TH Darmstadt.
 """
-function Rodas4PTableau(T, T2)
+function Rodas4PTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = 0.25
     b = T[RODAS4PA[6, 1], RODAS4PA[6, 2], RODAS4PA[6, 3], RODAS4PA[6, 4], RODAS4PA[6, 5], one(T)]
     btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T)]
@@ -195,14 +212,62 @@ Reference: Steinebach, G. (2020). Improvement of Rosenbrock-Wanner method RODASP
     In: Progress in Differential-Algebraic Equations II, pp. 165–184.
     Springer, Cham.
 """
-function Rodas4P2Tableau(T, T2)
+function Rodas4P2Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = 0.25
     b = T[RODAS4P2A[6, 1], RODAS4P2A[6, 2], RODAS4P2A[6, 3], RODAS4P2A[6, 4], RODAS4P2A[6, 5], one(T)]
     btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), one(T)]
     return RodasTableau{T, T2, Vector{T}}(RODAS4P2A, RODAS4P2C, gamma, RODAS4P2c, RODAS4P2d, RODAS4P2H, b, btilde)
 end
 
-function ROS3PRodasTableau(T, T2)
+const RODAS4PWA = [
+    0 0 0 0 0 0 0 0 0
+    2 0 0 0 0 0 0 0 0
+    2.9351406859394085 -0.2900839547917462 0 0 0 0 0 0 0
+    2.5023808526102953 0.16405393216724992 0.5533771741907447 0 0 0 0 0 0
+    3.750686547696225 -3.4281864369523043 3.040310330969146 3.9186650053435343 0 0 0 0 0
+    6.144641638053066 -3.5875118429024027 4.896418320248426 3.22902579478038 1.8769572180937995 0 0 0 0
+    7.024950636618132 -0.16004404386219917 3.011738084182477 2.6255276779916845 1.064210639984151 1.458733196183423 0 0 0
+    2.435229134779613 -3.645692955953369 1.8428193142644484 -1.3604738908042335 1.9007297861385437 1.2049388559324536 0.5873423923113256 0 0
+    2.435229134779612 -3.6456929559533693 1.8428193142644478 -1.3604738908042329 1.9007297861385437 1.2049388559324536 0.5873423923113257 1 0
+]
+const RODAS4PWC = [
+    0 0 0 0 0 0 0 0
+    -8 0 0 0 0 0 0 0
+    0.11431136138808462 5.111960520884256 0 0 0 0 0 0
+    -8.68739530736641 -0.21553233254388848 -2.2134894813624935 0 0 0 0 0
+    -10.812900826181544 5.419387230163944 -6.845923178683723 -5.6022546699245925 0 0 0 0
+    -13.17876026787501 8.4031432262977 -14.402912022742473 -1.8949265796948946 -7.507992684163551 0 0 0
+    2.4245226070350387 3.916211538629165 6.334875580590554 -18.204882737666242 11.2386753540205 4.394215434356857 0 0
+    12.966547752453305 1.6658702157873542 -1.952036642801561 44.8607385053866 -16.33815656155744 -7.339351477557218 6.415927010710538 0
+    -3.4230613926569706 10.549037870633642 -22.013331787653808 59.20345912605831 -38.48170615459573 -17.83635248514032 5.0140912391709005 -5.714232814492047
+]
+const RODAS4PWc = [0, 0.5, 0.806306160182747, 0.5500769630661511, 0.645123695869199, 0.7460176197877518, 0.38581216095480647, 1, 1]
+const RODAS4PWd = [0.25, -0.25, -0.062353072468327386, -0.24498696841659628, -0.3146820705324951, -0.16763676372651826, 0.10469903956242915, 0, 0]
+const RODAS4PWH = [
+    19.326241878617953 18.943207258475802 11.990640119156923 -42.76033014071441 23.570367385919752 11.996875016051995 -3.7778736016207493 0.10148390967516945 -0.6270551105086559
+    -20.792924064234402 -10.322183190927602 -32.8905146007957 97.07885073371318 -59.78903774380889 -27.711940798533377 8.498985815232789 -4.4886424302198185 -1.745889778976401
+]
+"""
+    Rodas4PWTableau(T, T2)
+
+An adaptation of Rodas4P 4th order L-stable Rosenbrock method into a W-method.
+Reference: Steinebach, G. (2026). Fourth order Rosenbrock W method for stiff Odes and DAEs.
+    In: in preparation.
+"""
+function Rodas4PWTableau(::Type{T}, ::Type{T2}) where {T, T2}
+    gamma = 0.25
+    b = T[RODAS4PWA[9, 1], RODAS4PWA[9, 2], RODAS4PWA[9, 3], RODAS4PWA[9, 4], RODAS4PWA[9, 5], RODAS4PWA[9, 6], RODAS4PWA[9, 7], RODAS4PWA[9, 8], one(T)]
+    btilde = T[zero(T), zero(T), zero(T), zero(T), zero(T), zero(T), zero(T), zero(T), one(T)]
+    return RodasTableau{T, T2, Vector{T}}(RODAS4PWA, RODAS4PWC, gamma, RODAS4PWc, RODAS4PWd, RODAS4PWH, b, btilde)
+end
+
+"""
+    ROS3PRodasTableau(T, T2)
+
+A 3rd order A-stable Rosenbrock method with 3 stages, designed for parabolic problems.
+Reference: Lang, J., & Verwer, J. (2001). ROS3P - An accurate third-order Rosenbrock solver designed for parabolic problems.
+"""
+function ROS3PRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1 / 2 + sqrt(3) / 6)
     igamma = inv(gamma)
     a21 = convert(T, igamma)
@@ -250,7 +315,7 @@ end
 A 3rd order Rosenbrock method with 4 stages.
 Reference: Sandu, A., et al. (1997). Benchmarking stiff ode solvers for atmospheric chemistry problems-I. implicit vs explicit. Atmospheric Environment, 31(19), 3151-3166.
 """
-function Rodas3RodasTableau(T, T2)
+function Rodas3RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 0)
     A[3, 1] = convert(T, 2)
@@ -276,6 +341,48 @@ function Rodas3RodasTableau(T, T2)
 end
 
 ################################################################################
+# Rodas3d (4-stage, hand-written)
+################################################################################
+
+"""
+    Rodas3dRodasTableau(T, T2)
+
+A 3rd order stiffly accurate Rosenbrock method with 4 stages and an embedded
+2nd order method for adaptivity. Constructed with the damping parameter
+γ = 0.57281606 so that R(±∞) = 0, which damps both stable and unstable modes.
+Designed for steady-state focused DAE integration such as the semi-implicit
+continuous Newton method, where damping speed matters more than trajectory
+accuracy.
+Reference: Yu, R., Gu, W., Xu, Y., Lu, S. (2024). Semi-implicit Continuous
+Newton Method for Power Flow Analysis. arXiv:2312.02809.
+Coefficients: https://github.com/rzyu45/MATPOWER-SICNM (coeff_rodas3d.m).
+"""
+function Rodas3dRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
+    A = zeros(T, 4, 4)
+    A[2, 1] = convert(T, 2.1736562342774159)
+    A[3, 1] = convert(T, 1.745761108723104)
+    A[4, 1] = convert(T, 1.745761108723104)
+    A[4, 3] = convert(T, 1)
+
+    C = zeros(T, 4, 4)
+    C[2, 1] = convert(T, -13.387001858207178)
+    C[3, 1] = convert(T, 0.30442314006596932)
+    C[3, 2] = convert(T, 0.30745278826153299)
+    C[4, 1] = convert(T, 0.57287646414081528)
+    C[4, 2] = convert(T, 0.34771098605699358)
+    C[4, 3] = convert(T, -2.7425340696473901)
+
+    gamma = convert(T2, 0.57281606)
+    c = T2[convert(T2, 0), convert(T2, 1.2451051999132263), convert(T2, 1), convert(T2, 1)]
+    d = T[convert(T, 0.57281606), convert(T, -3.819703409768521), zero(T), zero(T)]
+    b = T[convert(T, 1.745761108723104), zero(T), convert(T, 1), convert(T, 1)]
+    btilde = T[zero(T), zero(T), zero(T), one(T)]
+    H = zeros(T, 0, 4)
+
+    return RodasTableau(A, C, gamma, c, d, H, b, btilde)
+end
+
+################################################################################
 # Rodas3P (5-stage, with H matrix for dense output)
 ################################################################################
 
@@ -285,7 +392,7 @@ end
 A 3rd order Rosenbrock method with 5 stages, including a dense output matrix H.
 Reference: Steinebach, G. (2024). Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications. Proceedings of the JuliaCon Conferences.
 """
-function Rodas3PRodasTableau(T, T2)
+function Rodas3PRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1 // 3)
     a21 = convert(T, 4.0 / 3.0)
     a41 = convert(T, 2.90625)
@@ -337,7 +444,13 @@ function Rodas3PRodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
-function RosShamp4RodasTableau(T, T2)
+"""
+    RosShamp4RodasTableau(T, T2)
+
+A 4th order A-stable Rosenbrock method by Shampine.
+Reference: Shampine, L. F. (1982). Implementation of Rosenbrock methods.
+"""
+function RosShamp4RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1 // 2)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 2.0)
@@ -365,7 +478,7 @@ end
 
 A 4th order Rosenbrock method by van Veldhuizen.
 """
-function Veldd4RodasTableau(T, T2)
+function Veldd4RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.2257081148225682)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 2.0)
@@ -388,7 +501,12 @@ function Veldd4RodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
-function Velds4RodasTableau(T, T2)
+"""
+    Velds4RodasTableau(T, T2)
+
+A 4th order Rosenbrock method by van Veldhuizen.
+"""
+function Velds4RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1 // 2)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 2.0)
@@ -416,7 +534,7 @@ end
 
 A 4th order Generalized Runge-Kutta (Rosenbrock) method by Kaps and Rentrop.
 """
-function GRK4TRodasTableau(T, T2)
+function GRK4TRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.231)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 2.0)
@@ -439,7 +557,12 @@ function GRK4TRodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
-function GRK4ARodasTableau(T, T2)
+"""
+    GRK4ARodasTableau(T, T2)
+
+A 4th order Generalized Runge-Kutta (Rosenbrock) method by Kaps and Rentrop.
+"""
+function GRK4ARodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.395)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 1.108860759493671)
@@ -467,7 +590,7 @@ end
 
 A 4th order L-stable Rosenbrock method.
 """
-function Ros4LStabRodasTableau(T, T2)
+function Ros4LStabRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.57282)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 2.0)
@@ -495,7 +618,7 @@ end
 
 A 2nd order Rosenbrock method.
 """
-function ROS2RodasTableau(T, T2)
+function ROS2RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 1.7071067811865475)
     A = zeros(T, 2, 2)
     A[2, 1] = convert(T, 0.585786437626905)
@@ -509,7 +632,13 @@ function ROS2RodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
-function ROS2PRRodasTableau(T, T2)
+"""
+    ROS2PRRodasTableau(T, T2)
+
+A 2nd order stiffly accurate Rosenbrock method with 3 stages and Rinf = 0.
+Reference: Rang, J. (2014). The Prothero and Robinson example: Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
+"""
+function ROS2PRRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.228155493653962)
     A = zeros(T, 3, 3)
     A[2, 1] = convert(T, 4.382975767906234)
@@ -532,7 +661,7 @@ end
 
 A 2nd order Rosenbrock method with specific stability properties.
 """
-function ROS2SRodasTableau(T, T2)
+function ROS2SRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.292893218813452)
     A = zeros(T, 3, 3)
     A[2, 1] = convert(T, 2.0000000000000036)
@@ -555,7 +684,7 @@ end
 
 A 3rd order Rosenbrock method.
 """
-function ROS3RodasTableau(T, T2)
+function ROS3RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 3, 3)
     A[2, 1] = convert(T, 1.0)
@@ -577,7 +706,7 @@ end
 
 A 3rd order Rosenbrock method.
 """
-function ROS3PRRodasTableau(T, T2)
+function ROS3PRRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.788675134594813)
     A = zeros(T, 3, 3)
     A[2, 1] = convert(T, 3.0000000000000018)
@@ -601,7 +730,7 @@ end
 A 4th order Rosenbrock method with 7 stages by Scholz.
 Reference: Scholz, S. (1989).
 """
-function Scholz4_7RodasTableau(T, T2)
+function Scholz4_7RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.788675134594813)
     A = zeros(T, 3, 3)
     A[2, 1] = convert(T, 3.0000000000000018)
@@ -625,7 +754,7 @@ end
 A Rosenbrock-W method of order (3)4.
 Reference: Rang, J., & Angermann, L. (2005). New Rosenbrock-W methods of order 3 and 4 for stiff problems.
 """
-function ROS34PW1aRodasTableau(T, T2)
+function ROS34PW1aRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 5.0905205106702045)
@@ -647,7 +776,13 @@ function ROS34PW1aRodasTableau(T, T2)
     return RodasTableau(A, C, gamma, c, d, H, b, btilde)
 end
 
-function ROS34PW1bRodasTableau(T, T2)
+"""
+    ROS34PW1bRodasTableau(T, T2)
+
+A Rosenbrock-W method of order (3)4.
+Reference: Rang, J., & Angermann, L. (2005). New Rosenbrock-W methods of order 3 and 4 for stiff problems.
+"""
+function ROS34PW1bRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 5.0905205106702045)
@@ -676,7 +811,7 @@ end
 A Rosenbrock-W method of order (3)4.
 Reference: Rang, J., & Angermann, L. (2005).
 """
-function ROS34PW2RodasTableau(T, T2)
+function ROS34PW2RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 2.0)
@@ -705,7 +840,7 @@ end
 
 A 3rd order Rosenbrock-W method.
 """
-function ROS34PRwRodasTableau(T, T2)
+function ROS34PRwRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 2.0)
@@ -734,7 +869,7 @@ end
 
 A 3rd order low-storage Rosenbrock method.
 """
-function ROS3PRLRodasTableau(T, T2)
+function ROS3PRLRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 1.147140180139521)
@@ -762,7 +897,7 @@ end
 
 A 3rd order low-storage Rosenbrock method.
 """
-function ROS3PRL2RodasTableau(T, T2)
+function ROS3PRL2RodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.435866521508459)
     A = zeros(T, 4, 4)
     A[2, 1] = convert(T, 3.000000000000007)
@@ -790,7 +925,7 @@ end
 
 A 6-stage 4th order Rosenbrock-W method.
 """
-function RosenbrockW6S4OSRodasTableau(T, T2)
+function RosenbrockW6S4OSRodasTableau(::Type{T}, ::Type{T2}) where {T, T2}
     gamma = convert(T2, 0.25)
     A = zeros(T, 6, 6)
     A[2, 1] = convert(T, 0.5812383407115008)

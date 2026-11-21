@@ -43,9 +43,17 @@ end
 
 # pirate
 @inline function (f::ODEFunction)(
-        v::AbstractArray{<:VectorizationBase.AbstractSIMD}, args...
+        v::AbstractArray{<:VectorizationBase.AbstractSIMD}, p, t
     )
-    return @inline f.f(v, args...)
+    return @inline f.f(v, p, t)
+end
+
+@inline function (f::ODEFunction)(
+        v::AbstractArray{<:VectorizationBase.AbstractSIMD},
+        p::DespecializedParameters,
+        t
+    )
+    return @inline invoke_with_despecialized_parameters(f.f, (v, p, t))
 end
 
 @muladd function perform_step!(

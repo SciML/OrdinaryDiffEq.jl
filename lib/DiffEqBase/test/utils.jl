@@ -8,7 +8,7 @@ using ForwardDiff: Dual, Tag
 @testset "tspan2dtmin" begin
     # we only need to test very rough equality since timestepping isn't science.
     function approxoftype(a, b; rtol = 0.5)
-        return typeof(a) === typeof(b) && isapprox(a, b; rtol = rtol)
+        return typeof(a) === typeof(b) && isapprox(a, b; rtol)
     end
     function tspan2dtmin(tspan; kwargs...)
         prob2dtmin(ODEProblem((u, p, t) -> u, 1, tspan); kwargs...)

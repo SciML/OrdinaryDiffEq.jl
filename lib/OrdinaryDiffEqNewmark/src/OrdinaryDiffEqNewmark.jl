@@ -8,15 +8,17 @@ import OrdinaryDiffEqCore: initialize!, perform_step!, unwrap_alg,
     OrdinaryDiffEqImplicitSecondOrderAlgorithm,
     OrdinaryDiffEqAdaptiveImplicitSecondOrderAlgorithm,
     OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
-    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
+    alg_cache, _vec, _reshape, @cache, isfsal,
     constvalue, _unwrap_val, _ode_interpolant,
     trivial_limiter!, _ode_interpolant!,
     get_fsalfirstlast, generic_solver_docstring,
     OrdinaryDiffEqCore
+import DiffEqBase: calculate_residuals, calculate_residuals!
 import PreallocationTools: DiffCache, get_tmp
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
+import SciMLBase: full_cache
 using SciMLBase: DynamicalODEFunction
-using LinearAlgebra: mul!, I
+using LinearAlgebra: mul!, lmul!, I
 import FastBroadcast: @..
 import MuladdMacro: @muladd
 import ADTypes: AutoForwardDiff
@@ -34,6 +36,5 @@ include("newmark_caches.jl")
 include("newmark_nlsolve.jl")
 include("newmark_perform_step.jl")
 
-export NewmarkBeta
-
+export NewmarkBeta, GeneralizedAlpha
 end

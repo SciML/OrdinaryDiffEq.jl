@@ -1,8 +1,11 @@
 function nordsieck_adjust!(integrator, cache::T) where {T}
     (; nextorder, order) = cache
     if nextorder != order
-        # TODO: optimize?
-        nordsieck_adjust_order!(cache, nextorder - order)
+        if is_bdf(integrator.alg)
+            nordsieck_adjust_order_bdf!(cache, nextorder - order)
+        else
+            nordsieck_adjust_order!(cache, nextorder - order)
+        end
         cache.order = cache.nextorder
         cache.L = cache.order + 1
         cache.n_wait = cache.L
@@ -18,7 +21,7 @@ function nordsieck_finalize!(integrator, cache::T) where {T}
     (; order, dts) = cache
     update_nordsieck_vector!(cache)
     cache.n_wait -= 1
-    return if is_nordsieck_change_order(cache, 1) && cache.order != 12
+    return if is_nordsieck_change_order(cache, 1) && cache.order != nordsieck_qmax(integrator.alg)
         if isconst
             cache.z[end] = cache.Δ
         else
@@ -33,14 +36,14 @@ function nordsieck_prepare_next!(integrator, cache::T) where {T}
     (; maxη, order, L) = cache
     # TODO: further clean up
     (; bias1, bias2, bias3, addon) = integrator.alg
-    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
+    if get_EEst(integrator) > one(get_EEst(integrator))
         nordsieck_rewind!(cache)
         cache.n_wait = max(2, cache.n_wait)
         cache.nextorder = order
-        cache.η = inv((bias2 * OrdinaryDiffEqCore.get_EEst(integrator))^inv(L) + addon)
+        cache.η = inv((bias2 * get_EEst(integrator))^inv(L) + addon)
         return nothing
     end
-    cache.ηq = inv((bias2 * OrdinaryDiffEqCore.get_EEst(integrator))^inv(L) + addon)
+    cache.ηq = inv((bias2 * get_EEst(integrator))^inv(L) + addon)
     stepsize_η!(integrator, cache, cache.order)
     if !is_nordsieck_change_order(cache)
         cache.η = cache.ηq
@@ -60,6 +63,17 @@ function nordsieck_prepare_next!(integrator, cache::T) where {T}
         cache.Δ = cache.c_LTE * cache.Δ
     else
         @.. broadcast = false cache.Δ = cache.c_LTE * cache.Δ
+    end
+    return nothing
+end
+
+function nordsieck_complete_step!(integrator, cache, oldest_dt)
+    if get_EEst(integrator) > one(get_EEst(integrator))
+        nordsieck_prepare_next!(integrator, cache)
+        nordsieck_restore_dts!(cache, oldest_dt)
+    else
+        nordsieck_finalize!(integrator, cache)
+        nordsieck_prepare_next!(integrator, cache)
     end
     return nothing
 end
@@ -156,6 +170,64 @@ function calc_coeff!(cache::T) where {T}
     end # end @inbounds
 end
 
+# Fixed-leading-coefficient BDF coefficients `l` and error constants, translated from
+# `cvSetBDF` and `cvSetTqBDF` in SUNDIALS v7.9.0 `src/cvode/cvode.c` (BSD-3-Clause; see
+# the SUNDIALS section of LICENSE.md). CVODE's `l[i]` is `l[i + 1]` here and its
+# `tau[j]` (the j-th previous step size) is `dts[j + 1]`.
+function calc_coeff_bdf!(cache)
+    @inbounds begin
+        (; l, dts, order) = cache
+        q = order
+        dt = dts[1]
+        T = eltype(l)
+        for i in 1:(q + 1)
+            l[i] = zero(T)
+        end
+        l[1] = l[2] = one(T)
+        ξ_inv = ξstar_inv = one(T)
+        α0 = α0_hat = -one(T)
+        dtsum = dt
+        if q > 1
+            for j in 2:(q - 1)
+                dtsum += dts[j]
+                ξ_inv = dt / dtsum
+                α0 -= one(T) / j
+                for i in j:-1:1
+                    l[i + 1] = muladd(l[i], ξ_inv, l[i + 1])
+                end
+            end
+            α0 -= one(T) / q
+            ξstar_inv = -l[2] - α0
+            dtsum += dts[q]
+            ξ_inv = dt / dtsum
+            α0_hat = -l[2] - ξ_inv
+            for i in q:-1:1
+                l[i + 1] = muladd(l[i], ξstar_inv, l[i + 1])
+            end
+        end
+        A1 = 1 - α0_hat + α0
+        A2 = 1 + q * A1
+        cache.c_LTE = abs(A1 / (α0 * A2))
+        cache.c_𝒟 = abs(A2 * ξstar_inv / (l[q + 1] * ξ_inv))
+        if is_nordsieck_change_order(cache, 1)
+            if q > 1
+                A3 = α0 + one(T) / q
+                A4 = α0_hat + ξ_inv
+                cache.c_LTE₋₁ = abs(ξstar_inv / l[q + 1] * (1 - A4 + A3) / A3)
+            else
+                cache.c_LTE₋₁ = one(T)
+            end
+            dtsum += dts[q + 1]
+            ξ_inv = dt / dtsum
+            A5 = α0 - one(T) / (q + 1)
+            A6 = α0_hat - ξ_inv
+            cache.c_LTE₊₁ = abs((1 - A6 + A5) / A2 / (ξ_inv * (q + 2) * A5))
+        end
+        cache.c_conv = 1 // 10 / cache.c_LTE
+        return nothing
+    end
+end
+
 # Apply the Pascal linear operator
 function perform_predict!(cache::T, rewind = false) where {T}
     return @inbounds begin
@@ -218,7 +290,7 @@ function nlsolve_functional!(integrator, cache::T) where {T}
         (; ratetmp) = cache
         integrator.f(ratetmp, z[1], p, dt + t)
     end
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    increment_nf!(integrator.stats, 1)
     maxiters = 3
     div_rate = 2
     # Zero out the difference vector
@@ -258,7 +330,7 @@ function nlsolve_functional!(integrator, cache::T) where {T}
             return false
         end
         δ_prev = δ
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        increment_nf!(integrator.stats, 1)
         isconstcache ? (ratetmp = integrator.f(integrator.u, p, dt + t)) :
             integrator.f(ratetmp, integrator.u, p, dt + t)
     end
@@ -284,6 +356,20 @@ end
 function nordsieck_rewind!(cache)
     perform_predict!(cache, true)
     return nordsieck_rescale!(cache, true)
+end
+
+function nordsieck_restore_failed_step!(cache, oldest_dt)
+    nordsieck_rewind!(cache)
+    return nordsieck_restore_dts!(cache, oldest_dt)
+end
+
+function nordsieck_restore_dts!(cache, oldest_dt)
+    dts = cache.dts
+    for i in 1:(length(dts) - 1)
+        dts[i] = dts[i + 1]
+    end
+    dts[end] = oldest_dt
+    return nothing
 end
 
 function is_nordsieck_change_order(cache::T, n = 0) where {T}
@@ -347,15 +433,85 @@ function nordsieck_adjust_order!(cache::T, dorder) where {T}
     end # @inbound
 end
 
+# BDF order change of the Nordsieck vector, translated from `cvIncreaseBDF` and
+# `cvDecreaseBDF` in SUNDIALS v7.9.0 `src/cvode/cvode.c` (BSD-3-Clause; see the SUNDIALS
+# section of LICENSE.md). It runs before the rescale, so `z` is still scaled to the
+# previous step `dts[2]`, and CVODE's `tau[j]` is `dts[j + 1]`.
+function nordsieck_adjust_order_bdf!(cache::T, dorder) where {T}
+    isconstcache = T <: OrdinaryDiffEqConstantCache
+    (; z, l, order, dts) = cache
+    q = order
+    dtscale = dts[2]
+    fill!(l, zero(eltype(l)))
+    l[3] = one(eltype(l))
+    if dorder == 1
+        α0 = -one(eltype(l))
+        α1 = prod = ξold = one(eltype(l))
+        dtsum = dtscale
+        for j in 1:(q - 1)
+            dtsum += dts[j + 2]
+            ξ = dtsum / dtscale
+            prod *= ξ
+            α0 -= one(eltype(l)) / (j + 1)
+            α1 += inv(ξ)
+            for i in (j + 2):-1:2
+                l[i + 1] = muladd(l[i + 1], ξold, l[i])
+            end
+            ξold = ξ
+        end
+        # `z[end]` holds `Δ` of the last step at order `q` (stored by `chooseη!`)
+        A1 = (-α0 - α1) / prod
+        if isconstcache
+            z[q + 2] = A1 * z[end]
+            for j in 2:q
+                z[j + 1] = muladd.(l[j + 1], z[q + 2], z[j + 1])
+            end
+        else
+            @.. broadcast = false z[q + 2] = A1 * z[end]
+            for j in 2:q
+                @.. broadcast = false z[j + 1] = muladd(l[j + 1], z[q + 2], z[j + 1])
+            end
+        end
+    elseif q > 2
+        dtsum = zero(dtscale)
+        for j in 1:(q - 2)
+            dtsum += dts[j + 1]
+            ξ = dtsum / dtscale
+            for i in (j + 2):-1:2
+                l[i + 1] = muladd(l[i + 1], ξ, l[i])
+            end
+        end
+        for j in 2:(q - 1)
+            if isconstcache
+                z[j + 1] = muladd.(-l[j + 1], z[q + 1], z[j + 1])
+            else
+                @.. broadcast = false z[j + 1] = muladd(-l[j + 1], z[q + 1], z[j + 1])
+            end
+        end
+    end
+    return nothing
+end
+
+is_bdf(alg) = alg isa JVODE && alg.algorithm === :BDF
+
+# An Adams order change is only applied together with a step size change
+function nordsieck_needs_adjust(integrator, cache)
+    integrator.dt != cache.dts[2] && return true
+    return is_bdf(integrator.alg) && cache.nextorder != cache.order
+end
+
+# Maximum order: 5 for BDF (as in CVODE), the length of the Nordsieck array for Adams
+nordsieck_qmax(alg) = is_bdf(alg) ? 5 : 12
+
 # `η` is `dtₙ₊₁/dtₙ`
 function setη!(integrator, cache::T) where {T}
-    if cache.η < integrator.alg.qsteady_max
+    if cache.η < get_qsteady_max(integrator)
         cache.η = 1
     else
         # TODO: Not the same with SUNDIALS
         (integrator.iter == 1 || integrator.derivative_discontinuity) &&
             (cache.η = min(1.0e5, cache.η); return nothing)
-        cache.η = min(integrator.alg.qmax, max(integrator.alg.qmin, cache.η))
+        cache.η = min(get_qmax(integrator), max(get_qmin(integrator), cache.η))
     end
     return nothing
 end
@@ -364,9 +520,10 @@ function chooseη!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
     (; ηq, η₋₁, η₊₁, order, z, Δ) = cache
     η = max(ηq, η₋₁, η₊₁)
-    if η < integrator.alg.qsteady_max
+    if η < get_qsteady_max(integrator)
         cache.η = 1
         cache.nextorder = order
+        is_bdf(integrator.alg) && return nothing
     end
 
     if η == ηq
@@ -378,8 +535,7 @@ function chooseη!(integrator, cache::T) where {T}
     else
         cache.η = cache.η₊₁
         cache.nextorder = order + 1
-        # TODO: BDF
-        if integrator.alg.algorithm == :BDF
+        if is_bdf(integrator.alg)
             if isconst
                 z[end] = Δ
             else
@@ -394,7 +550,7 @@ function stepsize_η!(integrator, cache, order)
     bias2 = integrator.alg.bias2
     addon = integrator.alg.addon
     L = order + 1
-    cache.ηq = inv((bias2 * OrdinaryDiffEqCore.get_EEst(integrator))^inv(L) + addon)
+    cache.ηq = inv((bias2 * get_EEst(integrator))^inv(L) + addon)
     return cache.ηq
 end
 
@@ -409,7 +565,7 @@ function stepsize_η₊₁!(integrator, cache::T, order) where {T}
     addon = integrator.alg.addon
     q = order
     cache.η₊₁ = 0
-    qmax = length(z) - 1
+    qmax = nordsieck_qmax(integrator.alg)
     L = q + 1
     if q != qmax
         cache.prev_𝒟 == 0 && return cache.η₊₁

@@ -13,7 +13,8 @@ testTol = 2.0
 
 # Custom ODE functions for testing
 function f!(du, u, p, t)
-    return du[1] = -u[1]
+    du[1] = -u[1]
+    return
 end
 
 function f(u, p, t)
@@ -129,6 +130,13 @@ println("RKV76IIa")
 dts = [2, 1, 0.5, 0.25]
 
 check_convergence(dts, prob_oop, RKV76IIa(), 7)
+check_convergence(dts, prob_iip, RKV76IIa(), 7)
+
+let dt = 0.25
+    oop = solve(prob_oop, RKV76IIa(); dt = dt, adaptive = false)
+    iip = solve(prob_iip, RKV76IIa(); dt = dt, adaptive = false)
+    @test iip.u[end][1] ≈ oop.u[end] rtol = 1.0e-10
+end
 
 # -------------------------------------------------------------
 ### Backward solve lazy interpolation dt sign regression test
@@ -139,7 +147,8 @@ println("Backward solve lazy interpolation")
 
 function backward_ode!(du, u, p, t)
     du[1] = -u[1]
-    return du[2] = -2 * u[2]
+    du[2] = -2 * u[2]
+    return
 end
 
 prob_back = ODEProblem(backward_ode!, [1.0, 1.0], (1.0, 0.0))
@@ -182,3 +191,31 @@ solve(
 
 @test length(interp_lazy) == length(interp_nolazy)
 @test maximum(abs.(interp_lazy .- interp_nolazy)) < 1.0e-10
+
+### Interpolation inside a step truncated by a ContinuousCallback
+# The extra interpolation stages of the non-lazy interpolants live inside
+# kshortsize, so a shortened step must explicitly force them to be recomputed
+# rather than reuse the ones built for the original dt.
+println("Interpolation in a callback-truncated step")
+
+exp_prob = ODEProblem((du, u, p, t) -> (du[1] = u[1]; nothing), [1.0], (0.0, 5.0))
+root_cb = ContinuousCallback((u, t, integ) -> u[1] - 50.0, integ -> nothing)
+
+function worst_interior_error(sol, lo, hi)
+    return maximum(
+        abs(sol(t)[1] - exp(t)) / exp(t)
+            for t in range(lo, hi, length = 21)[2:(end - 1)]
+    )
+end
+
+for alg in (
+        Vern6(lazy = false), Vern7(lazy = false),
+        Vern8(lazy = false), Vern9(lazy = false),
+        Vern6(), Vern7(), Vern8(), Vern9(),
+    )
+    sol = solve(
+        exp_prob, alg; abstol = 1.0e-10, reltol = 1.0e-10, callback = root_cb
+    )
+    i = findfirst(≈(log(50.0)), sol.t)
+    @test worst_interior_error(sol, sol.t[i - 1], sol.t[i]) < 1.0e-8
+end

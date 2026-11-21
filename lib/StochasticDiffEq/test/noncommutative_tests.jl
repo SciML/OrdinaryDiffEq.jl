@@ -106,7 +106,7 @@ sim5 = analyticless_test_convergence(
 @test abs(sim5.𝒪est[:final] - 0.5) < 0.2
 test_dt_mil = 1 / 2^(12)
 sim6 = analyticless_test_convergence(
-    dts, prob2, RKMilGeneral(p = true, dt = test_dt_mil),
+    dts, prob2, RKMilGeneral(),
     test_dt_mil, trajectories = 500, use_noise_grid = false
 )
 @test abs(sim6.𝒪est[:final] - 1.0) < 0.2

@@ -13,7 +13,8 @@ using Random
 using DiffEqDevTools
 #using DiffEqGPU
 
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     return remake(prob, seed = seeds[i])
 end
 
@@ -40,8 +41,8 @@ seeds = rand(UInt, numtraj)
 prob = SDEProblem(f, g, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h1(sol.u[end]), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h1(sol.u[end]), false),
+    prob_func
 )
 
 sim = test_convergence(
@@ -117,8 +118,8 @@ dts = 1 .// 2 .^ (5:-1:0)
 prob = SDEProblem(f!, g!, [u₀], tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h1(sol.u[end][1]), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h1(sol.u[end][1]), false),
+    prob_func
 )
 
 sim = test_convergence(
@@ -195,11 +196,13 @@ println("COM:", sim.𝒪est[:weak_final])
 u₀ = [0.1, 0.1]
 function f3!(du, u, p, t)
     du[1] = 299 // 200 * u[1]
-    return du[2] = 299 // 200 * u[2]
+    du[2] = 299 // 200 * u[2]
+    return
 end
 function g3!(du, u, p, t)
     du[1] = 1 // 10 * u[1]
-    return du[2] = 1 // 10 * u[2]
+    du[2] = 1 // 10 * u[2]
+    return
 end
 dts = 1 .// 2 .^ (4:-1:0)
 tspan = (0.0, 1.0)
@@ -209,8 +212,8 @@ h3(z) = z^2 # == 1//10**exp(3//2*t) if h3(z) = z and  == 1//100**exp(301//100*t)
 prob = SDEProblem(f3!, g3!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h3(sol.u[end][1]), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h3(sol.u[end][1]), false),
+    prob_func
 )
 
 numtraj = Int(5.0e5)

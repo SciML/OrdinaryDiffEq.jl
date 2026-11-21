@@ -182,7 +182,7 @@ function SBDF(;
 end
 
 """
-    SBDF2(;kwargs...)
+    SBDF2(; kwargs...)
 
 The two-step version of the IMEX multistep methods of
 
@@ -197,7 +197,7 @@ See also `SBDF`.
 SBDF2(; kwargs...) = SBDF(2; kwargs...)
 
 """
-    SBDF3(;kwargs...)
+    SBDF3(; kwargs...)
 
 The three-step version of the IMEX multistep methods of
 
@@ -212,7 +212,7 @@ See also `SBDF`.
 SBDF3(; kwargs...) = SBDF(3; kwargs...)
 
 """
-    SBDF4(;kwargs...)
+    SBDF4(; kwargs...)
 
 The four-step version of the IMEX multistep methods of
 
@@ -484,6 +484,19 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     - `stald_sqtol`: STALD tolerance for quartic residual. Default: `1e-3`.
     - `stald_rrtol`: STALD tolerance for rr cross-verification. Default: `1e-2`.
     - `stald_tiny`: STALD tiny value to avoid division by zero. Default: `1e-90`.
+    - `time_filter`: Apply optional time filters based on
+        [DeCaria et al.](https://arxiv.org/abs/1810.06670), with the order-raising
+        weight adapted to FBDF's fixed-coefficient solve on unequal steps. At
+        base orders 1–4, an additional candidate has order `k+1`; at order 3,
+        a BDF3-Stab candidate has order 2. Adaptive stepping selects a candidate
+        and uses its error estimate and order for step-size control. The higher
+        candidate requires `qwait == 0` and never exceeds `max_order`; BDF3-Stab
+        remains available with `max_order = Val(3)`. Fixed stepping uses the
+        higher candidate when permitted by `max_order`. Filtering starts only
+        when sufficient history is available. Requires the identity mass matrix.
+        STALD's unfiltered derivative tests are not used on filtered steps.
+        Extra `f` evaluations are required; efficiency depends on the problem.
+        Default: `false`.
     """,
     extra_keyword_default = """
     κ = nothing,
@@ -499,6 +512,7 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     stald_sqtol = 1e-3,
     stald_rrtol = 1e-2,
     stald_tiny = 1e-90,
+    time_filter = false,
     """
 )
 struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT} <:
@@ -522,6 +536,7 @@ struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT} <:
     qmax::QT
     qsteady_min::QT
     qsteady_max::QT
+    time_filter::Bool
 end
 
 function FBDF(;
@@ -538,6 +553,7 @@ function FBDF(;
         stald_rrtol = 1.0e-2,
         stald_tiny = 1.0e-90,
         qsteady_min = 9 // 10, qsteady_max = 2 // 1, qmax = 10 // 1,
+        time_filter = false,
     ) where {MO}
     autodiff = _fixup_ad(autodiff)
 
@@ -548,6 +564,7 @@ function FBDF(;
         Float64(stald_sqtol), Float64(stald_rrtol), Float64(stald_tiny),
         _unwrap_val(concrete_jac),
         qmax, qsteady_min, qsteady_max,
+        time_filter,
     )
 end
 
@@ -575,7 +592,7 @@ An alias of `QNDF` with κ=0.
 QBDF(; kwargs...) = QNDF(; kappa = tuple(0 // 1, 0 // 1, 0 // 1, 0 // 1, 0 // 1), kwargs...)
 
 """
-    IMEXEuler(;kwargs...)
+    IMEXEuler(; kwargs...)
 
 The one-step version of the IMEX multistep methods of
 
@@ -602,7 +619,7 @@ See also `SBDF`, `IMEXEulerARK`.
 IMEXEuler(; kwargs...) = SBDF(1; kwargs...)
 
 """
-    IMEXEulerARK(;kwargs...)
+    IMEXEulerARK(; kwargs...)
 
 The one-step version of the IMEX multistep methods of
 
@@ -764,3 +781,145 @@ function DFBDF(;
 end
 
 @truncate_stacktrace DFBDF
+
+############################################ NordsieckBDF / DNordsieckBDF
+# ================================================================= algorithms
+@doc generic_solver_docstring(
+    """
+    An adaptive-order, adaptive-time BDF method on a propagated **Nordsieck**
+    history array `zn[j] = h^j/j! * y^(j)(t_n)`, following SUNDIALS CVODE.
+
+    Where `FBDF` stores raw `(t_i, u_i)` history and rebuilds the predictor and the
+    error/order estimates from it every step, this method propagates one array:
+    predicting is a Pascal-triangle shift, changing the step size is
+    `zn[j] *= eta^j`, and accepting a step is a rank-1 update. Because nothing is
+    reconstructed from stored points, a loose nonlinear solve cannot be amplified
+    into a step-size collapse, so the corrector can be solved to a fraction of the
+    local error budget (`nlsolve = NLNewton(κ = …)`, CVODE's NLSCOEF) instead of to
+    full accuracy. On stiff benchmarks that is worth roughly a factor of two in
+    f-evaluations relative to `FBDF`.
+
+    Dense output is the Nordsieck polynomial itself and is free.
+    """,
+    "NordsieckBDF",
+    "Multistep Method",
+    """
+    @article{byrne1975polyalgorithm,
+    title={A polyalgorithm for the numerical solution of ordinary differential equations},
+    author={Byrne, George D and Hindmarsh, Alan C},
+    journal={ACM Transactions on Mathematical Software},
+    volume={1}, number={1}, pages={71--96}, year={1975}}
+    @article{hindmarsh2005sundials,
+    title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
+    author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L
+            and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
+    journal={ACM Transactions on Mathematical Software},
+    volume={31}, number={3}, pages={363--396}, year={2005}}""",
+    """
+    - `nlsolve`: nonlinear solver for the implicit stage. Its `κ` acts as CVODE's
+      NLSCOEF, i.e. the fraction of the local error budget the corrector is allowed
+      to consume, because the increment norm is scaled by the test quantity `tq[2]`.
+      The default caps the corrector at 3 iterations, matching CVODE's `MAXCOR`:
+      past that it is cheaper to give up, refresh `W`, and re-converge than to keep
+      iterating with a stale Jacobian — a trade this method can take because
+      refactorizing is comparatively rare for it.
+    - `max_order`: maximum BDF order (1–5).
+    - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`.
+    """,
+    """
+    nlsolve = NLNewton(max_iter = 3),
+    extrapolant = :linear,
+    max_order::Val{MO} = Val{5}(),
+    step_limiter! = trivial_limiter!,
+    """
+)
+struct NordsieckBDF{MO, AD, F, F2, T, StepLimiter, CJ, QT} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm
+    max_order::Val{MO}
+    linsolve::F
+    nlsolve::F2
+    tol::T
+    extrapolant::Symbol
+    step_limiter!::StepLimiter
+    autodiff::AD
+    concrete_jac::CJ
+    stald::Bool
+    qmax::QT
+    qsteady_min::QT
+    qsteady_max::QT
+end
+
+function NordsieckBDF(;
+        max_order::Val{MO} = Val{5}(),
+        autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(max_iter = 3), tol = nothing,
+        extrapolant = :linear, step_limiter! = trivial_limiter!, stald = false,
+        qsteady_min = 1 // 1, qsteady_max = 1 // 1, qmax = 10 // 1
+    ) where {MO}
+    autodiff = _fixup_ad(autodiff)
+    return NordsieckBDF(
+        max_order, linsolve, nlsolve, tol, extrapolant, step_limiter!,
+        autodiff, _unwrap_val(concrete_jac), stald, qmax, qsteady_min, qsteady_max
+    )
+end
+
+@truncate_stacktrace NordsieckBDF
+
+@doc generic_solver_docstring(
+    """
+    Fully implicit DAE solver: the [`NordsieckBDF`](@ref) method applied to
+    `f(du, u, p, t) = 0`. The Nordsieck array supplies both the state predictor and
+    the derivative `du = zn[1]/h`, so the corrector solves
+    `f((zn[1] + l[1]*acor)/h, ypred + acor, p, t) = 0` with leading coefficient
+    `cj = l[1]/h` — the same role IDA's `cj` plays.
+    """,
+    "DNordsieckBDF",
+    "Fully Implicit Multistep Method",
+    """
+    @article{hindmarsh2005sundials,
+    title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
+    author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L
+            and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
+    journal={ACM Transactions on Mathematical Software},
+    volume={31}, number={3}, pages={363--396}, year={2005}}""",
+    """
+    - `nlsolve`: nonlinear solver for the implicit stage; its `κ` acts as NLSCOEF.
+    - `max_order`: maximum BDF order (1–5).
+    """,
+    """
+    nlsolve = NLNewton(max_iter = 3),
+    extrapolant = :linear,
+    max_order::Val{MO} = Val{5}(),
+    """
+)
+struct DNordsieckBDF{MO, AD, F, F2, T, CJ, QT} <: DAEAlgorithm
+    max_order::Val{MO}
+    linsolve::F
+    nlsolve::F2
+    tol::T
+    extrapolant::Symbol
+    autodiff::AD
+    concrete_jac::CJ
+    stald::Bool
+    qmax::QT
+    qsteady_min::QT
+    qsteady_max::QT
+end
+
+function DNordsieckBDF(;
+        max_order::Val{MO} = Val{5}(),
+        autodiff = AutoForwardDiff(), concrete_jac = nothing,
+        linsolve = nothing, nlsolve = NLNewton(max_iter = 3), tol = nothing,
+        extrapolant = :linear, stald = false,
+        qsteady_min = 1 // 1, qsteady_max = 1 // 1, qmax = 10 // 1
+    ) where {MO}
+    autodiff = _fixup_ad(autodiff)
+    return DNordsieckBDF(
+        max_order, linsolve, nlsolve, tol, extrapolant, autodiff,
+        _unwrap_val(concrete_jac), stald, qmax, qsteady_min, qsteady_max
+    )
+end
+
+@truncate_stacktrace DNordsieckBDF
+
+const NordsieckBDFAlgs = Union{NordsieckBDF, DNordsieckBDF}

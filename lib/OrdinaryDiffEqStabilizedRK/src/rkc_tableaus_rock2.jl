@@ -1,4 +1,4 @@
-function ROCK2ConstantCache(T, T2, zprev)
+function ROCK2ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
     ms = (
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
         20,
@@ -4552,6 +4552,6 @@ function ROCK2ConstantCache(T, T2, zprev)
     ]
 
     return ROCK2ConstantCache{T, T2, typeof(zprev)}(
-        ms, NTuple{46, T}(fp1), NTuple{46, T}(fp2), recf, zprev, 1, 1, 1, 0, 200
+        ms, NTuple{46, T}(fp1), NTuple{46, T}(fp2), recf, zprev, 1, 1, 1, 0, 200, 0
     )
 end

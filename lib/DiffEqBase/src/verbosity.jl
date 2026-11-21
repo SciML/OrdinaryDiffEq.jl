@@ -1,12 +1,13 @@
 @verbosity_specifier DEVerbosity begin
+    sub_specifiers = (:linear_verbosity, :nonlinear_verbosity)
     toggles = (
-        :linear_verbosity, :nonlinear_verbosity,
         :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable, :instability,
+        :symbolic_diagnostic,
         :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
         :w_factorization, :newton_iterations,
         :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
-        :stability_check, :near_singular,
+        :stability_check, :near_singular, :stage_limiter_unused, :step_limiter_unused,
         :sensitivity_vjp_choice,
         # SDE-specific fields
         :noise_evaluation,
@@ -17,6 +18,12 @@
         :residual_control,
         :neutral_delay,
         :state_dependent_delay,
+        # Global error fields (GlobalDiffEq)
+        :global_error_event_mismatch,
+        :global_error_companion_order,
+        :global_error_final_solve,
+        :global_error_ad_fallback,
+        :global_error_grazing_event,
     )
 
     presets = (
@@ -29,6 +36,7 @@
             max_iters = Silent(),
             dt_min_unstable = Silent(),
             instability = Silent(),
+            symbolic_diagnostic = Silent(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -45,6 +53,8 @@
             dt_epsilon = Silent(),
             stability_check = Silent(),
             near_singular = Silent(),
+            stage_limiter_unused = Silent(),
+            step_limiter_unused = Silent(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
@@ -55,6 +65,12 @@
             residual_control = Silent(),
             neutral_delay = Silent(),
             state_dependent_delay = Silent(),
+            # Global error fields (GlobalDiffEq)
+            global_error_event_mismatch = Silent(),
+            global_error_companion_order = Silent(),
+            global_error_final_solve = Silent(),
+            global_error_ad_fallback = Silent(),
+            global_error_grazing_event = Silent(),
         ),
         Minimal = (
             linear_verbosity = Minimal(),
@@ -65,6 +81,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = Silent(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -81,6 +98,8 @@
             dt_epsilon = WarnLevel(),
             stability_check = Silent(),
             near_singular = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
@@ -91,6 +110,12 @@
             residual_control = Silent(),
             neutral_delay = Silent(),
             state_dependent_delay = WarnLevel(),
+            # Global error fields (GlobalDiffEq)
+            global_error_event_mismatch = WarnLevel(),
+            global_error_companion_order = Silent(),
+            global_error_final_solve = WarnLevel(),
+            global_error_ad_fallback = Silent(),
+            global_error_grazing_event = WarnLevel(),
         ),
         Standard = (
             linear_verbosity = Minimal(),
@@ -101,6 +126,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = WarnLevel(),
             newton_convergence = Silent(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -117,6 +143,8 @@
             dt_epsilon = WarnLevel(),
             stability_check = Silent(),
             near_singular = Silent(),
+            stage_limiter_unused = ErrorLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = Silent(),
             # SDE-specific fields
             noise_evaluation = Silent(),
@@ -127,6 +155,12 @@
             residual_control = Silent(),
             neutral_delay = Silent(),
             state_dependent_delay = Silent(),
+            # Global error fields (GlobalDiffEq)
+            global_error_event_mismatch = WarnLevel(),
+            global_error_companion_order = WarnLevel(),
+            global_error_final_solve = WarnLevel(),
+            global_error_ad_fallback = WarnLevel(),
+            global_error_grazing_event = WarnLevel(),
         ),
         Detailed = (
             linear_verbosity = Detailed(),
@@ -137,6 +171,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = Silent(),
             step_accepted = Silent(),
@@ -153,6 +188,8 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
@@ -163,6 +200,12 @@
             residual_control = InfoLevel(),
             neutral_delay = InfoLevel(),
             state_dependent_delay = WarnLevel(),
+            # Global error fields (GlobalDiffEq)
+            global_error_event_mismatch = WarnLevel(),
+            global_error_companion_order = WarnLevel(),
+            global_error_final_solve = WarnLevel(),
+            global_error_ad_fallback = WarnLevel(),
+            global_error_grazing_event = WarnLevel(),
         ),
         All = (
             linear_verbosity = All(),
@@ -173,6 +216,7 @@
             max_iters = WarnLevel(),
             dt_min_unstable = WarnLevel(),
             instability = WarnLevel(),
+            symbolic_diagnostic = WarnLevel(),
             newton_convergence = WarnLevel(),
             step_rejected = InfoLevel(),
             step_accepted = InfoLevel(),
@@ -189,6 +233,8 @@
             dt_epsilon = InfoLevel(),
             stability_check = InfoLevel(),
             near_singular = WarnLevel(),
+            stage_limiter_unused = ErrorLevel(),
+            step_limiter_unused = WarnLevel(),
             sensitivity_vjp_choice = WarnLevel(),
             # SDE-specific fields
             noise_evaluation = InfoLevel(),
@@ -199,13 +245,19 @@
             residual_control = InfoLevel(),
             neutral_delay = InfoLevel(),
             state_dependent_delay = InfoLevel(),
+            # Global error fields (GlobalDiffEq)
+            global_error_event_mismatch = WarnLevel(),
+            global_error_companion_order = WarnLevel(),
+            global_error_final_solve = WarnLevel(),
+            global_error_ad_fallback = WarnLevel(),
+            global_error_grazing_event = WarnLevel(),
         ),
     )
 
     groups = (
         error_control = (
             :dt_NaN, :init_NaN, :dense_output_saveat, :max_iters, :dt_min_unstable,
-            :instability, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
+            :instability, :symbolic_diagnostic, :newton_convergence, :step_rejected, :step_accepted, :convergence_limit,
         ),
         performance = (
             :alg_switch, :stiff_detection, :mismatched_input_output_type, :jacobian_update,
@@ -213,7 +265,7 @@
         ),
         numerical = (
             :rosenbrock_no_differential_states, :shampine_dt, :unlimited_dt, :dt_epsilon,
-            :stability_check, :near_singular,
+            :stability_check, :near_singular, :stage_limiter_unused, :step_limiter_unused,
         ),
         sensitivity = (
             :sensitivity_vjp_choice,
@@ -228,6 +280,13 @@
             :residual_control,
             :neutral_delay,
             :state_dependent_delay,
+        ),
+        global_error = (
+            :global_error_event_mismatch,
+            :global_error_companion_order,
+            :global_error_final_solve,
+            :global_error_ad_fallback,
+            :global_error_grazing_event,
         ),
     )
 end
@@ -271,6 +330,8 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `dt_epsilon`: Messages when timestep goes below floating point epsilon
 - `stability_check`: Messages about stability checks in extrapolation methods
 - `near_singular`: Messages when Jacobian/mass matrix appears near-singular
+- `stage_limiter_unused`: Supplying a `stage_limiter` to a solver that does not apply one (defaults to `ErrorLevel`; lower it to allow the unused limiter)
+- `step_limiter_unused`: Messages when a step limiter is supplied to a solver that does not use it
 
 ## Sensitivity Group
 - `sensitivity_vjp_choice`: Messages about VJP choice in sensitivity analysis (used by SciMLSensitivity.jl)
@@ -286,6 +347,13 @@ diagnostic messages, warnings, and errors during ODE solution.
 - `neutral_delay`: Messages specific to neutral delay equations
 - `state_dependent_delay`: Messages when state-dependent delays are detected/evaluated
 
+## Global Error Group (used by GlobalDiffEq.jl)
+- `global_error_event_mismatch`: Messages when the events or the terminations of the forward solve and of the true solution, as the companion of `GlobalErrorEstimation` computes it, differ
+- `global_error_companion_order`: Messages when `GlobalErrorEstimation` solves its companion with a solver of order 3 or lower, which meets the tight companion tolerances poorly
+- `global_error_final_solve`: Messages when the final forward solve under global error control does not repeat the accepted solve (a callback with state outside of it, or a solve that is not deterministic)
+- `global_error_ad_fallback`: Messages when `GlobalAdjoint` cannot differentiate the model or a callback with ReverseDiff or ForwardDiff, and uses finite differences or a numerical VJP
+- `global_error_grazing_event`: Messages when an event of `GlobalAdjoint` is grazing (the vector field is tangent to the event surface), so that its saltation matrix has no time-shift term
+
 # Constructors
 
     DEVerbosity(preset::AbstractVerbosityPreset)
@@ -297,7 +365,7 @@ Create an `DEVerbosity` using a preset configuration:
 - `SciMLLogging.Detailed()`: Comprehensive debugging information
 - `SciMLLogging.All()`: Maximum verbosity
 
-    DEVerbosity(; preset=nothing, error_control=nothing, performance=nothing, numerical=nothing, sde_specific=nothing, dde_specific=nothing, kwargs...)
+    DEVerbosity(; preset = nothing, error_control = nothing, performance = nothing, numerical = nothing, sde_specific = nothing, dde_specific = nothing, global_error = nothing, kwargs...)
 
 Create an `DEVerbosity` with group-level or individual field control.
 
@@ -335,7 +403,18 @@ const DEFAULT_VERBOSE = DEVerbosity()
 end
 
 @inline function _process_verbose_param(verbose::Bool)
-    throw(ArgumentError("Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7. Use `DEVerbosity()` or a preset like `Standard()`, `None()`, etc. from SciMLLogging."))
+    throw(
+        ArgumentError(
+            """
+            Passing a `Bool` for `verbose` is no longer supported in OrdinaryDiffEq v7: `verbose` now takes a verbosity object.
+
+                solve(prob, alg; verbose = DEVerbosity(SciMLLogging.None()))  # was verbose = false
+                solve(prob, alg; verbose = DEVerbosity())                     # was verbose = true
+
+            `DEVerbosity` and `SciMLLogging` are both exported by OrdinaryDiffEq, so no extra `using` is needed; from another solver package add `using DiffEqBase, SciMLLogging`. Per-message control is documented at https://docs.sciml.ai/OrdinaryDiffEq/stable/verbosity/
+            """
+        )
+    )
 end
 
 @inline _process_verbose_param(verbose::DEVerbosity) = verbose

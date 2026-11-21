@@ -1,4 +1,5 @@
 using OrdinaryDiffEqQPRK, DiffEqDevTools, Test, Random
+using SciMLBase: SciMLBase, ODEProblem, ODEFunction, solve
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear
 
 Random.seed!(100)

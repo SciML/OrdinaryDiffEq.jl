@@ -8,13 +8,12 @@ Polyester = "f517fe37-dbe3-4b94-8317-1923a5111588"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
-OrdinaryDiffEqAdamsBashforthMoulton = {path = "../.."}
 OrdinaryDiffEqCore = {path = "../../../OrdinaryDiffEqCore"}
 
 [compat]
-DiffEqDevTools = "2.44.4"
+DiffEqDevTools = "3"
 FastBroadcast = "1.3"
 ODEProblemLibrary = "1"
-OrdinaryDiffEqAdamsBashforthMoulton = "1"
-OrdinaryDiffEqCore = "3"
+OrdinaryDiffEqAdamsBashforthMoulton = "2"
+OrdinaryDiffEqCore = "4"
 Polyester = "0.7"

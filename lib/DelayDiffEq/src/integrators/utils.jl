@@ -220,10 +220,13 @@ function OrdinaryDiffEqCore.handle_discontinuities!(integrator::DDEIntegrator)
             order = min(order, d2.order)
         end
 
-        # also remove all corresponding time stops
-        while OrdinaryDiffEqCore.has_tstop(integrator) &&
-                abs(OrdinaryDiffEqCore.first_tstop(integrator) - tdir_t) < maxΔt
-            OrdinaryDiffEqCore.pop_tstop!(integrator)
+        # also remove all corresponding propagated time stops, but never user
+        # tstops: a user-supplied tstop (e.g. from PresetTimeCallback) at exactly
+        # this time must still fire even if a propagated discontinuity drifted
+        # to within `maxΔt` of it (issue #1124).
+        while !isempty(integrator.tstops_propagated) &&
+                abs(first(integrator.tstops_propagated) - tdir_t) < maxΔt
+            pop!(integrator.tstops_propagated)
         end
     end
 
@@ -284,9 +287,12 @@ function add_next_discontinuities!(integrator, order, t = integrator.t)
         maxlag = integrator.tdir * (integrator.sol.prob.tspan[end] - t)
 
         for lag in constant_lags
-            if integrator.tdir * lag < maxlag
+            # a zero lag maps a discontinuity onto itself
+            if !iszero(lag) && integrator.tdir * lag < maxlag
                 # calculate discontinuity and add it to heap of discontinuities and time stops
-                d = Discontinuity(integrator.tdir * (t + lag), next_order)
+                d = eltype(integrator.d_discontinuities_propagated)(
+                    integrator.tdir * (t + lag), next_order
+                )
                 push!(integrator.d_discontinuities_propagated, d)
                 push!(integrator.tstops_propagated, d.t)
             end
@@ -300,13 +306,13 @@ function add_next_discontinuities!(integrator, order, t = integrator.t)
 end
 
 # Interface for accessing and removing next time stops and discontinuities
-function OrdinaryDiffEqCore.has_tstop(integrator::DDEIntegrator)
+function SciMLBase.has_tstop(integrator::DDEIntegrator)
     return _has(integrator.opts.tstops, integrator.tstops_propagated)
 end
-function OrdinaryDiffEqCore.first_tstop(integrator::DDEIntegrator)
+function SciMLBase.first_tstop(integrator::DDEIntegrator)
     return _first(integrator.opts.tstops, integrator.tstops_propagated)
 end
-function OrdinaryDiffEqCore.pop_tstop!(integrator::DDEIntegrator)
+function SciMLBase.pop_tstop!(integrator::DDEIntegrator)
     return _pop!(integrator.opts.tstops, integrator.tstops_propagated)
 end
 

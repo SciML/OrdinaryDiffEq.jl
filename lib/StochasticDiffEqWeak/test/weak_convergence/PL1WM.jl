@@ -10,7 +10,8 @@ using Random
 using DiffEqDevTools
 #using DiffEqGPU
 
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     return remake(prob, seed = seeds[i])
 end
 
@@ -39,8 +40,8 @@ seeds = rand(UInt, numtraj)
 prob = SDEProblem(f, g, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h1(sol.u[end]), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h1(sol.u[end]), false),
+    prob_func
 )
 
 sim = test_convergence(
@@ -68,8 +69,8 @@ p = [3 // 2, 1 // 100]
 prob = SDEProblem(f1!, g1!, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h1(sol.u[end][1]), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h1(sol.u[end][1]), false),
+    prob_func
 )
 
 numtraj = Int(2.0e4)
@@ -97,7 +98,8 @@ function f2!(du, u, p, t)
     du[1] = 243 // 154 * u[1] - 27 // 77 * u[2] + 23 // 154 * u[3] - 65 // 154 * u[4]
     du[2] = 27 // 77 * u[1] - 243 // 154 * u[2] + 65 // 154 * u[3] - 23 // 154 * u[4]
     du[3] = 5 // 154 * u[1] - 61 // 154 * u[2] + 162 // 77 * u[3] - 36 // 77 * u[4]
-    return du[4] = 61 // 154 * u[1] - 5 // 154 * u[2] + 36 // 77 * u[3] - 162 // 77 * u[4]
+    du[4] = 61 // 154 * u[1] - 5 // 154 * u[2] + 36 // 77 * u[3] - 162 // 77 * u[4]
+    return
 end
 function g2!(du, u, p, t)
     du[1, 1] = 1 // 9 * sqrt(u[2]^2 + u[3]^2 + 2 // 23) * 1 // 13
@@ -115,7 +117,8 @@ function g2!(du, u, p, t)
     du[4, 1] = 1 // 9 * sqrt(u[2]^2 + u[3]^2 + 2 // 23) * 1 // 15
     du[4, 2] = 1 // 8 * sqrt(u[4]^2 + u[1]^2 + 1 // 11) * 1 // 12
     du[4, 3] = p[1] * 1 // 12 * sqrt(u[1]^2 + u[2]^2 + 1 // 9) * 1 // 6
-    return du[4, 4] = p[1] * 1 // 14 * sqrt(u[3]^2 + u[4]^2 + 3 // 29) * 1 // 9
+    du[4, 4] = p[1] * 1 // 14 * sqrt(u[3]^2 + u[4]^2 + 3 // 29) * 1 // 9
+    return
 end
 dts = 1 .// 2 .^ (6:-1:1)
 tspan = (0.0, 1.0)
@@ -126,8 +129,8 @@ h2(z) = z
 prob = SDEProblem(f2!, g2!, u₀, tspan, p, noise_rate_prototype = zeros(4, 4))
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h2(sol.u[end][1]), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h2(sol.u[end][1]), false),
+    prob_func
 )
 
 numtraj = Int(1.0e5)
@@ -153,11 +156,13 @@ println("PL1WM:", sim.𝒪est[:weak_final])
 u₀ = [0.1, 0.1]
 function f3!(du, u, p, t)
     du[1] = 3 // 2 * u[1]
-    return du[2] = 3 // 2 * u[2]
+    du[2] = 3 // 2 * u[2]
+    return
 end
 function g3!(du, u, p, t)
     du[1] = 1 // 10 * u[1]
-    return du[2] = 1 // 10 * u[2]
+    du[2] = 1 // 10 * u[2]
+    return
 end
 dts = 1 .// 2 .^ (3:-1:0)
 tspan = (0.0, 1.0)
@@ -167,8 +172,8 @@ h3(z) = z^2 # == 1//10**exp(3//2*t) if h3(z) = z and  == 1//100**exp(301//100*t)
 prob = SDEProblem(f3!, g3!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h3(sol.u[end][1]), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h3(sol.u[end][1]), false),
+    prob_func
 )
 
 numtraj = Int(5.0e4)
@@ -204,15 +209,16 @@ seeds = rand(UInt, numtraj)
 prob = SDEProblem(fadd, gadd, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (sol.u[end], false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (sol.u[end], false),
+    prob_func
 )
 
 sim = test_convergence(
     dts, ensemble_prob, PL1WM(),
     save_everystep = false, trajectories = numtraj, save_start = false, adaptive = false,
     weak_timeseries_errors = false, weak_dense_errors = false,
-    expected_value = u₀ .* exp(1.0 * (p[1]))
+    expected_value = u₀ .* exp(1.0 * (p[1])),
+    retain_solutions = true          # compared trajectory-by-trajectory below
 )
 
 @test abs(sim.𝒪est[:weak_final] - 2) < 0.3 # order is 1.9494776704064192
@@ -222,7 +228,8 @@ sim1 = test_convergence(
     dts, ensemble_prob, PL1WMA(),
     save_everystep = false, trajectories = numtraj, save_start = false, adaptive = false,
     weak_timeseries_errors = false, weak_dense_errors = false,
-    expected_value = u₀ .* exp(1.0 * (p[1]))
+    expected_value = u₀ .* exp(1.0 * (p[1])),
+    retain_solutions = true          # compared trajectory-by-trajectory below
 )
 
 @test abs(sim1.𝒪est[:weak_final] - 2) < 0.3 # order is PL1WMA:1.9494776704064316
@@ -244,15 +251,16 @@ gadd!(du, u, p, t) = @.(du = p[2])
 prob = SDEProblem(fadd!, gadd!, u₀, tspan, p)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (sol.u[end][1], false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (sol.u[end][1], false),
+    prob_func
 )
 
 sim = test_convergence(
     dts, ensemble_prob, PL1WM(),
     save_everystep = false, trajectories = numtraj, save_start = false, adaptive = false,
     weak_timeseries_errors = false, weak_dense_errors = false,
-    expected_value = u₀ .* exp(1.0 * (p[1]))
+    expected_value = u₀ .* exp(1.0 * (p[1])),
+    retain_solutions = true          # compared trajectory-by-trajectory below
 )
 
 @test abs(sim.𝒪est[:weak_final] - 2) < 0.3 # order is 1.9494776704064192
@@ -262,7 +270,8 @@ sim1 = test_convergence(
     dts, ensemble_prob, PL1WMA(),
     save_everystep = false, trajectories = numtraj, save_start = false, adaptive = false,
     weak_timeseries_errors = false, weak_dense_errors = false,
-    expected_value = u₀ .* exp(1.0 * (p[1]))
+    expected_value = u₀ .* exp(1.0 * (p[1])),
+    retain_solutions = true          # compared trajectory-by-trajectory below
 )
 
 @test abs(sim1.𝒪est[:weak_final] - 2) < 0.3 # order is 1.9494776704064316

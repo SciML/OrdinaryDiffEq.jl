@@ -30,7 +30,7 @@ function constructDormandPrince(::Type{T} = Float64, ::Type{T_time} = T) where {
     c = map(T_time, c)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             fsal = true, stability_size = 3.3066
         )
     )
@@ -93,7 +93,7 @@ end
 construct_tsit5_interp_matrix() = construct_tsit5_interp_matrix(Float64)
 
 """
-    construct_tsit5_interp_matrix(::Type{T}) where T
+    construct_tsit5_interp_matrix(::Type{T}) where {T}
 
 High-precision version for BigFloat and other arbitrary-precision types.
 """
@@ -178,12 +178,12 @@ function constructTsit5ExplicitRK(::Type{T}) where {T <: Union{Float32, Float64}
     B_interp = construct_tsit5_interp_matrix(T)
 
     return DiffEqBase.ExplicitRKTableau(
-        A, c, α, 5,
-        αEEst = αEEst,
+        A, c, α, 5;
+        αEEst,
         adaptiveorder = 4,
         fsal = true,
         stability_size = 2.9,
-        B_interp = B_interp
+        B_interp
     )
 end
 
@@ -241,12 +241,12 @@ function constructTsit5ExplicitRK(::Type{T}, ::Type{T_time} = T) where {T, T_tim
     B_interp = construct_tsit5_interp_matrix(T)
 
     return DiffEqBase.ExplicitRKTableau(
-        A, c, α, 5,
-        αEEst = αEEst,
+        A, c, α, 5;
+        αEEst,
         adaptiveorder = 4,
         fsal = true,
         stability_size = 2.9,
-        B_interp = B_interp
+        B_interp
     )
 end
 
@@ -269,9 +269,16 @@ purposes or when you need a specific tableau not already implemented.
 
 For most applications, prefer the named methods like `DP5()`, `Tsit5()`, etc.
 """
-struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
-    tableau::TabType
+Base.@kwdef struct ExplicitRK{TabType, StageLimiter, StepLimiter} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
+    tableau::TabType = ODE_DEFAULT_TABLEAU
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
 end
-ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
+function ExplicitRK(tableau)
+    return ExplicitRK(tableau, trivial_limiter!, trivial_limiter!)
+end
 
 @truncate_stacktrace ExplicitRK
+
+OrdinaryDiffEqCore.has_stage_limiter(::ExplicitRK) = true

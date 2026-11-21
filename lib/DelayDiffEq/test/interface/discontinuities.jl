@@ -1,6 +1,8 @@
 using DelayDiffEq, DDEProblemLibrary
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqTsit5
+using OrdinaryDiffEqCore: PIController
 using SciMLBase: ReturnCode
 using Test
 
@@ -62,6 +64,25 @@ end
     end
 end
 
+@testset "autonomous discontinuity controller state" begin
+    alg = BS3()
+    controller = PIController(alg; discontinuity_detection = true)
+    integrator = init(prob, MethodOfSteps(alg); controller, dt = 0.01)
+
+    @test !integrator.is_disco_step
+    @test iszero(integrator.disco_checkpoint)
+    @test typeof(integrator.disco_checkpoint) === typeof(integrator.t)
+
+    sol = solve!(integrator)
+    @test sol.retcode == ReturnCode.Success
+
+    integrator.is_disco_step = true
+    integrator.disco_checkpoint = integrator.t
+    reinit!(integrator)
+    @test !integrator.is_disco_step
+    @test iszero(integrator.disco_checkpoint)
+end
+
 # additional discontinuities
 @testset "DDE with discontinuities" begin
     integrator = init(
@@ -84,6 +105,40 @@ end
         [Discontinuity(0.3, 4), Discontinuity(0.6, 5)]
 end
 
+@testset "discontinuity at tspan[1]" begin
+    history(p, t) = zeros(1)
+    function f(du, u, h, p, t)
+        du[1] = t > 0.0 ? 1.0 : 0.0
+        return nothing
+    end
+    prob = DDEProblem(f, [0.0], history, (0.0, 2.0); constant_lags = (1.0,))
+    integrator = init(
+        prob, MethodOfSteps(Tsit5()); d_discontinuities = [prob.tspan[1]]
+    )
+
+    @test integrator.t == nextfloat(prob.tspan[1])
+    @test integrator.fsalfirst == [1.0]
+
+    sol = solve!(integrator)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t[end] == prob.tspan[2]
+    @test sol.u[end] ≈ [2.0]
+end
+
+@testset "discontinuity before tspan[1]" begin
+    history(p, t) = ones(1)
+    function f(du, u, h, p, t)
+        du[1] = -h(p, t - 10.0)[1]
+        return nothing
+    end
+    prob = DDEProblem(f, [1.0], history, (0.0, 50.0); constant_lags = (10.0,))
+
+    sol = solve(prob, MethodOfSteps(Tsit5()); d_discontinuities = [-3.0])
+
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t[end] == prob.tspan[2]
+end
+
 # discontinuities induced by callbacks
 @testset "#190" begin
     cb = ContinuousCallback((u, t, integrator) -> 1, integrator -> nothing)
@@ -95,6 +150,24 @@ end
     for t in 0:5
         @test t ∈ sol.t
         @test Discontinuity(Float64(t), t) ∈ integrator.tracked_discontinuities
+    end
+end
+
+# Float32 tspan with Float64 constant_lags keeps discontinuity times in Float32.
+@testset "Float32 tspan with Float64 constant_lags" begin
+    function f!(du, u, h, p, t)
+        du[1] = -h(p, t - 1)[1]
+        return nothing
+    end
+    history(p, t) = ones(Float32, 1)
+    prob = DDEProblem(
+        f!, ones(Float32, 1), history, (0.0f0, 5.0f0); constant_lags = [1.0]
+    )
+    for alg in (Tsit5(), Rosenbrock23())
+        sol = solve(prob, MethodOfSteps(alg))
+        @test sol.retcode == ReturnCode.Success
+        @test eltype(sol.t) === Float32
+        @test sol.t[end] == 5.0f0
     end
 end
 
@@ -122,5 +195,30 @@ end
         sol = solve(prob_3426, MethodOfSteps(alg); reltol = 1.0e-7, abstol = 1.0e-10)
         @test sol.retcode == ReturnCode.Success
         @test sol.t[end] == 10.0
+    end
+end
+
+@testset "zero and wrong-sign constant lags (#4831)" begin
+    f(u, h, p, t) = -h(p, t) / 2 - h(p, t - 1) / 2
+    h(p, t) = 1.0
+
+    prob = DDEProblem(f, 1.0, h, (0.0, 5.0); constant_lags = [0.0, 1.0])
+    sol = solve(prob, MethodOfSteps(Tsit5()))
+    ref = solve(remake(prob; constant_lags = [1.0]), MethodOfSteps(Tsit5()))
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t == ref.t
+    @test sol.u == ref.u
+
+    g(u, h, p, t) = -h(p, t - 1)
+    prob = DDEProblem(g, 1.0, h, (0.0, 5.0); constant_lags = [0.0, 1.0])
+    sol = solve(prob, MethodOfSteps(BS3(); constrained = true))
+    ref = solve(remake(prob; constant_lags = [1.0]), MethodOfSteps(BS3(); constrained = true))
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t == ref.t
+    @test sol.u == ref.u
+
+    for lags in ([-1.0], [1.0, -0.5])
+        prob = DDEProblem(f, 1.0, h, (0.0, 5.0); constant_lags = lags)
+        @test_throws ArgumentError init(prob, MethodOfSteps(Tsit5()))
     end
 end

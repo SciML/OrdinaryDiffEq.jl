@@ -1,5 +1,6 @@
 using DelayDiffEq, DDEProblemLibrary, DiffEqDevTools, DiffEqCallbacks
 using OrdinaryDiffEqTsit5
+using OrdinaryDiffEqVerner
 using Test
 
 const prob = prob_dde_constant_1delay_scalar
@@ -55,6 +56,50 @@ end
     @test sol.t[end] == 4
 end
 
+@testset "callback jump enters the history" begin
+    function bolus_f(du, u, h, p, t)
+        du[1] = -1.5 * u[1]
+        du[2] = 1.5 * h(p, t - 10)[1] - u[2] / 30
+        return nothing
+    end
+    bolus_h(p, t) = zeros(2)
+    bolus_prob = DDEProblem(
+        bolus_f, [10.0, 0.0], bolus_h, (0.0, 24.0); constant_lags = (10.0,)
+    )
+    bolus(save_positions) = DiscreteCallback(
+        (u, t, integrator) -> t == 12.0,
+        integrator -> (integrator.u[1] += 20.0);
+        save_positions,
+    )
+    common = (; tstops = [12.0], abstol = 1.0e-12, reltol = 1.0e-12)
+
+    reference = solve(bolus_prob, alg; common..., callback = bolus((true, true)))
+    for save_positions in ((true, false), (false, true), (false, false))
+        sol = solve(bolus_prob, alg; common..., callback = bolus(save_positions))
+        @test maximum(
+            abs(sol(t)[2] - reference(t)[2]) for t in range(22.0, 24.0; length = 201)
+        ) < 1.0e-8
+    end
+
+    # the history keeps both sides of the jump whatever the output was asked for
+    integrator = init(bolus_prob, alg; common..., callback = bolus((false, false)))
+    solve!(integrator)
+    history = integrator.integrator.sol
+    @test count(isequal(12.0), history.t) == 2
+    @test issorted(history.t)
+
+    # the returned solution carries only what `save_positions` asked for
+    @test solve(
+        bolus_prob, alg; common..., callback = bolus((false, true))
+    )(12.0 + 1.0e-8)[1] > 19.9
+    unsaved = solve(bolus_prob, alg; common..., callback = bolus((false, false)))
+    @test count(isequal(12.0), unsaved.t) == 1
+    @test unsaved(12.0 + 1.0e-8)[1] < 0.1
+    @test solve(
+        bolus_prob, alg; common..., callback = bolus((true, false))
+    )(12.0 + 1.0e-8)[1] < 0.1
+end
+
 @testset "save discontinuity" begin
     f(du, u, h, p, t) = (du .= 0)
     prob = DDEProblem(f, [0.0], nothing, (0.0, 1.0))
@@ -92,4 +137,29 @@ end
     @test sol.retcode == ReturnCode.Success
     # Should be triggered approximately 10 times (at t=1,2,3,...,10)
     @test counter[] >= 9
+end
+
+# Issue SciML/DifferentialEquations.jl#1124: PresetTimeCallback was skipped when
+# a propagated-discontinuity tstop drifted (by float roundoff from compounded
+# constant lags) to within 10*eps of the user tstop. The discontinuity-handling
+# cleanup eagerly popped *any* nearby tstop, swallowing the user's preset tstop
+# along with the propagated one. Vern9 is used because the order-7 path
+# `5*0.2 + 2*4 = 9.0` is below Vern9's order-tracking limit but above Tsit5's,
+# so propagation reaches the collision time on this trivial problem.
+@testset "preset time callback near propagated discontinuity (#1124)" begin
+    f(du, u, h, p, t) = (du .= 0)
+    h(p, t) = [0.0]
+
+    fired = Ref(0)
+    preset = PresetTimeCallback([9.0], integ -> (fired[] += 1))
+
+    prob = DDEProblem(
+        f, [0.0], h, (0.0, 12.0);
+        constant_lags = [0.2, 4.0], callback = preset
+    )
+
+    sol = solve(prob, MethodOfSteps(Vern9()))
+    @test sol.retcode == ReturnCode.Success
+    @test fired[] == 1
+    @test 9.0 in sol.t
 end

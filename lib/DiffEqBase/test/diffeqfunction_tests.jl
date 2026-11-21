@@ -83,5 +83,5 @@ test_iop(f_op(u, p, t), dfun, dfun_ip, u, p, t)
 # Type stability
 f_analytic(u, p, t) = u
 jac = (u, p, t) -> 1
-@inferred ODEFunction{false}(f_op, jac = jac)
+@inferred ODEFunction{false}(f_op; jac)
 @inferred DiscreteFunction{false}(f_op, analytic = f_analytic)

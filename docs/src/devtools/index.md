@@ -134,34 +134,12 @@ Pkg.status(; mode = PKGMODE_MANIFEST) # hide
 </details>
 ```
 
-```@raw html
-You can also download the 
-<a href="
-```
-
 ```@eval
-using TOML
-proj = TOML.parse(read(joinpath(@__DIR__, "..", "..", "..", "Project.toml"), String))
+using Markdown, TOML
+root = joinpath(@__DIR__, "..", "..", "..")
+proj = TOML.parse(read(joinpath(root, "Project.toml"), String))
 version = proj["version"]
 name = proj["name"]
-link = "https://github.com/SciML/" * name * ".jl/tree/gh-pages/v" * version *
-       "/assets/Manifest.toml"
-```
-
-```@raw html
-">manifest</a> file and the
-<a href="
-```
-
-```@eval
-using TOML
-proj = TOML.parse(read(joinpath(@__DIR__, "..", "..", "..", "Project.toml"), String))
-version = proj["version"]
-name = proj["name"]
-link = "https://github.com/SciML/" * name * ".jl/tree/gh-pages/v" * version *
-       "/assets/Project.toml"
-```
-
-```@raw html
-">project</a> file.
+base = "https://github.com/SciML/" * name * ".jl/tree/gh-pages/v" * version * "/assets/"
+Markdown.parse("You can also download the [manifest]($(base)Manifest.toml) and [project]($(base)Project.toml) files.")
 ```

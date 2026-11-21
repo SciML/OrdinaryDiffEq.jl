@@ -1,4 +1,4 @@
-function ROCK4ConstantCache(T, T2, zprev)
+function ROCK4ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
     ms = (
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
         20,
@@ -4957,6 +4957,6 @@ function ROCK4ConstantCache(T, T2, zprev)
         zprev,
         1, 1,
         1, 0,
-        152
+        152, 0
     )
 end

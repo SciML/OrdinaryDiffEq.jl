@@ -11,7 +11,8 @@ using Random
 using DiffEqDevTools
 #using DiffEqGPU
 
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     return remake(prob, seed = seeds[i])
 end
 
@@ -24,13 +25,15 @@ end
 u₀ = [1.0, 1.0]
 function f2!(du, u, p, t)
     du[1] = -273 // 512 * u[1]
-    return du[2] = -1 // 160 * u[1] - (-785 // 512 + sqrt(2) / 8) * u[2]
+    du[2] = -1 // 160 * u[1] - (-785 // 512 + sqrt(2) / 8) * u[2]
+    return
 end
 function g2!(du, u, p, t)
     du[1, 1] = 1 // 4 * u[1]
     du[1, 2] = 1 // 16 * u[1]
     du[2, 1] = (1 - 2 * sqrt(2)) / 4 * u[1]
-    return du[2, 2] = 1 // 10 * u[1] + 1 // 16 * u[2]
+    du[2, 2] = 1 // 10 * u[1] + 1 // 16 * u[2]
+    return
 end
 dts = 1 .// 2 .^ (3:-1:0)
 tspan = (0.0, 3.0)
@@ -40,8 +43,8 @@ h2(z) = z^2 # but apply it only to u[1]
 prob = SDEProblem(f2!, g2!, u₀, tspan, noise_rate_prototype = zeros(2, 2))
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h2(sol.u[end][1]), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h2(sol.u[end][1]), false),
+    prob_func
 )
 
 numtraj = Int(1.0e6)

@@ -11,7 +11,8 @@ using Random
 using DiffEqDevTools
 #using DiffEqGPU
 seed = 103473
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     return remake(prob, seed = seeds[i])
 end
 
@@ -24,11 +25,13 @@ end
 u₀ = [0.1, 0.1]
 function f3!(du, u, p, t)
     du[1] = 3 // 2 * u[1]
-    return du[2] = 3 // 2 * u[2]
+    du[2] = 3 // 2 * u[2]
+    return
 end
 function g3!(du, u, p, t)
     du[1] = 1 // 10 * u[1]
-    return du[2] = 1 // 10 * u[2]
+    du[2] = 1 // 10 * u[2]
+    return
 end
 dts = 1 .// 2 .^ (3:-1:0)
 tspan = (0.0, 1.0)
@@ -38,8 +41,8 @@ h3(z) = z^2 # == 1//10**exp(3//2*t) if h3(z) = z and  == 1//100**exp(301//100*t)
 prob = SDEProblem(f3!, g3!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h3(sol.u[end][1]), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h3(sol.u[end][1]), false),
+    prob_func
 )
 
 numtraj = Int(5.0e6)

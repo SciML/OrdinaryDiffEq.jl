@@ -200,4 +200,43 @@ using SDEProblemLibrary: prob_sde_linear
             @test 3.0 ∈ sol.t
         end
     end
+
+    # SciML/OrdinaryDiffEq.jl#3165 / StochasticDiffEq.jl#679:
+    # callable returning tspan[1] must not zero dt at SDE init.
+    @testset "Callable tstops including tspan[1] (#3165)" begin
+        sde_f(u, p, t) = -0.1 * u
+        sde_g(u, p, t) = 0.01 * u
+        sprob = SDEProblem(sde_f, sde_g, [1.0], (0.0, 3.0))
+        tstops_callable = (p, tspan) -> [tspan[1], 1.0, 2.0]
+
+        sol_sde = solve(sprob, SOSRI(); tstops = tstops_callable)
+        @test sol_sde.retcode == ReturnCode.Success
+        @test 1.0 ∈ sol_sde.t
+        @test 2.0 ∈ sol_sde.t
+        @test sol_sde.t[end] == 3.0
+
+        sprob_kw = remake(sprob; kwargs = (; tstops = tstops_callable))
+        sol_remake = solve(sprob_kw, SOSRI())
+        @test sol_remake.retcode == ReturnCode.Success
+        @test 1.0 ∈ sol_remake.t
+        @test 2.0 ∈ sol_remake.t
+
+        # Array path already filtered endpoints; keep as control.
+        sol_arr = solve(sprob, SOSRI(); tstops = [0.0, 1.0, 2.0])
+        @test sol_arr.retcode == ReturnCode.Success
+        @test 1.0 ∈ sol_arr.t
+        @test 2.0 ∈ sol_arr.t
+
+        sol_em = solve(sprob, EM(); dt = 0.05, tstops = tstops_callable)
+        @test sol_em.retcode == ReturnCode.Success
+        @test 1.0 ∈ sol_em.t
+        @test 2.0 ∈ sol_em.t
+
+        # Callable may also name tf; endpoint is already on the heap.
+        tstops_with_tf = (p, tspan) -> [tspan[1], 1.5, tspan[2]]
+        sol_tf = solve(sprob, SRIW1(); tstops = tstops_with_tf)
+        @test sol_tf.retcode == ReturnCode.Success
+        @test 1.5 ∈ sol_tf.t
+        @test sol_tf.t[end] == 3.0
+    end
 end

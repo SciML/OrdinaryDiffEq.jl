@@ -1,27 +1,29 @@
 module OrdinaryDiffEqVerner
 
-import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
-    initialize!, perform_step!, unwrap_alg,
-    calculate_residuals, alg_stability_size,
-    OrdinaryDiffEqAlgorithm,
+import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
+    alg_stability_size,
     CompositeAlgorithm, accept_step_controller,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-    OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
-    alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-    constvalue, _unwrap_val,
+    OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats,
+    alg_cache, @cache, isfsal,
+    constvalue,
     explicit_rk_docstring, trivial_limiter!, _ode_interpolant,
     _ode_interpolant!, _ode_addsteps!, @fold,
     @OnDemandTableauExtract, AutoAlgSwitch,
     DerivativeOrderNotPossibleError,
-    get_fsalfirstlast, copyat_or_push!
-using FastBroadcast, MuladdMacro, RecursiveArrayTools
-using DiffEqBase: @def, @tight_loop_macros
-using FastBroadcast: Serial
+    get_fsalfirstlast
+import DiffEqBase: calculate_residuals!, calculate_residuals, initialize!
+import SciMLBase: alg_order, _unwrap_val, @def, full_cache
+using FastBroadcast: @.., Serial
+using MuladdMacro: @muladd
+using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivecopy,
+    recursivefill!, copyat_or_push!
 using TruncatedStacktraces: @truncate_stacktrace
 using LinearAlgebra: norm
 import OrdinaryDiffEqCore
-using Reexport
+using Reexport: @reexport
 @reexport using SciMLBase
+using SciMLBase: ODEProblem
 
 include("algorithms.jl")
 include("alg_utils.jl")
@@ -62,6 +64,23 @@ PrecompileTools.@compile_workload begin
         )
     end
 
+    if Preferences.@load_preference("PrecompileAutoDePSpecialize", false)
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_p, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_p_params
+            )
+        )
+        push!(
+            prob_list,
+            ODEProblem{true, SciMLBase.AutoDePSpecialize}(
+                OrdinaryDiffEqCore.lorenz_pref, [1.0; 0.0; 0.0],
+                (0.0, 1.0), OrdinaryDiffEqCore.lorenz_pref_params
+            )
+        )
+    end
+
     if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
         push!(
             prob_list,
@@ -94,7 +113,7 @@ PrecompileTools.@compile_workload begin
     end
 
     for prob in prob_list, solver in solver_list
-        solve(prob, solver)(5.0)
+        SciMLBase.solve(prob, solver)(5.0)
     end
 
     prob_list = nothing

@@ -6,7 +6,7 @@ specific ordinary differential equations using the explicit Runge-Kutta
 method `erk`. The type `T` will be used for computations and is the
 `eltype` of `A`, `b`, and `c`.
 """
-function deduce_Butcher_tableau(erk, T = Float64)
+function deduce_Butcher_tableau(erk, ::Type{T} = Float64) where {T}
     # get the number of stages s
     step_counter_s = 0
     function f_for_s(du, u, p, t)

@@ -1,4 +1,5 @@
 using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve, ADTypes
+using RecursiveArrayTools: ArrayPartition
 import ODEProblemLibrary: prob_ode_linear,
     prob_ode_2Dlinear,
     prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
@@ -159,6 +160,38 @@ end
     end
 
 
+    println("Rodas3d")
+
+    # Rodas3d's damping parameter γ = 0.57281606 is a root of the 4th-order
+    # linear order condition (an endpoint of the L-stability interval in
+    # Hairer & Wanner Table 6.4), so the method superconverges at order 4 on
+    # linear problems; the design order 3 is checked on a nonlinear problem below.
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, Rodas3d())
+    @test sim.𝒪est[:final] ≈ 4 atol = testTol
+
+    sol = solve(prob, Rodas3d())
+    @test length(sol.t) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Rodas3d())
+    @test sim.𝒪est[:final] ≈ 4 atol = testTol
+
+    sol = solve(prob, Rodas3d())
+    @test length(sol.t) < 20
+    @test SciMLBase.successful_retcode(sol)
+
+    prob = ODEProblem(
+        (u, p, t) -> [-2u[1] + u[2]^2, -u[2] + sin(u[1]) + 0.1t],
+        [1.0, 0.5], (0.0, 1.0)
+    )
+    test_setup = Dict(:alg => Rodas4(), :reltol => 1.0e-13, :abstol => 1.0e-13)
+    sim = analyticless_test_convergence((1 / 2) .^ (7:-1:4), prob, Rodas3d(), test_setup)
+    @test sim.𝒪est[:final] ≈ 3 atol = testTol
+
     println("Rodas5P")
 
     prob = prob_ode_linear
@@ -207,7 +240,8 @@ end
 
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
+    rodas6p_dts = (1 / 2) .^ (5:-1:2)
+    sim = test_convergence(rodas6p_dts, prob, Rodas6P(), dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2] ≈ 6 atol = testTol
 
@@ -217,7 +251,7 @@ end
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, Rodas6P(), dense_errors = true)
+    sim = test_convergence(rodas6p_dts, prob, Rodas6P(), dense_errors = true)
     #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2] ≈ 6 atol = testTol
 
@@ -256,6 +290,8 @@ end
         #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
         @test sim.𝒪est[:L2] ≈ 5 atol = testTol
 
+        # Krylov linear solvers need tight tolerance for the outer-method
+        # convergence order to surface; LinearSolve now respects reltol/abstol.
         sim = test_convergence(
             dts, prob,
             Rodas5P(
@@ -264,7 +300,8 @@ end
                 ),
                 linsolve = LinearSolve.KrylovJL()
             ),
-            dense_errors = true
+            dense_errors = true,
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
         @test sim.𝒪est[:L2] ≈ 5 atol = testTol
@@ -277,7 +314,8 @@ end
                 ),
                 linsolve = LinearSolve.KrylovJL_GMRES()
             ),
-            dense_errors = true
+            dense_errors = true,
+            reltol = 1.0e-14, abstol = 1.0e-14
         )
         #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
         @test sim.𝒪est[:L2] ≈ 5 atol = testTol
@@ -381,5 +419,307 @@ end
         else
             @inferred(solve(prob, alg; dt = 0.1))
         end
+    end
+end
+
+@testset "Issue #3631: DAE dense output for Rosenbrock methods with empty H" begin
+    # Methods without a stiff-aware dense output (empty H matrix, e.g. ROS34PW2,
+    # ROS34PW3, Rodas3) stored f(uprev) and f(u) and reused the standard Hermite
+    # cubic. For DAE problems those values are residuals on algebraic variables,
+    # not derivatives, so Hermite was producing wildly wrong off-knot values.
+    # See https://github.com/SciML/OrdinaryDiffEq.jl/issues/3631.
+    function f!(du, u, p, t)
+        du[1] = 20 * ((t - 1)^(p - 1) + t * (p - 1) * (t - 1)^(p - 2))
+        du[2] = u[1] - u[2]
+        return nothing
+    end
+    anasol(t, p) = 10 .* t .* (t .- 1) .^ (p - 1)
+
+    p = 3
+    u0 = [0.0, 0.0]
+    tspan = (0.0, 1.5)
+    M = zeros(2, 2)
+    M[1, 1] = 1
+    M[1, 2] = 1
+    prob = ODEProblem(ODEFunction(f!, mass_matrix = M), u0, tspan, p)
+
+    tt = collect(0:0.01:tspan[2])
+
+    # Methods with their own dense output should match the analytical solution
+    # almost exactly; methods that fall back to the generic Hermite path must
+    # at least be bounded by O(dt) — Hermite-on-residuals previously produced
+    # interpolation errors orders of magnitude larger than the knot errors.
+    for (method, expected_interp) in (
+            (Rodas4P, 1.0e-10), (ROS34PW2, 5.0e-2),
+            (ROS34PW3, 5.0e-2), (Rodas3, 5.0e-2), (Rodas3d, 5.0e-2),
+        )
+        sol = solve(prob, method(); dense = true, reltol = 1.0e-4, abstol = 1.0e-4)
+        err_knot = maximum(abs.(sol[1, :] .- anasol(sol.t, p)))
+        err_interp = maximum(abs.(sol(tt; idxs = 1) .- anasol(tt, p)))
+        @test err_knot < 1.0e-6
+        @test err_interp < expected_interp
+        # interp error should not be wildly larger than knot error
+        @test err_interp < 100 * max(err_knot, 1.0e-4)
+    end
+end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/3721
+# OOP static-array mass-matrix solves were failing in two ways:
+# 1. With a Float32 state and a Float64 time type (e.g. `dt = 0.1` promoting
+#    tspan), calc_W produces a Float64-eltype StaticWOperator that cannot be
+#    assigned into JacReuseState's Float32-seeded `cached_W` slot.
+# 2. On rejected-step retries the OOP reuse branch rebuilt W via
+#    `default_factorize`, producing a `StaticArrays.LU` instead of the
+#    `StaticWOperator` type of the `cached_W` slot.
+using StaticArrays
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
+
+@testset "Static-array mass-matrix OOP JacReuseState (#3721)" begin
+    function rober_static(u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        return @SVector [
+            -k₁ * y₁ + k₃ * y₂ * y₃,
+            k₁ * y₁ - k₂ * y₂^2 - k₃ * y₂ * y₃,
+            y₁ + y₂ + y₃ - 1,
+        ]
+    end
+
+    # Float64 reference
+    M64 = @SMatrix [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 0.0]
+    prob64 = ODEProblem(
+        ODEFunction(rober_static, mass_matrix = M64),
+        @SVector([1.0, 0.0, 0.0]), (0.0, 1.0e5), (0.04, 3.0e7, 1.0e4)
+    )
+    ref = solve(
+        prob64, Rosenbrock23(), abstol = 1.0e-10, reltol = 1.0e-10,
+        initializealg = BrownFullBasicInit()
+    )
+
+    # Failure mode 1: Float32 state with Float64 dt (promotes the time type).
+    M32 = @SMatrix [1.0f0 0.0f0 0.0f0; 0.0f0 1.0f0 0.0f0; 0.0f0 0.0f0 0.0f0]
+    prob32 = ODEProblem(
+        ODEFunction(rober_static, mass_matrix = M32),
+        @SVector([1.0f0, 0.0f0, 0.0f0]), (0.0f0, 1.0f5), (0.04f0, 3.0f7, 1.0f4)
+    )
+    sol32 = solve(
+        prob32, Rosenbrock23(), dt = 0.1, abstol = 1.0f-5, reltol = 1.0f-5,
+        initializealg = BrownFullBasicInit()
+    )
+    @test SciMLBase.successful_retcode(sol32)
+    @test norm(sol32.u[end] - ref.u[end]) < 1.0e-4
+
+    # Failure mode 2: homogeneous Float64 at a tolerance that produces step
+    # rejections, whose retries take the cached-J reuse branch. nreject > 0 is
+    # asserted so this keeps covering that branch if step control changes.
+    sol64 = solve(
+        prob64, Rosenbrock23(), abstol = 1.0e-5, reltol = 1.0e-5,
+        initializealg = BrownFullBasicInit()
+    )
+    @test SciMLBase.successful_retcode(sol64)
+    @test sol64.stats.nreject > 0
+    @test norm(sol64.u[end] - ref.u[end]) < 1.0e-4
+
+    # The Rodas-family OOP constant cache goes through the same cached_W
+    # seeding path; Rodas23W and ROS34PW2 are W-methods so they additionally
+    # exercise the Jacobian-reuse decision logic on the static path.
+    for alg in (Rodas4(), Rodas23W(), ROS34PW2())
+        sol_rodas = solve(
+            prob32, alg, dt = 0.1, abstol = 1.0f-5, reltol = 1.0f-5,
+            initializealg = BrownFullBasicInit()
+        )
+        @test SciMLBase.successful_retcode(sol_rodas)
+        @test norm(sol_rodas.u[end] - ref.u[end]) < 1.0e-4
+    end
+end
+
+# Regression test for issue #3962 (and #1263): out-of-place Rosenbrock/Rodas steps
+# previously used `_reshape(W \ _vec(...), axes(uprev))`, which collapses the
+# ArrayPartition state behind SecondOrderODEProblem/DynamicalODEFunction down to a
+# bare Vector. The next `f(u,p,t)` then failed with `type Array has no field x`.
+# Stages now use `ArrayInterface.restructure(uprev, ...)` so the wrapper is kept.
+@testset "OOP SecondOrderODEProblem preserves ArrayPartition (#3962)" begin
+    # u'' = -u  ⇒  position = [cos t, sin t], velocity = [-sin t, cos t]
+    ho_iip(ddu, du, u, p, t) = (@. ddu = -u)
+    ho_oop(du, u, p, t) = -u
+    u0 = [1.0, 0.0]
+    du0 = [0.0, 1.0]
+    tspan = (0.0, 1.0)
+    prob_iip = SecondOrderODEProblem(ho_iip, du0, u0, tspan)
+    prob_oop = SecondOrderODEProblem(ho_oop, du0, u0, tspan)
+
+    for alg in (Rosenbrock23(), Rodas5P(), Rodas4(), Rodas5())
+        ref = solve(prob_iip, alg, abstol = 1.0e-10, reltol = 1.0e-10)
+        sol = solve(prob_oop, alg, abstol = 1.0e-10, reltol = 1.0e-10)
+        @test SciMLBase.successful_retcode(sol)
+        # Wrapper must survive the out-of-place stages.
+        @test sol.u[end] isa ArrayPartition
+        # And the answer must match the in-place reference, not merely not-error.
+        @test norm(sol.u[end] - ref.u[end]) < 1.0e-6
+    end
+end
+
+# Regression for #3974: Rodas5P's btilde is the unit vector e_8 (zero for
+# stages 1-7, one for stage 8), and Rodas5P's b weights likewise have exact
+# zeros. The fused stage-loop kernels (#3935) multiplied every stage through
+# unconditionally, including zero-weighted ones. `0 * finite = 0` is harmless,
+# but `0 * NaN`/`0 * Inf` is NaN, so a transient non-finite value in an
+# earlier, zero-weighted stage (e.g. an ill-conditioned Newton solve right
+# after a callback-driven parameter jump on a singular mass-matrix DAE) would
+# silently poison the entire weighted sum -- corrupting the error estimate
+# (or the solution update) even though the mathematically correct result
+# never depends on that term. The old per-coefficient broadcast fallback
+# explicitly skipped zero-weighted terms and never had this failure mode.
+@testset "fused weighted-sum skips zero-weighted stages (#3974)" begin
+    _weighted_sum! = OrdinaryDiffEqRosenbrock._weighted_sum!
+    _weighted_sum_fallback! = OrdinaryDiffEqRosenbrock._weighted_sum_fallback!
+
+    # Rodas5P's actual btilde: zero everywhere except the last stage.
+    btilde = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    dim = 10
+
+    # A zero-weighted early stage is transiently non-finite; the only stage
+    # that should matter (weight 1) is perfectly finite.
+    ks = [fill(0.0, dim) for _ in 1:8]
+    ks[3] .= NaN
+    ks[8] .= 0.001
+
+    out_fused = zeros(dim)
+    _weighted_sum!(out_fused, nothing, btilde, ks)
+    @test out_fused == ks[8]
+    @test !any(isnan, out_fused)
+
+    out_fallback = zeros(dim)
+    _weighted_sum_fallback!(out_fallback, nothing, btilde, ks)
+    @test out_fused == out_fallback
+
+    # Sanity: an end-to-end solve stays well-behaved when Rodas5P's error
+    # estimate is computed via the fused path on an ordinary stiff
+    # mass-matrix DAE (ROBER with a singular diagonal mass matrix).
+    function rober!(du, u, p, t)
+        y1, y2, y3 = u
+        k1, k2, k3 = p
+        du[1] = -k1 * y1 + k3 * y2 * y3
+        du[2] = k1 * y1 - k3 * y2 * y3 - k2 * y2^2
+        du[3] = y1 + y2 + y3 - 1
+        return nothing
+    end
+    M = Diagonal([1.0, 1.0, 0.0])
+    prob = ODEProblem(
+        ODEFunction(rober!; mass_matrix = M),
+        [1.0, 0.0, 0.0],
+        (0.0, 1.0e5),
+        (0.04, 3.0e7, 1.0e4),
+    )
+    sol = solve(
+        prob, Rodas5P();
+        abstol = 1.0e-8, reltol = 1.0e-8,
+        initializealg = BrownFullBasicInit(),
+    )
+    @test SciMLBase.successful_retcode(sol)
+end
+
+# Regression test for issue #4598: the mass-matrix DAE error estimate scales the
+# algebraic-constraint residual by 1/abstol, which must work elementwise when
+# abstol is a vector. A vector abstol with equal entries must reproduce the
+# scalar-abstol trajectory bitwise. A non-uniform vector must not collapse to
+# inv(first(abstol)) (equal-entry tests alone cannot catch that).
+@testset "Vector abstol on mass-matrix DAEs (#4598)" begin
+    function rober_dae(du, u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+        du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+        du[3] = y₁ + y₂ + y₃ - 1
+        return nothing
+    end
+    function rober_dae(u, p, t)
+        y₁, y₂, y₃ = u
+        k₁, k₂, k₃ = p
+        return [
+            -k₁ * y₁ + k₃ * y₂ * y₃,
+            k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2,
+            y₁ + y₂ + y₃ - 1,
+        ]
+    end
+    M = Diagonal([1.0, 1.0, 0.0])
+    u0 = [1.0, 0.0, 0.2]
+    p = (0.04, 3.0e7, 1.0e4)
+    abstol_vec = [1.0e-8, 1.0e-8, 1.0e-8]
+    # Tighter algebraic absolute tolerance: elementwise scaling changes the
+    # adaptive path vs equal-entry / scalar abstol (reviewer: Rosenbrock23
+    # ~213/1 vs ~211/0; Rodas5P ~181 vs ~112).
+    abstol_nu = [1.0e-8, 1.0e-8, 1.0e-12]
+
+    for prob in (
+            ODEProblem(ODEFunction{true}(rober_dae; mass_matrix = M), u0, (0.0, 1.0e3), p),
+            ODEProblem(ODEFunction{false}(rober_dae; mass_matrix = M), u0, (0.0, 1.0e3), p),
+        )
+        for Alg in (Rosenbrock23, Rodas5P)
+            sol_vec = solve(
+                prob, Alg(); abstol = abstol_vec, reltol = 1.0e-8,
+                initializealg = BrownFullBasicInit()
+            )
+            sol_scalar = solve(
+                prob, Alg(); abstol = 1.0e-8, reltol = 1.0e-8,
+                initializealg = BrownFullBasicInit()
+            )
+            @test SciMLBase.successful_retcode(sol_vec)
+            @test sol_vec.stats.naccept == sol_scalar.stats.naccept
+            @test sol_vec.stats.nreject == sol_scalar.stats.nreject
+            @test sol_vec.u[end] == sol_scalar.u[end]
+
+            sol_nu = solve(
+                prob, Alg(); abstol = abstol_nu, reltol = 1.0e-8,
+                initializealg = BrownFullBasicInit()
+            )
+            @test SciMLBase.successful_retcode(sol_nu)
+            @test (sol_nu.stats.naccept != sol_vec.stats.naccept) ||
+                (sol_nu.stats.nreject != sol_vec.stats.nreject)
+        end
+    end
+
+    # Hand-derived algebraic contribution after one Rosenbrock23 IIP step.
+    # perform_step! (adaptive path) overwrites cache.atmp with
+    # ifelse(algvar, fsallast, 0) ./ abstol, so atmp[3] must equal
+    # fsallast[3] / abstol_nu[3] — not fsallast[3] / abstol_nu[1]
+    # (the inv(first(abstol)) mistake). Use NoInit so the first residual is
+    # nonzero; the adaptive=false path skips this branch entirely.
+    prob_iip = ODEProblem(
+        ODEFunction{true}(rober_dae; mass_matrix = M), [1.0, 0.0, 0.5], (0.0, 1.0), p
+    )
+    integ = init(
+        prob_iip, Rosenbrock23();
+        abstol = abstol_nu, reltol = 1.0e-8,
+        adaptive = true, dt = 1.0e-4,
+        initializealg = SciMLBase.NoInit()
+    )
+    OrdinaryDiffEqRosenbrock.OrdinaryDiffEqCore.perform_step!(integ, integ.cache)
+    r_alg = integ.fsallast[3]
+    @test integ.cache.atmp[1] == 0
+    @test integ.cache.atmp[2] == 0
+    @test integ.cache.atmp[3] ≈ r_alg / abstol_nu[3]
+    @test integ.cache.atmp[3] != r_alg / abstol_nu[1]
+
+    # Rosenbrock32 must reject singular mass matrices (#4650), IIP and OOP.
+    dae_oop(u, p, t) = [-u[1], u[1] - u[2]]
+    function dae_iip(du, u, p, t)
+        du[1] = -u[1]
+        du[2] = u[1] - u[2]
+        return nothing
+    end
+    M2 = Diagonal([1.0, 0.0])
+    for prob in (
+            ODEProblem(ODEFunction{true}(dae_iip; mass_matrix = M2), [1.0, 1.0], (0.0, 1.0)),
+            ODEProblem(ODEFunction{false}(dae_oop; mass_matrix = M2), [1.0, 1.0], (0.0, 1.0)),
+        )
+        @test_throws ArgumentError solve(prob, Rosenbrock32())
+    end
+    Mns = Diagonal([2.0, 1.0])
+    for prob in (
+            ODEProblem(ODEFunction{true}(dae_iip; mass_matrix = Mns), [1.0, 1.0], (0.0, 1.0)),
+            ODEProblem(ODEFunction{false}(dae_oop; mass_matrix = Mns), [1.0, 1.0], (0.0, 1.0)),
+        )
+        @test SciMLBase.successful_retcode(solve(prob, Rosenbrock32()))
     end
 end

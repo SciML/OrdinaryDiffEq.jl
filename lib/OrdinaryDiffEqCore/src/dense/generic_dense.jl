@@ -6,6 +6,48 @@ _vals_eltype(vals::RecursiveArrayTools.AbstractVectorOfArray) = eltype(vals.u)
 @inline _get_val(vals::RecursiveArrayTools.AbstractVectorOfArray, j) = vals.u[j]
 @inline _set_val!(vals, j, v) = (vals[j] = v; nothing)
 @inline _set_val!(vals::RecursiveArrayTools.AbstractVectorOfArray, j, v) = (vals.u[j] = v; nothing)
+@inline _vals_indices(vals) = eachindex(vals)
+@inline _vals_indices(vals::RecursiveArrayTools.AbstractVectorOfArray) = eachindex(vals.u)
+
+@noinline function _throw_interpolant_length_mismatch(len_out, expected)
+    return throw(
+        DimensionMismatch(
+            "in-place interpolation `out` has length $len_out but expected length $expected"
+        )
+    )
+end
+
+@inline function _check_interpolant_idxs(u, idxs)
+    if idxs isa Union{Integer, AbstractVector{<:Integer}, AbstractVector{Bool}} &&
+            u isa AbstractArray
+        checkbounds(u, idxs)
+    end
+    return nothing
+end
+
+@inline _interpolant_idxs_count(idxs::AbstractVector{<:Integer}) = length(idxs)
+@inline _interpolant_idxs_count(idxs::AbstractVector{Bool}) = count(idxs)
+
+@inline function _check_interpolant_out_length(out, idxs)
+    if idxs isa Union{AbstractVector{<:Integer}, AbstractVector{Bool}}
+        n = _interpolant_idxs_count(idxs)
+        length(out) == n || _throw_interpolant_length_mismatch(length(out), n)
+    end
+    return nothing
+end
+
+@inline function _check_interpolant_idxs_out(u, out, idxs)
+    _check_interpolant_idxs(u, idxs)
+    if idxs === nothing
+        if !(u isa Number) && !(out isa Number)
+            length(out) == length(u) ||
+                _throw_interpolant_length_mismatch(length(out), length(u))
+        end
+    else
+        _check_interpolant_out_length(out, idxs)
+    end
+    return nothing
+end
 
 const DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE = """
 Derivative order too high for interpolation order. An interpolation derivative is
@@ -22,11 +64,16 @@ You can find the list of available ODE/DAE solvers with their documented interpo
 
 using SciMLBase: SENSITIVITY_INTERP_MESSAGE
 
+"""
+    DerivativeOrderNotPossibleError <: Exception
+
+Thrown when a dense-output interpolation is asked for a derivative order higher
+than the interpolant supports (Hermite interpolation supports up to order 3).
+"""
 struct DerivativeOrderNotPossibleError <: Exception end
 
 function Base.showerror(io::IO, e::DerivativeOrderNotPossibleError)
-    print(io, DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE)
-    return println(io, VERBOSE_MSG)
+    return print(io, DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE)
 end
 
 ## Integrator Dispatches
@@ -35,36 +82,79 @@ end
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
+# `searchsortedfirst` bounded below by `lo`, over `v` sorted ascending
+# (`forward = true`) or descending (`forward = false`). Callers in the sorted
+# vector-`tvals` loop pass the previous hit as `lo`, so the FindFirstFunctions
+# bracketing gallop turns repeated nearby lookups into O(1) instead of a fresh
+# O(log n) bisection; `max(lo, ...)` reproduces the lower bound exactly.
 @inline function _searchsortedfirst(v::AbstractVector, x, lo::Integer, forward::Bool)
-    u = oftype(lo, 1)
-    lo = lo - u
-    hi = length(v) + u
-    @inbounds while lo < hi - u
-        m = (lo + hi) >>> 1
-        @inbounds if (forward && v[m] < x) || (!forward && v[m] > x)
-            lo = m
-        else
-            hi = m
-        end
-    end
-    return hi
+    order = forward ? Base.Order.Forward : Base.Order.Reverse
+    return max(
+        lo,
+        searchsorted_first(KIND_BRACKET_GALLOP, v, x, clamp(lo, firstindex(v), lastindex(v)); order)
+    )
 end
 
 @inline function _searchsortedlast(v::AbstractVector, x, lo::Integer, forward::Bool)
-    u = oftype(lo, 1)
-    lo = lo - u
-    hi = length(v) + u
-    @inbounds while lo < hi - u
-        m = (lo + hi) >>> 1
-        @inbounds if (forward && v[m] > x) || (!forward && v[m] < x)
-            hi = m
-        else
-            lo = m
-        end
-    end
-    return lo
+    order = forward ? Base.Order.Forward : Base.Order.Reverse
+    return max(
+        lo - oftype(lo, 1),
+        searchsorted_last(KIND_BRACKET_GALLOP, v, x, clamp(lo, firstindex(v), lastindex(v)); order)
+    )
 end
 
+# Hint-accelerated interval search for the scalar interpolation paths below.
+# Scalar interpolation calls arrive with strongly correlated `tval`s (adjoint
+# solves sweep time monotonically, delay-equation history lookups cluster) or
+# hit near-uniform grids (`saveat` ranges, fixed-dt stepping); the hint holds
+# a strategy enum selected for the grid plus the previous hit as the gallop
+# guess. The `max` clamps reproduce the lower search bounds of the plain
+# methods above.
+@inline function _searchsortedfirst(
+        hint::TsSearchHint, v::AbstractVector, x, lo::Integer, forward::Bool
+    )
+    maybe_reprobe_ts_hint!(hint)
+    order = forward ? Base.Order.Forward : Base.Order.Reverse
+    i = searchsorted_first(hint.kind, v, x, ts_hint_start(hint, v); order)
+    hint.idx_prev = clamp(i, firstindex(v), lastindex(v))
+    return max(lo, i)
+end
+@inline function _searchsortedlast(
+        hint::TsSearchHint, v::AbstractVector, x, lo::Integer, forward::Bool
+    )
+    maybe_reprobe_ts_hint!(hint)
+    order = forward ? Base.Order.Forward : Base.Order.Reverse
+    i = searchsorted_last(hint.kind, v, x, ts_hint_start(hint, v); order)
+    hint.idx_prev = clamp(i, firstindex(v), lastindex(v))
+    return max(lo - oftype(lo, 1), i)
+end
+@inline function _searchsortedfirst(
+        ::Nothing, v::AbstractVector, x, lo::Integer, forward::Bool
+    )
+    return _searchsortedfirst(v, x, lo, forward)
+end
+@inline function _searchsortedlast(
+        ::Nothing, v::AbstractVector, x, lo::Integer, forward::Bool
+    )
+    return _searchsortedlast(v, x, lo, forward)
+end
+
+# Collapse :left zero-width duplicated knots at t to i₋ (pre-jump); skip when t ≠ knot (past-end).
+@inline function _collapse_left_duplicate_knot(i₋::Integer, i₊::Integer, ts, t)
+    if i₋ == i₊ || @inbounds(ts[i₋] != ts[i₊]) || t != @inbounds(ts[i₋])
+        return (i₋, i₊)
+    end
+    return (i₋, i₋)
+end
+
+"""
+    ode_addsteps!(k, integrator, ...)
+    ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false, allow_calc_end = true, force_calc_end = false)
+
+Ensure the stage-derivative array `k` for the current step is fully populated so
+the dense-output interpolant can be evaluated. Solver sublibraries add methods
+that compute their method-specific extra `k` stages on demand.
+"""
 @inline function ode_addsteps!(
         integrator, f = integrator.f, always_calc_begin = false,
         allow_calc_end = true, force_calc_end = false
@@ -162,7 +252,9 @@ end
     return ode_addsteps!(integrator, args...)
 end
 
-@inline function ode_interpolant(Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
+@inline function ode_interpolant(
+        Θ, integrator::SciMLBase.DEIntegrator, idxs, ::Type{deriv}
+    ) where {deriv}
     SciMLBase.addsteps!(integrator)
     if integrator.cache isa CompositeCache
         val = composite_ode_interpolant(
@@ -184,8 +276,8 @@ end
 end
 
 function default_ode_interpolant(
-        Θ, integrator, cache::DefaultCache, alg_choice, idxs, deriv
-    )
+        Θ, integrator, cache::DefaultCache, alg_choice, idxs, ::Type{deriv}
+    ) where {deriv}
     if alg_choice == 1
         return ode_interpolant(
             Θ, integrator.dt, integrator.uprev,
@@ -229,8 +321,8 @@ end
 
 @generated function composite_ode_interpolant(
         Θ, integrator, caches::T, current, idxs,
-        deriv
-    ) where {T <: Tuple}
+        ::Type{deriv}
+    ) where {T <: Tuple, deriv}
     expr = Expr(:block)
     for i in 1:length(T.types)
         push!(
@@ -257,6 +349,8 @@ end
 
 @inline function ode_interpolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs_out(integrator.uprev, val, idxs)
+    _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         ode_interpolant!(
             val, Θ, integrator.dt, integrator.uprev, integrator.u,
@@ -384,6 +478,13 @@ end
     return expr
 end
 
+"""
+    current_interpolant(t, integrator, idxs, deriv)
+
+Evaluate the dense-output interpolant of the *current* step at absolute time(s)
+`t` (mapping to `Θ = (t - tprev)/dt`), for components `idxs` and derivative order
+`deriv`. Out-of-place.
+"""
 @inline function current_interpolant(
         t::Number, integrator::SciMLBase.DEIntegrator, idxs,
         deriv
@@ -424,6 +525,13 @@ end
     return [ode_interpolant!(val, ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
 
+"""
+    current_extrapolant(t, integrator, idxs = nothing, deriv = Val{0})
+
+Evaluate the extrapolant of the current step at absolute time(s) `t`, i.e. the
+continuous extension used to extrapolate beyond an accepted step (maps to
+`Θ = (t - tprev)/(t_cur - tprev)`). Out-of-place.
+"""
 @inline function current_extrapolant(
         t::Number, integrator::SciMLBase.DEIntegrator,
         idxs = nothing, deriv = Val{0}
@@ -432,6 +540,11 @@ end
     return ode_extrapolant(Θ, integrator, idxs, deriv)
 end
 
+"""
+    current_extrapolant!(val, t, integrator, idxs = nothing, deriv = Val{0})
+
+In-place version of [`current_extrapolant`](@ref): write the result into `val`.
+"""
 @inline function current_extrapolant!(
         val, t::Number, integrator::SciMLBase.DEIntegrator,
         idxs = nothing, deriv = Val{0}
@@ -458,6 +571,8 @@ end
 
 @inline function ode_extrapolant!(val, Θ, integrator::SciMLBase.DEIntegrator, idxs, deriv)
     SciMLBase.addsteps!(integrator)
+    _check_interpolant_idxs_out(integrator.uprev, val, idxs)
+    _check_interpolant_idxs_out(integrator.u, val, idxs)
     return if integrator.cache isa CompositeCache
         composite_ode_extrapolant!(
             val, Θ, integrator, integrator.cache.caches,
@@ -645,6 +760,15 @@ function _evaluate_interpolant(
         cache, idxs,
         deriv, ks, ts, p, differential_vars
     ) where {F}
+    # Linear fallback when the per-step k storage is empty (e.g. SDE/SDDE
+    # solutions that reuse OrdinaryDiffEqCore.InterpolationData but never
+    # populate ks). Without this, ks[i₊] throws a BoundsError before we
+    # ever reach the linear-fallback inside _ode_interpolant.
+    if isempty(ks)
+        return linear_interpolant(
+            Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv
+        )
+    end
     _ode_addsteps!(
         ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
         cache
@@ -725,12 +849,17 @@ function evaluate_interpolant(
         f::F, Θ, dt, timeseries, i₋, i₊, cache, idxs,
         deriv, ks, ts, id, p, differential_vars
     ) where {F}
-    if isdiscretecache(cache)
+    if i₋ == i₊ && deriv === Val{0}
+        return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
+    elseif isdiscretecache(cache)
         return ode_interpolant(
             Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
             deriv, differential_vars
         )
-    elseif !id.dense
+    elseif !id.dense || isempty(ks)
+        # SDE/SDDE solutions reuse OrdinaryDiffEqCore.InterpolationData but
+        # never populate ks; fall back to linear interpolation in that case
+        # to avoid a BoundsError when accessing ks[i₊] below.
         return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
     elseif cache isa CompositeCache
         return evaluate_composite_cache(
@@ -769,10 +898,10 @@ function ode_interpolation(
         t = tvals[j]
         (i₋, i₊) = i₋₊ref[]
         if continuity === :left
-            # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
-            # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+            # ts[i₋] < t ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for t ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at t (duplicated knot) collapses to i₊ = i₋.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
+            (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
         else
             # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -803,6 +932,15 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
+    # `vals` slots are read only on the mutate-in-place path (array elements);
+    # on the `_set_val!` path they may be uninitialized (`Any`/`BigFloat` undef).
+    # Only the slots the main loop writes (`eachindex(tvals)`) are checked —
+    # `vals` may be longer than `tvals`, with untouched extra slots.
+    if idxs !== nothing && !isempty(vals) && _vals_eltype(vals) <: AbstractArray
+        for i in eachindex(tvals)
+            _check_interpolant_out_length(_get_val(vals, i), idxs)
+        end
+    end
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
 
@@ -821,14 +959,15 @@ function ode_interpolation!(
     else
         cache_i₊ = cache
     end
+    last_idxs_axes = nothing
     @inbounds for j in idx
         t = tvals[j]
 
         if continuity === :left
-            # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
-            # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+            # ts[i₋] < t ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for t ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at t (duplicated knot) collapses to i₊ = i₋.
             i₊ = min(lastindex(ts), _searchsortedfirst(ts, t, i₊, tdir > 0))
             i₋ = i₊ > 1 ? i₊ - 1 : i₊
+            (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, t)
         else
             # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -836,11 +975,59 @@ function ode_interpolation!(
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
         id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
+        # Mutate-in-place path (`vals` elements are arrays): read each slot and
+        # validate length. Replace-slot path (`_set_val!`): do not read the slot
+        # (may be uninitialized `Any`/`BigFloat`), but still validate idxs vs state.
+        ax = (axes(timeseries[i₋]), axes(timeseries[i₊]))
+        if _vals_eltype(vals) <: AbstractArray
+            out_j = _get_val(vals, j)
+            # `idxs` / full-state `out` validity depends only on the states' axes;
+            # skip the idxs rescan while consecutive intervals keep the axes already
+            # validated. For `idxs === nothing`, still O(1)-check each time's `out`
+            # length against those axes (not a rescan).
+            if ax != last_idxs_axes
+                _check_interpolant_idxs_out(timeseries[i₋], out_j, idxs)
+                _check_interpolant_idxs_out(timeseries[i₊], out_j, idxs)
+                last_idxs_axes = ax
+            elseif idxs === nothing
+                if !(timeseries[i₋] isa Number) && !(out_j isa Number)
+                    length(out_j) == length(timeseries[i₋]) ||
+                        _throw_interpolant_length_mismatch(
+                        length(out_j), length(timeseries[i₋])
+                    )
+                end
+                if !(timeseries[i₊] isa Number) && !(out_j isa Number)
+                    length(out_j) == length(timeseries[i₊]) ||
+                        _throw_interpolant_length_mismatch(
+                        length(out_j), length(timeseries[i₊])
+                    )
+                end
+            end
+        elseif idxs !== nothing
+            if ax != last_idxs_axes
+                _check_interpolant_idxs(timeseries[i₋], idxs)
+                _check_interpolant_idxs(timeseries[i₊], idxs)
+                last_idxs_axes = ax
+            end
+        end
 
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
 
-        if isdiscretecache(cache)
+        if i₋ == i₊ && deriv === Val{0}
+            if _vals_eltype(vals) <: AbstractArray
+                linear_interpolant!(
+                    _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv
+                )
+            else
+                _set_val!(
+                    vals, j,
+                    linear_interpolant(
+                        Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv
+                    )
+                )
+            end
+        elseif isdiscretecache(cache)
             if _vals_eltype(vals) <: AbstractArray
                 ode_interpolant!(
                     _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
@@ -854,7 +1041,7 @@ function ode_interpolation!(
                     )
                 )
             end
-        elseif !id.dense
+        elseif !id.dense || isempty(ks)
             if _vals_eltype(vals) <: AbstractArray
                 linear_interpolant!(
                     _get_val(vals, j), Θ, dt, timeseries[i₋], timeseries[i₊], idxs,
@@ -1025,14 +1212,14 @@ function ode_interpolation(
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
-        # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
-        i₊ = min(lastindex(ts), _searchsortedfirst(ts, tval, 2, tdir > 0))
+        # ts[i₋] < tval ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for tval ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at tval (duplicated knot) collapses to i₊ = i₋.
+        i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
+        (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
-        i₋ = max(1, _searchsortedlast(ts, tval, 1, tdir > 0))
+        i₋ = max(1, _searchsortedlast(_ts_hint(id), ts, tval, 1, tdir > 0))
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
     id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
@@ -1041,12 +1228,14 @@ function ode_interpolation(
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
-        if isdiscretecache(cache)
+        if i₋ == i₊ && deriv === Val{0}
+            val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
+        elseif isdiscretecache(cache)
             val = ode_interpolant(
                 Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv, differential_vars
             )
-        elseif !id.dense
+        elseif !id.dense || isempty(ks)
             val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif cache isa CompositeCache
             _ode_addsteps!(
@@ -1142,31 +1331,36 @@ function ode_interpolation!(
         continuity::Symbol = :left
     ) where {I, deriv}
     (; ts, timeseries, ks, f, cache, differential_vars) = id
+    _check_interpolant_out_length(out, idxs)
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
-        # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
-        # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
-        i₊ = min(lastindex(ts), _searchsortedfirst(ts, tval, 2, tdir > 0))
+        # ts[i₋] < tval ≤ ts[i₊] (in tdir order); i₋, i₊ = 1, 2 for tval ≤ ts[1] and lastindex(ts)-1, lastindex(ts) past the end; a zero-width interval at tval (duplicated knot) collapses to i₊ = i₋.
+        i₊ = min(lastindex(ts), _searchsortedfirst(_ts_hint(id), ts, tval, 2, tdir > 0))
         i₋ = i₊ > 1 ? i₊ - 1 : i₊
+        (i₋, i₊) = _collapse_left_duplicate_knot(i₋, i₊, ts, tval)
     else
         # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
         # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
-        i₋ = max(1, _searchsortedlast(ts, tval, 1, tdir > 0))
+        i₋ = max(1, _searchsortedlast(_ts_hint(id), ts, tval, 1, tdir > 0))
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
     id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
+    _check_interpolant_idxs_out(timeseries[i₋], out, idxs)
+    _check_interpolant_idxs_out(timeseries[i₊], out, idxs)
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
-        if isdiscretecache(cache)
+        if i₋ == i₊ && deriv === Val{0}
+            linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
+        elseif isdiscretecache(cache)
             ode_interpolant!(
                 out, Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv, differential_vars
             )
-        elseif !id.dense
+        elseif !id.dense || isempty(ks)
             linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif cache isa CompositeCache
             _ode_addsteps!(
@@ -1195,7 +1389,7 @@ function ode_interpolation!(
                 ) # update the kcurrent
                 ode_interpolant!(
                     out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                    cache.caches[2], idxs, deriv, differential_vars
+                    cache.cache2, idxs, deriv, differential_vars
                 )
             elseif alg_choice == 3
                 _ode_addsteps!(
@@ -1213,7 +1407,7 @@ function ode_interpolation!(
                 ) # update the kcurrent
                 ode_interpolant!(
                     out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                    cache.cache5, idxs, deriv, differential_vars
+                    cache.cache4, idxs, deriv, differential_vars
                 )
             elseif alg_choice == 5
                 _ode_addsteps!(
@@ -1259,8 +1453,13 @@ end
     return nothing
 end
 
+# By default, Hermite interpolant so update the derivative at the two ends
 """
-By default, Hermite interpolant so update the derivative at the two ends
+    _ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false, allow_calc_end = true, force_calc_end = false)
+
+Generic fallback for [`ode_addsteps!`](@ref) that fills `k[1]`, `k[2]` with the
+RHS at the step endpoints (`f(uprev, p, t)` and `f(u, p, t+dt)`), sufficient for
+cubic-Hermite dense output.
 """
 function _ode_addsteps!(
         k, t, uprev, u, dt, f, p, cache, always_calc_begin = false,
@@ -1281,8 +1480,16 @@ function _ode_addsteps!(
     return nothing
 end
 
+# ode_interpolant and ode_interpolant! dispatch
 """
-ode_interpolant and ode_interpolant! dispatch
+    ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{deriv}}, differential_vars)
+
+Evaluate the out-of-place dense-output interpolant at fraction `Θ ∈ [0, 1]` of a
+step of length `dt` from `y₀` to `y₁`, using the stage-derivative history `k` and
+the algorithm `cache`. `idxs` selects components (or `nothing` for all), `deriv`
+is the derivative order, and `differential_vars` masks algebraic components for
+DAEs. Solver sublibraries add methods for their cache types; the fallback is
+Hermite (or linear when `k` is empty).
 """
 function ode_interpolant(
         Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
@@ -1294,6 +1501,12 @@ function ode_interpolant(
         Θ, dt, y₀, y₁, k, cache::OrdinaryDiffEqMutableCache, idxs,
         T::Type{Val{TI}}, differential_vars
     ) where {TI}
+    # Empty (zero-dimensional) continuous state: there is nothing to interpolate,
+    # and the branches below would index into the empty state (`first(y₁)`). Bail
+    # out with an empty result. https://github.com/SciML/OrdinaryDiffEq.jl/issues/3778
+    if y₁ isa AbstractArray && isempty(y₁) && !(idxs isa Number)
+        return idxs === nothing ? copy(y₁) : y₁[idxs]
+    end
     return if idxs isa Number || !ArrayInterface.ismutable(y₀)
         # typeof(y₀) can be these if saveidxs gives a single value
         _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
@@ -1318,6 +1531,12 @@ function ode_interpolant(
     end
 end
 
+"""
+    ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{deriv}}, differential_vars)
+
+In-place version of [`ode_interpolant`](@ref): write the interpolated value into
+`out`.
+"""
 function ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
@@ -1331,6 +1550,15 @@ end
 @inline _dv(dv::Bool, _) = dv
 @inline _dv(dv, i) = dv[i]
 
+"""
+    interpolation_differential_vars(differential_vars, y₀, idxs)
+
+Resolve the per-component differential-vs-algebraic mask actually used by the
+interpolant, given the problem's `differential_vars`, the value `y₀`, and the
+selected `idxs`. Returns `true` when all selected components are differential,
+`false` when the mask is undefined (forcing linear interpolation), or the
+appropriate (sub)mask otherwise.
+"""
 function interpolation_differential_vars(differential_vars, y₀, idxs)
     if isnothing(differential_vars)
         if y₀ isa Number
@@ -1362,6 +1590,14 @@ function interpolation_differential_vars(differential_vars, y₀, idxs)
 end
 
 # If no dispatch found, assume Hermite (or linear when k is empty, e.g. SDE)
+"""
+    _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
+
+Low-level out-of-place interpolation kernel dispatched on the `cache` type. The
+generic fallback performs cubic Hermite interpolation (linear when there are fewer
+than two stage derivatives). Solver sublibraries specialize this for their own
+dense-output formulas.
+"""
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
@@ -1380,6 +1616,11 @@ function _ode_interpolant(
     )
 end
 
+"""
+    _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
+
+In-place counterpart of [`_ode_interpolant`](@ref); writes into `out`.
+"""
 function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars
     ) where {TI}
@@ -1394,10 +1635,14 @@ function _ode_interpolant!(
     return hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
 end
 
+# Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 190
+# Hermite Interpolation, chosen if no other dispatch for ode_interpolant
 """
-Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 190
+    hermite_interpolant(Θ, dt, y₀, y₁, k, ::Val{mutable}, idxs, T::Type{Val{deriv}}, differential_vars)
 
-Herimte Interpolation, chosen if no other dispatch for ode_interpolant
+Evaluate the cubic-Hermite interpolant (or its `deriv`-th derivative) between `y₀`
+and `y₁` from the endpoint derivatives `k[1]`, `k[2]`. Algebraic components
+(`differential_vars` false) fall back to linear interpolation.
 """
 @muladd function hermite_interpolant(
         Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
@@ -1472,6 +1717,12 @@ end
     end
 end
 
+"""
+    hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{deriv}}, differential_vars)
+
+In-place cubic-Hermite interpolation, writing into `out`. See
+[`hermite_interpolant`](@ref).
+"""
 @muladd function hermite_interpolant!(
         out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{0}}, differential_vars
     )

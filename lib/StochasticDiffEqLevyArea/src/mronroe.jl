@@ -1,3 +1,10 @@
+"""
+    MronRoe()
+
+Mrongowius--Rößler Fourier-series Lévy-area approximation with an improved
+tail-sum correction. Its truncation error has convergence order ``1`` in the
+number of retained Fourier terms.
+"""
 struct MronRoe <: AbstractIteratedIntegralAlgorithm end
 
 convorder(::MronRoe) = 1 // 1

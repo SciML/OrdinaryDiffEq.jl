@@ -1,7 +1,36 @@
+"""
+    DEOptions
+
+Mutable container of resolved common solver options, stored on a running
+integrator as `integrator.opts`.
+
+# Fields
+
+- `abstol`, `reltol`, `internalnorm`, and `internalopnorm` control error tests.
+- `dtmin`, `dtmax`, `failfactor`, `force_dtmin`, `advance_to_tstop`, and
+  `stop_at_next_tstop` control time-step selection.
+- `tstops`, `saveat`, `d_discontinuities`, and their corresponding caches manage
+  scheduled times.
+- `save_everystep`, `save_idxs`, `dense`, `save_on`, `save_start`, `save_end`,
+  `save_noise`, `save_discretes`, and `save_end_user` control output.
+- `callback`, `isoutofdomain`, and `unstable_check` configure step checks.
+- `maxiters`, `verbose`, and the `progress` fields configure reporting.
+
+# Rules
+
+Solver implementations may read or update these fields while stepping, but must
+preserve the queue invariants maintained by the initialization and time-stop
+hooks. Application code should configure these options through `solve` or
+`init`, rather than constructing `DEOptions` directly.
+
+!!! warning "Developer API"
+    `DEOptions` is a versioned interface for solver implementations. It is not a
+    user-facing solver configuration type.
+"""
 mutable struct DEOptions{
         absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-        disccache, verbType, DType,
+        disccache, verbType, DType, StageLimiter, StepLimiter,
     }
     maxiters::MI
     save_everystep::Bool
@@ -29,6 +58,8 @@ mutable struct DEOptions{
     timeseries_errors::Bool
     dense_errors::Bool
     delta::DType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
     dense::Bool
     save_on::Bool
     save_start::Bool
@@ -47,8 +78,9 @@ mutable struct DEOptions{
 end
 
 # Legacy constructor for backwards compatibility with packages (e.g. DelayDiffEq)
-# that construct DEOptions without the delta and save_noise fields and without
-# the DType type parameter. Accepts 21 type params and 46 positional args.
+# that construct DEOptions without the delta, save_noise, stage_limiter!, and step_limiter!
+# fields and without the DType/StageLimiter/StepLimiter type parameters. Accepts 21 type
+# params and 46 positional args.
 function DEOptions{
         absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
@@ -72,7 +104,8 @@ function DEOptions{
     return DEOptions{
         absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-        disccache, verbType, typeof(nothing),
+        disccache, verbType, typeof(nothing), typeof(trivial_limiter!),
+        typeof(trivial_limiter!),
     }(
         maxiters, save_everystep, adaptive, abstol, reltol,
         gamma, qmax, qmin, qsteady_max, qsteady_min, qoldinit,
@@ -81,7 +114,7 @@ function DEOptions{
         tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
         progress, progress_steps, progress_name, progress_message, progress_id,
         timeseries_errors, dense_errors,
-        nothing, dense, save_on, save_start, save_end,
+        nothing, trivial_limiter!, trivial_limiter!, dense, save_on, save_start, save_end,
         false, save_discretes, save_end_user, callback, isoutofdomain, unstable_check,
         verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
     )
@@ -114,7 +147,7 @@ For reference, relevant fields of the `ODEIntegrator` are:
 For example, to modify the absolute tolerance for the future timesteps, one can do:
 
 ```julia
-integrator.opts.abstol = 1e-9
+integrator.opts.abstol = 1.0e-9
 ```
 
 For more info see the linked documentation page.
@@ -175,6 +208,8 @@ mutable struct ODEIntegrator{
     fsalfirst::FSALType
     fsallast::FSALType
     rng::RNGType
+    is_disco_step::Bool
+    disco_checkpoint::tType
     W::WType
     P::PType
     sqdt::SqdtType

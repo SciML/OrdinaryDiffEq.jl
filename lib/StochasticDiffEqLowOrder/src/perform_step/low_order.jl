@@ -2,6 +2,7 @@
     (; t, dt, uprev, u, W, P, c, p, f) = integrator
 
     K = uprev .+ dt .* integrator.f(uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if is_split_step(integrator.alg)
         u_choice = K
@@ -14,6 +15,7 @@
     else
         noise = integrator.f.g(u_choice, p, t) .* W.dW
     end
+    integrator.stats.nf2 += 1
 
     if P !== nothing
         tmp = c(uprev, p, t, P.dW, nothing)
@@ -28,6 +30,7 @@ end
     (; tmp, rtmp1, rtmp2) = cache
     (; t, dt, uprev, u, W, P, c, p) = integrator
     integrator.f(rtmp1, uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     @.. u = uprev + dt * rtmp1
 
@@ -38,6 +41,7 @@ end
     end
 
     integrator.f.g(rtmp2, u_choice, p, t)
+    integrator.stats.nf2 += 1
 
     if P !== nothing
         c(tmp, uprev, p, t, P.dW, nothing)
@@ -64,6 +68,8 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
     ftmp = integrator.f(uprev, p, t)
     gtmp = integrator.f.g(uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
     if is_diagonal_noise(integrator.sol.prob)
         noise = gtmp .* W.dW
     else
@@ -71,12 +77,14 @@ end
     end
     tmp = @.. uprev + dt * ftmp + noise
     gtmp2 = (gtmp .+ integrator.f.g(tmp, p, t + dt)) ./ 2
+    integrator.stats.nf2 += 1
     if is_diagonal_noise(integrator.sol.prob)
         noise2 = gtmp2 .* W.dW
     else
         noise2 = gtmp2 * W.dW
     end
     u = uprev .+ (dt / 2) .* (ftmp .+ integrator.f(tmp, p, t + dt)) .+ noise2
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.u = u
 end
 
@@ -85,6 +93,8 @@ end
     (; t, dt, uprev, u, W, p, f) = integrator
     integrator.f(ftmp1, uprev, p, t)
     integrator.f.g(gtmp1, uprev, p, t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
 
     if is_diagonal_noise(integrator.sol.prob)
         @.. nrtmp = gtmp1 * W.dW
@@ -96,6 +106,8 @@ end
 
     integrator.f(ftmp2, tmp, p, t + dt)
     integrator.f.g(gtmp2, tmp, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    integrator.stats.nf2 += 1
 
     if is_diagonal_noise(integrator.sol.prob)
         @.. nrtmp = W.dW * (gtmp1 + gtmp2) / 2
@@ -177,7 +189,7 @@ end
     if integrator.opts.adaptive
         du2 = integrator.f(K, p, t + dt)
         Ed = dt * (du2 - du1) / 2
-        En = W.dW .^ 3 .* ((du2 - L) / (integrator.sqdt)) .^ 2 / 6
+        En = W.dW .^ 3 .* ggprime .^ 2 / 6
 
         resids = calculate_residuals(
             Ed, En, uprev, u, integrator.opts.abstol,
@@ -239,7 +251,7 @@ end
         if dW isa Number || is_diagonal_noise(integrator.sol.prob)
             J = J .- 1 // 2 .* abs(dt)
         else
-            J -= 1 // 2 .* UniformScaling(abs(dt))
+            J = J - UniformScaling(abs(dt) / 2)
         end
     end
 
@@ -309,10 +321,16 @@ end
 
     @.. mil_correction = zero(u)
     if SciMLBase.alg_interpretation(integrator.alg) == SciMLBase.AlgorithmInterpretation.Ito
-        if dW isa Number || is_diagonal_noise(integrator.sol.prob)
+        if dW isa Number
+            J -= abs(dt) / 2
+        elseif is_diagonal_noise(integrator.sol.prob)
             @.. J -= 1 // 2 * abs(dt)
+        elseif ArrayInterface.fast_scalar_indexing(J)
+            @inbounds for i in diagind(J)
+                J[i] -= abs(dt) / 2
+            end
         else
-            J -= 1 // 2 .* UniformScaling(abs(dt))
+            view(J, diagind(J)) .-= abs(dt) / 2
         end
     end
 

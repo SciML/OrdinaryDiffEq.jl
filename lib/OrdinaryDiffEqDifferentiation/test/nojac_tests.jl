@@ -1,5 +1,7 @@
 using OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock, RecursiveFactorization, LinearSolve,
     Test, ADTypes
+using OrdinaryDiffEqCore: get_fresh_jacobian
+using SparseArrays: sparse, spdiagm, nnz, SparseMatrixCSC
 
 const N = 32
 const xyd_brusselator = range(0, stop = 1, length = N)
@@ -137,7 +139,8 @@ function pollu(dy, y, p, t)
     dy[17] = -r20
     dy[18] = r20
     dy[19] = -r21 - r22 - r24 + r23 + r25
-    return dy[20] = -r25 + r24
+    dy[20] = -r25 + r24
+    return
 end
 
 function fjac(J, y, p, t)
@@ -258,6 +261,75 @@ prob = ODEProblem(ODEFunction(pollu, jac = fjac), u0, (0.0, 60.0))
 
 integ = init(prob, Rosenbrock23(), abstol = 1.0e-6, reltol = 1.0e-6)
 @test integ.cache.jac_config === (nothing, nothing)
+
+@testset "Matrix-free diagnostic Jacobian" begin
+    f = ODEFunction(
+        (du, u, p, t) -> (du .= -u);
+        jac_prototype = sparse([1.0 0.0; 0.0 1.0])
+    )
+    prob = ODEProblem(f, ones(2), (0.0, 1.0))
+    integrator = init(prob, Rosenbrock23(linsolve = KrylovJL_GMRES()))
+    work = (integrator.stats.nf, integrator.stats.njacs)
+
+    @test get_fresh_jacobian(integrator, integrator.cache) === nothing
+    @test (integrator.stats.nf, integrator.stats.njacs) == work
+end
+
+# `ODEFunction` defaults `sparsity` to a matrix-free `jac_prototype`; that used to
+# crash in `prepare_user_sparsity` before any linear solve ran (#4302).
+@testset "Matrix-free FunctionOperator jac_prototype prepares" begin
+    using SciMLOperators: FunctionOperator
+    using LinearAlgebra: mul!, I
+    using Random: MersenneTwister
+    using DiffEqBase: prepare_alg
+
+    n = 40
+    A = randn(MersenneTwister(1), n, n) - 20I
+    rhs!(du, u, p, t) = mul!(du, A, u)
+    jv(v, u, p, t) = A * v
+    jv(w, v, u, p, t) = mul!(w, A, v)
+    Jop = FunctionOperator(jv, zeros(n), zeros(n); islinear = true)
+    prob = ODEProblem(ODEFunction(rhs!; jac_prototype = Jop), ones(n), (0.0, 1.0))
+
+    alg = prepare_alg(TRBDF2(linsolve = KrylovJL_GMRES()), ones(n), SciMLBase.NullParameters(), prob)
+    @test !(alg.autodiff isa AutoSparse)
+    @test_nowarn init(prob, TRBDF2(linsolve = KrylovJL_GMRES()); abstol = 1.0e-8, reltol = 1.0e-8)
+end
+
+@testset "get_fresh_jacobian keeps a sparse J's pattern" begin
+    # `zero(::SparseMatrixCSC)` has no stored entries, so it drops the pattern `calc_J!`
+    # colours against and the instability diagnostic threw `DimensionMismatch` instead of
+    # reporting the Jacobian it was asked for.
+    n = 12
+    diffusivity = 50.0
+    function heat!(du, u, p, t)
+        for i in 1:n
+            l = i == 1 ? zero(eltype(u)) : u[i - 1]
+            r = i == n ? zero(eltype(u)) : u[i + 1]
+            du[i] = diffusivity * (l - 2u[i] + r)
+        end
+        return
+    end
+    u0 = [sinpi(i / (n + 1)) for i in 1:n]
+    trueJ = diffusivity *
+        Matrix(spdiagm(-1 => ones(n - 1), 0 => fill(-2.0, n), 1 => ones(n - 1)))
+    pattern = spdiagm(-1 => ones(n - 1), 0 => ones(n), 1 => ones(n - 1))
+
+    for proto in (copy(pattern), Matrix(pattern))
+        prob = ODEProblem(ODEFunction(heat!; jac_prototype = proto), u0, (0.0, 1.0))
+        # `instability_jacobian` only reaches this hook for caches that carry `J`
+        # themselves, which is the Rosenbrock and Radau shape.
+        for alg in (Rosenbrock23(), Rodas5P())
+            integrator = init(prob, alg; dt = 0.01, adaptive = false)
+            step!(integrator)
+            step!(integrator)
+            J = get_fresh_jacobian(integrator, integrator.cache)
+            @test J !== nothing
+            @test Matrix(J) ≈ trueJ
+            proto isa SparseMatrixCSC && @test nnz(J) == nnz(pattern)
+        end
+    end
+end
 integ = init(
     prob, Rosenbrock23(linsolve = SimpleLUFactorization()), abstol = 1.0e-6,
     reltol = 1.0e-6

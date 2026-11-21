@@ -2,7 +2,6 @@ module StochasticDiffEqLevyArea
 
 import LinearAlgebra: mul!
 import Random: randn!, default_rng, AbstractRNG
-using Random: Xoshiro
 import SpecialFunctions: trigamma
 
 """

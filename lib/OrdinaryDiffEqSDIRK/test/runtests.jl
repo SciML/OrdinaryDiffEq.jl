@@ -1,11 +1,10 @@
-using Pkg
+using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia
@@ -15,5 +14,7 @@ if (TEST_GROUP == "QA" || TEST_GROUP == "ALL") && isempty(VERSION.prerelease)
     activate_qa_env()
 end
 
+@time @safetestset "Tableau consistency" include("tableau_consistency_tests.jl")
+@time @safetestset "Stage predictors" include("predictor_tests.jl")
 @time @safetestset "Convergence" include("sdirk_convergence_tests.jl")
 @time @safetestset "DAE tests" include("dae_esdirk_test.jl")

@@ -135,6 +135,40 @@ end
     end
 end
 
+@testset "RKMilGeneral dZ truncation sizing" begin
+    # The MronRoe Fourier coefficients are drawn as the noise process' dZ, so every
+    # step of them lands in the saved noise history. Sizing them from the order-1/2
+    # truncation rule (O(1/dt) terms) instead of MronRoe's own (O(1/√dt)) grows the
+    # saved noise by a factor of ~340 at dt = 2^-12, which is enough to take a
+    # 500-trajectory convergence study past 250 GiB. See issue #4036.
+    mm = 4
+    f!(du, u, p, t) = (du .= 0; nothing)
+    g!(du, u, p, t) = (du .= 1; nothing)
+    prob = SDEProblem(f!, g!, [2.0, 2.0], (0.0, 0.5); noise_rate_prototype = zeros(2, mm))
+
+    n_tail = (mm^2 + mm) ÷ 2
+    implied_terms(sol) = (length(sol.W.Z[1]) - n_tail) ÷ (2 * mm)
+
+    for dt in (1 / 2^6, 1 / 2^12)
+        expected = terms_needed(mm, dt, dt^(3 // 2), MronRoe(), MaxL2())
+        sol = solve(prob, RKMilGeneral(); dt, adaptive = false, save_noise = true)
+        @test implied_terms(sol) == expected
+        # `p = true` used to bake floor(1/dt) + 1 terms into the algorithm object, so
+        # the truncation neither tracked the solver's step size nor the noise dimension.
+        sol_ptrue = solve(
+            prob, RKMilGeneral(p = true, dt = 1 / 2^12); dt,
+            adaptive = false, save_noise = true
+        )
+        @test implied_terms(sol_ptrue) == expected
+    end
+
+    # An explicitly requested truncation is still honoured.
+    sol_fixed = solve(
+        prob, RKMilGeneral(p = 7), dt = 1 / 2^6, adaptive = false, save_noise = true
+    )
+    @test implied_terms(sol_fixed) == 7
+end
+
 @testset "Simulate non-com. SDEs tests" begin
     u₀ = [0.0, 0.0, 0.0]
     f(u, p, t) = [0.0, 0.0, 0.0]
@@ -151,17 +185,17 @@ end
     prob = SDEProblem(f, g, u₀, (0.0, 1.0); noise_rate_prototype = zeros(3, 2))
     prob! = SDEProblem(f!, g!, u₀, (0.0, 1.0); noise_rate_prototype = zeros(3, 2))
 
-    sol = solve(prob, RKMilGeneral(; ii_approx = IICommutative()), dt = dt, adaptive = false)
+    sol = solve(prob, RKMilGeneral(; ii_approx = IICommutative()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
-    sol = solve(prob, RKMilGeneral(; ii_approx = IILevyArea()), dt = dt, adaptive = false)
+    sol = solve(prob, RKMilGeneral(; ii_approx = IILevyArea()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
-    sol = solve(prob, RKMilGeneral(ii_approx = Fourier()), dt = dt, adaptive = false)
+    sol = solve(prob, RKMilGeneral(ii_approx = Fourier()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
 
-    sol = solve(prob!, RKMilGeneral(; ii_approx = IICommutative()), dt = dt, adaptive = false)
+    sol = solve(prob!, RKMilGeneral(; ii_approx = IICommutative()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
-    sol = solve(prob!, RKMilGeneral(; ii_approx = IILevyArea()), dt = dt, adaptive = false)
+    sol = solve(prob!, RKMilGeneral(; ii_approx = IILevyArea()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
-    sol = solve(prob!, RKMilGeneral(ii_approx = Fourier()), dt = dt, adaptive = false)
+    sol = solve(prob!, RKMilGeneral(ii_approx = Fourier()); dt, adaptive = false)
     @test sol.retcode == ReturnCode.Success
 end

@@ -1,4 +1,11 @@
 using OrdinaryDiffEq, DelayDiffEq, BoundaryValueDiffEq, DiffEqDevTools, DiffEqBase, Test
+using OrdinaryDiffEqLowOrderRK: Euler, Midpoint, Heun, BS3, BS5, DP5, RK4
+using OrdinaryDiffEqTsit5: Tsit5
+using OrdinaryDiffEqVerner: Vern6, Vern7, Vern9
+using OrdinaryDiffEqRosenbrock: Rodas4, Rodas5, RosShamp4
+using OrdinaryDiffEqFIRK: RadauIIA5
+using OrdinaryDiffEqBDF: DFBDF
+using OrdinaryDiffEqNonlinearSolve: NLFunctional
 using ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 using DDEProblemLibrary: prob_dde_constant_1delay_ip
 using BVProblemLibrary: prob_bvp_linear_1
@@ -34,7 +41,8 @@ test_sol_2Dlinear = TestSolution(
 prob_lotka = begin
     function lotka(du, u, p, t)
         du[1] = 1.5 * u[1] - u[1] * u[2]
-        return du[2] = -3 * u[2] + u[1] * u[2]
+        du[2] = -3 * u[2] + u[1] * u[2]
+        return
     end
     ODEProblem(lotka, [1.0; 1.0], (0.0, 10.0))
 end
@@ -198,7 +206,7 @@ end
         tspan = (0.0, 100000.0)
 
         differential_vars = [true, true, false]
-        prob2 = DAEProblem(dae_rober, du₀, u₀, tspan, differential_vars = differential_vars)
+        prob2 = DAEProblem(dae_rober, du₀, u₀, tspan; differential_vars)
 
         dae_ref_sol = solve(prob2, DFBDF(), abstol = 1 / 10^14, reltol = 1 / 10^14)
 

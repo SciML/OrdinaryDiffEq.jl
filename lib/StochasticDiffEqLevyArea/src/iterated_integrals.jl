@@ -1,5 +1,5 @@
 """
-    ito_correction!(I, h=1)
+    ito_correction!(I, h = 1)
 
 Subtract h/2 from every diagonal element of I (Itô correction).
 """
@@ -25,7 +25,7 @@ function iterated_integrals(
     ) where {T <: AbstractFloat}
     m = length(W)
     n = terms_needed(m, h, eps, alg, error_norm)
-    I = levyarea(W / √h, n, alg; rng = rng)
+    I = levyarea(W / √h, n, alg; rng)
     if ito_correction
         ito_correction!(I)
     end
@@ -67,7 +67,7 @@ function iterated_integrals(
     ) where {T <: AbstractFloat}
     m = length(W)
     n = terms_needed(m, q_12, h, eps, alg, error_norm)
-    I = levyarea(W ./ q_12 ./ √h, n, alg; rng = rng)
+    I = levyarea(W ./ q_12 ./ √h, n, alg = rng)
     if ito_correction
         ito_correction!(I)
     end

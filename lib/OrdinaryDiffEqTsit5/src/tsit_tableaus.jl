@@ -1,3 +1,9 @@
+"""
+    Tsit5ConstantCache <: OrdinaryDiffEqConstantCache
+
+Out-of-place solver cache for the Tsitouras 5(4) method (`Tsit5`). Carries no
+mutable state (the tableau coefficients are generated on demand).
+"""
 struct Tsit5ConstantCache <: OrdinaryDiffEqConstantCache end
 struct Tsit5ConstantCacheActual{T, T2}
     c1::T2

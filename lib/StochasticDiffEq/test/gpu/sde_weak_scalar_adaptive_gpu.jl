@@ -18,7 +18,8 @@ function scalar_noise!(du, u, p, t)
     return nothing
 end
 
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     Random.seed!(seeds[i])
     W = WienerProcess(0.0, 0.0, 0.0)
     return remake(prob, noise = W)
@@ -37,7 +38,7 @@ tspan = (0.0f0, 100.0f0)
 p = [1.9f0, 0.1f0]
 
 prob = SDEProblem(f!, scalar_noise!, u0, tspan, p, noise = W)
-ensembleprob = EnsembleProblem(prob, prob_func = prob_func)
+ensembleprob = EnsembleProblem(prob; prob_func)
 
 @info "scalar SDE"
 

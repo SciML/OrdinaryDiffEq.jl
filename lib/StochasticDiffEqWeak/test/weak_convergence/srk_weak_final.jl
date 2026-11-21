@@ -11,7 +11,8 @@ using Random
 using DiffEqDevTools
 #using DiffEqGPU
 seed = 103473
-function prob_func(prob, i, repeat)
+function prob_func(prob, ctx)
+    i = ctx.sim_id; repeat = ctx.repeat
     return remake(prob, seed = seeds[i])
 end
 
@@ -38,8 +39,8 @@ seeds = rand(UInt, numtraj)
 prob = SDEProblem(f, g, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h1(asinh(sol.u[end])), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h1(asinh(sol.u[end])), false),
+    prob_func
 )
 
 sim = test_convergence(
@@ -164,8 +165,8 @@ h1(z) = z^3 - 6 * z^2 + 8 * z
 prob = SDEProblem(f1!, g1!, u₀, tspan)
 ensemble_prob = EnsembleProblem(
     prob;
-    output_func = (sol, i) -> (h1(asinh(sol.u[end][1])), false),
-    prob_func = prob_func
+    output_func = (sol, ctx) -> (h1(asinh(sol.u[end][1])), false),
+    prob_func
 )
 
 numtraj = Int(6.0e6)

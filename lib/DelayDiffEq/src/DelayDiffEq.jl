@@ -1,13 +1,14 @@
 module DelayDiffEq
 
 import Reexport: @reexport, Reexport
+import SciMLBase
 @reexport using SciMLBase
 import OrdinaryDiffEqCore, OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqDifferentiation,
     OrdinaryDiffEqRosenbrock
 import OrdinaryDiffEqDefault: OrdinaryDiffEqDefault
 import OrdinaryDiffEqFunctionMap: OrdinaryDiffEqFunctionMap
 
-using DataStructures: BinaryMinHeap
+using BinaryHeaps: BinaryMinHeap
 using LinearAlgebra: opnorm, I
 using Logging: @logmsg
 using RecursiveArrayTools: copyat_or_push!, recursivecopy, recursivecopy!,
@@ -22,21 +23,22 @@ import SymbolicIndexingInterface as SII
 using SciMLBase: AbstractDDEAlgorithm, AbstractDDEIntegrator, AbstractODEIntegrator,
     DEIntegrator
 using SciMLBase: AbstractSDDEProblem, SDDEProblem
+using SciMLBase: ProblemSolverPairingError
 
 using Base: deleteat!
 import FastBroadcast: @..
 
 using OrdinaryDiffEqNonlinearSolve: NLAnderson, NLFunctional
 using OrdinaryDiffEqCore: AbstractNLSolverCache, SlowConvergence,
-    alg_extrapolates, alg_maximum_order, initialize!, DEVerbosity
+    alg_extrapolates, alg_maximum_order
 using OrdinaryDiffEqCore: StochasticDiffEqAlgorithm,
-    StochasticDiffEqRODEAlgorithm,
-    StochasticDiffEqConstantCache, StochasticDiffEqMutableCache
+    StochasticDiffEqRODEAlgorithm
 using OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 using OrdinaryDiffEqFunctionMap: FunctionMap
 # using OrdinaryDiffEqDifferentiation: resize_grad_config!, resize_jac_config!
 
-using DiffEqBase: is_diagonal_noise
+using SciMLBase: is_diagonal_noise
+using DiffEqBase: DEVerbosity
 
 # Explicit imports for functions
 using OrdinaryDiffEqCore: AutoSwitch, CompositeAlgorithm
@@ -53,9 +55,7 @@ using SciMLBase: CallbackSet, DAEProblem, DDEProblem, AbstractSciMLSolution, ODE
     change_t_via_interpolation!, isadaptive
 using DiffEqBase: initialize!
 import DiffEqBase
-using SciMLLogging: AbstractVerbosityPreset, None, @SciMLMessage
-
-import SciMLBase
+using SciMLLogging: AbstractVerbosityPreset, @SciMLMessage
 
 const SDEAlgUnion = Union{StochasticDiffEqAlgorithm, StochasticDiffEqRODEAlgorithm}
 
@@ -128,6 +128,16 @@ function SciMLBase.__init(
     return SciMLBase.__init(prob, MethodOfSteps(alg), args...; kwargs...)
 end
 function DiffEqBase.check_prob_alg_pairing(prob::SDDEProblem, alg::SDEAlgUnion)
+    return nothing
+end
+function DiffEqBase.check_prob_alg_pairing(
+        prob::SDDEProblem,
+        alg::AbstractMethodOfStepsAlgorithm
+    )
+    # MethodOfSteps wrapping an SDE algorithm is valid for SDDEProblem
+    if !(alg.alg isa SDEAlgUnion)
+        throw(ProblemSolverPairingError(prob, alg))
+    end
     return nothing
 end
 

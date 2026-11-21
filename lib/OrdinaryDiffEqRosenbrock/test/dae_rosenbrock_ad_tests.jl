@@ -55,7 +55,7 @@ sol = @inferred solve(
     alg = Alg(; autodiff)
     function f(p)
         sol = @inferred solve(
-            remake(_prob, p = p), alg, abstol = 1.0e-14,
+            remake(_prob; p), alg, abstol = 1.0e-14,
             reltol = 1.0e-14, initializealg = initalg
         )
         sum(sol.u[end])

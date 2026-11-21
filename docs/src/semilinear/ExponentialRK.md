@@ -38,9 +38,13 @@ sol = solve(prob, ETDRK4(), dt = 1 / 4)
 ```@docs
 LawsonEuler
 NorsettEuler
+ETD1
 ETD2
 ETDRK2
 ETDRK3
 ETDRK4
 HochOst4
+Friedli
+ERK32ZB
+ERK43ZB
 ```

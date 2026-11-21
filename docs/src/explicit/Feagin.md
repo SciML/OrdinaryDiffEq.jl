@@ -69,7 +69,7 @@ first_steps("OrdinaryDiffEqFeagin", "Feagin14")
 ## Full list of solvers
 
 ```@docs
-Feagin10
-Feagin12
-Feagin14
+OrdinaryDiffEqFeagin.Feagin10
+OrdinaryDiffEqFeagin.Feagin12
+OrdinaryDiffEqFeagin.Feagin14
 ```

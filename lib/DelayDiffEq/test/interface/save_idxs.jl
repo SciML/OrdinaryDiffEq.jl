@@ -14,7 +14,8 @@ const prob_notinplace = DDEProblem(
 # in-place problem
 function f_inplace(du, u, h, p, t)
     du[1] = -h(p, t - 1 / 5)[1] + u[1]
-    return du[2] = -h(p, t - 1 / 3)[2] - h(p, t - 1 / 5)[2]
+    du[2] = -h(p, t - 1 / 3)[2] - h(p, t - 1 / 5)[2]
+    return
 end
 const prob_inplace = DDEProblem(
     f_inplace, ones(2), (p, t) -> zeros(2), (0.0, 100.0),

@@ -47,7 +47,7 @@ function effective_cost(dim, q_12, stepsize, eps, alg, norm)
 end
 
 """
-    optimal_algorithm(dim, stepsize, eps=stepsize^(3/2), norm=MaxL2())
+    optimal_algorithm(dim, stepsize, eps = stepsize^(3 / 2), norm = MaxL2())
 
 Returns the optimal algorithm (fewest random numbers) for the given parameters.
 """

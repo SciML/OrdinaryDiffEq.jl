@@ -1,11 +1,28 @@
-using Pkg
+using SciMLTesting
 using SafeTestsets
 
-const TEST_GROUP = get(ENV, "ODEDIFFEQ_TEST_GROUP", "ALL")
+const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    return Pkg.instantiate()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
+end
+
+@time @safetestset "Discontinuity restart" include("imex_discontinuity_restart_tests.jl")
+
+@time @safetestset "SciMLBase reexport" begin
+    using OrdinaryDiffEqIMEXMultistep, Test
+    exported = (
+        :ODEProblem, :ODEFunction, :SplitODEProblem, :solve, :init, :step!,
+        :remake, :ReturnCode, :CallbackSet, :ContinuousCallback, :terminate!,
+        :u_modified!, :add_tstop!, :get_du, :EnsembleProblem,
+    )
+    @test all(Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), exported))
+    internal = (
+        :build_solution, :isinplace, :has_jac, :AbstractODEProblem,
+        :StandardODEProblem, :UJacobianWrapper, :LinearProblem,
+        :ConvexOptimizationProblem,
+    )
+    @test !any(Base.isexported.(Ref(OrdinaryDiffEqIMEXMultistep), internal))
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia

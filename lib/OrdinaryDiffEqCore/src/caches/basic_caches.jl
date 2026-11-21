@@ -1,5 +1,26 @@
+"""
+    OrdinaryDiffEqCache <: SciMLBase.DECache
+
+Abstract supertype of every solver cache. A cache holds the per-solve scratch
+state (stage values, temporaries, tableau, nonlinear solver, …) associated with
+an algorithm. Concrete caches are built by [`alg_cache`](@ref) and subtype either
+[`OrdinaryDiffEqConstantCache`](@ref) or [`OrdinaryDiffEqMutableCache`](@ref).
+"""
 abstract type OrdinaryDiffEqCache <: SciMLBase.DECache end
+"""
+    OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache
+
+Abstract supertype for out-of-place ("constant") caches used when the state is
+immutable (e.g. `Number`s, `StaticArray`s). These allocate fresh values each step
+instead of mutating in place. `is_constant_cache` returns `true` for them.
+"""
 abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
+"""
+    OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache
+
+Abstract supertype for in-place ("mutable") caches used when the state is a
+mutable array. Their scratch fields are preallocated and reused each step.
+"""
 abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
@@ -8,8 +29,34 @@ ismutablecache(cache::OrdinaryDiffEqMutableCache) = true
 ismutablecache(cache::OrdinaryDiffEqConstantCache) = false
 
 # Don't worry about the potential alloc on a constant cache
+"""
+    get_fsalfirstlast(cache, u)
+
+Return the `(fsalfirst, fsallast)` derivative buffers for `cache`, allocating
+zeros of the shape of `u` for constant caches. Used to set up FSAL storage when
+initializing the integrator.
+"""
 get_fsalfirstlast(cache::OrdinaryDiffEqConstantCache, u) = (zero(u), zero(u))
 
+"""
+    CompositeCache(caches, choice_function, current) <: OrdinaryDiffEqCache
+
+Cache used by [`CompositeAlgorithm`](@ref). Holds the tuple of sub-`caches`, the
+`choice_function` that selects the active algorithm, and the index `current` of
+the currently-active sub-cache.
+
+# Fields
+
+- `caches`: Tuple of caches for the component algorithms.
+- `choice_function`: Function selecting the active component algorithm.
+- `current`: Index of the active component cache.
+
+# Developer API
+
+This is a solver-developer extension type for shared composite-cache machinery.
+End-user code should call `solve` and use solution APIs, rather than construct
+`CompositeCache` values or access cache fields.
+"""
 mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     caches::T
     choice_function::F
@@ -29,6 +76,14 @@ function get_fsalfirstlast(cache::CompositeCache, u)
     end
 end
 
+"""
+    DefaultCache <: OrdinaryDiffEqCache
+
+Specialized composite cache used by the automatic default solver. It lazily holds
+up to six candidate sub-caches (`cache1`…`cache6`) constructed on demand from
+`args`, together with the `choice_function` and the `current` selected index,
+avoiding compilation of every candidate up front.
+"""
 mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiffEqCache
     args::A
     choice_function::F
@@ -49,6 +104,15 @@ mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F, uType} <: OrdinaryDiff
     end
 end
 
+# The `alg_cache` arguments stored in `DefaultCache.args`, which holds the three element types as `Val`s so
+# that the field type is concrete.
+@inline function default_cache_args(
+        u, rate_prototype, ::Val{uEltypeNoUnits}, ::Val{uBottomEltypeNoUnits},
+        ::Val{tTypeNoUnits}, rest...
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return (u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, rest...)
+end
+
 function get_fsalfirstlast(cache::DefaultCache, u)
     return (cache.u, cache.u) # will be overwritten by the cache choice
 end
@@ -61,6 +125,34 @@ function ismutablecache(
     return T1 <: OrdinaryDiffEqMutableCache
 end
 
+"""
+    alg_cache(alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{iip}, verbose)
+
+Construct and return the internal solver cache for `alg`.
+
+This is a developer extension point for solver packages. Each solver sublibrary
+defines a method for its algorithm type that allocates stage buffers, tableau
+data, nonlinear-solver state, and other per-solve scratch storage. The `Val{iip}`
+argument selects the in-place or out-of-place cache branch.
+
+# Examples
+
+Solver packages extend `alg_cache` for their algorithm type:
+
+```julia
+import OrdinaryDiffEqCore: alg_cache
+
+function alg_cache(
+        alg::MyAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck, ::Val{iip}, verbose
+    ) where {
+        uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, iip,
+    }
+    return MyAlgorithmCache(u, rate_prototype)
+end
+```
+"""
 function alg_cache(
         alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -95,8 +187,13 @@ function alg_cache(
     T4 = Base.promote_op(alg_cache, A4, argT...)
     T5 = Base.promote_op(alg_cache, A5, argT...)
     T6 = Base.promote_op(alg_cache, A6, argT...)
+    stored_args = (
+        u, rate_prototype, Val(uEltypeNoUnits),
+        Val(uBottomEltypeNoUnits), Val(tTypeNoUnits), uprev, uprev2, f, t, dt,
+        reltol, p, calck, Val(V), verbose,
+    )
     cache = DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function), typeof(u)}(
-        args, alg.choice_function, 1, u
+        stored_args, alg.choice_function, 1, u
     )
     algs = alg.algs
     # If the type is a bitstype we need to initialize it correctly here since isdefined will always return true.

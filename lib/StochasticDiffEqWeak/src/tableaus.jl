@@ -22,7 +22,13 @@ struct RoesslerRI{T, T2} <: Tableau
     quantile::T
 end
 
-function constructDRI1(T = Float64, T2 = Float64)
+"""
+    constructDRI1([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRI` tableau used by `DRI1`, with coefficient element
+type `T` and abscissa element type `T2`.
+"""
+function constructDRI1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1 // 2; 1]
     c₁ = [0; 342 // 491; 342 // 491]
     c₂ = [0; 0; 0]
@@ -72,7 +78,13 @@ function constructDRI1(T = Float64, T2 = Float64)
     )
 end
 
-function constructRI1(T = Float64, T2 = Float64)
+"""
+    constructRI1([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRI` tableau used by `RI1`, with coefficient element type
+`T` and abscissa element type `T2`.
+"""
+function constructRI1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 2 // 3; 2 // 3]
     c₁ = [0; 1; 1]
     c₂ = [0; 0; 0]
@@ -122,7 +134,13 @@ function constructRI1(T = Float64, T2 = Float64)
     )
 end
 
-function constructRI3(T = Float64, T2 = Float64)
+"""
+    constructRI3([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRI` tableau used by `RI3`, with coefficient element type
+`T` and abscissa element type `T2`.
+"""
+function constructRI3(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1; 1 // 2]
     c₁ = [0; 1; 1]
     c₂ = [0; 0; 0]
@@ -172,7 +190,13 @@ function constructRI3(T = Float64, T2 = Float64)
     )
 end
 
-function constructRI5(T = Float64, T2 = Float64)
+"""
+    constructRI5([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRI` tableau used by `RI5`, with coefficient element type
+`T` and abscissa element type `T2`.
+"""
+function constructRI5(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1; 5 // 12]
     c₁ = [0; 1 // 4; 1 // 4]
     c₂ = [0; 0; 0]
@@ -222,7 +246,13 @@ function constructRI5(T = Float64, T2 = Float64)
     )
 end
 
-function constructRI6(T = Float64, T2 = Float64)
+"""
+    constructRI6([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRI` tableau used by `RI6`, with coefficient element type
+`T` and abscissa element type `T2`.
+"""
+function constructRI6(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1; 0]
     c₁ = [0; 1; 1]
     c₂ = [0; 0; 0]
@@ -272,7 +302,13 @@ function constructRI6(T = Float64, T2 = Float64)
     )
 end
 
-function constructRDI1WM(T = Float64, T2 = Float64)
+"""
+    constructRDI1WM([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRI` tableau used by `RDI1WM`, with coefficient element
+type `T` and abscissa element type `T2`.
+"""
+function constructRDI1WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 2 // 3]
     c₁ = [0; 0]
     c₂ = [0; 0]
@@ -316,7 +352,13 @@ function constructRDI1WM(T = Float64, T2 = Float64)
     )
 end
 
-function constructRDI2WM(T = Float64, T2 = Float64)
+"""
+    constructRDI2WM([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRI` tableau used by `RDI2WM`, with coefficient element
+type `T` and abscissa element type `T2`.
+"""
+function constructRDI2WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1; 0]
     c₁ = [0; 2 // 3; 2 // 3]
     c₂ = [0; 0; 0]
@@ -366,7 +408,13 @@ function constructRDI2WM(T = Float64, T2 = Float64)
     )
 end
 
-function constructRDI3WM(T = Float64, T2 = Float64)
+"""
+    constructRDI3WM([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRI` tableau used by `RDI3WM`, with coefficient element
+type `T` and abscissa element type `T2`.
+"""
+function constructRDI3WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1 // 2; 3 // 4]
     c₁ = [0; 2 // 3; 2 // 3]
     c₂ = [0; 0; 0]
@@ -416,7 +464,13 @@ function constructRDI3WM(T = Float64, T2 = Float64)
     )
 end
 
-function constructRDI4WM(T = Float64, T2 = Float64)
+"""
+    constructRDI4WM([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRI` tableau used by `RDI4WM`, with coefficient element
+type `T` and abscissa element type `T2`.
+"""
+function constructRDI4WM(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 1 // 2; 1]
     c₁ = [0; 2 // 3; 2 // 3]
     c₂ = [0; 0; 0]
@@ -466,6 +520,13 @@ function constructRDI4WM(T = Float64, T2 = Float64)
     )
 end
 
+"""
+    checkRIOrder(tableau; tol = 1.0e-6, ps = 2)
+
+Evaluate the weak order conditions of a `RoesslerRI` tableau through order
+`ps`. Returns one Boolean per condition, using `tol` for coefficient
+comparisons. Supported values of `ps` are 1 and 2.
+"""
 function checkRIOrder(RI; tol = 1.0e-6, ps = 2)
     (; c₀, c₁, c₂, A₀, A₁, A₂, B₀, B₁, B₂, α, β₁, β₂, β₃, β₄) = RI
     e = ones(size(α))
@@ -566,7 +627,13 @@ struct RoesslerRS{T, T2} <: Tableau
     quantile::T
 end
 
-function constructRS1(T = Float64, T2 = Float64)
+"""
+    constructRS1([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRS` tableau used by `RS1`, with coefficient element type
+`T` and abscissa element type `T2`.
+"""
+function constructRS1(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 0; 1; 0]
     c₁ = [0; 0; 1; 1]
     c₂ = [0; 0; 0; 0]
@@ -626,7 +693,13 @@ function constructRS1(T = Float64, T2 = Float64)
     )
 end
 
-function constructRS2(T = Float64, T2 = Float64)
+"""
+    constructRS2([T = Float64], [T2 = Float64])
+
+Construct the `RoesslerRS` tableau used by `RS2`, with coefficient element type
+`T` and abscissa element type `T2`.
+"""
+function constructRS2(::Type{T} = Float64, ::Type{T2} = Float64) where {T, T2}
     c₀ = [0; 2 // 3; 2 // 3; 0]
     c₁ = [0; 0; 1; 1]
     c₂ = [0; 0; 0; 0]
@@ -686,6 +759,13 @@ function constructRS2(T = Float64, T2 = Float64)
     )
 end
 
+"""
+    checkRSOrder(tableau; tol = 1.0e-6, ps = 2)
+
+Evaluate the weak order conditions of a `RoesslerRS` tableau through order
+`ps`. Returns one Boolean per condition, using `tol` for coefficient
+comparisons. Supported values of `ps` are 1 and 2.
+"""
 function checkRSOrder(RS; tol = 1.0e-6, ps = 2)
     (; c₀, c₁, c₂, A₀, A₁, A₂, B₀, B₁, B₂, B₂, B₃, α, β₁, β₂) = RS
     e = ones(size(α))
@@ -783,7 +863,13 @@ struct KomoriNON{T} <: Tableau
     quantile::T
 end
 
-function constructNON(T = Float64)
+"""
+    constructNON([T = Float64])
+
+Construct the `KomoriNON` tableau used by `NON`, with coefficient element type
+`T`.
+"""
+function constructNON(::Type{T} = Float64) where {T}
     c0 = [1 // 6; 1 // 3; 1 // 3; 1 // 6]
     cj = [1 // 8; 3 // 8; 3 // 8; 1 // 8]
     cjl = [0; 1 // 2; -1 // 2; 0]
@@ -846,14 +932,15 @@ function constructNON(T = Float64)
     )
 end
 
+"""
+    checkNONOrder(tableau; tol = 1.0e-6)
+
+Evaluate the weak and deterministic order conditions of a `KomoriNON` or
+`KomoriNON2` tableau. Returns one Boolean per condition, using `tol` for
+coefficient comparisons.
+"""
 function checkNONOrder(NON; tol = 1.0e-6)
-    if NON isa KomoriNON
-        (; c0, cj, cjl, clj, α00, α0j, αj0, αjj, αjl, αjljj, αljjl) = NON
-    elseif NON isa KomoriNON2
-        (; c0, cj, ckj, α00, α0j, αj0, αjj, αjl, αkjjl) = NON
-    else
-        (; c0, cj, α00, α0j, αj0, αjj, αjl) = NON
-    end
+    (; c0, cj, α00, α0j, αj0, αjj, αjl) = NON
     e = ones(size(c0))
 
     conditions = Vector{Bool}(undef, 44) # 38 conditions for second order, 6 extra conditions for fourth deterministic order, 44 in total
@@ -893,6 +980,7 @@ function checkNONOrder(NON; tol = 1.0e-6)
     conditions[32] = abs(dot(cj, (αjj * e) .* (αjl * e)) - 1 / 4) < tol
 
     if NON isa KomoriNON
+        (; cjl, clj, αjljj, αljjl) = NON
         conditions[33] = abs(dot(clj, e) - 0) < tol
         conditions[34] = abs(dot(cjl, e) - 0) < tol
         conditions[35] = abs(dot(clj, αljjl * e) - 1 / 2) < tol
@@ -900,12 +988,16 @@ function checkNONOrder(NON; tol = 1.0e-6)
         conditions[37] = abs(dot(clj .* (αljjl * e), αljjl * (αjljj * e)) - 0) < tol
         conditions[38] = abs(dot(clj, (αljjl * e) .^ 2) - 0) < tol
     elseif NON isa KomoriNON2
+        (; ckj, αkjjl) = NON
         conditions[33] = abs(ckj[4] + ckj[3] - 0) < tol
         conditions[34] = abs(ckj[2] - 0) < tol
         conditions[35] = abs(αkjjl[4, 3] - 0) < tol
         conditions[36] = true # we set alpha^(k(j),j,0,0) = 0
         conditions[37] = abs(ckj[3] * αkjjl[3, 2]^2 + ckj[4] * αkjjl[4, 2]^2 - 0) < tol
         conditions[38] = abs(ckj[3] * αkjjl[3, 2] + ckj[4] * αkjjl[4, 2] - 1 / 2) < tol
+    else
+        # Tableaus without the extra noise coefficients cannot satisfy conditions 33–38.
+        conditions[33:38] .= false
     end
     # deterministic fourth order
     conditions[39] = abs(dot(c0, α00 * α00 * (α00 * e)) - 1 / 24) < tol
@@ -918,6 +1010,12 @@ function checkNONOrder(NON; tol = 1.0e-6)
     return (conditions)
 end
 
+"""
+    KomoriNON2
+
+Butcher tableau for the second-order weak Komori `NON2` method for
+Stratonovich SDEs.
+"""
 struct KomoriNON2{T} <: Tableau
     c0::Vector{T}
     cj::Vector{T}
@@ -934,7 +1032,13 @@ struct KomoriNON2{T} <: Tableau
     quantile::T
 end
 
-function constructNON2(T = Float64)
+"""
+    constructNON2([T = Float64])
+
+Construct the `KomoriNON2` tableau used by `NON2`, with coefficient element
+type `T`.
+"""
+function constructNON2(::Type{T} = Float64) where {T}
     # gamma is a free parameter
     γ = 1
     c0 = [1 // 6; 1 // 3; 1 // 3; 1 // 6]

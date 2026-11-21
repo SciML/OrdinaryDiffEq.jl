@@ -1,4 +1,42 @@
 """
+    DormandPrince()
+
+Constructs the tableau object for the Dormand-Prince Order 4/5 method (DP5).
+"""
+function DormandPrince(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
+    A = [
+        0 0 0 0 0 0 0
+        1 // 5 0 0 0 0 0 0
+        3 // 40 9 // 40 0 0 0 0 0
+        44 // 45 -56 // 15 32 // 9 0 0 0 0
+        19372 // 6561 -25360 // 2187 64448 // 6561 -212 // 729 0 0 0
+        9017 // 3168 -355 // 33 46732 // 5247 49 // 176 -5103 // 18656 0 0
+        35 // 384 0 500 // 1113 125 // 192 -2187 // 6784 11 // 84 0
+    ]
+    c = [0; 1 // 5; 3 // 10; 4 // 5; 8 // 9; 1; 1]
+    α = [35 // 384; 0; 500 // 1113; 125 // 192; -2187 // 6784; 11 // 84; 0]
+    αEEst = [
+        5179 // 57600,
+        0,
+        7571 // 16695,
+        393 // 640,
+        -92097 // 339200,
+        187 // 2100,
+        1 // 40,
+    ]
+    A = map(T, A)
+    α = map(T, α)
+    αEEst = map(T, αEEst)
+    c = map(T_time, c)
+    return (
+        DiffEqBase.ExplicitRKTableau(
+            A, c, α, 5; αEEst, adaptiveorder = 4,
+            fsal = true, stability_size = 3.3066
+        )
+    )
+end
+
+"""
 Runge-Kutta-Fehlberg Order 4/5 method.
 """
 function RKF5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
@@ -19,7 +57,7 @@ function RKF5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             stability_size = 3.6777066213218945
         )
     )
@@ -338,7 +376,7 @@ function PapakostasPapaGeorgiou5(::Type{T} = Float64, ::Type{T_time} = T) where 
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4, fsal = true,
+            A, c, α, 5; αEEst, adaptiveorder = 4, fsal = true,
             stability_size = 3.306567892634947
         )
     )
@@ -406,7 +444,7 @@ function PapakostasPapaGeorgiou52(::Type{T} = Float64, ::Type{T_time} = T) where
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4, fsal = true,
+            A, c, α, 5; αEEst, adaptiveorder = 4, fsal = true,
             stability_size = 3.4272251630453394
         )
     )
@@ -560,7 +598,7 @@ function Tsitouras5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4, fsal = true,
+            A, c, α, 5; αEEst, adaptiveorder = 4, fsal = true,
             stability_size = 3.5068469938049547
         )
     )
@@ -637,7 +675,7 @@ function BogakiShampine5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_ti
     αEEst2[8] = 3293 // 556956
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             stability_size = 3.9879271987261333
         )
     )
@@ -701,7 +739,7 @@ function SharpSmart5(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             stability_size = 3.9156746135081772
         )
     )
@@ -728,7 +766,7 @@ function BogakiShampine3(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_ti
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 3, αEEst = αEEst, adaptiveorder = 2,
+            A, c, α, 3; αEEst, adaptiveorder = 2,
             stability_size = 2.5127453266183286
         )
     )
@@ -757,7 +795,7 @@ function CashKarp(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
+            A, c, α, 5; αEEst, adaptiveorder = 4,
             stability_size = 3.7343596072347225
         )
     )
@@ -783,7 +821,7 @@ function RKF4(::Type{T} = Float64, ::Type{T_time} = T) where {T, T_time}
     αEEst = map(T, αEEst)
     return (
         DiffEqBase.ExplicitRKTableau(
-            A, c, α, 4, αEEst = αEEst, adaptiveorder = 3,
+            A, c, α, 4; αEEst, adaptiveorder = 3,
             stability_size = 4.109222736949077
         )
     )

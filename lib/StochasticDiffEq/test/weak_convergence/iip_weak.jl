@@ -179,8 +179,12 @@ sim = test_convergence(
 #@test abs(sim.𝒪est[:weak_l∞]-1) < 0.3
 println("SRI")
 dts = 1 .// 2 .^ (8:-1:2)
+# 2e4 trajectories leaves the weak-order estimate with a standard deviation of 0.17
+# against a 0.5 tolerance, so a ~3σ draw breaches it — which is what this study's own
+# RNG state produced (𝒪 off by 0.553). 4e5 brings the spread to 0.049, worst case 0.09
+# over 12 seeds. See issue #4061.
 sim = test_convergence(
-    dts, prob, SRI(), save_everystep = false, trajectories = Int(2.0e4),
+    dts, prob, SRI(), save_everystep = false, trajectories = Int(4.0e5),
     weak_timeseries_errors = false
 )
 @test abs(sim.𝒪est[:weak_final] - 2) < 0.5

@@ -3,7 +3,8 @@ using Test, LinearAlgebra
 
 function regular_rate(out, u, p, t)
     out[1] = (0.1 / 1000.0) * u[1] * u[2]
-    return out[2] = 0.01u[2]
+    out[2] = 0.01u[2]
+    return
 end
 
 const dc = zeros(3, 2)
@@ -21,7 +22,12 @@ jumps = JumpSet(rj)
 iip_prob = DiscreteProblem([999.0, 1, 0], (0.0, 250.0))
 jump_iipprob = JumpProblem(iip_prob, Direct(), rj)
 jump_iipprob_pure = JumpProblem(iip_prob, PureLeaping(), rj)
+integrator = init(jump_iipprob, TauLeaping(); dt = 1.0, adaptive = false)
+@test integrator.alg isa TauLeaping
+step!(integrator)
+@test integrator.t > first(iip_prob.tspan)
 @time sol = solve(jump_iipprob, TauLeaping())
+@test successful_retcode(sol)
 @time sol = solve(jump_iipprob_pure, SimpleTauLeaping(); dt = 1.0)
 @time sol = solve(jump_iipprob, TauLeaping(); dt = 1.0, adaptive = false)
 @time sol = solve(jump_iipprob, CaoTauLeaping(); dt = 1.0)
@@ -85,8 +91,8 @@ jumpdiff_prob = JumpProblem(oop_sdeprob, Direct(), rj)
 @time sol = solve(jumpdiff_prob, EM(); dt = 1.0)
 @time sol = solve(jumpdiff_prob, ImplicitEM(); dt = 1.0)
 
-sol = solve(EnsembleProblem(jumpdiff_prob), EM(); dt = 1.0, trajectories = 10_000)
-meanX = mean([sol.u[i][end, end] for i in 1:10_000])
+sol = solve(EnsembleProblem(jumpdiff_prob), EM(); dt = 1.0, trajectories = N)
+meanX = mean([sol.u[i][end, end] for i in 1:N])
 @test mean1 ≈ meanX rtol = 1.0e-2
 
 sol = solve(EnsembleProblem(jumpdiff_prob), ImplicitEM(); dt = 1.0, trajectories = 1_000)
@@ -97,7 +103,8 @@ meanX = mean([sol.u[i][end, end] for i in 1:1_000])
 # Test in-place version with fixed dt
 function regular_rate_iip(out, u, p, t)
     out[1] = (0.1 / 1000.0) * u[1] * u[2]
-    return out[2] = 0.01u[2]
+    out[2] = 0.01u[2]
+    return
 end
 
 const dc_iip = zeros(3, 2)
@@ -122,7 +129,7 @@ jump_iipprob_theta = JumpProblem(iip_prob_theta, Direct(), rj_iip)
 # Test with different theta values
 for theta in [0.25, 0.5, 0.75]
     @time sol = solve(
-        jump_iipprob_theta, ThetaTrapezoidalTauLeaping(; theta = theta);
+        jump_iipprob_theta, ThetaTrapezoidalTauLeaping(; theta);
         dt = 1.0, adaptive = false
     )
     @test length(sol.t) > 0

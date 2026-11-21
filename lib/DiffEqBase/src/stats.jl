@@ -52,7 +52,7 @@ else
         @printf io "%-50s %-d\n" "Number of Jacobians created:" s.njacs
         @printf io "%-50s %-d\n" "Number of nonlinear solver iterations:" s.nnonliniter
         @printf io "%-50s %-d\n" "Number of nonlinear solver convergence failures:" s.nnonlinconvfail
-        @printf io "%-50s %-d\n" "Number of rootfind condition calls:" s.ncondition
+        @printf io "%-50s %-d\n" "Number of callback condition calls:" s.ncondition
         @printf io "%-50s %-d\n" "Number of accepted steps:" s.naccept
         @printf io "%-50s %-d" "Number of rejected steps:" s.nreject
         iszero(s.maxeig) || @printf io "\n%-50s %-d" "Maximum eigenvalue recorded:" s.maxeig

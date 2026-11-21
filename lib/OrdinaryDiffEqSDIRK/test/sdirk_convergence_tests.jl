@@ -2,6 +2,7 @@
 using OrdinaryDiffEqSDIRK, ODEProblemLibrary, DiffEqDevTools, ADTypes
 using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NonlinearSolveAlg
 using Test, Random
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore
 Random.seed!(100)
 
 ## Convergence Testing
@@ -17,7 +18,7 @@ testTol = 0.2
 
     @show "Very low order"
 
-    sim11 = test_convergence(dts, prob, ImplicitEuler(extrapolant = :linear))
+    sim11 = test_convergence(dts, prob, ImplicitEuler(predictor = Predictor.Linear))
     @test sim11.𝒪est[:final] ≈ 1 atol = testTol
 
     sim112 = test_convergence(
@@ -81,7 +82,14 @@ testTol = 0.2
     sim16 = test_convergence(dts, prob, Kvaerno3())
     @test sim16.𝒪est[:final] ≈ 3 atol = testTol
 
-    sim162 = test_convergence(dts, prob, Kvaerno3(nlsolve = NLFunctional()))
+    # NLFunctional default κ=1//100 is too loose for order-3 measurement at the
+    # tested dt range; tighten κ + raise max_iter so the nonlinear residual is
+    # below truncation error. See SciML/OrdinaryDiffEq.jl#3595.
+    sim162 = test_convergence(
+        dts, prob,
+        Kvaerno3(nlsolve = NLFunctional(κ = 1 // 1000, max_iter = 100));
+        abstol = 1.0e-12, reltol = 1.0e-12
+    )
     @test sim162.𝒪est[:final] ≈ 3 atol = testTol
 
     sim17 = test_convergence(dts, prob, KenCarp3())
@@ -143,6 +151,9 @@ testTol = 0.2
     sim118 = test_convergence(dts, prob, KenCarp58())
     @test sim118.𝒪est[:final] ≈ 5 atol = testTol
 
+    sim118b = test_convergence(dts, prob, ESDIRK325L2SA())
+    @test sim118b.𝒪est[:final] ≈ 3 atol = testTol
+
     sim119 = test_convergence(dts, prob, ESDIRK436L2SA2())
     @test sim119.𝒪est[:final] ≈ 4 atol = testTol
 
@@ -155,4 +166,166 @@ testTol = 0.2
     dts = (1 / 2) .^ (5:-1:1)
     sim122 = test_convergence(dts, prob, ESDIRK659L2SA())
     @test sim122.𝒪est[:final] ≈ 6 atol = testTol
+end
+
+@testset "ARS343 SplitODEProblem" begin
+    dts = 1 .// 2 .^ (8:-1:4)
+
+    # OOP: regression test for #3623 (BoundsError at index [0]) + order check
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+    sim_oop = test_convergence(dts, prob_oop, ARS343())
+    @test sim_oop.𝒪est[:l∞] ≈ 3 atol = testTol
+
+    # IIP: same problem, in-place
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    sim_iip = test_convergence(dts, prob_iip, ARS343())
+    @test sim_iip.𝒪est[:l∞] ≈ 3 atol = testTol
+end
+
+@testset "IMEX-SSP family SplitODEProblem" begin
+    dts = 1 .// 2 .^ (10:-1:6)
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    forced = (u0, p, t) -> (cos(t) + sin(t)) / 2 .+ (u0 .- 1 / 2) .* exp(-t)
+    ff_forced_oop = SplitFunction(f1_oop, (u, p, t) -> cos(t); analytic = forced)
+    prob_forced_oop = SplitODEProblem(ff_forced_oop, 1.0, (0.0, 1.0))
+    ff_forced_iip = SplitFunction(f1_iip!, (du, u, p, t) -> (du .= cos(t)); analytic = forced)
+    prob_forced_iip = SplitODEProblem(ff_forced_iip, [1.0, 0.5], (0.0, 1.0))
+    for (alg, expected) in (
+            (IMEXSSP222(), 2), (IMEXSSP2322(), 2),
+            (IMEXSSP3332(), 2), (IMEXSSP3433(), 3),
+        )
+        sim_oop = test_convergence(dts, prob_oop, alg)
+        @test sim_oop.𝒪est[:l∞] ≈ expected atol = testTol
+        sim_iip = test_convergence(dts, prob_iip, alg)
+        @test sim_iip.𝒪est[:l∞] ≈ expected atol = testTol
+        sim_forced_oop = test_convergence(dts, prob_forced_oop, alg)
+        @test sim_forced_oop.𝒪est[:l∞] ≈ expected atol = testTol
+        sim_forced_iip = test_convergence(dts, prob_forced_iip, alg)
+        @test sim_forced_iip.𝒪est[:l∞] ≈ expected atol = testTol
+    end
+end
+
+@testset "BHR553 SplitODEProblem" begin
+    # BHR(5,5,3)* — Boscarino-Russo 2009. Uses a coarser dt range than the
+    # IMEX-SSP family because BHR's pre-asymptotic regime extends to ~1/16.
+    dts = 1 .// 2 .^ (6:-1:2)
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    sim_oop = test_convergence(dts, prob_oop, BHR553())
+    @test sim_oop.𝒪est[:l∞] ≈ 3 atol = 0.3
+    sim_iip = test_convergence(dts, prob_iip, BHR553())
+    @test sim_iip.𝒪est[:l∞] ≈ 3 atol = 0.3
+end
+
+@testset "ARS222/ARS232/ARS443 SplitODEProblem" begin
+    dts = 1 .// 2 .^ (8:-1:4)
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+    for (alg, expected) in ((ARS222(), 2), (ARS232(), 2), (ARS443(), 3))
+        sim_oop = test_convergence(dts, prob_oop, alg)
+        @test sim_oop.𝒪est[:l∞] ≈ expected atol = testTol
+        sim_iip = test_convergence(dts, prob_iip, alg)
+        @test sim_iip.𝒪est[:l∞] ≈ expected atol = testTol
+    end
+
+    # ARS232 and ARS343 have one more explicit stage than implicit, so they do not end on the last stage.
+    ε = 1.0e-10
+    relax! = (du, u, p, t) -> (du[1] = 0; du[2] = (u[1] - u[2]) / ε; nothing)
+    rotate! = (du, u, p, t) -> (du[1] = -u[2]; du[2] = u[1]; nothing)
+    stiff_prob = SplitODEProblem(relax!, rotate!, [1.0, 1.0], (0.0, 0.1))
+    for alg in (ARS222(), ARS443())
+        u = solve(stiff_prob, alg; dt = 0.1, adaptive = false).u[end]
+        @test abs(u[2] - u[1]) < 100ε
+    end
+end
+
+# Regression test: Kvaerno3/4/5 with SplitODEProblem must integrate the full RHS (f1+f2),
+# not just f1. These are non-IMEX (issplit=false) methods, so f.f2 must flow through
+# fsalfirst rather than being split off into the explicit ks arrays (which have Ae=be=0).
+# f = f1 + f2 = -u + 2u = u  =>  exact solution u(t) = exp(t) * u0
+@testset "Kvaerno SplitODEProblem" begin
+    dts = 1 .// 2 .^ (8:-1:4)
+
+    f1_oop = (u, p, t) -> -u
+    f2_oop = (u, p, t) -> 2u
+    ff_oop = SplitFunction(f1_oop, f2_oop; analytic = (u0, p, t) -> exp(t) * u0)
+    prob_oop = SplitODEProblem(ff_oop, 1.0, (0.0, 1.0))
+
+    f1_iip! = (du, u, p, t) -> (du .= -u)
+    f2_iip! = (du, u, p, t) -> (du .= 2u)
+    ff_iip = SplitFunction(f1_iip!, f2_iip!; analytic = (u0, p, t) -> exp(t) .* u0)
+    prob_iip = SplitODEProblem(ff_iip, [1.0, 0.5], (0.0, 1.0))
+
+    sim_oop = test_convergence(dts, prob_oop, Kvaerno4())
+    @test sim_oop.𝒪est[:l∞] ≈ 4 atol = testTol
+
+    sim_iip = test_convergence(dts, prob_iip, Kvaerno4())
+    @test sim_iip.𝒪est[:l∞] ≈ 4 atol = testTol
+end
+
+# Regression test: Kvaerno3/4/5 must evaluate stage 2 at c₂ = 2γ (= Ai[2,1] + Ai[2,2]),
+# otherwise they lose order on non-autonomous problems (they are unaffected on autonomous ones).
+# u' = -u + cos(t) + sin(t)  =>  u(t) = sin(t) + exp(-t) * u0
+@testset "Kvaerno non-autonomous convergence" begin
+    f_oop = ODEFunction(
+        (u, p, t) -> -u .+ (cos(t) + sin(t));
+        analytic = (u0, p, t) -> sin(t) .+ exp(-t) .* u0
+    )
+    f_iip = ODEFunction(
+        (du, u, p, t) -> (du .= -u .+ (cos(t) + sin(t)));
+        analytic = (u0, p, t) -> sin(t) .+ exp(-t) .* u0
+    )
+    prob_oop = ODEProblem(f_oop, [1.0, 0.5], (0.0, 1.0))
+    prob_iip = ODEProblem(f_iip, [1.0, 0.5], (0.0, 1.0))
+    for (alg, order, dts) in (
+            (Kvaerno3(), 3, 1 .// 2 .^ (8:-1:4)),
+            (Kvaerno4(), 4, 1 .// 2 .^ (7:-1:3)),
+            (Kvaerno5(), 5, 1 .// 2 .^ (6:-1:3)),
+        )
+        @testset "$(nameof(typeof(alg)))" begin
+            sim = test_convergence(dts, prob_oop, alg)
+            @test sim.𝒪est[:l∞] ≈ order atol = testTol
+            sim = test_convergence(dts, prob_iip, alg)
+            @test sim.𝒪est[:l∞] ≈ order atol = testTol
+        end
+    end
+end
+
+@testset "IMEX methods without an embedded pair are not adaptive" begin
+    f1 = (u, p, t) -> -u
+    f2 = (u, p, t) -> 0.1 * u
+    prob = SplitODEProblem(f1, f2, 1.0, (0.0, 1.0))
+    for alg in (
+            ARS222(), ARS232(), ARS343(), ARS443(),
+            IMEXSSP222(), IMEXSSP2322(), IMEXSSP3332(), IMEXSSP3433(), BHR553(),
+        )
+        @test !OrdinaryDiffEqCore.isadaptive(alg)
+        @test_throws ArgumentError solve(prob, alg)
+        @test solve(prob, alg; dt = 0.1).retcode == ReturnCode.Success
+    end
 end

@@ -35,5 +35,19 @@ function errcoeff(m, q_12, stepsize, alg::AbstractIteratedIntegralAlgorithm, ::L
     return 1 / (2^(1 / p)) * errcoeff(m, q_12, stepsize, alg, SchattenqLp{p, p}())
 end
 
+"""
+    MaxL2
+
+Error-norm type that takes the maximum of the entrywise ``L^2`` norms of an
+iterated-integral approximation. Construct an instance with `MaxL2()`.
+"""
 const MaxL2 = MaxLp{2}
+
+"""
+    FrobeniusL2
+
+Error-norm type that takes the Frobenius norm of the entrywise ``L^2`` norms
+of an iterated-integral approximation. Construct an instance with
+`FrobeniusL2()`.
+"""
 const FrobeniusL2 = SchattenqLp{2, 2}

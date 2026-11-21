@@ -1,6 +1,10 @@
 using Test, RecursiveArrayTools, StaticArrays, SparseArrays
 
-using DiffEqBase: NAN_CHECK
+using DiffEqBase: DiffEqBase, NAN_CHECK
+
+@static if VERSION >= v"1.11"
+    @test Base.ispublic(DiffEqBase, :NAN_CHECK)
+end
 
 @test !NAN_CHECK(3.0 + 4.0im)
 @test NAN_CHECK(NaN)
