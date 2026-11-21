@@ -446,11 +446,11 @@ end
 end
 
 # Skip saveat at tspan end when save_end=false.
-# ODE: skip saving at tspan[2] when save_end=false.
+# ODE: use the current directional endpoint, including after reinit!.
 # SDE: always save at explicit saveat times (never skip).
 function skip_saveat_at_tspan_end(integrator, curt)
-    return isnothing(_get_W(integrator)) && curt == integrator.sol.prob.tspan[2] &&
-        !integrator.opts.save_end
+    return isnothing(_get_W(integrator)) && !integrator.opts.save_end &&
+        curt == integrator.tdir * DiffEqBase.get_tstops_max(integrator)
 end
 
 # Save dense output when saving at exact time t.
