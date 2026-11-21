@@ -17,17 +17,26 @@ function _validate_tolerances(abstol, reltol, name)
     return nothing
 end
 
-function _validate_estimation_problem(prob, name)
+# `events = true` for the DefectCorrection companion, which supports callbacks and mass
+# matrices (see defect_correction.jl).
+function _validate_estimation_problem(prob, name; events = false)
     prob.u0 isa AbstractVector{<:AbstractFloat} ||
         throw(ArgumentError("$name requires a real floating-point vector state"))
     isempty(prob.u0) && throw(ArgumentError("$name requires a nonempty state"))
     prob.tspan[1] < prob.tspan[2] ||
         throw(ArgumentError("$name requires a forward-time ODEProblem"))
-    prob.f.mass_matrix == LinearAlgebra.I ||
-        throw(ArgumentError("$name currently requires the standard mass matrix"))
-    _has_callbacks(values(prob.kwargs)) &&
-        throw(ArgumentError("$name does not currently support callbacks"))
+    events && return nothing
+    prob.f.mass_matrix == LinearAlgebra.I || throw(
+        ArgumentError(
+            "$name supports mass matrices only with equation = DefectCorrection"
+        )
+    )
+    _has_callbacks(values(prob.kwargs)) && throw(_callback_support_error(name))
     return nothing
+end
+
+function _callback_support_error(name)
+    return ArgumentError("$name supports callbacks only with equation = DefectCorrection")
 end
 
 # The estimator differentiates the dense output (P' = interp(t, Val{1})) to form
@@ -83,9 +92,11 @@ error. One of [`DefectCorrection`](@ref) or [`ErrorTransport`](@ref).
 @doc """
     DefectCorrection
 
-Integrate the nonlinear correction equation `ε' = f(P + ε, p, t) - P'(t)`,
-`ε(t₀) = 0`, where `P` is the numerical solution's dense interpolant. Requires
-no Jacobian, only extra evaluations of `f` on the perturbed argument `P + ε`.
+Integrate the nonlinear correction equation `M ε' = f(P + ε, p, t) - M P'(t)`,
+`ε(t₀) = 0`, where `P` is the numerical solution's dense interpolant and `M` the
+mass matrix. Requires no Jacobian, only extra evaluations of `f` on the perturbed
+argument `P + ε`. The user's callbacks act on `P + ε`, the estimate of the exact
+solution, so the estimate follows the true event times.
 The "solving for the correction" technique of Zadunaisky (1976) and Dormand,
 Duckers and Prince (1984).
 """ DefectCorrection
@@ -123,23 +134,19 @@ and runs a second solve.
 Co-integrate the error estimate in a single forward pass: drive the forward
 integrator one accepted step at a time and, over each just-completed step,
 advance the companion ODE using that step's live dense output as the interpolant.
-Stores no dense solution (`O(1)` extra memory) and runs no second solve. Gives an
+For [`global_error_estimate`](@ref) and in the `gtol` control loop, it stores no dense
+solution (`O(1)` extra memory) and runs no second solve. The solution from `solve` has
+the error of each saved state (`sol.global_error`) and saves each step; under `gtol`,
+this costs one more estimate after the control loop. Gives an
 estimate closely agreeing with [`InterpolatingMode`](@ref).
 """ SimultaneousMode
 
-# Out-of-place view of the (possibly in-place) user RHS, safe for dual numbers.
+# Out-of-place view of the (possibly in-place) user RHS, safe for dual numbers (`_rhs`).
 function _oop_rhs(prob)
     f = SciMLBase.unwrapped_f(prob.f)
-    if SciMLBase.isinplace(prob)
-        return let f = f
-            function (u, p, t)
-                du = similar(u)
-                f(du, u, p, t)
-                return du
-            end
-        end
-    else
-        return f
+    SciMLBase.isinplace(prob) || return f
+    return let f = f
+        (u, p, t) -> _rhs(f, true, u, p, t)
     end
 end
 
@@ -151,18 +158,6 @@ _interp_value(interp, t, right_continuity) =
     right_continuity ? interp(t, continuity = :right) : interp(t)
 _interp_deriv(interp, t, right_continuity) =
     right_continuity ? interp(t, Val{1}, continuity = :right) : interp(t, Val{1})
-
-# Nonlinear defect-correction companion RHS: ε' = f(P + ε) - P'.
-function _defect_correction_rhs(prob, interp, right_continuity)
-    foop = _oop_rhs(prob)
-    return let interp = interp, foop = foop, p = prob.p, rc = right_continuity
-        function (ε, _, t)
-            u = _interp_value(interp, t, rc)
-            du = _interp_deriv(interp, t, rc)
-            return foop(u + ε, p, t) - du
-        end
-    end
-end
 
 # Linearized error-transport companion RHS: ε' = J(P) ε + (f(P) - P'), with the
 # Jacobian applied matrix-free as a JVP through `autodiff`.
@@ -185,13 +180,12 @@ function _error_transport_rhs(prob, interp, right_continuity, autodiff)
     end
 end
 
-# Return `make_rhs(interp, prob, right_continuity)` selecting the companion ODE.
+# Return `make_rhs(interp, prob, right_continuity)` for the ErrorTransport companion.
+# DefectCorrection has its own implementation with callbacks in defect_correction.jl.
 function _companion_rhs_builder(equation::GlobalErrorEquation, autodiff)
-    if equation === DefectCorrection
-        return (interp, prob, rc) -> _defect_correction_rhs(prob, interp, rc)
-    else
-        return (interp, prob, rc) -> _error_transport_rhs(prob, interp, rc, autodiff)
-    end
+    equation === ErrorTransport ||
+        throw(ArgumentError("only ErrorTransport uses the generic companion"))
+    return (interp, prob, rc) -> _error_transport_rhs(prob, interp, rc, autodiff)
 end
 
 const _DENSE_SOLVE_KWARGS = (;
@@ -205,21 +199,25 @@ const _DENSE_SOLVE_KWARGS = (;
 
 # Endpoint-error refinement loop: solve, estimate the endpoint global error, and
 # tighten the local tolerances until the estimate is at most gtol; then redo the
-# solve with the user's original saving options.
+# solve with the user's original saving options. If given, `final_solve(abstol, reltol,
+# result)` does that solve instead, with the estimator result at the accepted tolerances.
+# The estimator returns a number or `(; estimate, ...)`.
 function _refine_to_gtol(
         estimator, prob, inner_alg, gtol, options, args...;
-        abstol, reltol, kwargs...
+        final_solve = nothing, abstol, reltol, kwargs...
     )
     local_abstol = abstol
     local_reltol = reltol
     last_estimate = oftype(float(gtol), Inf)
 
     for _ in 1:options.maxiters
-        last_estimate = estimator(local_abstol, local_reltol)
+        result = estimator(local_abstol, local_reltol)
+        last_estimate = result isa Number ? result : result.estimate
         isfinite(last_estimate) ||
             throw(ErrorException("the global error estimate is not finite"))
 
         if last_estimate <= gtol
+            final_solve === nothing || return final_solve(local_abstol, local_reltol, result)
             return SciMLBase.solve(
                 prob, inner_alg, args...;
                 abstol = local_abstol, reltol = local_reltol, kwargs...
@@ -241,6 +239,21 @@ function _refine_to_gtol(
     )
 end
 
+# Default companion tolerances. The companion `reltol` does not set the relative accuracy
+# of the estimate: the error can have a transient peak much larger than its final value,
+# and the companion errors at the peak do not shrink with it. The companion `abstol` must
+# be below the size of the error, which the forward `abstol` bounds only roughly.
+const _DEFAULT_COMPANION_RELTOL = 1.0e-8
+const _COMPANION_ABSTOL_FACTOR = 1.0e-4
+
+function _companion_tolerances(companion_abstol, companion_reltol, abstol, gtol)
+    reltol = something(companion_reltol, _DEFAULT_COMPANION_RELTOL)
+    companion_abstol === nothing || return companion_abstol, reltol
+    default_abstol = _COMPANION_ABSTOL_FACTOR .* abstol
+    gtol === nothing || (default_abstol = min.(default_abstol, gtol / 100))
+    return default_abstol, reltol
+end
+
 function _companion_options(gtol, maxiters, safety, companion_abstol, companion_reltol)
     maxiters isa Integer && maxiters > 0 ||
         throw(ArgumentError("maxiters must be a positive integer"))
@@ -248,7 +261,8 @@ function _companion_options(gtol, maxiters, safety, companion_abstol, companion_
         throw(ArgumentError("safety must be between zero and one"))
     (gtol === nothing || _positive_finite_real(gtol)) ||
         throw(ArgumentError("gtol must be a positive finite real number"))
-    _validate_tolerances(companion_abstol, companion_reltol, "companion")
+    # `nothing` selects the default (see `_companion_tolerances`).
+    _validate_tolerances(something(companion_abstol, 1.0), something(companion_reltol, 1.0), "companion")
     return (;
         maxiters = Int(maxiters), safety,
         companion_abstol, companion_reltol,
@@ -262,8 +276,7 @@ function _companion_error_estimate(
         make_rhs, name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, kwargs...
     )
-    _has_callbacks(kwargs) &&
-        throw(ArgumentError("$name does not currently support callbacks"))
+    _has_callbacks(kwargs) && throw(_callback_support_error(name))
     _validate_estimation_problem(prob, name)
     solve_kwargs = merge((; kwargs...), _DENSE_SOLVE_KWARGS)
     sol = SciMLBase.solve(prob, inner_alg, args...; abstol, reltol, solve_kwargs...)
@@ -283,8 +296,7 @@ function _companion_error_estimate_streaming(
         make_rhs, name, prob, inner_alg, companion_alg, args...;
         abstol, reltol, companion_abstol, companion_reltol, kwargs...
     )
-    _has_callbacks(kwargs) &&
-        throw(ArgumentError("$name does not currently support callbacks"))
+    _has_callbacks(kwargs) && throw(_callback_support_error(name))
     _validate_estimation_problem(prob, name)
     integrator = SciMLBase.init(
         prob, inner_alg, args...;

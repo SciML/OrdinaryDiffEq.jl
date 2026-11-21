@@ -1,6 +1,6 @@
-using GlobalDiffEq, OrdinaryDiffEqTsit5, LinearAlgebra
+using GlobalDiffEq, OrdinaryDiffEqTsit5, OrdinaryDiffEqRosenbrock, LinearAlgebra
 using Test
-import SciMLBase
+import SciMLBase, SciMLLogging
 
 lv!(du, u, p, t) = (du[1] = 1.5u[1] - u[1] * u[2]; du[2] = -3.0u[2] + u[1] * u[2]; nothing)
 lv(u, p, t) = [1.5u[1] - u[1] * u[2], -3.0u[2] + u[1] * u[2]]
@@ -59,6 +59,59 @@ end
     end
 end
 
+@testset "Error trajectory: $mode" for mode in MODES
+    prob = ODEProblem(lv!, [1.0, 1.0], lv_tspan)
+    ref = solve(prob, Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
+    alg = GlobalErrorEstimation(Tsit5(); mode)
+    @test SciMLBase.has_global_error(alg)
+    @test !SciMLBase.has_global_error(GlobalErrorEstimation(Tsit5(); equation = ErrorTransport))
+
+    # Without gtol, the solve gives the error of each saved state at the given tolerances.
+    sol = solve(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6)
+    @test length(sol.global_error) == length(sol.u)
+    @test global_error_estimate(sol) === sol.global_error
+    @test norm(sol.global_error[end]) ≈
+        global_error_estimate(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6)
+    actual = [ref(t) .- u for (t, u) in zip(sol.t, sol.u)]
+    @test all(
+        norm(e - a) <= 1.0e-3 * maximum(norm, actual) for (e, a) in zip(sol.global_error, actual)
+    )
+
+    # Under global error control, the final solution has the error trajectory too.
+    gsol = solve(
+        prob, GlobalErrorEstimation(Tsit5(); mode, gtol = 1.0e-7); abstol = 1.0e-3, reltol = 1.0e-3
+    )
+    @test length(gsol.global_error) == length(gsol.u)
+    gactual = [ref(t) .- u for (t, u) in zip(gsol.t, gsol.u)]
+    @test all(
+        norm(e - a) <= 1.0e-3 * maximum(norm, gactual) for (e, a) in zip(gsol.global_error, gactual)
+    )
+end
+
+@testset "Stiff problem with an implicit solver" begin
+    # Van der Pol with mu = 1000. At the fast transition near t = 807 the global error
+    # passes through a peak 1e7 times its final value, so a loose default reltol for the
+    # companion gives a wrong estimate.
+    svdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 1.0e3 * ((1 - u[1]^2) * u[2]) - u[1]; nothing)
+    prob = ODEProblem(svdp!, [2.0, 0.0], (0.0, 1000.0))
+    ref = solve(prob, Rodas5P(); abstol = 1.0e-12, reltol = 1.0e-12)
+    sol = solve(prob, Rodas5P(); abstol = 1.0e-4, reltol = 1.0e-4)
+    gtol = 1.0e-6
+    for mode in MODES
+        est = global_error_estimate(
+            prob, GlobalErrorEstimation(Rodas5P(); mode); abstol = 1.0e-4, reltol = 1.0e-4
+        )
+        @test est / norm(sol.u[end] - ref.u[end]) ≈ 1 rtol = 1.0e-2
+        # The outer solve wraps f for the ForwardDiff traits of the inner solver, which
+        # differentiates f for its Jacobian.
+        gsol = solve(
+            prob, GlobalErrorEstimation(Rodas5P(); mode, gtol); abstol = 1.0e-3, reltol = 1.0e-3
+        )
+        @test SciMLBase.successful_retcode(gsol)
+        @test norm(gsol.u[end] - ref.u[end]) <= gtol
+    end
+end
+
 @testset "Companion estimator argument validation" begin
     prob = ODEProblem(lv!, [1.0, 1.0], lv_tspan)
     alg = GlobalErrorEstimation(Tsit5())
@@ -73,12 +126,19 @@ end
     @test_throws ArgumentError GlobalErrorEstimation(Tsit5(); gtol = -1.0)
     @test_throws ArgumentError GlobalErrorEstimation(Tsit5(); maxiters = 0)
     @test_throws ArgumentError GlobalErrorEstimation(Tsit5(); safety = 2.0)
-    # gtol is required to solve with the wrapper
-    @test_throws ArgumentError solve(prob, alg)
+    # Without gtol, ErrorTransport has nothing to return (DefectCorrection returns the
+    # error trajectory).
+    @test_throws ArgumentError solve(prob, GlobalErrorEstimation(Tsit5(); equation = ErrorTransport))
 
+    # Callbacks are supported only by DefectCorrection (see companion_events_tests.jl).
     callback = DiscreteCallback((u, t, integrator) -> false, integrator -> nothing)
     callback_prob = ODEProblem(lv!, [1.0, 1.0], lv_tspan; callback)
-    @test_throws ArgumentError global_error_estimate(callback_prob, alg)
+    for mode in MODES
+        @test global_error_estimate(callback_prob, GlobalErrorEstimation(Tsit5(); mode)) > 0
+        unsupported = GlobalErrorEstimation(Tsit5(); equation = ErrorTransport, mode)
+        @test_throws ArgumentError global_error_estimate(callback_prob, unsupported)
+        @test_throws ArgumentError global_error_estimate(prob, unsupported; callback)
+    end
 
     backwards_prob = ODEProblem(lv!, [1.0, 1.0], (10.0, 0.0))
     @test_throws ArgumentError global_error_estimate(backwards_prob, alg)
@@ -101,4 +161,29 @@ end
             nondense, "GlobalErrorEstimation"
         )
     end
+end
+
+@testset "Companion solver warning" begin
+    # The companion runs at tight tolerances, which a low-order solver meets poorly. The
+    # solve warns, not the constructor, because only the solve has `verbose`. The
+    # `global_error_companion_order` toggle of `DEVerbosity` controls the warning.
+    decay = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0))
+    @test_logs GlobalErrorEstimation(Rosenbrock32())
+    @test_logs (:warn, r"solves the companion with Rosenbrock32") match_mode = :any global_error_estimate(
+        decay, GlobalErrorEstimation(Rosenbrock32())
+    )
+    @test_logs (:warn, r"solves the companion with Rosenbrock32") match_mode = :any solve(
+        decay, GlobalErrorEstimation(Rosenbrock32())
+    )
+    @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
+        decay, GlobalErrorEstimation(Rosenbrock32(); companion_alg = Tsit5())
+    )
+    # The toggle or a preset silences the warning.
+    for verbose in (DEVerbosity(global_error_companion_order = SciMLLogging.Silent()), SciMLLogging.None())
+        @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
+            decay, GlobalErrorEstimation(Rosenbrock32()); verbose
+        )
+    end
+    @test_throws ArgumentError global_error_estimate(decay, GlobalErrorEstimation(Tsit5()); verbose = false)
+    @test GlobalErrorEstimation(Tsit5()).companion_alg isa Tsit5
 end

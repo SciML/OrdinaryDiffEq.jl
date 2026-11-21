@@ -18,6 +18,13 @@ run_qa(
                 # SciMLSensitivity extension adds methods to these internal
                 # functions of its parent package.
                 :_adjoint_defect_projection, :_default_adjoint_sensealg,
+                # Internal helpers of GlobalDiffEq that the SciMLSensitivity
+                # extension calls.
+                :_rhs, :_rhs_jacobian, :_parameters_at, :_calls_before_entry, :_entry_bridge,
+                :_supports_events, :_unsupported_events_error, :_gauss_rule_order,
+                # SciMLSensitivity's integrand type of the Gauss adjoints: the method of
+                # `ODEAdjointProblem` for a Gauss adjoint needs it.
+                :GaussIntegrand,
             ),
         ),
     ),

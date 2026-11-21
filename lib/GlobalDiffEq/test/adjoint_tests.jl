@@ -118,3 +118,16 @@ end
     @test abs(grid_sol.u[end][1] - exact(tspan[2])) <= gtol
     @test grid_sol.global_error[end] <= gtol
 end
+
+@testset "GlobalAdjoint: the reported endpoint error under global error control" begin
+    # The reported endpoint error is the estimate of the accepted iteration. Here the first
+    # iteration is accepted, so the reported error is the estimate at
+    # abstol = reltol = gtol.
+    decay = ODEProblem((u, p, t) -> [-u[1], -2u[2]], [1.0, 1.0], (0.0, 3.0))
+    # A fixed rng gives the same directions in both estimates.
+    ga = () -> GlobalAdjoint(Tsit5(); gtol = 1.0e-4, samples = 2, adjoint_alg = Tsit5(), rng = Xoshiro(7))
+    sol = solve(decay, ga())
+    direct = adjoint_error_estimate(decay, ga(); abstol = 1.0e-4, reltol = 1.0e-4)
+    @test direct < 1.0e-4
+    @test sol.global_error[end] ≈ direct rtol = 1.0e-8
+end
