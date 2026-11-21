@@ -410,6 +410,9 @@ OrdinaryDiffEqCore._ode_addsteps!
 
 Used by SDE/RODE solver sublibraries; no-ops for pure ODEs.
 
+`reinit_noise!(W, dt, u, p)` prepares a pending increment at the reset origin
+using the current state and parameters for the solver's first step.
+
 ```@docs
 OrdinaryDiffEqCore.accept_noise!
 OrdinaryDiffEqCore.reject_noise!
