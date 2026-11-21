@@ -83,3 +83,40 @@ end
             for i in eachindex(sol.t) if sol.t[i] != tjump
     )
 end
+
+@testset "d_discontinuities restart the history as a callback does" begin
+    sw = [0.5, 1.0, 1.5, 2.0, 2.5]
+    c(t) = isodd(count(<(t), sw))
+    f!(du, u, p, t) = (du[1] = -3 * u[1] + c(t); nothing)
+    prob = ODEProblem(f!, [0.0], (0.0, 3.0))
+    # On each interval u relaxes exponentially towards c / 3.
+    function exact(t)
+        u, s = 0.0, 0.0
+        for b in [filter(<(t), sw); t]
+            ci = c((s + b) / 2)
+            u = ci / 3 + (u - ci / 3) * exp(-3 * (b - s))
+            s = b
+        end
+        return u
+    end
+    err(sol) = maximum(abs(u[1] - exact(t)) for (t, u) in zip(sol.t, sol.u))
+    cb = DiscreteCallback(
+        (u, t, integrator) -> t in sw, integrator -> nothing; save_positions = (false, false)
+    )
+    for alg in (VCAB3(), VCAB4(), VCAB5(), VCABM3(), VCABM4(), VCABM5())
+        kw = (; reltol = 1.0e-8, abstol = 1.0e-11, d_discontinuities = sw)
+        sol = solve(prob, alg; kw...)
+        restarted = solve(prob, alg; kw..., callback = cb)
+        @test sol.t == restarted.t
+        @test sol.u == restarted.u
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 3.0
+        @test err(sol) < 1.0e-6
+    end
+    for alg in (VCAB3(), VCAB4(), VCAB5(), VCABM3(), VCABM4(), VCABM5())
+        sol = solve(prob, alg; reltol = 1.0e-8, abstol = 1.0e-11, tstops = sw, callback = cb)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 3.0
+        @test err(sol) < 1.0e-6
+    end
+end

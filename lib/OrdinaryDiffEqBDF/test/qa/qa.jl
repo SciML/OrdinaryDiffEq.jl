@@ -26,7 +26,7 @@ run_qa(
                 # from the public solver-author extension surface).
                 :_resolved_QT, :trivial_limiter!,
                 # SciMLBase internal.
-                :_unwrap_val,
+                :_unwrap_val, :_reshape, :_vec,
                 # TruncatedStacktraces internal macro.
                 Symbol("@truncate_stacktrace"),
             ),
