@@ -197,7 +197,7 @@ function KenCarp3ESDIRKIMEXTableau(T::Type{<:CompiledFloats}, T2::Type{<:Compile
     )
 end
 
-function KenCarp3ESDIRKIMEXTableau(T, T2)
+function KenCarp3ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 1767732205903 // 4055673282236)
 
     a31 = convert(T, 2746238789719 // 10658868560708)
@@ -387,7 +387,7 @@ end
 # KenCarp4 IMEX Tableau
 #
 
-function KenCarp4ESDIRKIMEXTableau(T, T2)
+function KenCarp4ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T2, 1 // 4)
 
     a31 = convert(T, 8611 // 62500)
@@ -558,7 +558,7 @@ end
 # KenCarp5 IMEX Tableau
 #
 
-function KenCarp5ESDIRKIMEXTableau(T, T2)
+function KenCarp5ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T2, 41 // 200)
 
     a31 = convert(T, 41 // 400)
@@ -779,7 +779,7 @@ function KenCarp5ESDIRKIMEXTableau(T, T2)
     )
 end
 
-function ARS343Tableau(T, T2)
+function ARS343Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 4358665215084590 // 10000000000000000)
 
     s = 4
@@ -830,7 +830,7 @@ end
 
 # ARS(2,2,2) — Ascher-Ruuth-Spiteri 1997 §2.6 (Table V).
 # γ = (2-√2)/2; explicit δ = 1 - 1/(2γ) for L-stable explicit part.
-function ARS222Tableau(T, T2)
+function ARS222Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 1 - 1 / sqrt(T(2)))
     δ = convert(T, 1 - 1 / (2 * (1 - 1 / sqrt(T(2)))))
     s = 3
@@ -872,7 +872,7 @@ end
 
 # ARS(2,3,2) — Ascher-Ruuth-Spiteri 1997 §2.6 (Table VI).
 # Same implicit tableau as ARS222 (γ = (2-√2)/2); explicit δ = -2√2/3.
-function ARS232Tableau(T, T2)
+function ARS232Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 1 - 1 / sqrt(T(2)))
     δ = convert(T, -2 * sqrt(T(2)) / 3)
     s = 3
@@ -914,7 +914,7 @@ end
 
 # ARS(4,4,3) — Ascher-Ruuth-Spiteri 1997 §2.8 (Table VII).
 # 5-stage 3rd-order ESDIRK IMEX with γ = 1/2.
-function ARS443Tableau(T, T2)
+function ARS443Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 1 // 2)
     s = 5
 
@@ -974,7 +974,7 @@ function ARS443Tableau(T, T2)
     )
 end
 
-function IMEXSSP222Tableau(T, T2)
+function IMEXSSP222Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 1 - 1 / sqrt(T(2)))
     a21 = convert(T, sqrt(T(2)) - 1)   # = 1 - 2γ
     c2 = convert(T2, 1 / sqrt(T2(2)))  # = 1 - γ
@@ -1012,7 +1012,7 @@ end
 # Non-ESDIRK: first stage is implicit, γ = 1/2
 # Implicit: c = [1/2, 0, 1]
 #
-function IMEXSSP2322Tableau(T, T2)
+function IMEXSSP2322Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 1 // 2)
     a21 = convert(T, -1 // 2)
 
@@ -1048,7 +1048,7 @@ end
 # Non-ESDIRK: first stage is implicit, γ = 1 - 1/√2
 # b = [1/6, 1/6, 2/3]
 #
-function IMEXSSP3332Tableau(T, T2)
+function IMEXSSP3332Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 1 - 1 / sqrt(T(2)))
     a21 = convert(T, sqrt(T(2)) - 1)           # = 1 - 2γ
     a31 = convert(T, 1 / sqrt(T(2)) - 1 // 2)  # = 1/2 - γ
@@ -1093,7 +1093,7 @@ end
 # α = 0.24169426078821, β = 0.06042356519705, η = 0.12915286960590, γ = α
 # b = [0, 1/6, 1/6, 2/3]
 #
-function IMEXSSP3433Tableau(T, T2)
+function IMEXSSP3433Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     α_coef = 0.24169426078821
     β = 0.06042356519705
     η = 0.1291528696059
@@ -1148,7 +1148,7 @@ function IMEXSSP3433Tableau(T, T2)
 end
 
 
-function CFNLIRK3ESDIRKIMEXTableau(T, T2)
+function CFNLIRK3ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     s = 4
     γ = convert(T2, 0.43586652150846)
     γT = convert(T, γ)
@@ -1203,7 +1203,7 @@ end
 # Kvaerno3 IMEX Tableau
 #
 
-function Kvaerno3ESDIRKIMEXTableau(T, T2)
+function Kvaerno3ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 0.4358665215)
 
     a31 = convert(T, 0.490563388419108)
@@ -1275,7 +1275,7 @@ end
 # Kvaerno4 IMEX Tableau
 #
 
-function Kvaerno4ESDIRKIMEXTableau(T, T2)
+function Kvaerno4ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 0.4358665215)
 
     a31 = convert(T, 0.140737774731968)
@@ -1363,7 +1363,7 @@ end
 # Kvaerno5 IMEX Tableau
 #
 
-function Kvaerno5ESDIRKIMEXTableau(T, T2)
+function Kvaerno5ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T, 0.26)
 
     a31 = convert(T, 0.13)
@@ -1495,7 +1495,7 @@ end
 # KenCarp47 IMEX Tableau
 #
 
-function KenCarp47ESDIRKIMEXTableau(T, T2)
+function KenCarp47ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T2, 1235 // 10000)
 
     a31 = convert(T, 624185399699 // 4186980696204)
@@ -1697,7 +1697,7 @@ end
 # KenCarp58 IMEX Tableau
 #
 
-function KenCarp58ESDIRKIMEXTableau(T, T2)
+function KenCarp58ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     γ = convert(T2, 2 // 9)
 
     a31 = convert(T, 2366667076620 // 8822750406821)
@@ -1959,7 +1959,7 @@ end
 #
 # ESDIRK54I8L2SA IMEX Tableau (8 stages, order 5)
 #
-function ESDIRK54I8L2SAESDIRKIMEXTableau(T, T2)
+function ESDIRK54I8L2SAESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = ESDIRK54I8L2SATableau(T, T2)
     s = 8
     γ = convert(T, tab.γ)
@@ -2017,7 +2017,7 @@ end
 #
 # ESDIRK325L2SA IMEX Tableau (5 stages, order 3)
 #
-function ESDIRK325L2SAESDIRKIMEXTableau(T, T2)
+function ESDIRK325L2SAESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = ESDIRK325L2SATableau(T, T2)
     s = 5
     γ = tab.γ
@@ -2054,7 +2054,7 @@ end
 #
 # ESDIRK436L2SA2 IMEX Tableau (6 stages, order 4)
 #
-function ESDIRK436L2SA2ESDIRKIMEXTableau(T, T2)
+function ESDIRK436L2SA2ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = ESDIRK436L2SA2Tableau(T, T2)
     s = 6
     γ = tab.γ
@@ -2097,7 +2097,7 @@ end
 #
 # ESDIRK437L2SA IMEX Tableau (7 stages, order 4)
 #
-function ESDIRK437L2SAESDIRKIMEXTableau(T, T2)
+function ESDIRK437L2SAESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = ESDIRK437L2SATableau(T, T2)
     s = 7
     γ = tab.γ
@@ -2147,7 +2147,7 @@ end
 #
 # ESDIRK547L2SA2 IMEX Tableau (7 stages, order 5)
 #
-function ESDIRK547L2SA2ESDIRKIMEXTableau(T, T2)
+function ESDIRK547L2SA2ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = ESDIRK547L2SA2Tableau(T, T2)
     s = 7
     γ = tab.γ
@@ -2198,7 +2198,7 @@ end
 # ESDIRK659L2SA IMEX Tableau (9 stages, order 6)
 # Note: stage 9 has a91=a92=a93=0 (only depends on stages 4-8)
 #
-function ESDIRK659L2SAESDIRKIMEXTableau(T, T2)
+function ESDIRK659L2SAESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = ESDIRK659L2SATableau(T, T2)
     s = 9
     γ = tab.γ
@@ -2289,7 +2289,7 @@ ESDIRKIMEXTableau(::ImplicitEuler, T, T2) = ImplicitEulerESDIRKIMEXTableau(T, T2
 ESDIRKIMEXTableau(::Trapezoid, T, T2) = TrapezoidESDIRKIMEXTableau(T, T2)
 ESDIRKIMEXTableau(::SSPSDIRK2, T, T2) = SSPSDIRK2ESDIRKIMEXTableau(T, T2)
 
-function SFSDIRK4ESDIRKIMEXTableau(T, T2)
+function SFSDIRK4ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = SFSDIRK4Tableau(T, T2)
     s = 4
     γT = convert(T, tab.γ)
@@ -2313,7 +2313,7 @@ function SFSDIRK4ESDIRKIMEXTableau(T, T2)
     )
 end
 
-function SFSDIRK5ESDIRKIMEXTableau(T, T2)
+function SFSDIRK5ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = SFSDIRK5Tableau(T, T2)
     s = 5
     γT = convert(T, tab.γ)
@@ -2342,7 +2342,7 @@ function SFSDIRK5ESDIRKIMEXTableau(T, T2)
     )
 end
 
-function SFSDIRK6ESDIRKIMEXTableau(T, T2)
+function SFSDIRK6ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = SFSDIRK6Tableau(T, T2)
     s = 6
     γT = convert(T, tab.γ)
@@ -2377,7 +2377,7 @@ function SFSDIRK6ESDIRKIMEXTableau(T, T2)
     )
 end
 
-function SFSDIRK7ESDIRKIMEXTableau(T, T2)
+function SFSDIRK7ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = SFSDIRK7Tableau(T, T2)
     s = 7
     γT = convert(T, tab.γ)
@@ -2419,7 +2419,7 @@ function SFSDIRK7ESDIRKIMEXTableau(T, T2)
     )
 end
 
-function SFSDIRK8ESDIRKIMEXTableau(T, T2)
+function SFSDIRK8ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = SFSDIRK8Tableau(T, T2)
     s = 8
     γT = convert(T, tab.γ)
@@ -2469,7 +2469,7 @@ function SFSDIRK8ESDIRKIMEXTableau(T, T2)
     )
 end
 
-function Hairer4ESDIRKIMEXTableau(alg::Union{Hairer4, Hairer42}, T, T2)
+function Hairer4ESDIRKIMEXTableau(alg::Union{Hairer4, Hairer42}, ::Type{T}, ::Type{T2}) where {T, T2}
     tab = alg isa Hairer4 ? Hairer4Tableau(T, T2) : Hairer42Tableau(T, T2)
     s = 5
     γT = convert(T, tab.γ)
@@ -2508,7 +2508,7 @@ function Hairer4ESDIRKIMEXTableau(alg::Union{Hairer4, Hairer42}, T, T2)
     )
 end
 
-function SDIRK2ESDIRKIMEXTableau(T, T2)
+function SDIRK2ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     s = 2
     γT = one(T)
     Ai = zeros(T, s, s)
@@ -2525,7 +2525,7 @@ function SDIRK2ESDIRKIMEXTableau(T, T2)
     )
 end
 
-function Cash4ESDIRKIMEXTableau(alg::Cash4, T, T2)
+function Cash4ESDIRKIMEXTableau(alg::Cash4, ::Type{T}, ::Type{T2}) where {T, T2}
     tab = Cash4Tableau(T, T2)
     s = 5
     γT = convert(T, tab.γ)
@@ -2572,7 +2572,7 @@ function Cash4ESDIRKIMEXTableau(alg::Cash4, T, T2)
     )
 end
 
-function TRBDF2ESDIRKIMEXTableau(T, T2)
+function TRBDF2ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     tab = TRBDF2Tableau(T, T2)
     s = 3
     Ai = zeros(T, s, s)
@@ -2595,7 +2595,7 @@ function TRBDF2ESDIRKIMEXTableau(T, T2)
     )
 end
 
-function ImplicitMidpointESDIRKIMEXTableau(T, T2)
+function ImplicitMidpointESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     s = 1
     γ = convert(T2, 1 // 2)
     Ai = fill(convert(T, 1 // 2), 1, 1)
@@ -2615,7 +2615,7 @@ Construct the single-stage ESDIRK-IMEX Butcher tableau whose implicit part is th
 implicit Euler method (element types `T` for coefficients, `T2` for abscissae).
 Used as the base tableau for the implicit-Euler IMEX splitting scheme.
 """
-function ImplicitEulerESDIRKIMEXTableau(T, T2)
+function ImplicitEulerESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     s = 1
     Ai = fill(one(T), 1, 1)
     bi = T[one(T)]
@@ -2628,7 +2628,7 @@ function ImplicitEulerESDIRKIMEXTableau(T, T2)
     )
 end
 
-function TrapezoidESDIRKIMEXTableau(T, T2)
+function TrapezoidESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     s = 2
     γ = convert(T2, 1 // 2)
     γT = convert(T, 1 // 2)
@@ -2645,7 +2645,7 @@ function TrapezoidESDIRKIMEXTableau(T, T2)
     )
 end
 
-function SSPSDIRK2ESDIRKIMEXTableau(T, T2)
+function SSPSDIRK2ESDIRKIMEXTableau(::Type{T}, ::Type{T2}) where {T, T2}
     s = 2
     γ = convert(T2, 1 // 4)
     γT = convert(T, 1 // 4)
@@ -2668,7 +2668,7 @@ end
 # Ma-Huang 2024 (arXiv:2306.08742) Appendix 7.2 with c4=1.5. γ ≈ 0.435866521508460
 # is the middle root of 6γ³ - 18γ² + 9γ - 1. Explicit-first-stage convention:
 # Ai[1,:] = Ae[1,:] = 0, c[1] = 0.
-function BHR553Tableau(T, T2)
+function BHR553Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     γv = 0.43586652150846
     γ = convert(T, γv)
     γ2 = convert(T2, γv)
