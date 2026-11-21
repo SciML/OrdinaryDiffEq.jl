@@ -88,6 +88,7 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test order > 0.75
     end
     @time @safetestset "Lamba resize!" include("lamba_resize_tests.jl")
+    @time @safetestset "EM addat!" include("em_addat_tests.jl")
 
     @time @safetestset "RKMilCommute Ito diagonal update (scalar iip + nondiag alloc)" begin
         using StochasticDiffEqLowOrder

@@ -110,3 +110,17 @@ end
         @test integ.sol.retcode == ReturnCode.Success
     end
 end
+
+@testset "addat! with a value" begin
+    integ = init(prob, MethodOfSteps(Trapezoid()))
+    for _ in 1:4
+        step!(integ)
+    end
+    addat!(integ, 4:5, [1.0, 2.0])
+    @test integ.u[4:5] == [1.0, 2.0]
+    @test all(v -> v[4:5] == [1.0, 2.0], (integ.uprev, integ.uprev2, integ.cache.uprev3))
+    @test_throws ArgumentError addat!(integ, 1:1)
+    @test length(integ.u) == 5
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
+end

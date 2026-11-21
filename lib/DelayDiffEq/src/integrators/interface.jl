@@ -255,11 +255,13 @@ function foreach_state_buffer(f, integrator::DDEIntegrator, cache = integrator.c
 end
 
 # The next step reads the step history, so grown entries must not keep leftover memory.
-function fill_grown_step_history!(integrator::DDEIntegrator, cache, oldlen)
+function fill_grown_step_history!(
+        integrator::DDEIntegrator, cache, oldlen, val = zero(eltype(integrator.u))
+    )
     uprev3 = hasfield(typeof(cache), :uprev3) ? cache.uprev3 : nothing
     for v in (integrator.uprev, integrator.uprev2, uprev3)
         (v isa AbstractArray && v !== integrator.u && length(v) > oldlen) || continue
-        fill!(view(v, (oldlen + 1):length(v)), zero(eltype(v)))
+        view(v, (oldlen + 1):length(v)) .= val
     end
     return nothing
 end
@@ -319,12 +321,22 @@ function DiffEqBase.deleteat_non_user_cache!(integrator::DDEIntegrator, cache, i
 end
 
 # add component(s)
-function DiffEqBase.addat!(integrator::DDEIntegrator, idxs)
+# `addat!` on the state buffers appends, so `idxs` must name the indices after the end.
+function DiffEqBase.addat!(integrator::DDEIntegrator, idxs, val = zero(eltype(integrator.u)))
     oldlen = length(integrator.u)
-    foreach_state_buffer(c -> addat!(c, idxs), integrator)
+    r = (oldlen + 1):(oldlen + length(idxs))
+    vec(collect(idxs)) == r ||
+        throw(ArgumentError("`addat!` appends components, so `idxs` must be $r, got $idxs"))
+    isempty(r) && return nothing
+    # Converting first means a bad `val` throws before any buffer is grown.
+    added = similar(integrator.u, length(r)) .= val
+    foreach_state_buffer(c -> addat!(c, r), integrator)
     resize_solver_internals!(integrator, integrator.cache, length(integrator.u))
-    addat_non_user_cache!(integrator, integrator.cache, idxs)
-    fill_grown_step_history!(integrator, integrator.cache, oldlen)
+    addat_non_user_cache!(integrator, integrator.cache, r)
+    integrator.u[r] .= added
+    fill_grown_step_history!(integrator, integrator.cache, oldlen, added)
+    # Refreshes the FSAL derivative outside callbacks too.
+    SciMLBase.derivative_discontinuity!(integrator, true)
     return nothing
 end
 
