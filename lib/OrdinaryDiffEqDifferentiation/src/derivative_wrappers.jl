@@ -322,19 +322,19 @@ function get_chunksize(
 end # don't degrade compile time information to runtime information
 
 """
-    resize_jac_config!(cache, integrator)
+    resize_jac_config!(cache, integrator, alg = integrator.alg)
 
 Resize the Jacobian differentiation configuration on `cache` to match a changed
 state length (e.g. after a `resize!` callback), rebuilding the AD/finite-difference
-configs for the new size.
+configs for the new size with the backend of `alg`.
 """
-function resize_jac_config!(cache, integrator)
+function resize_jac_config!(cache, integrator, alg = integrator.alg)
     if !isnothing(cache.jac_config) && !isnothing(cache.jac_config[1])
         uf = cache.uf
         uf = SciMLBase.@set uf.f = SciMLBase.unwrapped_f(uf.f)
 
         # for correct FiniteDiff dirs
-        autodiff_alg = alg_autodiff(integrator.alg)
+        autodiff_alg = alg_autodiff(alg)
         if autodiff_alg isa AutoFiniteDiff
             ad_right = SciMLBase.@set autodiff_alg.dir = 1
             ad_left = SciMLBase.@set autodiff_alg.dir = -1
@@ -358,16 +358,16 @@ function resize_jac_config!(cache, integrator)
 end
 
 """
-    resize_grad_config!(cache, integrator)
+    resize_grad_config!(cache, integrator, alg = integrator.alg)
 
 Resize the time-derivative differentiation configuration on `cache` to match a
-changed state length.
+changed state length, using the backend of `alg`.
 """
-function resize_grad_config!(cache, integrator)
+function resize_grad_config!(cache, integrator, alg = integrator.alg)
     if !isnothing(cache.grad_config) && !isnothing(cache.grad_config[1])
 
         # for correct FiniteDiff dirs
-        autodiff_alg = ADTypes.dense_ad(alg_autodiff(integrator.alg))
+        autodiff_alg = ADTypes.dense_ad(alg_autodiff(alg))
         if autodiff_alg isa AutoFiniteDiff
             ad_right = SciMLBase.@set autodiff_alg.dir = 1
             ad_left = SciMLBase.@set autodiff_alg.dir = -1

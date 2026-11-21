@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, Test, ADTypes, SparseMatrixColorings, DiffEqBase, ForwardDiff, SciMLBase, LinearSolve
 using OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqSDIRK, OrdinaryDiffEqRosenbrock
 using PreallocationTools: get_tmp
+using OrdinaryDiffEqCore: CompositeAlgorithm
 import OrdinaryDiffEqDifferentiation.DI
 
 f(du, u, p, t) = du .= u
@@ -253,4 +254,56 @@ runSim(Rosenbrock23(autodiff = AutoFiniteDiff()))
     u_modified!(integrator, true)
     @test_nowarn step!(integrator)
     @test length(integrator.u) == 2
+end
+
+@testset "resize! with composite members on different AD backends" begin
+    f!(du, u, p, t) = (du .= -1000 .* (u .- 0.5); nothing)
+    prob = ODEProblem(f!, [1.0], (0.0, 0.1))
+    fd = Rosenbrock23(autodiff = AutoFiniteDiff())
+    fdk = Rosenbrock23(autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES())
+    adk = Rosenbrock23(linsolve = KrylovJL_GMRES())
+    for algs in ((fd, Rosenbrock23()), (Rosenbrock23(), fd), (fdk, adk), (adk, fdk))
+        integ = init(prob, CompositeAlgorithm(algs, _ -> 1))
+        step!(integ)
+        resize!(integ, 2)
+        integ.u[2] = 1.0
+        integ.uprev[2] = 1.0
+        u_modified!(integ, true)
+        solve!(integ)
+        @test integ.sol.retcode == ReturnCode.Success
+        @test integ.u ≈ [0.5, 0.5]
+    end
+end
+
+@testset "same-size resize! with a MatrixOperator jac_prototype" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    jac!(J, u, p, t) = (J[1, 1] = -1; nothing)
+    f = ODEFunction(f!; jac = jac!, jac_prototype = MatrixOperator(fill(-1.0, 1, 1)))
+    prob = ODEProblem(f, [1.0], (0.0, 0.5))
+    integ = init(prob, Rosenbrock23(); reltol = 1.0e-8, abstol = 1.0e-10)
+    step!(integ)
+    resize!(integ, 1)
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
+    @test integ.u[1] ≈ exp(-0.5) rtol = 1.0e-6
+
+    integ = init(prob, Rosenbrock23(); reltol = 1.0e-8, abstol = 1.0e-10)
+    step!(integ)
+    @test_throws ArgumentError resize!(integ, 2)
+end
+
+@testset "resize! with a Krylov linsolve and concrete_jac" begin
+    f!(du, u, p, t) = (du .= -u; nothing)
+    prob = ODEProblem(f!, [1.0], (0.0, 0.5))
+    alg = Rosenbrock23(linsolve = KrylovJL_GMRES(), concrete_jac = true)
+    integ = init(prob, alg; reltol = 1.0e-8, abstol = 1.0e-10)
+    step!(integ)
+    t1 = integ.t
+    resize!(integ, 2)
+    integ.u[2] = 1.0
+    integ.uprev[2] = 1.0
+    u_modified!(integ, true)
+    solve!(integ)
+    @test integ.sol.retcode == ReturnCode.Success
+    @test integ.u ≈ [exp(-0.5), exp(-(0.5 - t1))] rtol = 1.0e-5
 end
