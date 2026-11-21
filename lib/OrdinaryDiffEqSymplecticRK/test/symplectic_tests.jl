@@ -105,9 +105,9 @@ ref = solve(
 @testset "symplectic time-dependent $alg" for (alg, x, d) in ALGOS
     sol = solve(prob_direct, alg(); dt, saveat = 0.01)
     if alg <: Yoshida6
-        @test maximum(ref[4, :] - sol[4, :]) < 9.0e-3
+        @test maximum(abs.(ref[4, :] - sol[4, :])) < 9.0e-3
     else
-        @test maximum(ref[4, :] - sol[4, :]) < 3.0e-3
+        @test maximum(abs.(ref[4, :] - sol[4, :])) < 3.0e-3
     end
 end
 

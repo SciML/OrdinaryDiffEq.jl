@@ -116,3 +116,37 @@ end
         @test sol.t[end] == tspan[2]
     end
 end
+
+# No evaluation past tspan when t + dt rounds beyond it or the coefficient sum rounds above 1.
+const INSIDE_ALGS = (
+    SymplecticEuler(), VelocityVerlet(), VerletLeapfrog(), LeapfrogDriftKickDrift(),
+    PseudoVerletLeapfrog(), McAte2(), McAte3(), KahanLi6(), KahanLi8(), SofSpa10(),
+)
+
+function guarded_solve(alg, iip, tspan, dt, T)
+    lo, hi = minmax(tspan...)
+    inside(t) = lo <= t <= hi || throw(DomainError(t))
+    f1(v, u, t) = (inside(t); -sin.(u))
+    f2(v, u, t) = (inside(t); v)
+    return solve(
+        make_problem(f1, f2, iip, T[0.3], T[1.1], tspan), alg; dt, adaptive = false
+    )
+end
+
+@testset "non-binary endpoint, iip = $iip, $(nameof(typeof(alg)))" for iip in (false, true),
+        alg in INSIDE_ALGS
+
+    sol = guarded_solve(alg, iip, (-1.0, 0.1), 1.1, Float64)
+    @test sol.t[end] == 0.1
+    sol = guarded_solve(alg, iip, (0.1, -1.0), 1.1, Float64)
+    @test sol.t[end] == -1.0
+end
+
+@testset "Float32 endpoint, iip = $iip, $(nameof(typeof(alg)))" for iip in (false, true),
+        alg in INSIDE_ALGS
+
+    sol = guarded_solve(alg, iip, (0.0f0, 1.0f0), 1.0f0, Float32)
+    @test sol.t[end] == 1.0f0
+    sol = guarded_solve(alg, iip, (0.0f0, 1.0f0), 0.1f0, Float32)
+    @test sol.t[end] == 1.0f0
+end

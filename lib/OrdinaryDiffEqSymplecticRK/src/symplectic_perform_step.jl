@@ -1,3 +1,19 @@
+# the time the integrator stores at the end of the step; t + dt can round past a tstop
+function step_end_time(integrator, t, dt)
+    if OrdinaryDiffEqCore._get_next_step_tstop(integrator)
+        return OrdinaryDiffEqCore._get_tstop_target(integrator)
+    end
+    return t + dt
+end
+
+function last_nonzero(c)
+    k = 0
+    for i in eachindex(c)
+        iszero(c[i]) || (k = i)
+    end
+    return k
+end
+
 # http://www.chimica.unipd.it/antonino.polimeno/pubblica/downloads/JChemPhys_101_4062.pdf
 
 function initialize!(integrator, cache::SymplecticEulerConstantCache)
@@ -204,7 +220,7 @@ end
     dtsq = dt^2
     half = cache.half
     u = uprev + dt * duprev + dtsq * (half * ku)
-    kdu = f.f1(duprev, u, p, t + dt)
+    kdu = f.f1(duprev, u, p, step_end_time(integrator, t, dt))
     # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
     du = duprev + dt * (half * ku + half * kdu)
 
@@ -222,7 +238,7 @@ end
     dtsq = dt^2
     half = cache.half
     @.. broadcast = false u = uprev + dt * duprev + dtsq * (half * ku)
-    f.f1(kdu, duprev, u, p, t + dt)
+    f.f1(kdu, duprev, u, p, step_end_time(integrator, t, dt))
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
     @.. broadcast = false du = duprev + dt * (half * ku + half * kdu)
@@ -247,7 +263,7 @@ end
     u = uprev + dt * ku
 
     # update velocity
-    kdu = f.f1(du, u, p, t + dt)
+    kdu = f.f1(du, u, p, step_end_time(integrator, t, dt))
     du = du + dt * half * kdu
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -270,7 +286,7 @@ end
     @.. broadcast = false u = uprev + dt * ku
 
     # update velocity
-    f.f1(kdu, du, u, p, t + dt)
+    f.f1(kdu, du, u, p, step_end_time(integrator, t, dt))
     @.. broadcast = false du = du + dt * half * kdu
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -301,7 +317,7 @@ end
     du = duprev + dt * kdu
 
     # update position (add to half step position)
-    ku = f.f2(du, u, p, t + dt)
+    ku = f.f2(du, u, p, step_end_time(integrator, t, dt))
     u = u + dt * half * ku
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
@@ -333,7 +349,7 @@ end
     @.. broadcast = false du = duprev + dt * kdu
 
     # update position (add to half step position)
-    f.f2(ku, du, u, p, t + dt)
+    f.f2(ku, du, u, p, step_end_time(integrator, t, dt))
     @.. broadcast = false u = u + dt * half * ku
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
@@ -357,26 +373,29 @@ end
     # Stage 1: drift using kuprev from FSAL. Two clocks: kick i (f1) is evaluated
     # at the time the position has reached, tq = t + (b[1] + ... + b[i]) * dt, and
     # drift i (f2) at the time the velocity has reached, tp = t + (a[1] + ... + a[i-1]) * dt.
-    tend = t + dt
+    tend = step_end_time(integrator, t, dt)
+    # after the last nonzero coefficient the clock is at tend; the rounded sum can exceed 1
+    la = last_nonzero(a)
+    lb = last_nonzero(b)
     u = uprev + dt * b[1] * kuprev
     # coefficient sums; each stage time is formed from t, so rounding cannot accumulate
     sq = b[1]
-    tq = N == 1 ? tend : t + sq * dt
+    tq = lb <= 1 ? tend : t + sq * dt
     kdu = f.f1(duprev, u, p, tq)
     du = duprev + dt * a[1] * kdu
     sp = a[1]
-    tp = t + sp * dt
+    tp = la <= 1 ? tend : t + sp * dt
 
     # Stages 2 through N
     for i in 2:N
         ku = f.f2(du, u, p, tp)
         u = u + dt * b[i] * ku
         sq += b[i]
-        tq = i == N ? tend : t + sq * dt
+        tq = i >= lb ? tend : t + sq * dt
         kdu = f.f1(du, u, p, tq)
         du = du + dt * a[i] * kdu
         sp += a[i]
-        tp = t + sp * dt
+        tp = i >= la ? tend : t + sp * dt
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu
@@ -402,26 +421,29 @@ end
 
     # Stage 1: drift using kuprev from FSAL. Each kick is evaluated at the time
     # the position has reached, t + (b[1] + ... + b[i]) * dt.
-    tend = t + dt
+    tend = step_end_time(integrator, t, dt)
+    # after the last nonzero coefficient the clock is at tend; the rounded sum can exceed 1
+    la = last_nonzero(a)
+    lb = last_nonzero(b)
     @.. broadcast = false u = uprev + dt * b[1] * kuprev
     # coefficient sums; each stage time is formed from t, so rounding cannot accumulate
     sq = b[1]
-    tq = N == 1 ? tend : t + sq * dt
+    tq = lb <= 1 ? tend : t + sq * dt
     f.f1(kdu, duprev, u, p, tq)
     @.. broadcast = false du = duprev + dt * a[1] * kdu
     sp = a[1]
-    tp = t + sp * dt
+    tp = la <= 1 ? tend : t + sp * dt
 
     # Stages 2 through N
     for i in 2:N
         f.f2(ku, du, u, p, tp)
         @.. broadcast = false u = u + dt * b[i] * ku
         sq += b[i]
-        tq = i == N ? tend : t + sq * dt
+        tq = i >= lb ? tend : t + sq * dt
         f.f1(kdu, du, u, p, tq)
         @.. broadcast = false du = du + dt * a[i] * kdu
         sp += a[i]
-        tp = t + sp * dt
+        tp = i >= la ? tend : t + sp * dt
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu
