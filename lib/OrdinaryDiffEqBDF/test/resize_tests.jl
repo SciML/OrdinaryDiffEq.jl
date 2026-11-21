@@ -1,5 +1,6 @@
-using OrdinaryDiffEqBDF, LinearAlgebra, Test
+using OrdinaryDiffEqBDF, LinearAlgebra, OffsetArrays, Test
 using OrdinaryDiffEqCore: CompositeAlgorithm
+using OrdinaryDiffEqNonlinearSolve: NLFunctional
 
 const A = [-1.0 0.35 0.1; 0.2 -1.4 0.25; 0.15 0.3 -1.2]
 const U0 = [1.0, -0.5]
@@ -101,4 +102,47 @@ f_active!(du, u, p, t) = (mul!(du, view(ACTIVE_A[], ACTIVE[], ACTIVE[]), u); not
         @test integ.u ≈ fresh.u[end] rtol = 1.0e-7 atol = 1.0e-10
         @test integ.u ≈ exp(ACTIVE_A[][after, after] * (TF - TG)) * u_edit rtol = 1.0e-7 atol = 1.0e-10
     end
+end
+
+# Shrinking a vector with `resize!` keeps its trailing memory, so growing it back exposes the old
+# values. QNDF keeps its difference history across a resize when the derivative discontinuity is
+# cleared, so the rows a resize adds to that history must not carry such values.
+@testset "QNDF history rows added by a resize" begin
+    prob = ODEProblem(f!, [U0; UNEW], (0.0, TF))
+    integrator = init(prob, QNDF(); reltol = 1.0e-10, abstol = 1.0e-12)
+    for _ in 1:10
+        step!(integrator)
+    end
+    history = (integrator.cache.D, integrator.cache.Dtmp, integrator.cache.prevD)
+    foreach(d -> foreach(x -> x[3] = NaN, d), history)
+    u3 = integrator.u[3]
+    resize!(integrator, 2)
+    resize!(integrator, 3)
+    integrator.u[3] = u3
+    derivative_discontinuity!(integrator, false)
+    @test all(x[3] == 0 for d in history for x in d)
+    solve!(integrator)
+    @test integrator.sol.retcode == ReturnCode.Success
+    @test integrator.u ≈ exp(A * TF) * [U0; UNEW] rtol = 1.0e-7
+end
+
+decay!(du, u, p, t) = (du .= -u; nothing)
+
+@testset "QNDF history resize with offset axes ($offset)" for offset in (-2, 2)
+    prob = ODEProblem(decay!, OffsetArray(collect(1.0:5.0), offset), (0.0, 1.0))
+    integrator = init(prob, QNDF(nlsolve = NLFunctional()); reltol = 1.0e-8, abstol = 1.0e-10)
+    for _ in 1:5
+        step!(integrator)
+    end
+    cache = integrator.cache
+    history = [x for d in (cache.D, cache.Dtmp, cache.prevD) for x in d]
+    kept = map(x -> copy(parent(x)), history)
+    resize!(integrator, 6)
+    @test all(parent(x)[1:5] == k for (x, k) in zip(history, kept))
+    @test all(x[end] == 0 for x in history)
+    integrator.u[end] = 0.0
+    derivative_discontinuity!(integrator, false)
+    solve!(integrator)
+    @test integrator.sol.retcode == ReturnCode.Success
+    @test parent(integrator.u) ≈ [exp(-1.0) .* (1:5); 0.0] rtol = 1.0e-6
 end
