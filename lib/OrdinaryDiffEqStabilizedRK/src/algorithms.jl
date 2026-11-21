@@ -82,8 +82,8 @@ end
 @doc generic_solver_docstring(
     """High stability for real eigenvalues. Third order method with an embedded second order
     error estimate. The optimal third order stability polynomial is realized as a composition
-    of three-stage substeps, using the tabulated degrees 3, 6, 9, 15, 21, 27, 36, 48, 63, 81,
-    135, 189 and 243.""",
+    of three-stage substeps, using the tabulated degrees 3, 6, 9, 15, 21, 27, 36, 48, 63, 81
+    and 135.""",
     "DUMKA3",
     "Stabilized Explicit Method.",
     """Alexei A. Medovikov. High order explicit methods for parabolic equations.
@@ -104,7 +104,7 @@ end
     """,
     """
     min_stages = 0,
-    max_stages = 243,
+    max_stages = 135,
     eigen_est = nothing,
     eigen_est_interval = 20,
     """
@@ -115,7 +115,7 @@ struct DUMKA3{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     eigen_est::E
     eigen_est_interval::Int
 end
-function DUMKA3(; min_stages = 0, max_stages = 243, eigen_est = nothing, eigen_est_interval = 20)
+function DUMKA3(; min_stages = 0, max_stages = 135, eigen_est = nothing, eigen_est_interval = 20)
     return DUMKA3(min_stages, max_stages, eigen_est, eigen_est_interval)
 end
 
