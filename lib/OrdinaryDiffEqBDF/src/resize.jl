@@ -42,3 +42,17 @@ function resize_non_user_cache!(
     integrator.derivative_discontinuity = true
     return nothing
 end
+
+function resize_non_user_cache!(
+        integrator::OrdinaryDiffEqCore.ODEIntegrator, cache::MOOSE234Cache, i::Int
+    )
+    resize!(integrator.u, i)
+    resize!(integrator.uprev, i)
+    resize!(integrator.uprev2, i)
+    resize_nlsolver!(integrator, i)
+    resize_bdf_buffers!(cache.u_history, i)
+    resize_bdf_buffers!(cache.dense, i)
+    reset_moose_history!(cache)
+    integrator.derivative_discontinuity = true
+    return nothing
+end

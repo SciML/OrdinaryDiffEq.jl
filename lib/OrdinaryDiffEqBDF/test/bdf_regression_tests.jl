@@ -253,6 +253,26 @@ end
     sol_stiff = solve(prob_stiff, MOOSE234(), abstol = 1.0e-4, reltol = 1.0e-4)
     @test sol_stiff.retcode == ReturnCode.Success
     @test sol_stiff.t[end] == 6.3
+
+    # KenCarp4 reference values checked by tightening reltol from 1e-11 to 1e-13.
+    for (sol, times, reference, atol) in (
+            (
+                sol_mod, (0.01, 1.0, 6.3), (
+                    (1.9999544488, -0.006334883), (1.9933371742, -0.0067037872),
+                    (1.9572597128, -0.0069138501),
+                ), 4.0e-6,
+            ),
+            (
+                sol_stiff, (0.001, 1.0, 6.3), (
+                    (1.9999995445, -0.0006334754), (1.9993333705, -0.0006670371),
+                    (1.9957928459, -0.0006690131),
+                ), 5.0e-5,
+            ),
+        )
+        for (t, expected) in zip(times, reference)
+            @test all(isapprox.(sol(t), expected; atol, rtol = 0))
+        end
+    end
 end
 
 @testset "MOOSE234 ROBER stiff system" begin
@@ -267,6 +287,15 @@ end
     @test sol.retcode == ReturnCode.Success
     @test sol.t[end] == 1.0e5
     @test isapprox(sum(sol.u[end]), 1.0, atol = 1.0e-6)
+
+    # KenCarp4 reference values checked by tightening reltol from 1e-11 to 1e-13.
+    for (t, expected) in (
+            (0.4, (0.985172113861, 3.38639537908e-5, 0.014794022185)),
+            (40.0, (0.715827068719, 9.18553476458e-6, 0.284163745746)),
+            (1.0e5, (0.017865921142, 7.27475146844e-8, 0.98213400611)),
+        )
+        @test all(abs.(sol(t) .- expected) .<= (1.0e-7, 7.0e-9, 1.0e-7))
+    end
 end
 
 if VERSION >= v"1.12"

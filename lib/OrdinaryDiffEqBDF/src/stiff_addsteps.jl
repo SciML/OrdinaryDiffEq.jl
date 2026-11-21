@@ -245,18 +245,18 @@ function _ode_addsteps!(
         force_calc_end = false
     )
     always_calc_begin || return nothing
-    (; u_history, ts, order) = cache
-    n = order + 1
+    (; u_history, ts, dense_order) = cache
+    n = dense_order + 1
 
     thetas = Vector{typeof(t)}(undef, n)
     thetas[1] = one(t)
-    for j in 1:order
+    for j in 1:dense_order
         thetas[1 + j] = (ts[j] - t) / dt
     end
 
     values = Vector{typeof(u)}(undef, n)
     values[1] = u isa Number ? u : copy(u)
-    for j in 1:order
+    for j in 1:dense_order
         values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
     end
 
@@ -275,11 +275,11 @@ function _ode_addsteps!(
         force_calc_end = false
     )
     always_calc_begin || return nothing
-    (; u_history, ts, order, equi_ts) = cache
-    n = order + 1
+    (; u_history, ts, dense_order, equi_ts) = cache
+    n = dense_order + 1
 
     equi_ts[1] = one(eltype(equi_ts))
-    for j in 1:order
+    for j in 1:dense_order
         equi_ts[1 + j] = (ts[j] - t) / dt
     end
 

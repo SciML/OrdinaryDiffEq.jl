@@ -573,8 +573,9 @@ end
 @doc BDF_docstring(
     "A variable-stepsize, variable-order (2/3/4) implicit method based on the MOOSE234
 (Multiple Order One Solve Embedded 234) scheme of DeCaria, Guzel, Layton, and Li.
-Performs a single BDF3 nonlinear solve per step, then applies two cheap linear
-time-filter post-processing steps to produce embedded solutions at orders 2 and 4.
+Performs one implicit BDF solve per step using the actual time nodes. It starts
+with orders 1 and 2 as history accumulates, then applies linear time filters to
+the BDF3 solution to produce embedded solutions at orders 2 and 4.
 This yields error estimates at three orders, enabling VSVO behavior at the cost of
 a single implicit solve per step. Requires adaptive stepping (`adaptive = true`);
 initialization with `adaptive = false` throws an `ArgumentError`.",
@@ -585,11 +586,11 @@ initialization with `adaptive = false` throws an `ArgumentError`.",
     journal={arXiv preprint arXiv:1810.06670},
     year={2018}}""",
     extra_keyword_description = """
-    - `nlsolve`: nonlinear solver algorithm used for the BDF3 implicit solve of each
+    - `nlsolve`: nonlinear solver algorithm used for the implicit BDF solve of each
       step. The initial guess is the Lagrange extrapolation of the stored solution
       history, or the current state on the first step after a start or restart.
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`, applied to
-      the BDF3 solution before the filters. Only in-place problems call it.
+      the BDF solution before the filters. Only in-place problems call it.
     """,
     extra_keyword_default = """
     nlsolve = NLNewton(),

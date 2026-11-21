@@ -826,7 +826,7 @@ function choose_order_moose!(
         cache::Union{MOOSE234Cache, MOOSE234ConstantCache}
     )
     k = cache.order
-    dt = integrator.dt
+    dt = abs(integrator.dt)
     n_hist = min(cache.iters_from_event + 1, 5)
     max_avail = n_hist >= 4 ? 4 : (n_hist >= 3 ? 3 : 2)
 
@@ -949,7 +949,7 @@ end
 # --------------------------------------------------------------------------
 function step_reject_controller!(integrator, ::MOOSE234)
     k = integrator.cache.order
-    h = integrator.dt
+    h = abs(integrator.dt)
     integrator.cache.consfailcnt += 1
     integrator.cache.nconsteps = 0
 
@@ -985,7 +985,7 @@ function step_reject_controller!(integrator, ::MOOSE234)
         integrator.derivative_discontinuity = true
     end
 
-    integrator.dt = hₙ
+    integrator.dt = integrator.tdir * hₙ
     return integrator.cache.order = kₙ
 end
 

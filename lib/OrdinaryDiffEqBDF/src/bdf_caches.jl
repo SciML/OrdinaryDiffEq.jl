@@ -974,27 +974,26 @@ end
 # DeCaria et al., arXiv:1810.06670v1
 
 @cache mutable struct MOOSE234ConstantCache{
-        N, tsType, tType, uType, uuType,
-        EEstType, rType, wType,
+        N, tsType, uuType, EEstType, coeffType, ddType,
     } <:
     OrdinaryDiffEqConstantCache
     nlsolver::N
     ts::tsType
-    ts_tmp::tsType
-    t_old::tType
+    ts_tmp::coeffType
+    bdf_coeffs::coeffType
+    dd_c::ddType
+    dd_D::ddType
     u_history::uuType
     order::Int
     prev_order::Int
-    u_corrector::uType
     nconsteps::Int
     consfailcnt::Int
     qwait::Int
     terkm1::EEstType
     terk::EEstType
     terkp1::EEstType
-    r::rType
-    weights::wType
     iters_from_event::Int
+    dense_order::Int
 end
 
 function alg_cache(
@@ -1003,7 +1002,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = Int64(1) // 1, 1
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
@@ -1011,14 +1010,15 @@ function alg_cache(
 
     hist_size = 6 # max_order(4) + 2
     ts = zero(Vector{typeof(t)}(undef, hist_size))
-    ts_tmp = similar(ts)
+    ts_tmp = Vector{tTypeNoUnits}(undef, hist_size)
+    bdf_coeffs = similar(ts_tmp)
+    dd_c = Matrix{tTypeNoUnits}(undef, 5, 5)
+    dd_D = similar(dd_c)
 
     if u isa Number
         u_history = zeros(eltype(u), hist_size)
-        u_corrector = zeros(eltype(u), hist_size)
     else
         u_history = [zero(u) for _ in 1:hist_size]
-        u_corrector = [zero(u) for _ in 1:hist_size]
     end
 
     order = 2
@@ -1026,36 +1026,32 @@ function alg_cache(
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)
     terkp1 = tTypeNoUnits(1)
-    r = zero(Vector{typeof(t)}(undef, hist_size))
-    weights = zero(Vector{typeof(t)}(undef, hist_size))
-    weights[1] = 1
     nconsteps = 0
     consfailcnt = 0
     qwait = 4 # order + 2
-    t_old = zero(t)
     iters_from_event = 0
 
     return MOOSE234ConstantCache(
-        nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
-        u_corrector, nconsteps, consfailcnt, qwait, terkm1,
-        terk, terkp1, r, weights, iters_from_event
+        nlsolver, ts, ts_tmp, bdf_coeffs, dd_c, dd_D, u_history, order, prev_order,
+        nconsteps, consfailcnt, qwait, terkm1, terk, terkp1, iters_from_event, 1
     )
 end
 
 @cache mutable struct MOOSE234Cache{
-        N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
-        EEstType, rType, wType, StepLimiter, fdWeightsType,
+        N, rateType, uNoUnitsType, tsType, uType, uuType,
+        EEstType, coeffType, ddType, StepLimiter,
     } <:
     BDFMutableCache
     fsalfirst::rateType
     nlsolver::N
     ts::tsType
-    ts_tmp::tsType
-    t_old::tType
+    ts_tmp::coeffType
+    bdf_coeffs::coeffType
+    dd_c::ddType
+    dd_D::ddType
     u_history::uuType
     order::Int
     prev_order::Int
-    u_corrector::uuType
     u₀::uType
     nconsteps::Int
     consfailcnt::Int
@@ -1067,13 +1063,11 @@ end
     terkp1::EEstType
     terk_tmp::uType
     terkp1_tmp::uType
-    r::rType
-    weights::wType
     equi_ts::tsType
     iters_from_event::Int
+    dense_order::Int
     dense::Vector{uType}
     step_limiter!::StepLimiter
-    fd_weights::fdWeightsType
 end
 
 @truncate_stacktrace MOOSE234Cache 1
@@ -1084,7 +1078,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = Int64(1) // 1, 1
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
     fsalfirst = zero(rate_prototype)
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
@@ -1096,37 +1090,31 @@ function alg_cache(
     u_history = [zero(u) for _ in 1:hist_size]
     order = 2
     prev_order = 2
-    u_corrector = [zero(u) for _ in 1:hist_size]
     recursivefill!(ts, zero(t))
     terkm1 = tTypeNoUnits(1)
     terk = tTypeNoUnits(1)
     terkp1 = tTypeNoUnits(1)
     terk_tmp = similar(u)
     terkp1_tmp = similar(u)
-    r = Vector{typeof(t)}(undef, hist_size)
-    weights = Vector{typeof(t)}(undef, hist_size)
-    recursivefill!(r, zero(t))
-    recursivefill!(weights, zero(t))
-    weights[1] = 1
     nconsteps = 0
     consfailcnt = 0
     qwait = 4 # order + 2
-    t_old = zero(t)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, zero(uEltypeNoUnits))
     u₀ = similar(u)
     equi_ts = similar(ts)
     tmp = similar(u)
-    ts_tmp = similar(ts)
+    ts_tmp = Vector{tTypeNoUnits}(undef, hist_size)
+    bdf_coeffs = similar(ts_tmp)
+    dd_c = Matrix{tTypeNoUnits}(undef, 5, 5)
+    dd_D = similar(dd_c)
     iters_from_event = 0
 
     dense = [zero(u) for _ in 1:10] # 2*(max_order+1) = 2*5 = 10
-    fd_weights = zeros(typeof(t), 5, 5) # (max_order+1) × (max_order+1)
 
     return MOOSE234Cache(
-        fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
-        u_corrector, u₀, nconsteps, consfailcnt, qwait, tmp, atmp,
-        terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event, dense, alg.step_limiter!, fd_weights
+        fsalfirst, nlsolver, ts, ts_tmp, bdf_coeffs, dd_c, dd_D, u_history, order, prev_order,
+        u₀, nconsteps, consfailcnt, qwait, tmp, atmp, terkm1, terk, terkp1,
+        terk_tmp, terkp1_tmp, equi_ts, iters_from_event, 1, dense, alg.step_limiter!
     )
 end
