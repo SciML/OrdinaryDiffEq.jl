@@ -35,13 +35,13 @@ function _ode_addsteps!(
             end
         end
         f₀ = f(uprev, p, t)
-        k₁ = _restructure_state(uprev, W \ _vec((f₀ + dtγ * dT))) * neginvdtγ
+        k₁ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec((f₀ + dtγ * dT)))) * neginvdtγ
         tmp = @.. uprev + dto2 * k₁
         f₁ = f(tmp, p, t + dto2)
         if mass_matrix === I
-            k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
+            k₂ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(f₁ - k₁)))
         else
-            k₂ = _restructure_state(uprev, W \ _vec(f₁ - mass_matrix * k₁))
+            k₂ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(f₁ - mass_matrix * k₁)))
         end
         k₂ = @.. k₂ * neginvdtγ + k₁
         copyat_or_push!(k, 1, k₁)
@@ -87,7 +87,7 @@ function _ode_addsteps!(
         num_stages = size(A, 1)
         du = f(uprev, p, t)
         linsolve_tmp = @.. du + (dt * d[1]) * dT
-        k1 = _restructure_state(uprev, W \ _vec(linsolve_tmp))
+        k1 = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(linsolve_tmp)))
         # constant number for type stability make sure this is greater than num_stages
         ks = ntuple(Returns(k1), Val(20))
         # Last stage affect's ks for Rodas5,5P,6P
@@ -112,7 +112,7 @@ function _ode_addsteps!(
                 linsolve_tmp = mass_matrix * linsolve_tmp
             end
             linsolve_tmp = @.. du + (dt * d[stage]) * dT + linsolve_tmp
-            ks = Base.setindex(ks, _restructure_state(uprev, W \ _vec(linsolve_tmp)), stage)
+            ks = Base.setindex(ks, _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(linsolve_tmp))), stage)
         end
 
         if size(H, 1) > 0
