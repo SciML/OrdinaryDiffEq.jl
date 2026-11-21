@@ -188,6 +188,7 @@ function ad_group()
     # Enzyme and Mooncake run on both AD lanes; Zygote runs on Julia <= 1.11.
     is_APPVEYOR && return
     activate_ad_env()
+    @time @safetestset "Progress AD Tests" include("AD/progress_ad.jl")
     @time @safetestset "AD Tests" include("AD/ad_tests.jl")
     @time @safetestset "Autodiff Events Tests" include("AD/autodiff_events.jl")
     return @time @safetestset "Discrete Adjoint Tests" include("AD/discrete_adjoints.jl")
