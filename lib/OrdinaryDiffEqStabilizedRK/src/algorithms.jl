@@ -79,6 +79,46 @@ function ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing, eigen_es
     return ROCK4(min_stages, max_stages, eigen_est, eigen_est_interval)
 end
 
+@doc generic_solver_docstring(
+    """High stability for real eigenvalues. Third order method with an embedded second order
+    error estimate. The optimal third order stability polynomial is realized as a composition
+    of three-stage substeps, using the tabulated degrees 3, 6, 9, 15, 21, 27, 36, 48, 63, 81,
+    135, 189 and 243.""",
+    "DUMKA3",
+    "Stabilized Explicit Method.",
+    """Alexei A. Medovikov. High order explicit methods for parabolic equations.
+    BIT Numerical Mathematics, 38 (2), pp 372-390, 1998. doi: https://doi.org/10.1007/BF02512373""",
+    """
+    - `min_stages`: The minimum degree of the stability polynomial; the smallest tabulated
+        degree that is at least `min_stages` is used as the lower bound.
+    - `max_stages`: The maximum degree of the stability polynomial; the largest tabulated
+        degree that is at most `max_stages` (and at least 3) is used as the upper bound.
+    - `eigen_est`: function of the form
+        `(integrator) -> integrator.eigen_est = upper_bound`,
+        where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+        If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
+    - `eigen_est_interval`: with the internal power-iteration estimator, only recompute
+        the spectral radius estimate every `eigen_est_interval` accepted steps. It is always
+        recomputed on the first step, after step rejections, and at discontinuities. The
+        default of 20 matches the reference DUMKA3 code.
+    """,
+    """
+    min_stages = 0,
+    max_stages = 243,
+    eigen_est = nothing,
+    eigen_est_interval = 20,
+    """
+)
+struct DUMKA3{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
+    eigen_est_interval::Int
+end
+function DUMKA3(; min_stages = 0, max_stages = 243, eigen_est = nothing, eigen_est_interval = 20)
+    return DUMKA3(min_stages, max_stages, eigen_est, eigen_est_interval)
+end
+
 # SERK methods
 
 for Alg in [:ESERK4, :ESERK5, :TSRKC2, :TSRKC3]
@@ -414,6 +454,6 @@ end
 OrdinaryDiffEqCore.has_stage_limiter(
     ::Union{
         ROCK2, ROCK4, RKC, RKMC2, ESERK4, ESERK5, SERK2, TSRKC2, TSRKC3,
-        RKL1, RKL2, RKG1, RKG2,
+        RKL1, RKL2, RKG1, RKG2, DUMKA3,
     },
 ) = true

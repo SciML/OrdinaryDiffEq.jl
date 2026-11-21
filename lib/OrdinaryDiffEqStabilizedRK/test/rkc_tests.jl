@@ -588,3 +588,37 @@ end
         @test sol_rkl.retcode == ReturnCode.Success
     end
 end
+
+
+@testset "DUMKA3" begin
+    # third order convergence, out-of-place and in-place
+    dts = 1 .// 2 .^ (8:-1:4)
+    for prob in (prob_ode_linear, prob_ode_2Dlinear)
+        sim = test_convergence(dts, prob, DUMKA3())
+        @test sim.𝒪est[:l∞] ≈ 3 atol = 0.2
+    end
+
+    # third order convergence when the step forces higher degrees
+    f(u, p, t) = -50 * u + sin(t)
+    f_analytic(u0, p, t) = (50 * sin(t) - cos(t)) / 2501 + exp(-50 * t) * 2502 / 2501
+    prob = ODEProblem(ODEFunction(f, analytic = f_analytic), 1.0, (0.0, 1.0))
+    sim = test_convergence(1 .// 2 .^ (10:-1:6), prob, DUMKA3(min_stages = 15))
+    @test sim.𝒪est[:l∞] ≈ 3 atol = 0.3
+
+    # adaptive solve on a stiff diffusion problem, with a user supplied spectral radius
+    N = 100
+    A = Tridiagonal(fill(1.0, N - 1), fill(-2.0, N), fill(1.0, N - 1)) .* (N + 1)^2
+    heat!(du, u, p, t) = mul!(du, A, u)
+    u0 = [sin(π * i / (N + 1)) for i in 1:N]
+    prob = ODEProblem(heat!, u0, (0.0, 0.1))
+    exact = exp(-4 * (N + 1)^2 * sin(π / (2 * (N + 1)))^2 * 0.1) .* u0
+    sol = solve(prob, DUMKA3(eigen_est = integ -> integ.eigen_est = 4 * (N + 1)^2); reltol = 1e-6, abstol = 1e-8)
+    @test sol.retcode == ReturnCode.Success
+    @test norm(sol.u[end] - exact, Inf) < 1e-5
+    sol = solve(prob, DUMKA3(); reltol = 1e-6, abstol = 1e-8)
+    @test norm(sol.u[end] - exact, Inf) < 1e-5
+
+    # max_stages limits the degree, and so the step through dtnew_modification
+    sol = solve(prob, DUMKA3(max_stages = 15); reltol = 1e-6, abstol = 1e-8)
+    @test norm(sol.u[end] - exact, Inf) < 1e-5
+end
