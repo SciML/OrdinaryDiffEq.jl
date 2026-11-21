@@ -176,3 +176,36 @@ test_find_first_callback(callbacks, find_first_integrator);
     @test irrational_f(after) < 0.0
     @test nextfloat(after) == before
 end
+
+mutable struct ErasedReturnIntegrator{S}
+    t::Float64
+    tdir::Int
+    last_event_error::Float64
+    callback_cache::DiffEqBase.CallbackCache{Vector{Float64}, Vector{Float64}}
+    crossing::S
+end
+for CB in (ContinuousCallback, VectorContinuousCallback)
+    @eval function DiffEqBase.find_callback_time(
+            integrator::ErasedReturnIntegrator, callback::$CB, counter
+        )
+        return 1.0 + counter, integrator.crossing, true, Float64(counter), 0.0
+    end
+end
+
+@testset "Continuous callback return contract" begin
+    for crossing in (-1.0, view([-1.0, 1.0], :))
+        integ = ErasedReturnIntegrator(
+            0.0, 1, 0.0, DiffEqBase.CallbackCache(2, Float64, Float64), crossing
+        )
+        cbs = crossing isa Number ? callbacks[1:2] : callbacks[(end - 1):end]
+        expected = DiffEqBase.find_first_continuous_callback(integ, cbs...)
+        actual = DiffEqBase.find_first_continuous_callback(integ, collect(cbs))
+        @test typeof(actual) === typeof(expected)
+        @test actual == expected
+        concrete = DiffEqBase.find_first_continuous_callback(integ, collect(cbs), Val(true))
+        @test concrete isa Tuple{Float64, Int8, Bool, Int, Int, Int}
+        @test concrete[2] === (crossing isa Number ? Int8(-1) : Int8(0))
+        @test concrete[3:end] == expected[3:end]
+        @test concrete[1] == expected[1]
+    end
+end
