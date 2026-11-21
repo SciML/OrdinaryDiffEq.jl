@@ -176,6 +176,10 @@ end
 SciMLBase.allows_arbitrary_number_types(::GlobalAdjoint) = false
 SciMLBase.allowscomplex(::GlobalAdjoint) = false
 SciMLBase.isautodifferentiable(::GlobalAdjoint) = false
+# As for GlobalErrorEstimation: without these traits, an implicit inner solver (needed for
+# a DAE) finds no dual signature in the wrapper of `f`.
+SciMLBase.forwarddiffs_model(alg::GlobalAdjoint) = SciMLBase.forwarddiffs_model(alg.alg)
+SciMLBase.forwarddiff_chunksize(alg::GlobalAdjoint) = SciMLBase.forwarddiff_chunksize(alg.alg)
 SciMLBase.has_global_error(::GlobalAdjoint) = true
 
 function _validate_adjoint_problem(prob)
