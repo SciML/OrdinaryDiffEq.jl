@@ -16,7 +16,7 @@ const ALGOS = (
     (CandyRoz4, true, 4),
     (McAte4, true, 4),
     (CalvoSanz4, true, 4),
-    (McAte42, true, 1), # known to be broken
+    (McAte42, true, 4),
     (McAte5, true, 5),
     (Yoshida6, true, 6),
     (KahanLi6, true, 6),

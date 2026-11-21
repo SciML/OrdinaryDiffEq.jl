@@ -354,28 +354,36 @@ end
     N = length(a)
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
-    # Stage 1: drift using kuprev from FSAL
+    # Stage 1: drift using kuprev from FSAL. Two clocks: kick i (f1) is evaluated
+    # at the time the position has reached, tq = t + (b[1] + ... + b[i]) * dt, and
+    # drift i (f2) at the time the velocity has reached, tp = t + (a[1] + ... + a[i-1]) * dt.
+    tend = t + dt
     u = uprev + dt * b[1] * kuprev
-    kdu = f.f1(duprev, u, p, t)
+    # coefficient sums; each stage time is formed from t, so rounding cannot accumulate
+    sq = b[1]
+    tq = N == 1 ? tend : t + sq * dt
+    kdu = f.f1(duprev, u, p, tq)
     du = duprev + dt * a[1] * kdu
-    tnew = t + a[1] * dt
+    sp = a[1]
+    tp = t + sp * dt
 
     # Stages 2 through N
     for i in 2:N
-        ku = f.f2(du, u, p, tnew)
+        ku = f.f2(du, u, p, tp)
         u = u + dt * b[i] * ku
-        kdu = f.f1(du, u, p, tnew)
+        sq += b[i]
+        tq = i == N ? tend : t + sq * dt
+        kdu = f.f1(du, u, p, tq)
         du = du + dt * a[i] * kdu
-        if i < N
-            tnew = tnew + a[i] * dt
-        end
+        sp += a[i]
+        tp = t + sp * dt
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu
     if !iszero(a[N])
-        kdu = f.f1(du, u, p, tnew)
+        kdu = f.f1(du, u, p, tend)
     end
-    ku = f.f2(du, u, p, tnew)
+    ku = f.f2(du, u, p, tend)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, N + (!iszero(a[N]) ? 1 : 0))
     integrator.stats.nf2 += N
@@ -392,28 +400,35 @@ end
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
-    # Stage 1: drift using kuprev from FSAL
+    # Stage 1: drift using kuprev from FSAL. Each kick is evaluated at the time
+    # the position has reached, t + (b[1] + ... + b[i]) * dt.
+    tend = t + dt
     @.. broadcast = false u = uprev + dt * b[1] * kuprev
-    f.f1(kdu, duprev, u, p, t)
+    # coefficient sums; each stage time is formed from t, so rounding cannot accumulate
+    sq = b[1]
+    tq = N == 1 ? tend : t + sq * dt
+    f.f1(kdu, duprev, u, p, tq)
     @.. broadcast = false du = duprev + dt * a[1] * kdu
-    tnew = t + a[1] * dt
+    sp = a[1]
+    tp = t + sp * dt
 
     # Stages 2 through N
     for i in 2:N
-        f.f2(ku, du, u, p, tnew)
+        f.f2(ku, du, u, p, tp)
         @.. broadcast = false u = u + dt * b[i] * ku
-        f.f1(kdu, du, u, p, tnew)
+        sq += b[i]
+        tq = i == N ? tend : t + sq * dt
+        f.f1(kdu, du, u, p, tq)
         @.. broadcast = false du = du + dt * a[i] * kdu
-        if i < N
-            tnew = tnew + a[i] * dt
-        end
+        sp += a[i]
+        tp = t + sp * dt
     end
 
     # FSAL finalization: if a[N] != 0, du changed so we need fresh kdu
     if !iszero(a[N])
-        f.f1(kdu, du, u, p, tnew)
+        f.f1(kdu, du, u, p, tend)
     end
-    f.f2(ku, du, u, p, tnew)
+    f.f2(ku, du, u, p, tend)
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, N + (!iszero(a[N]) ? 1 : 0))
     integrator.stats.nf2 += N

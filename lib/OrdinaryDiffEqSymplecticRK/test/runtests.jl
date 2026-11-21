@@ -11,6 +11,7 @@ end
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Synplectic Convergence Tests" include("symplectic_convergence.jl")
     @time @safetestset "Synplectic Tests" include("symplectic_tests.jl")
+    @time @safetestset "Symplectic Nonlinear Convergence Tests" include("symplectic_nonlinear_convergence.jl")
 end
 
 # Run QA tests (AllocCheck, JET, Aqua) - skip on pre-release Julia

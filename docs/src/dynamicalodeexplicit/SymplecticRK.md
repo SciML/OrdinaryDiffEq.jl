@@ -55,8 +55,8 @@ For a Hamiltonian system with energy `H(p,q)`, symplectic integrators preserve t
 
   - **`CandyRoz4`**: Fourth-order method
   - **`McAte4`**: Fourth-order McLachlan-Atela (requires quadratic kinetic energy)
-  - **`CalvoSanz4`**: Optimized fourth-order method
-  - **`McAte42`**: Alternative fourth-order method (BROKEN)
+  - **`CalvoSanz4`**: Optimized fourth-order method (requires quadratic kinetic energy)
+  - **`McAte42`**: Alternative fourth-order method (McLachlan 1995)
 
 ### Higher-order methods
 
@@ -73,6 +73,31 @@ For a Hamiltonian system with energy `H(p,q)`, symplectic integrators preserve t
   - **For molecular dynamics (common choice)**: `VelocityVerlet` (less efficient than McAte2 but widely used)
   - **For non-differentiable dynamics**: `SymplecticEuler` (first-order, only when necessary)
   - **For computational efficiency**: `McAte2` or `McAte3`
+
+### Stage times
+
+The tableau methods (`PseudoVerletLeapfrog`, `McAte2`, `Ruth3`, `McAte3`, `CandyRoz4`,
+`McAte4`, `CalvoSanz4`, `McAte42`, `McAte5`, `Yoshida6`, `KahanLi6`, `McAte8`, `KahanLi8`,
+`SofSpa10`) evaluate kick `i` of a step from `t` to `t + dt` at the time the position has
+reached, `t + (b[1] + ... + b[i]) * dt`, and drift `i` at the time the velocity has reached,
+`t + (a[1] + ... + a[i-1]) * dt`; the last evaluations of a step are at `t + dt`. This keeps
+the order of the method for time-dependent forces. A time-dependent drift (`f2` depending
+on `t`) is outside the quadratic-kinetic-energy assumption of `McAte4`, `CalvoSanz4` and
+`McAte5`, which then drop to third order; the package tests check the stated order with a
+time-dependent drift for `PseudoVerletLeapfrog`, `McAte2`, `Ruth3`, `McAte3`, `CandyRoz4`
+and `McAte42`.
+
+Methods with negative coefficients evaluate some stages outside `[t, t + dt]`, so on the
+first or last step outside the integration interval:
+
+  - the force `f1` (kick) for `Ruth3` (up to `t + 25/24 dt`) and `CandyRoz4` (from
+    about `t - 0.351207 dt` to `t + 1.351207 dt`);
+  - the drift `f2` for `McAte4`, `CalvoSanz4`, `McAte42`, `McAte5`, `Yoshida6` and
+    `McAte8`, which matters only when `f2` depends on `t`.
+
+If the right-hand side is defined only on the integration interval, extend it slightly
+beyond the interval or use a method whose stage times all stay inside `[t, t + dt]`:
+`PseudoVerletLeapfrog`, `McAte2`, `McAte3`, `KahanLi6`, `KahanLi8` or `SofSpa10`.
 
 ### Important Note on Chaotic Systems
 
