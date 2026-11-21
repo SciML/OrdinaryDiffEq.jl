@@ -1125,14 +1125,19 @@ function build_nlsolver(
             W_ref = nothing
             if cache isa NonlinearSolveNoInitCache
                 if !isdae && f.nlstep_data === nothing && precondition === nothing &&
-                        W isa StaticWOperator
-                    W_ref = Ref(W.W)
+                        (
+                        W isa StaticWOperator ||
+                            (J isa StaticArray && SciMLBase.alg_order(alg) == 1)
+                    )
+                    W_matrix = W isa StaticWOperator ? W.W :
+                        J - f.mass_matrix * inv(oneunit(γ * dt))
+                    W_ref = Ref(W_matrix)
                     nlf_jac = let W_ref = W_ref
                         (z, p) -> W_ref[]
                     end
                     prob = NonlinearProblem(
                         NonlinearFunction{false, SciMLBase.FullSpecialize}(
-                            nlf; jac = nlf_jac, jac_prototype = W.W
+                            nlf; jac = nlf_jac, jac_prototype = W_matrix
                         ),
                         copy(ztmp), nlp_params
                     )
