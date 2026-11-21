@@ -411,8 +411,9 @@ section at the end of this page for some example usage.
   of the vector field `f`. Each entry `t_d` is added as a tstop, and when the
   integrator lands on `t_d` it advances `t` by one ULP in the integration direction
   and re-evaluates the FSAL cache on the post-discontinuity side. The convention
-  is *right-continuous*: `f` evaluated at `t_d` is the "old" regime and `f` at
-  `nextfloat(t_d)` is the "new" regime, so user code should be written as
+  is *left-continuous* in the integration direction: `f` evaluated at `t_d` must
+  still give the "old" regime and `f` one ULP past `t_d` the "new" one, so for a
+  forward solve user code should be written as
   ```julia
   if t > t_d
       # new regime
@@ -420,12 +421,22 @@ section at the end of this page for some example usage.
       # old regime
   end
   ```
-  Writing `t >= t_d` also works but means the solver takes one step of post-regime
-  integration with a pre-regime-evaluated FSAL, which is less efficient and can
-  reduce step acceptance near the discontinuity. A `d_discontinuities` entry at
-  `tspan[1]` is supported (the starting-time case), in which case the first step
-  begins at `nextfloat(tspan[1])`; this is useful for callbacks that need to
-  activate immediately. The default is `[]`.
+  and for a backward solve (`tspan[2] < tspan[1]`) the new regime is `t < t_d`.
+  With `t >= t_d` instead, the step that lands on `t_d` sees the new regime at its
+  end. This can cost many rejected steps and still give a wrong solution, and some
+  methods give a wrong solution without any rejected step.
+  Even the strict form is not exact: stages at the end of that step are evaluated at
+  `t + (t_d - t)`, which can round past `t_d` (e.g. `t_d = 0.3` from `t = -10.0`
+  gives `0.3000000000000007`), and shifting `t_d` by `prevfloat`/`nextfloat` has
+  the same problem. Adaptive solves usually recover through rejected steps, but
+  fixed-step solves (`adaptive = false`) can return a wrong solution without any
+  warning.
+  When the switch must be exact, keep the regime in a parameter and flip it from a
+  `DiscreteCallback` at `t_d` (with `tstops = [t_d]`) instead of testing `t` in `f`.
+  A `d_discontinuities` entry at `tspan[1]` is supported (the starting-time case),
+  in which case the first step begins one ULP inside `tspan` (`nextfloat(tspan[1])`
+  forward, `prevfloat(tspan[1])` backward); this is useful for callbacks that need
+  to activate immediately. The default is `[]`.
 * `save_everystep`: Saves the result at every step.
   Default is true if `isempty(saveat)`.
 * `save_on`: Denotes whether intermediate solutions are saved. This overrides the
