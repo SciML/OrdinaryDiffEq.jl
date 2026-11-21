@@ -1,5 +1,6 @@
 using DelayDiffEq, DDEProblemLibrary
 using OrdinaryDiffEqLowOrderRK
+using SciMLBase: ReturnCode
 using Test
 
 # Check that numerical solutions approximate analytical solutions,
@@ -45,4 +46,54 @@ end
     sol_ip = solve(prob_dde_constant_2delays_ip, alg; dt = 0.1)
 
     @test sol_scalar.t ≈ sol_ip.t && sol_scalar.u ≈ sol_ip[1, :]
+end
+
+# No constant lags
+@testset "no constant lags" begin
+    lag(u, p, t) = 1 + 0.1 * abs(u)
+    f(u, h, p, t) = -h(p, t - lag(u, p, t))
+    h(p, t) = 1.0
+    @testset "$name" for (name, prob) in (
+            ("dependent lags", DDEProblem(f, 1.0, h, (0.0, 20.0); dependent_lags = (lag,))),
+            ("no lags", DDEProblem(f, 1.0, h, (0.0, 20.0))),
+        )
+        sol = solve(prob, alg)
+        sol_unconstrained = solve(prob, MethodOfSteps(BS3()))
+
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t ≈ sol_unconstrained.t && sol.u ≈ sol_unconstrained.u
+    end
+end
+
+# Fixed steps longer than the lag
+@testset "fixed steps" begin
+    sol = solve(prob_dde_constant_1delay_scalar, alg; adaptive = false, dt = 1.5)
+
+    @test maximum(diff(sol.t)) ≈ 1
+    @test sol.stats.nfpiter == 0
+
+    # without `dt`, fixed steps would run from one tstop to the next
+    sol = solve(prob_dde_constant_1delay_scalar, alg; adaptive = false)
+
+    @test maximum(diff(sol.t)) ≈ 1
+    @test sol.stats.nfpiter == 0
+
+    # a user `dtmax` does not limit fixed steps
+    sol = solve(prob_dde_constant_1delay_scalar, alg; adaptive = false, dt = 0.5, dtmax = 0.2)
+
+    @test maximum(diff(sol.t)) ≈ 0.5
+end
+
+# Time spans that end at zero
+@testset "tspan ending at zero" begin
+    @testset "tdir = $tdir" for tdir in (1, -1)
+        prob = DDEProblem(
+            (u, h, p, t) -> -h(p, t - tdir * 0.1), 1.0, (p, t) -> 1.0, (-tdir * 1.0, 0.0);
+            constant_lags = [tdir * 0.1]
+        )
+        sol = solve(prob, MethodOfSteps(DP5(); constrained = true))
+
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 0
+    end
 end
