@@ -1,5 +1,10 @@
 using OrdinaryDiffEq, Test
 using OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqBDF: QNDF
+using OrdinaryDiffEqFIRK: RadauIIA5, AdaptiveRadau
+using OrdinaryDiffEqLowOrderRK: BS5
+using OrdinaryDiffEqExplicitRK: ExplicitRK, constructTsit5ExplicitRK
+using OrdinaryDiffEqExtrapolation: ImplicitEulerExtrapolation
 import SciMLBase
 
 function lorenz!(du, u, p, t)
@@ -48,3 +53,93 @@ end
 end
 
 @test_throws SciMLBase.LazyInterpolationException SciMLBase.strip_solution(vern_sol)
+
+@testset "Composite Solution Stripping" begin
+    composite_sol = solve(prob, AutoTsit5(Rosenbrock23()))
+    @test all(==(1), composite_sol.alg_choice)
+    stripped_sol = SciMLBase.strip_solution(composite_sol)
+    @test isnothing(stripped_sol.interp.f)
+    @test isnothing(stripped_sol.interp.cache.choice_function)
+    @test isnothing(stripped_sol.interp.cache.caches[2].jac_config)
+    @test stripped_sol(0.33) == composite_sol(0.33)
+    @test SciMLBase.strip_solution(solve(prob, AutoVern7(Rosenbrock23(); lazy = false))) isa ODESolution
+end
+
+@testset "Stripped solutions interpolate like the original" begin
+    lorenz(u, p, t) = (du = similar(u); lorenz!(du, u, p, t); du)
+    ts = range(tspan...; length = 101)
+    algs = (
+        Rosenbrock23(), Rodas5P(), FBDF(), QNDF(), RadauIIA5(), AdaptiveRadau(),
+        BS5(lazy = false), DefaultODEAlgorithm(lazy = Val(false)),
+        AutoTsit5(Rosenbrock23()), AutoVern7(Rodas5P(); lazy = false),
+        ExplicitRK(tableau = constructTsit5ExplicitRK()),
+    )
+    for f in (lorenz!, lorenz), alg in algs
+        sol = solve(ODEProblem(f, u0, tspan), alg)
+        stripped_sol = SciMLBase.strip_solution(sol)
+        @test isnothing(stripped_sol.interp.f)
+        @test all(isapprox(stripped_sol(t), sol(t); rtol = 1.0e-12) for t in ts)
+    end
+
+    holds(x, y, seen = IdDict()) = x === y || (
+        !(x isa Union{Module, Type}) && !haskey(seen, x) && (
+            seen[x] = true;
+            x isa Array ? any(i -> isassigned(x, i) && holds(x[i], y, seen), eachindex(x)) :
+                any(i -> isdefined(x, i) && holds(getfield(x, i), y, seen), 1:nfields(x))
+        )
+    )
+    parameter_rate(t) = 1.0
+    growth = ODEProblem((du, u, p, t) -> (du .= p.rate(t) .* u), [1.0], (0.0, 1.0), (rate = parameter_rate,))
+    ts = range(0.013, 0.987; length = 50)
+    for alg in (AdaptiveRadau(), RadauIIA5(), DefaultODEAlgorithm(lazy = Val(false)))
+        sol = solve(growth, alg; reltol = 1.0e-10, abstol = 1.0e-10)
+        stripped_sol = SciMLBase.strip_solution(sol; strip_alg = true)
+        @test !holds(stripped_sol.interp, parameter_rate)
+        @test all(stripped_sol(t) == sol(t) for t in ts)
+    end
+    sol = SciMLBase.strip_solution(solve(growth, DefaultODEAlgorithm(lazy = Val(false)); reltol = 1.0e-10, abstol = 1.0e-10))
+    @test maximum(t -> abs(sol(t)[1] - exp(t)), ts) < 1.0e-11
+end
+
+using Serialization
+roundtrip_rate(t) = 1.0
+roundtrip_rhs!(du, u, p, t) = (du .= -p.rate(t) .* u)
+roundtrip_rhs(u, p, t) = -p.rate(t) .* u
+@testset "Stripped solutions deserialize without the RHS or p defined" begin
+    p = (rate = roundtrip_rate,)
+    cases = (
+        (ODEProblem{true, SciMLBase.FullSpecialize}(roundtrip_rhs!, [1.0], (0.0, 1.0), p), DefaultODEAlgorithm(lazy = Val(false))),
+        (ODEProblem(roundtrip_rhs, [1.0], (0.0, 1.0), p), DefaultODEAlgorithm(lazy = Val(false))),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), AdaptiveRadau()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), ImplicitEulerExtrapolation()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), RadauIIA5()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), Rodas5P()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), FBDF()),
+        (ODEProblem(roundtrip_rhs!, [1.0], (0.0, 1.0), p), Tsit5()),
+    )
+    ts = range(0.013, 0.987; length = 20)
+    dir = mktempdir()
+    sols = map(enumerate(cases)) do (i, (prob, alg))
+        sol = solve(prob, alg)
+        serialize(joinpath(dir, "$i.jls"), SciMLBase.strip_solution(sol; strip_alg = true))
+        sol
+    end
+    script = """
+    using OrdinaryDiffEq, OrdinaryDiffEqFIRK, OrdinaryDiffEqExtrapolation, Serialization
+    for i in 1:$(length(cases))
+        result = try
+            sol = deserialize(joinpath($(repr(dir)), "\$i.jls"))
+            [sol(t) for t in $(repr(collect(ts)))]
+        catch err
+            sprint(showerror, err)
+        end
+        serialize(joinpath($(repr(dir)), "\$i.out"), result)
+    end
+    """
+    run(`$(Base.julia_cmd()) --project=$(Base.active_project()) -e $script`)
+    for (i, sol) in enumerate(sols)
+        result = deserialize(joinpath(dir, "$i.out"))
+        @test result isa Vector
+        @test result ≈ sol.(ts) rtol = 1.0e-12
+    end
+end
