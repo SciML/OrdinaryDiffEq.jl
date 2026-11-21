@@ -140,6 +140,7 @@ function nlsolve!(
     η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
     ndz = one(η)
+    step_ndz = one(η)
     for iter in 1:maxiters
         if always_new && isnewton(nlsolver)
             # An out-of-place integrator's `u` may alias `uprev`, so it is rebound, never written.
@@ -154,6 +155,11 @@ function nlsolve!(
 
         # compute next step and calculate norm of residuals
         ndzprev = ndz
+        step_ndzprev = step_ndz
+        has_step_ndz = hasfield(NL, :step_ndz)
+        if has_step_ndz
+            nlsolver.step_ndz = -one(nlsolver.step_ndz)
+        end
         if isnewton(nlsolver)
             # Newton solve requires γW in order to update W
             ndz = compute_step!(nlsolver, integrator, γW)
@@ -169,6 +175,11 @@ function nlsolve!(
             nlsolver.nfails += 1
             break
         end
+        step_ndz = if has_step_ndz && nlsolver.step_ndz >= zero(nlsolver.step_ndz)
+            nlsolver.step_ndz
+        else
+            ndz
+        end
 
         if _uninformative_step(nlsolver, ndz)
             @SciMLMessage(
@@ -180,6 +191,7 @@ function nlsolve!(
             # `θ`) and let the inner solver retry with its shrunken trust region. If
             # it never moves, the loop runs out and the step fails as unconverged.
             ndz = ndzprev
+            step_ndz = step_ndzprev
             continue
         end
 
@@ -188,7 +200,10 @@ function nlsolve!(
 
         # check divergence (not in initial step)
         if iter > 1
-            θ = prev_θ = has_prev_θ ? max(0.3 * prev_θ, ndz / ndzprev) : ndz / ndzprev
+            # Contraction is measured on the displacement actually taken; the
+            # undamped `ndz` below guards convergence on damped steps.
+            θ = prev_θ = has_prev_θ ? max(0.3 * prev_θ, step_ndz / step_ndzprev) :
+                step_ndz / step_ndzprev
 
             # When one Newton iteration basically does nothing, it's likely that we
             # are at the precision limit of floating point number. Thus, we just call
@@ -212,7 +227,7 @@ function nlsolve!(
             # divergence
             if check_div′ && θ > 2
                 @SciMLMessage(
-                    lazy"Newton iteration diverging: θ = $(θ) > 2, ndz = $(ndz), ndzprev = $(ndzprev)",
+                    lazy"Newton iteration diverging: θ = $(θ) > 2, ndz = $(step_ndz), ndzprev = $(step_ndzprev)",
                     integrator.opts.verbose, :newton_convergence
                 )
                 nlsolver.status = Divergence

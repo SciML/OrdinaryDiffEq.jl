@@ -812,6 +812,10 @@ function build_nlsolver(
 
         # TODO: check if the solver is iterative
         weight = zero(u)
+        # Independent of `weight` above, which is aliased into the linear solve's
+        # preconditioner (`_WeightPreconditioner`/`wrapprecs`) and must not change
+        # mid-solve; `relax!`/`relax` recompute this one in place every call.
+        lsweight = zero(u)
 
         if islinear(f) || SciMLBase.has_jac(f) ||
                 (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
@@ -980,7 +984,7 @@ function build_nlsolver(
             nlcache = NLNewtonCache(
                 ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
-                linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t,
+                linsolve, weight, lsweight, invγdt, tType(nlalg.new_W_dt_cutoff), t,
                 dae_jacobians
             )
         end
