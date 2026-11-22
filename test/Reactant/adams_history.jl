@@ -1,4 +1,4 @@
-using OrdinaryDiffEqAdamsBashforthMoulton: AB3, AB4
+using OrdinaryDiffEqAdamsBashforthMoulton: AB3, AB4, AB5, ABM32, ABM43
 using SciMLBase: ODEProblem, init, solve!, ReturnCode
 using Reactant
 using Test
@@ -34,4 +34,18 @@ using Test
         @test only(host[3 + j]) ≈ Float64(expected) rtol = 16eps()
         @test only(Array(compiled[3 + j])) ≈ Float64(expected) rtol = 16eps()
     end
+end
+
+@testset "Compiled Adams startup rejection" for alg in (ABM32(), ABM43(), AB5()), iip in (false, true)
+    rhs = iip ? ((du, u, p, t) -> (du .= p .* u; nothing)) : ((u, p, t) -> p .* u)
+    function setup(u, p)
+        return init(ODEProblem(rhs, u, (32.0, 49.5), p), alg; dt = 3.5, adaptive = false)
+    end
+    u, p = [1 / 64], [-1 / 8]
+    integ = setup(u, p)
+    @test solve!(integ).retcode == ReturnCode.Success
+    @test integ.iter == 5
+    @test integ.cache.step == (alg isa ABM32 ? 3 : alg isa ABM43 ? 4 : 5)
+    startup = (u, p) -> setup(u, p).cache.step
+    @test_throws ArgumentError Reactant.@jit startup(Reactant.to_rarray(u), Reactant.to_rarray(p))
 end
