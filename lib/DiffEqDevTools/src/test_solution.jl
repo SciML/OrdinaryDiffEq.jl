@@ -68,7 +68,7 @@ function appxtrue(sol::AbstractODESolution, sol2::TestSolution)
         errors[:l2] = sqrt(
             recursive_mean(
                 vecvecapply(
-                    (x) -> float(x) .^ 2,
+                    (x) -> abs2.(float(x)),
                     sol - timeseries_analytic
                 )
             )
@@ -86,7 +86,7 @@ function appxtrue(sol::AbstractODESolution, sol2::TestSolution)
             :L2 => sqrt(
                 recursive_mean(
                     vecvecapply(
-                        (x) -> float(x) .^ 2,
+                        (x) -> abs2.(float(x)),
                         interp_u -
                             interp_analytic
                     )
@@ -101,7 +101,7 @@ function appxtrue(sol::AbstractODESolution, sol2::TestSolution)
             errors[:l2] = sqrt(
                 recursive_mean(
                     vecvecapply(
-                        (x) -> float(x) .^ 2,
+                        (x) -> abs2.(float(x)),
                         sol.u - timeseries_analytic
                     )
                 )

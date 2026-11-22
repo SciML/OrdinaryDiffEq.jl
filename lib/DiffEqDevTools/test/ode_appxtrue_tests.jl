@@ -43,7 +43,7 @@ sol_nodense = solve(
 @test haskey(appxtrue(sol4, TestSolution(sol_nodense)).errors, :l2)
 
 @testset "Nondense TestSolution sampled errors" begin
-    for u0 in (1.0, [1.0, 2.0], [1.0 2.0; 3.0 4.0])
+    for u0 in (1.0, [1.0, 2.0], [1.0 2.0; 3.0 4.0], 1.0im, ComplexF64[1, im])
         @testset "$(typeof(u0))" begin
             problem = ODEProblem((u, p, t) -> -u, u0, (0.0, 1.0))
             reference = solve(problem, Tsit5(); abstol = 1.0e-12, reltol = 1.0e-12)
@@ -80,5 +80,27 @@ sol_nodense = solve(
             @test dense_result.errors[:l2] ≈ result.errors[:l2]
             @test dense_result.errors[:l∞] ≈ result.errors[:l∞]
         end
+    end
+end
+
+@testset "Complex TestSolution squared magnitudes" begin
+    for u0 in (1.0im, ComplexF64[1, im])
+        constant = ODEProblem((u, p, t) -> zero(u), u0, (0.0, 1.0))
+        linear = ODEProblem((u, p, t) -> u0, u0, (0.0, 1.0))
+        approximate = solve(constant, Euler(); dt = 0.25, dense = false)
+        for dense in (false, true)
+            reference = solve(linear, Tsit5(); dense, saveat = dense ? Float64[] : 0.5)
+            result = appxtrue(approximate, TestSolution(reference))
+            @test result.errors[:l2] isa Real
+            @test result.errors[:l2] ≈ sqrt(3 / 8)
+            @test result.errors[:l∞] ≈ 1
+            @test result.errors[:final] ≈ 1
+            if dense
+                @test result.errors[:L2] isa Real
+                @test result.errors[:L2] ≈ sqrt(sum(abs2, range(0.0, 1.0; length = 100)) / 100)
+            end
+        end
+        stored = TestSolution(approximate.t, [u0 * (1 + t) for t in approximate.t])
+        @test appxtrue(approximate, stored).errors[:l2] ≈ sqrt(3 / 8)
     end
 end
