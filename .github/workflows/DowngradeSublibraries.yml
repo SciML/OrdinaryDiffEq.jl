@@ -21,6 +21,8 @@ jobs:
     secrets: "inherit"
     with:
       julia-version: "1.11"
+      # The failing ubuntu-latest run used Ubuntu 26.04; pin the downgrade test matrix to Ubuntu 24.04 for libxml2.so.2.
+      apt-packages: "libxml2"
       skip: "Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,OrdinaryDiffEqCore,OrdinaryDiffEqNonlinearSolve,OrdinaryDiffEqDifferentiation"
       group-env-name: "GROUP"
       group-env-value: "Core"

@@ -173,12 +173,18 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
 
     # Choose the starting method
     if AS.current == 0
-        choice = if AS.stiffalgfirst || !_is_identity_massmatrix(integrator.f.mass_matrix)
+        # A mass-matrix problem starts on the stiff branch and is never switched (see
+        # below), so record that in `is_stiffalg`, as `stiffalgfirst` does. The stiffness
+        # test and the `do_error_check` gate read it: left `false`, every step on which the
+        # test reported stiffness turned off `check_error!` (`maxiters`, `dtmin`, NaN `dt`,
+        # `unstable_check`) for that step.
+        AS.is_stiffalg = AS.stiffalgfirst ||
+            !_is_identity_massmatrix(integrator.f.mass_matrix)
+        AS.current = if AS.is_stiffalg
             stiffchoice(reltol, len, integrator.f.mass_matrix)
         else
             nonstiffchoice(reltol)
         end
-        AS.current = choice
         return AS.current
     end
 
