@@ -7,6 +7,13 @@
 const DIAGNOSTIC_OBJECT_CHARS = 160
 const DIAGNOSTIC_REPORT_CHARS = 4000
 
+"""
+    truncate_str(x, limit::Int = DIAGNOSTIC_OBJECT_CHARS) -> String
+
+Render `x` to a string, cutting the content to `limit` characters and
+appending `"… (truncated)"` when the output is longer. Used to keep solver
+failure diagnostics bounded when printing large symbolic systems or user data.
+"""
 @noinline function truncate_str(x, limit::Int = DIAGNOSTIC_OBJECT_CHARS)::String
     buf = IOBuffer(maxsize = 4limit)
     print(IOContext(buf, :limit => true, :displaysize => (10, limit)), x)
@@ -112,6 +119,14 @@ number, extend this with the exact comparison.
 check_error_dt_below_time_eps(integrator) =
     integrator.t isa AbstractFloat && abs(integrator.dt) <= abs(eps(integrator.t))
 
+"""
+    check_error_dt_at_min(integrator) -> Bool
+
+Return whether the current step magnitude is at or below the configured `dtmin`.
+Integrators with traced times can specialize the comparison for subnormal values.
+"""
+check_error_dt_at_min(integrator) = abs(integrator.dt) <= abs(integrator.opts.dtmin)
+
 check_error_dt_nan(integrator, step_accepted) = isnan(integrator.dt)
 
 check_error_maxiters(integrator, step_accepted) = integrator.iter > integrator.opts.maxiters
@@ -121,7 +136,7 @@ check_error_maxiters(integrator, step_accepted) = integrator.iter > integrator.o
 function check_error_dtmin(integrator, step_accepted)
     opts = integrator.opts
     (!opts.force_dtmin && opts.adaptive) || return false
-    return check_error_and(abs(integrator.dt) <= abs(opts.dtmin)) do
+    return check_error_and(check_error_dt_at_min(integrator)) do
         check_error_or(!step_accepted) do
             hasproperty(opts, :tstops) ?
                 integrator.t + integrator.dt < integrator.tdir * first(opts.tstops) : true

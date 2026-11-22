@@ -1,0 +1,13 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+Aqua = "0.8.11"
+DiffEqBase = "7"
+SciMLBase = "3"
+SciMLTesting = "2.8"
+julia = "1.10"

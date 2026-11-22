@@ -12,12 +12,6 @@ struct EvalFunc{F} <: Function
 end
 (f::EvalFunc)(args...) = f.f(args...)
 
-NO_TSPAN_PROBS = Union{
-    AbstractLinearProblem, AbstractNonlinearProblem,
-    AbstractIntegralProblem, AbstractSteadyStateProblem,
-    AbstractJumpProblem,
-}
-
 """
     has_callbacks(kwargs) -> Bool
 
@@ -63,7 +57,7 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
             }(values(kwargs))
             callbacks = NamedTuple{(:callback,)}(
                 (
-                    DiffEqBase.CallbackSet(
+                    CallbackSet(
                         prob.kwargs[:callback],
                         values(kwargs).callback
                     ),

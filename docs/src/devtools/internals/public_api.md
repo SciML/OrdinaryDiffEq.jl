@@ -24,6 +24,7 @@ DiffEqBase.apply_callback!
 DiffEqBase.apply_discrete_callback!
 DiffEqBase.calculate_residuals
 DiffEqBase.calculate_residuals!
+DiffEqBase.check_error_dt_at_min
 DiffEqBase.check_error_dt_below_time_eps
 DiffEqBase.check_error_failed_retcode
 DiffEqBase.check_prob_alg_pairing
@@ -153,6 +154,7 @@ OrdinaryDiffEqCore.AutoSwitchCache
 OrdinaryDiffEqCore.isautoswitch
 OrdinaryDiffEqCore.default_autoswitch
 OrdinaryDiffEqCore.unwrap_alg
+OrdinaryDiffEqCore._current_alg
 OrdinaryDiffEqCore.isdefaultalg
 OrdinaryDiffEqCore.is_composite_algorithm
 OrdinaryDiffEqCore.is_composite_cache

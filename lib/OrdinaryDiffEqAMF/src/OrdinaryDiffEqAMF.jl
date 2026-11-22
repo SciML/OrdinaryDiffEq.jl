@@ -2,12 +2,13 @@ module OrdinaryDiffEqAMF
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm
 
-using LinearAlgebra
-using LinearSolve
-using SciMLOperators
+using LinearAlgebra: LinearAlgebra, ldiv!
+using LinearSolve: LinearSolve, LinearVerbosity
+using SciMLOperators: SciMLOperators, IdentityOperator, ScalarOperator, cache_operator
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using SciMLBase
+using SciMLBase: SciMLBase
 
 include("linsolve.jl")
 include("operators.jl")

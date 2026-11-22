@@ -77,3 +77,9 @@ DiffEqBase.ShampineCollocationInit
 ```@docs
 DiffEqBase.SensitivityADPassThrough
 ```
+
+## Diagnostic rendering
+
+```@docs
+DiffEqBase.truncate_str
+```

@@ -118,6 +118,11 @@ unstable_check_solver = CompiledODESolve(
         else
             @test !SciMLBase.successful_retcode(host)
             @test !Bool(SciMLBase.successful_retcode(traced))
+            if isempty(kwargs) && all(isnan, p)
+                @test host.retcode == ReturnCode.Unstable
+                @test traced.t == host.t == Float32[0]
+                @test Array(traced.u[end]) == host.u[end] == u
+            end
         end
     end
 end
@@ -164,6 +169,20 @@ end
     end
 end
 
+constant_rhs(u, p, t) = p
+constant_rhs!(du, u, p, t) = (du .= p; nothing)
+
+@testset "Fixed steps to $tend" for tend in (1.0f-37, 1.0e-307), rhs in (constant_rhs, constant_rhs!)
+    solver = (u, p) -> solve(ODEProblem(rhs, u, (zero(tend), tend), p), Tsit5(); adaptive = false, dt = oftype(tend, 0.3) * tend)
+    u, p = [zero(tend)], [inv(tend)]
+    host = solver(u, p)
+    traced = Reactant.@jit solver(Reactant.to_rarray(u), Reactant.to_rarray(p))
+    @test host.u[end] ≈ [one(tend)]
+    @test traced.retcode == host.retcode == ReturnCode.Success
+    @test traced.t == [tend]
+    @test Array(traced.u[end]) ≈ [one(tend)]
+end
+
 # End times below `100 floatmin(T)`, where `t` has a subnormal spacing.
 @testset "End time $tend" for tend in (1.0f-37, 1.0f-36, 1.0e-306)
     solver = (u, p) -> solve(ODEProblem(f, u, (zero(tend), tend), p), Tsit5())
@@ -198,6 +217,28 @@ end
         nchecked += 1
     end
     @test nchecked == 256
+end
+
+@testset "Compiled timestep bounds" for T in (Float32, Float64), direction in (1, -1)
+    floor = 4 * eps(zero(T))
+    function bound(u, dt)
+        prob = ODEProblem(f, u, (zero(T), T(direction)), u)
+        integ = init(prob, Tsit5(); dt = T(0.1) * direction, dtmin = floor)
+        integ.dt = dt
+        at_min = DiffEqBase.check_error_dt_at_min(integ)
+        OrdinaryDiffEqCore.fix_dt_at_bounds!(integ)
+        return integ.dt, at_min
+    end
+    u = T[1]
+    device_u = Reactant.to_rarray(u)
+    compiled = Reactant.compile(bound, (device_u, Reactant.ConcreteRNumber(one(T))))
+    for dt in (zero(T), -floor, prevfloat(floor), floor, nextfloat(floor), one(T), typemax(T), T(NaN))
+        step = direction * dt
+        host, at_min = bound(u, step)
+        traced, traced_at_min = compiled(device_u, Reactant.ConcreteRNumber(step))
+        @test isequal(T(traced), host)
+        @test Bool(traced_at_min) == at_min
+    end
 end
 
 @testset "Compiled eps(t) is exact" begin

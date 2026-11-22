@@ -343,6 +343,17 @@ _set_tstop_flag!(integrator, is_tstop, target = nothing) = nothing
 
 _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
 
+function step_to_tstop(dt, distance, tolerance)
+    reaches = dt + tolerance >= distance
+    step = if ReactantCore.within_compile()
+        # A subnormal remainder can flush to zero, so integrate the full snapped interval.
+        ifelse(reaches, distance, dt)
+    else
+        min(dt, distance)
+    end
+    return step, reaches
+end
+
 function modify_dt_for_tstops!(integrator)
     if has_tstop(integrator)
         tdir_t = integrator.tdir * integrator.t
@@ -368,11 +379,9 @@ function modify_dt_for_tstops!(integrator)
         if integrator.opts.adaptive
             original_dt = abs(integrator.dt)
             integrator.dtpropose = integrator.tdir * original_dt
-            _set_tstop_flag!(
-                integrator, !(original_dt + tstop_tol < distance_to_tstop),
-                integrator.tdir * tdir_tstop
-            )
-            integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
+            step, is_tstop = step_to_tstop(original_dt, distance_to_tstop, tstop_tol)
+            _set_tstop_flag!(integrator, is_tstop, integrator.tdir * tdir_tstop)
+            integrator.dt = integrator.tdir * step
         elseif integrator.dtchangeable
             zero_dt = iszero(integrator.dtcache)
             if integrator.force_stepfail
@@ -382,8 +391,8 @@ function modify_dt_for_tstops!(integrator)
                 is_tstop = zero_dt
             else
                 original_dt = ifelse(zero_dt, distance_to_tstop, abs(integrator.dtcache))
-                integrator.dt = integrator.tdir * min(original_dt, distance_to_tstop)
-                is_tstop = !(original_dt + tstop_tol < distance_to_tstop)
+                step, is_tstop = step_to_tstop(original_dt, distance_to_tstop, tstop_tol)
+                integrator.dt = integrator.tdir * step
             end
             integrator.dtpropose = ifelse(zero_dt, integrator.dt, integrator.dtpropose)
             _set_tstop_flag!(integrator, is_tstop, integrator.tdir * tdir_tstop)
@@ -617,6 +626,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
                 integrator.sol.t[integrator.saveiter] != integrator.t &&
                 (
                 (integrator.opts.save_end_user isa Bool && integrator.opts.save_end_user) ||
+                    integrator.opts.saveat_cache isa Number ||
                     integrator.t ∈ integrator.opts.saveat_cache ||
                     integrator.t == integrator.sol.prob.tspan[2] ||
                     isempty(integrator.opts.saveat_cache)
@@ -733,6 +743,7 @@ function _accept_step!(integrator, q, ttmp)
     integrator.last_stepfail = false
     integrator.tprev = integrator.t
 
+    accepted_dt = integrator.dt
     ReactantCore.@trace track_numbers = false if _get_next_step_tstop(integrator)
         # Step controller dt is overly pessimistic, since dt = time to tstop.
         # Restore the original dt so the controller proposes a reasonable next step.
@@ -749,6 +760,7 @@ function _accept_step!(integrator, q, ttmp)
     ) *
         oneunit(integrator.dt)
     calc_dt_propose!(integrator, dtnew)
+    integrator.dt = accepted_dt
     handle_callbacks!(integrator)
     return nothing
 end
@@ -1340,18 +1352,19 @@ fix_dt_at_bounds!(integrator)
 ```
 """
 function fix_dt_at_bounds!(integrator)
-    if integrator.tdir > 0
-        integrator.dt = min(integrator.opts.dtmax, integrator.dt)
+    dtmin = timedepentdtmin(integrator)
+    dt, dtmax, tdir = integrator.dt, integrator.opts.dtmax, integrator.tdir
+    integrator.dt = if ReactantCore.within_compile()
+        ext = Base.get_extension(@__MODULE__, :OrdinaryDiffEqCoreReactantExt)
+        ext.clamp_timestep(clamp_timestep, dt, dtmin, dtmax, tdir)
     else
-        integrator.dt = max(integrator.opts.dtmax, integrator.dt)
-    end
-    dtmin = timedepentdtmin(integrator)  # always positive
-    if integrator.tdir > 0
-        integrator.dt = max(integrator.dt, dtmin)
-    else
-        integrator.dt = min(integrator.dt, -dtmin)
+        clamp_timestep(dt, dtmin, dtmax, tdir)
     end
     return nothing
+end
+
+function clamp_timestep(dt, dtmin, dtmax, tdir)
+    return tdir > 0 ? max(min(dtmax, dt), dtmin) : min(max(dtmax, dt), -dtmin)
 end
 
 """

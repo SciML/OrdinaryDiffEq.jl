@@ -1,6 +1,7 @@
 module OrdinaryDiffEqCoreReactantExt
 
-using OrdinaryDiffEqCore: OrdinaryDiffEqCore
+using DiffEqBase: DiffEqBase
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore, ODEIntegrator
 using ReactantCore: promote_to_traced
 # Neither name has a public equivalent: methods for traced numbers dispatch on
 # `TracedRNumber`, and Reactant defines no `reinterpret` for traced numbers.
@@ -31,16 +32,43 @@ magnitude_bits(x::TracedRNumber{T}) where {T} = bits(x) & magnitude_mask(T)
 # The bits of `eps(t)` for finite `t` are `2^(E - 1)` for a biased exponent `E <= p`, where
 # `eps(t)` is subnormal, and `(E - p) << p` otherwise. Non-negative floats and non-NaN bit
 # patterns order alike, and a NaN `dt` compares above every finite `eps`.
-function OrdinaryDiffEqCore.dt_below_time_eps(
-        dt::Union{T, TracedRNumber{T}}, t::TracedRNumber{T}
-    ) where {T <: IEEEFloat}
+function spacing_bits(t::TracedRNumber{T}) where {T <: IEEEFloat}
     U = uint(T)
     p = significand_bits(T)
     biased = div(bits(t) & exponent_mask(T), one(U) << p)
     subnormal_eps = promote_to_traced(U(2))^(max(biased, one(U)) - one(U))
-    eps_bits = ifelse(biased > p, (biased - p) * (one(U) << p), subnormal_eps)
-    dt_bits = magnitude_bits(promote_to_traced(dt))
-    return (biased != exponent_mask(T) >> p) & (dt_bits <= eps_bits)
+    return ifelse(biased > p, (biased - p) * (one(U) << p), subnormal_eps)
+end
+
+function OrdinaryDiffEqCore.dt_below_time_eps(
+        dt::Union{T, TracedRNumber{T}}, t::TracedRNumber{T}
+    ) where {T <: IEEEFloat}
+    return isfinite(t) & (magnitude_bits(promote_to_traced(dt)) <= spacing_bits(t))
+end
+
+const TracedODEIntegrator{T} = ODEIntegrator{A, I, U, D, TracedRNumber{T}} where {A, I, U, D}
+
+function DiffEqBase.timedepentdtmin(integrator::TracedODEIntegrator{T}) where {T <: IEEEFloat}
+    limit = promote_to_traced(integrator.opts.dtmin)
+    floor_bits = max(spacing_bits(integrator.t), ifelse(signbit(limit), zero(uint(T)), bits(limit)))
+    return ifelse(isfinite(integrator.t) & !isnan(limit), bitcast_convert(T, floor_bits), T(NaN))
+end
+
+clamp_timestep(clamp, dt, dtmin, dtmax, tdir) = clamp(dt, dtmin, dtmax, tdir)
+
+function clamp_timestep(clamp, dt::TracedRNumber{T}, dtmin, dtmax, tdir) where {T <: IEEEFloat}
+    # Floating min/max can flush a selected subnormal. Clamp its magnitude before restoring the sign.
+    forward = tdir > 0
+    limit = promote_to_traced(dtmax)
+    directed = ifelse(signbit(dt) == forward, zero(uint(T)), magnitude_bits(dt))
+    ceiling = ifelse(signbit(limit) == forward, zero(uint(T)), magnitude_bits(limit))
+    bounded = bitcast_convert(T, clamp(directed, magnitude_bits(dtmin), ceiling, 1))
+    return ifelse(isnan(dt) | isnan(limit), T(NaN), ifelse(forward, bounded, -bounded))
+end
+
+function DiffEqBase.check_error_dt_at_min(integrator::TracedODEIntegrator{T}) where {T <: IEEEFloat}
+    limit = promote_to_traced(integrator.opts.dtmin)
+    return !isnan(limit) & (magnitude_bits(integrator.dt) <= magnitude_bits(limit))
 end
 
 # `nextfloat(a) - a` is exact, `eps(floatmax(T))` caps `a == floatmax(T)`, and a
