@@ -17,22 +17,41 @@ using Test
     end
 
     rhs = iip ? ((du, u, p, t) -> (du .= p .* u; nothing)) : ((u, p, t) -> p .* u)
-    function endpoint(u, p)
-        prob = ODEProblem(rhs, u, (32.0, 49.5), p)
+    function endpoint(u, p, nsteps)
+        prob = ODEProblem(rhs, u, (32.0, 32.0 + 3.5 * nsteps), p)
         integ = init(prob, alg; dt = 3.5, dtmax = 3.5, adaptive = false, save_everystep = false)
         sol = solve!(integ)
-        return sol.retcode, integ.iter, integ.cache.step, sol.u[end], integ.cache.k2, integ.cache.k3
+        lags = order == 3 ? (integ.cache.k2, integ.cache.k3) : (integ.cache.k2, integ.cache.k3, integ.cache.k4)
+        return (; sol.retcode, integ.iter, integ.cache.step, u = sol.u[end], lags, integ.fsalfirst)
     end
 
     u, p = [1 / 64], [Float64(rate)]
-    host = endpoint(u, p)
-    compiled = Reactant.@jit endpoint(Reactant.to_rarray(u), Reactant.to_rarray(p))
-    @test Bool(compiled[1] == host[1] == ReturnCode.Success)
-    @test Int(compiled[2]) == host[2] == 5
-    @test Int(compiled[3]) == host[3] == order
-    for (j, expected) in enumerate((trajectory[end], rate * trajectory[end - 1], rate * trajectory[end - 2]))
-        @test only(host[3 + j]) ≈ Float64(expected) rtol = 16eps()
-        @test only(Array(compiled[3 + j])) ≈ Float64(expected) rtol = 16eps()
+    host = endpoint(u, p, 5)
+    compiled = Reactant.@jit endpoint(Reactant.to_rarray(u), Reactant.to_rarray(p), 5)
+    @test Bool(compiled.retcode == host.retcode == ReturnCode.Success)
+    @test Int(compiled.iter) == host.iter == 5
+    @test Int(compiled.step) == host.step == order
+    @test only(host.u) ≈ Float64(trajectory[end]) rtol = 16eps()
+    @test only(Array(compiled.u)) ≈ Float64(trajectory[end]) rtol = 16eps()
+    for j in eachindex(host.lags)
+        expected = Float64(rate * trajectory[end - j])
+        @test only(host.lags[j]) ≈ expected rtol = 16eps()
+        @test only(Array(compiled.lags[j])) ≈ expected rtol = 16eps()
+    end
+    @test only(host.fsalfirst) ≈ Float64(rate * trajectory[end - 1]) rtol = 16eps()
+    @test only(Array(compiled.fsalfirst)) ≈ Float64(rate * trajectory[end - 1]) rtol = 16eps()
+
+    if iip
+        for nsteps in 1:(order - 1)
+            host = endpoint(u, p, nsteps)
+            compiled = Reactant.@jit endpoint(Reactant.to_rarray(u), Reactant.to_rarray(p), nsteps)
+            for lag in 2:order
+                j = order - lag + 1
+                expected = j <= nsteps ? Float64(rate * trajectory[j]) : 0.0
+                @test only(host.lags[lag - 1]) ≈ expected rtol = 16eps()
+                @test only(Array(compiled.lags[lag - 1])) ≈ expected rtol = 16eps()
+            end
+        end
     end
 end
 

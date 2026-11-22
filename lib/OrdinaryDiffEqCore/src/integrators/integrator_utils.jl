@@ -274,6 +274,9 @@ function update_fsal!(integrator)
             if isinplace(integrator.sol.prob)
                 fsalfirst, fsallast = _fsal_copy_buffers(integrator)
                 recursivecopy!(fsalfirst, fsallast)
+                if ReactantCore.within_compile() && fsalfirst !== integrator.fsalfirst
+                    recursivecopy!(integrator.fsalfirst, fsallast)
+                end
             else
                 integrator.fsalfirst = integrator.fsallast
             end
