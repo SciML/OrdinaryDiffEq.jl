@@ -86,6 +86,15 @@ end
     return set_taylor_order(taylor, buffer_order)
 end
 
+jet_indices(u::AbstractArray) = Base.OneTo(length(u))
+jet_indices(u::AbstractVector) = firstindex(u):lastindex(u)
+
+jet_input(u::AbstractArray) = u
+function jet_input(u::AbstractVector)
+    firstindex(u) == 1 && return u
+    return view(u, jet_indices(u))
+end
+
 function build_jet(
         f::ODEFunction{iip}, p, order, state = nothing, buffer_order = order
     ) where {iip}
@@ -113,8 +122,10 @@ function build_jet(
     if isnothing(state)
         u0 = Symbolics.variable(:u0)
     else
+        # Sparse mapping can combine implicit zeros into one symbolic value.
+        prototype = state isa AbstractSparseArray ? CartesianIndices(size(state)) : state
         index = Ref(0)
-        u0 = map(state) do _
+        u0 = map(prototype) do _
             index[] += 1
             Symbolics.variable(Symbol("u0_$(index[])"))
         end
@@ -153,25 +164,25 @@ function build_jet(
             TaylorScalar(Tuple(scalar_jet_coeffs[1](u0_val, t0_val))), buffer_order
         )
     elseif u isa AbstractArray && eltype(u) <: TaylorScalar
-        n = Base.length(u)
-        coeffs = [TaylorDiff.flatten(parent(u)[i])[j] for i in 1:n for j in 1:(P + 1)]
-        u0_parent = parent(u0)
+        indices = jet_indices(state)
+        coeffs = [TaylorDiff.flatten(u[i])[j] for i in indices for j in 1:(P + 1)]
+        symbols = [u0[i] for i in indices]
         array_jet_coeffs = build_function(
-            coeffs, u0_parent, t0; expression = Val(false), cse = true
+            coeffs, symbols, t0; expression = Val(false), cse = true, similarto = Array
         )
+        slots = Dict(symbol => i for (i, symbol) in enumerate(symbols))
+        output_slots = map(entry -> slots[entry.value], u)
         jet = (
             (u0_val, t0_val) -> begin
-                coeffs_out = array_jet_coeffs[1](parent(u0_val), t0_val)
-                index = Ref(0)
-                return map(u) do _
-                    index[] += 1
-                    taylor_from_coefficients(coeffs_out, index[], order, buffer_order)
+                coeffs_out = array_jet_coeffs[1](jet_input(u0_val), t0_val)
+                return map(output_slots) do i
+                    taylor_from_coefficients(coeffs_out, i, order, buffer_order)
                 end
             end,
             (out, coeffs_out, u0_val, t0_val) -> begin
-                array_jet_coeffs[2](coeffs_out, parent(u0_val), t0_val)
-                for i in 1:n
-                    parent(out)[i] = taylor_from_coefficients(coeffs_out, i, order, buffer_order)
+                array_jet_coeffs[2](coeffs_out, jet_input(u0_val), t0_val)
+                for (i, index) in enumerate(indices)
+                    out[index] = taylor_from_coefficients(coeffs_out, i, order, buffer_order)
                 end
                 return out
             end,

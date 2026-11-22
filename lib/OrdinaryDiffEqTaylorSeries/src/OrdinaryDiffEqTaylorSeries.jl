@@ -20,6 +20,7 @@ using TruncatedStacktraces: @truncate_stacktrace
 using TaylorDiff: TaylorDiff, TaylorArray, TaylorScalar
 using Symbolics: Symbolics, @variables, build_function
 using SymbolicUtils: SymbolicUtils
+using SparseArrays: AbstractSparseArray
 import CommonSolve: solve
 import SciMLBase: SciMLBase, unwrapped_f, alg_order
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!

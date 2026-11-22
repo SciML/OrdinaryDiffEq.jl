@@ -12,6 +12,10 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "In-place Taylor jet state indexing" begin
+        include("jet_state_indexing.jl")
+    end
+
     @testset "Taylor methods with mutable static states" begin
         using StaticArrays
 
