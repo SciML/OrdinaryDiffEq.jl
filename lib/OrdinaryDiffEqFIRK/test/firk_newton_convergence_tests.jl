@@ -34,7 +34,13 @@ using SciMLBase: successful_retcode
             while integrator.t < 0.2
                 step!(integrator)
             end
-            integrator.cache.ηold = eps(Float64)
+            if alg isa GaussLegendre
+                integrator.cache.ηold = eps(Float64)
+            else
+                integrator.cache.θ_meas = eps(Float64)
+                integrator.cache.dt_meas = integrator.dt
+                integrator.cache.nomeas = OrdinaryDiffEqFIRK.FIRK_MEASURE_EVERY
+            end
             step!(integrator)
             @test integrator.cache.iter >= 2
             solve!(integrator)
