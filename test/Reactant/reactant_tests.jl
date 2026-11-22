@@ -303,9 +303,9 @@ end
 
 @testset "Floatmin-scale spacing" for T in (Float32, Float64), alg in (Euler(), Tsit5())
     a = floatmin(T)
-    function bounded(u, p)
+    function bounded(u, p; bounds = (; dtmax = T(3.5) * a))
         prob = ODEProblem((u, p, t) -> p .* u, u, (32a, 40a), p)
-        return init(prob, alg; adaptive = false, dt = T(3.5) * a, dtmax = T(3.5) * a, save_everystep = false)
+        return init(prob, alg; adaptive = false, dt = T(3.5) * a, save_everystep = false, bounds...)
     end
     u, p = T[1 / 64], T[-T(0.5) / a]
     integ = bounded(u, p)
@@ -320,6 +320,10 @@ end
     end
     init_time = (u, p) -> bounded(u, p).t
     @test_throws ArgumentError Reactant.@jit init_time(Reactant.to_rarray(u), Reactant.to_rarray(p))
+    for bounds in ((;), (; dtmax = 8a), (; dtmax = 16a))
+        grid = (u, p) -> bounded(u, p; bounds).t
+        @test_throws ArgumentError Reactant.@jit grid(Reactant.to_rarray(u), Reactant.to_rarray(p))
+    end
 end
 
 include("adams_history.jl")

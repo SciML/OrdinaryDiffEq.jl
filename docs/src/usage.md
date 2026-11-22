@@ -89,7 +89,7 @@ Array(sol.u[end])
 
 Reactant requires statically shaped outputs. A compiled solve therefore returns an endpoint-only `ODESolution`: `sol.u` and `sol.t` contain the final state and time, while `sol.prob`, `sol.stats`, and `sol.interp` are `nothing`. Adaptive solves are tested with `IController`, `PIController`, and `PIDController`; the tested algorithms are the `Tsit5` and Verner explicit Runge–Kutta families. Implicit algorithms, saving intermediate or partial states (`saveat` or `save_idxs`), callbacks, user `tstops`, discontinuity handling, `force_dtmin`, progress reporting, custom domain or instability checks, and step limiters are not currently supported inside Reactant compilation and produce an `ArgumentError` instead of silently changing the solve.
 
-The compiled CPU backend flushes subnormal values to zero. If the spacing at the largest-magnitude endpoint of `tspan` is subnormal and `abs(dtmax)` is smaller than the span, initialization raises an `ArgumentError`. Rescale time and the initial state to keep stage calculations in the normal floating-point range.
+The compiled CPU backend flushes subnormal values to zero. If the spacing at the largest-magnitude endpoint of `tspan` is subnormal and `abs(dtmax)` is smaller than the span, initialization raises an `ArgumentError`. At that spacing, fixed-step solves that need multiple steps also require an RHS whose state and time arguments can be shown to be unused, and the default stage limiter. Rescale time and the initial state to keep stage calculations in the normal floating-point range.
 
 ## Available Solvers
 
