@@ -1,3 +1,4 @@
+using OrdinaryDiffEqLowOrderRK: Euler
 using OrdinaryDiffEqCore: IController, PIController, PIDController
 using OrdinaryDiffEq
 using OrdinaryDiffEqCore
@@ -297,4 +298,26 @@ end
     @test_throws ArgumentError Reactant.@jit fp(
         Reactant.ConcreteRNumber(Float16(0.5)), Reactant.ConcreteRNumber(Float16(0.2))
     )
+end
+
+
+@testset "Floatmin-scale spacing" for T in (Float32, Float64), alg in (Euler(), Tsit5())
+    a = floatmin(T)
+    function bounded(u, p)
+        prob = ODEProblem((u, p, t) -> p .* u, u, (32a, 40a), p)
+        return init(prob, alg; adaptive = false, dt = T(3.5) * a, dtmax = T(3.5) * a, save_everystep = false)
+    end
+    u, p = T[1 / 64], T[-T(0.5) / a]
+    integ = bounded(u, p)
+    sol = solve!(integ)
+    @test integ.iter == 3
+    @test sol.t[end] == 40a
+    @test sol.retcode == ReturnCode.Success
+    if alg isa Euler
+        @test only(sol.u[end]) == T(1 / 64) * (1 - T(1.75))^2 * T(0.5)
+    else
+        @test only(sol.u[end]) > 0
+    end
+    init_time = (u, p) -> bounded(u, p).t
+    @test_throws ArgumentError Reactant.@jit init_time(Reactant.to_rarray(u), Reactant.to_rarray(p))
 end

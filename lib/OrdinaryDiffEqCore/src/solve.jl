@@ -451,6 +451,12 @@ Base.@constprop :aggressive function _ode_init(
     if ReactantCore.within_compile()
         prob isa SciMLBase.AbstractODEProblem ||
             throw(ArgumentError("only ODEProblem is supported inside Reactant compilation"))
+        tstart, tend = prob.tspan
+        tmag = max(abs(tstart), abs(tend))
+        if tmag isa Union{Float16, Float32, Float64} && issubnormal(eps(tmag)) &&
+                abs(dtmax) < abs(tend - tstart)
+            throw(ArgumentError("timespans with floatmin-scale spacing and a bounded dtmax are not supported under Reactant compilation because the backend flushes subnormals; rescale tspan/u0"))
+        end
         isimplicit(alg) &&
             throw(ArgumentError("implicit algorithms are not supported inside Reactant compilation"))
         !adaptive && isnothing(dt) &&
