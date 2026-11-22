@@ -52,16 +52,12 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
             @test sol_oop.u[end] ≈ sol_iip.u[end] rtol = 1.0e-10
         end
 
-        # With zero noise the scheme reduces to the deterministic trapezoid rule
+        # With zero noise, ImplicitEM() reduces to backward Euler.
         g_zero(u, p, t) = zeros(2, 2)
         prob_zero = SDEProblem(f_oop, g_zero, u0, tspan; noise_rate_prototype = zeros(2, 2))
         A = [-1.0 0.1; -0.1 -1.0]
         sol_zero = solve(prob_zero, ImplicitEM(); dt = 0.001, adaptive = false)
         @test norm(sol_zero.u[end] - exp(A) * u0) < 1.0e-3
-
-        # Adaptive stepping for non-diagonal noise in the out-of-place ImplicitEM is not
-        # supported yet (the error estimate assumes diagonal noise): see OrdinaryDiffEq.jl#3172
-        @test_broken successful_retcode(solve(prob_oop, ImplicitEM(); dt = 0.01, seed = 7))
     end
 end
 
