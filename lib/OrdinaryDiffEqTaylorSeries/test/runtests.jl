@@ -16,6 +16,10 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         include("jet_state_indexing.jl")
     end
 
+    @time @safetestset "Out-of-place sparse Taylor jets" begin
+        include("sparse_taylor_jets.jl")
+    end
+
     @testset "Taylor methods with mutable static states" begin
         using StaticArrays
 
