@@ -321,3 +321,5 @@ end
     init_time = (u, p) -> bounded(u, p).t
     @test_throws ArgumentError Reactant.@jit init_time(Reactant.to_rarray(u), Reactant.to_rarray(p))
 end
+
+include("adams_history.jl")

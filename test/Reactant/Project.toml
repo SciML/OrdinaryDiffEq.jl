@@ -4,6 +4,7 @@ ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 FastPower = "a4df4552-cc26-4903-aec0-212e50a0e84b"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqAdamsBashforthMoulton = "89bda076-bce5-4f1c-845f-551c83cdda9a"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -15,6 +16,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [sources]
 DiffEqBase = {path = "../../lib/DiffEqBase"}
 OrdinaryDiffEq = {path = "../.."}
+OrdinaryDiffEqAdamsBashforthMoulton = {path = "../../lib/OrdinaryDiffEqAdamsBashforthMoulton"}
 OrdinaryDiffEqCore = {path = "../../lib/OrdinaryDiffEqCore"}
 OrdinaryDiffEqLowOrderRK = {path = "../../lib/OrdinaryDiffEqLowOrderRK"}
 

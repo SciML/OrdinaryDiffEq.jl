@@ -13,6 +13,7 @@ import SciMLBase: alg_order, full_cache
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqLowOrderRK: BS3ConstantCache, BS3Cache, RK4ConstantCache, RK4Cache
 import RecursiveArrayTools: recursivefill!
+import ReactantCore
 using MuladdMacro: @muladd
 import FastBroadcast: @..
 using FastBroadcast: Serial

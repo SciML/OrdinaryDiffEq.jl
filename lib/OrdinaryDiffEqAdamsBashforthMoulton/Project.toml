@@ -4,6 +4,7 @@ authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "2.2.1"
 
 [deps]
+ReactantCore = "a3311ec8-5e00-46d5-b541-4f83e724a433"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 OrdinaryDiffEqLowOrderRK = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
@@ -29,6 +30,7 @@ OrdinaryDiffEqCore = {path = "../OrdinaryDiffEqCore"}
 OrdinaryDiffEqLowOrderRK = {path = "../OrdinaryDiffEqLowOrderRK"}
 
 [compat]
+ReactantCore = "0.1.21"
 SciMLTesting = "2.8"
 Pkg = "1"
 Test = "<0.0.1, 1"
