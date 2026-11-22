@@ -993,7 +993,6 @@ end
     terk::EEstType
     terkp1::EEstType
     iters_from_event::Int
-    dense_order::Int
 end
 
 function alg_cache(
@@ -1002,6 +1001,8 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    ArrayInterface.issingular(f.mass_matrix) &&
+        throw(ArgumentError("MOOSE234 requires a nonsingular mass matrix."))
     γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
     nlsolver = build_nlsolver(
         alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
@@ -1033,7 +1034,7 @@ function alg_cache(
 
     return MOOSE234ConstantCache(
         nlsolver, ts, ts_tmp, bdf_coeffs, dd_c, dd_D, u_history, order, prev_order,
-        nconsteps, consfailcnt, qwait, terkm1, terk, terkp1, iters_from_event, 1
+        nconsteps, consfailcnt, qwait, terkm1, terk, terkp1, iters_from_event
     )
 end
 
@@ -1065,7 +1066,6 @@ end
     terkp1_tmp::uType
     equi_ts::tsType
     iters_from_event::Int
-    dense_order::Int
     dense::Vector{uType}
     step_limiter!::StepLimiter
 end
@@ -1078,6 +1078,8 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    ArrayInterface.issingular(f.mass_matrix) &&
+        throw(ArgumentError("MOOSE234 requires a nonsingular mass matrix."))
     γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
     fsalfirst = zero(rate_prototype)
     nlsolver = build_nlsolver(
@@ -1115,6 +1117,6 @@ function alg_cache(
     return MOOSE234Cache(
         fsalfirst, nlsolver, ts, ts_tmp, bdf_coeffs, dd_c, dd_D, u_history, order, prev_order,
         u₀, nconsteps, consfailcnt, qwait, tmp, atmp, terkm1, terk, terkp1,
-        terk_tmp, terkp1_tmp, equi_ts, iters_from_event, 1, dense, alg.step_limiter!
+        terk_tmp, terkp1_tmp, equi_ts, iters_from_event, dense, alg.step_limiter!
     )
 end

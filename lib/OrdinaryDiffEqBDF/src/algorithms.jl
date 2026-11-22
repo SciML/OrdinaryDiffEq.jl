@@ -578,7 +578,8 @@ with orders 1 and 2 as history accumulates, then applies linear time filters to
 the BDF3 solution to produce embedded solutions at orders 2 and 4.
 This yields error estimates at three orders, enabling VSVO behavior at the cost of
 a single implicit solve per step. Requires adaptive stepping (`adaptive = true`);
-initialization with `adaptive = false` throws an `ArgumentError`.",
+initialization with `adaptive = false` or a singular mass matrix throws an
+`ArgumentError`.",
     "MOOSE234",
     references = """@article{decaria2018variable,
     title={A variable stepsize, variable order family of low complexity},

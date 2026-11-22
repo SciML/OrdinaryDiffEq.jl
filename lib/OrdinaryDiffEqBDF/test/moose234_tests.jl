@@ -1,5 +1,6 @@
 using OrdinaryDiffEqBDF, Test
 using OrdinaryDiffEqCore: set_EEst!
+using LinearAlgebra: Diagonal
 
 @testset "MOOSE234 variable-step order-four update" begin
     for iip in (false, true), mesh in ((0, -1, -2, -3), (0, -2, -3, -4)), h in (0.125, 0.0625)
@@ -67,5 +68,54 @@ end
             @test cache.order == 2
             @test integ.dt ≈ direction * 0.1
         end
+    end
+end
+
+@testset "BDF zero-valued dense sample" begin
+    zero_time = (1 + cospi(3 / 4)) / 2
+    for alg in (MOOSE234(), FBDF()), iip in (false, true)
+        f = iip ? ((du, u, p, t) -> fill!(du, 1.0)) : ((u, p, t) -> 1.0)
+        prob = ODEProblem(f, iip ? [-zero_time] : -zero_time, (0.0, 1.0))
+        scalar = iip ? only : identity
+        opts = (; dt = 1.0, abstol = 1.0, reltol = 1.0e-6)
+        sol = solve(prob, alg; opts...)
+        @test scalar(sol(0.5)) ≈ 0.5 - zero_time
+        @test scalar(sol(0.5, Val{1})) ≈ 1.0
+        saved = solve(prob, alg; opts..., saveat = [0.5])
+        @test scalar(only(saved.u)) ≈ 0.5 - zero_time
+        callback = ContinuousCallback((u, t, integ) -> scalar(u), terminate!)
+        event = solve(prob, alg; opts..., callback)
+        @test event.retcode == ReturnCode.Terminated
+        @test event.t[end] ≈ zero_time
+        @test scalar(event(zero_time / 2)) ≈ -zero_time / 2
+    end
+end
+
+@testset "MOOSE234 singular mass matrix" begin
+    for iip in (false, true)
+        f = iip ? ((du, u, p, t) -> (du .= (1.0, u[2] - exp(u[1])))) :
+            ((u, p, t) -> [1.0, u[2] - exp(u[1])])
+        prob = ODEProblem(ODEFunction(f; mass_matrix = Diagonal([1.0, 0.0])), [0.0, 1.0], (0.0, 2.0))
+        @test_throws ArgumentError("MOOSE234 requires a nonsingular mass matrix.") init(
+            prob, MOOSE234(); abstol = 1.0e-6, reltol = 1.0e-6
+        )
+    end
+end
+
+@testset "MOOSE234 step growth and safety factor" begin
+    for iip in (false, true)
+        f = iip ? ((du, u, p, t) -> (du .= -u)) : ((u, p, t) -> -u)
+        prob = ODEProblem(f, iip ? [1.0] : 1.0, (0.0, 1.0))
+        opts = (; dt = 1.0e-4, abstol = 1.0e-6, reltol = 1.0e-6)
+        controller = OrdinaryDiffEqBDF.BDFController(qmax = 1.1, qmax_first_step = 1.1)
+        sol = solve(prob, MOOSE234(); opts..., controller)
+        @test sol.retcode == ReturnCode.Success
+        steps = diff(sol.t)
+        @test maximum(steps[2:end] ./ steps[1:(end - 1)]) ≈ 1.1 rtol = 1.0e-12
+
+        cautious = solve(prob, MOOSE234(); opts..., controller = OrdinaryDiffEqBDF.BDFController(gamma = 0.25))
+        aggressive = solve(prob, MOOSE234(); opts..., controller = OrdinaryDiffEqBDF.BDFController(gamma = 0.9))
+        @test cautious.retcode == aggressive.retcode == ReturnCode.Success
+        @test cautious.t[5] < aggressive.t[5]
     end
 end

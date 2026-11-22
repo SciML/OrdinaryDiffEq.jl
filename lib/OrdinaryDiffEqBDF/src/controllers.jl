@@ -817,73 +817,43 @@ end
 # Order selection: compute candidate stepsizes for each available order
 # (2, 3, 4) and pick the order allowing the largest next step.
 #
-#   hₖ = dt · (γ / |Estₖ|)^(1/(k+1)),   γ = 0.9
+#   hₖ = dt · (γ / |Estₖ|)^(1/(k+1))
 #
-# Returns (kₙ, terk_new) where terk_new is the error norm at the chosen order.
+# Returns the chosen order and inverse step ratio.
 # --------------------------------------------------------------------------
 function choose_order_moose!(
         integrator,
         cache::Union{MOOSE234Cache, MOOSE234ConstantCache}
     )
     k = cache.order
-    dt = abs(integrator.dt)
-    n_hist = min(cache.iters_from_event + 1, 5)
-    max_avail = n_hist >= 4 ? 4 : (n_hist >= 3 ? 3 : 2)
-
+    gamma = get_gamma(integrator)
+    n_hist = cache.iters_from_event + 1
     est2 = cache.terkm1
     est3 = cache.terkp1
+    can_estimate_order4 = n_hist >= 4 && zero(est3) < est3 < est2
+    est4 = can_estimate_order4 ? est3 * (est3 / est2) : est3
 
-    # Candidate step for order 2:  h₂ = dt · (γ / est2)^(1/3)
-    if est2 > zero(est2)
-        h2 = dt * (0.9 / est2)^(1 / 3)
-    else
-        h2 = 10 * dt
-    end
-
-    # Candidate step for order 3:  h₃ = dt · (γ / est3)^(1/4)
-    if max_avail >= 3 && est3 > zero(est3)
-        h3 = dt * (0.9 / est3)^(1 / 4)
-    else
-        h3 = zero(dt)
-    end
-
-    # Candidate step for order 4: Est4 is not available, so approximate it.
-    # When errors decrease geometrically (est2 > est3), extrapolate
-    # est4 ≈ est3² / est2.
-    h4 = zero(dt)
-    if max_avail >= 4 && est2 > zero(est2) && est3 > zero(est3) && est3 < est2
-        est4_approx = est3 * est3 / est2
-        h4 = dt * (0.9 / est4_approx)^(1 / 5)
-    end
-
-    # Pick the order with the largest candidate step
+    q2 = (est2 / gamma)^(1 / 3)
+    q3 = (est3 / gamma)^(1 / 4)
+    q4 = (est4 / gamma)^(1 / 5)
     kₙ = 2
-    hₙ = h2
-    if max_avail >= 3 && h3 > hₙ
+    q = q2
+    if n_hist >= 3 && est3 > zero(est3) && q3 < q
         kₙ = 3
-        hₙ = h3
+        q = q3
     end
-    if max_avail >= 4 && h4 > hₙ
+    if can_estimate_order4 && q4 < q
         kₙ = 4
-        hₙ = h4
+        q = q4
     end
 
     # Only allow order *increase* when the qwait countdown has reached 0
     if kₙ > k && cache.qwait > 0
         kₙ = k
+        q = k == 2 ? q2 : q3
     end
 
-    # Error norm at the chosen order (drives the stepsize formula)
-    if kₙ == 2
-        terk_new = est2
-    elseif kₙ == 3
-        terk_new = est3
-    else
-        terk_new = (est2 > zero(est2) && est3 > zero(est3) && est3 < est2) ?
-            est3 * est3 / est2 : est3
-    end
-
-    return kₙ, terk_new
+    return kₙ, q
 end
 
 # --------------------------------------------------------------------------
@@ -900,17 +870,12 @@ function stepsize_controller!(
     )
     cache.prev_order = cache.order
 
-    kₙ, terk = choose_order_moose!(integrator, cache)
+    kₙ, q = choose_order_moose!(integrator, cache)
     if kₙ != cache.order
         cache.nconsteps = 0
         cache.order = kₙ
     end
 
-    if iszero(terk)
-        q = inv(get_current_qmax(integrator, get_qmax(integrator)))
-    else
-        q = (terk / 0.9)^(1 / (kₙ + 1))
-    end
     return q
 end
 
@@ -930,6 +895,9 @@ function step_accept_controller!(
     if q <= get_qsteady_max(integrator) && q >= get_qsteady_min(integrator)
         q = one(q)
     end
+    # The deadband applies to the unconstrained step ratio.
+    qmax = get_current_qmax(integrator, get_qmax(integrator))
+    q = clamp(q, inv(qmax), inv(get_qmin(integrator)))
     cache.nconsteps += 1
     cache.iters_from_event += 1
     # CVODE-style qwait countdown: order + 2 steps after an order change

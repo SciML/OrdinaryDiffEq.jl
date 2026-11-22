@@ -201,12 +201,8 @@ end
 ####################################################################
 # FBDF / DFBDF: Lagrange interpolation at fixed Chebyshev nodes
 #
-# All data lives in k. y₀ and y₁ are NOT used.
-#
-# Layout: k has max_order+1 entries.
-#   k[1..n] = solution values resampled at fixed Chebyshev reference
-#             nodes xi_1,...,xi_n in [0,1] (see _CHEB_NODES in bdf_utils.jl)
-#   k[n+1..end] = zero (unused entries for orders below max_order)
+# The length of k records the number of samples in the saved interval.
+# k holds solution values at the matching Chebyshev nodes in [0,1].
 #
 # The reference nodes are compile-time constants (no GPU scalar indexing).
 # At step time the original Lagrange interpolant through the actual
@@ -215,19 +211,6 @@ end
 # barycentric formula (Val{0}, O(n)) or product-rule Lagrange basis
 # derivatives (Val{1..3}, O(n^2) but n≤6).
 ####################################################################
-
-# Helper: determine number of active data points from k entries.
-# Active entries are non-zero (counting from the top).
-_is_all_zero(x::Number) = iszero(x)
-_is_all_zero(x::AbstractArray) = all(iszero, x)
-
-function _bdf_active_order(k)
-    n = length(k)
-    while n > 0 && _is_all_zero(k[n])
-        n -= 1
-    end
-    return max(n, 1)
-end
 
 # Function barrier on the active order: _CHEB_NODES and _BARY_WEIGHTS are
 # tuples of differently sized tuples, so indexing them with a runtime `n`
@@ -240,7 +223,7 @@ function _ode_interpolant(
         cache::FBDF_CACHES,
         idxs, T::Type{Val{D}}, differential_vars
     ) where {D}
-    n = _bdf_active_order(k)
+    n = length(k)
     return if n == 1
         _fbdf_interp(Val(1), Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
     elseif n == 2
@@ -263,7 +246,7 @@ function _ode_interpolant!(
         cache::FBDF_CACHES,
         idxs, T::Type{Val{D}}, differential_vars
     ) where {D}
-    n = _bdf_active_order(k)
+    n = length(k)
     return if n == 1
         _fbdf_interp!(Val(1), out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
     elseif n == 2

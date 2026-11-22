@@ -23,7 +23,6 @@ prob_gpu = ODEProblem(f_gpu!, copy(u0_gpu), tspan, p_gpu)
     @test isapprox(Array(sol_gpu.u[end]), sol_cpu.u[end], rtol = 1.0e-3)
 end
 
-# FBDF GPU - scalar indexing in _bdf_active_order fixed via _is_all_zero helper
 @testset "FBDF GPU" begin
     sol_cpu = solve(prob_cpu, FBDF(), abstol = 1.0e-6, reltol = 1.0e-6)
     sol_gpu = solve(prob_gpu, FBDF(), abstol = 1.0e-6, reltol = 1.0e-6)

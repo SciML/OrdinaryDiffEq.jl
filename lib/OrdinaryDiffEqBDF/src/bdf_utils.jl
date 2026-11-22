@@ -430,7 +430,6 @@ function reset_moose_history!(cache)
     cache.consfailcnt = cache.nconsteps = 0
     cache.qwait = 4
     cache.iters_from_event = 0
-    cache.dense_order = 1
     return nothing
 end
 

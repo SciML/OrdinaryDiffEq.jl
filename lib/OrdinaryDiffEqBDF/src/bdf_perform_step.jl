@@ -851,15 +851,11 @@ end
 
 function initialize!(integrator, cache::MOOSE234ConstantCache)
     integrator.opts.adaptive || throw(ArgumentError("MOOSE234 requires adaptive=true."))
-    integrator.kshortsize = 5 # max_order(4) + 1
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     integrator.fsallast = zero(integrator.fsalfirst)
-    for i in 1:5
-        integrator.k[i] = zero(integrator.fsalfirst)
-    end
+    initialize_bdf_interpolation!(integrator, integrator.fsallast)
 
     derivative_discontinuity = integrator.derivative_discontinuity
     integrator.derivative_discontinuity = true
@@ -994,8 +990,7 @@ function perform_step!(integrator, cache::MOOSE234ConstantCache, repeat_step = f
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if integrator.opts.calck
-        cache.dense_order = bdf_order
-        _ode_addsteps!(integrator.k, t, uprev, u, dt, f, p, cache, true)
+        save_bdf_interpolation!(integrator, cache, u, bdf_order + 1)
     end
 
     return integrator.u = u
@@ -1003,12 +998,8 @@ end
 
 function initialize!(integrator, cache::MOOSE234Cache)
     integrator.opts.adaptive || throw(ArgumentError("MOOSE234 requires adaptive=true."))
-    integrator.kshortsize = 5 # max_order(4) + 1
 
-    resize!(integrator.k, integrator.kshortsize)
-    for i in 1:5
-        integrator.k[i] = cache.dense[i]
-    end
+    initialize_bdf_interpolation!(integrator, cache.dense[1])
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
@@ -1021,7 +1012,7 @@ end
 function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
     (;
         ts, u_history, nlsolver, ts_tmp, bdf_coeffs,
-        equi_ts, step_limiter!, u₀, tmp, atmp, terk_tmp, terkp1_tmp, dense,
+        equi_ts, step_limiter!, u₀, tmp, atmp, terk_tmp, terkp1_tmp,
     ) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
@@ -1149,8 +1140,7 @@ function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if integrator.opts.calck
-        cache.dense_order = bdf_order
-        _ode_addsteps!(integrator.k, t, uprev, u, dt, f, p, cache, true)
+        save_bdf_interpolation!(integrator, cache, u, bdf_order + 1)
     end
 
     return nothing
@@ -1589,17 +1579,12 @@ function _fbdf_time_filter(
     return u_bdf, f(u_bdf, p, tdt)
 end
 
-function initialize!(integrator, cache::FBDFConstantCache{max_order}) where {max_order}
-    integrator.kshortsize = max_order + 1
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+function initialize!(integrator, cache::FBDFConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    # k[1..max_order+1] = solution values at fixed Chebyshev reference nodes
     integrator.fsallast = zero(integrator.fsalfirst)
-    for i in 1:(max_order + 1)
-        integrator.k[i] = zero(integrator.fsalfirst)
-    end
+    initialize_bdf_interpolation!(integrator, integrator.fsallast)
 
     derivative_discontinuity = integrator.derivative_discontinuity
     integrator.derivative_discontinuity = true
@@ -1756,23 +1741,8 @@ function perform_step!(
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
     if integrator.opts.calck
-        # Store dense output: resample Lagrange interpolant at Chebyshev nodes
         dense_order = cache.time_filter ? max(k, cache.filter_order) : k
-        n = min(dense_order + 1, max_order + 1)
-        calck_thetas = Vector{typeof(t)}(undef, n)
-        calck_thetas[1] = one(t)
-        for j in 1:min(dense_order, max_order)
-            calck_thetas[1 + j] = (ts[j] - t) / dt
-        end
-        calck_values = Vector{typeof(u)}(undef, n)
-        calck_values[1] = u isa Number ? u : copy(u)
-        for j in 1:min(dense_order, max_order)
-            calck_values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
-        end
-        _resample_at_chebyshev!(integrator.k, calck_values, calck_thetas, n)
-        for j in (n + 1):(max_order + 1)
-            integrator.k[j] = zero(u)
-        end
+        save_bdf_interpolation!(integrator, cache, u, min(dense_order, max_order) + 1)
     end
     _fbdf_finish_fixed_step!(integrator, cache)
     return integrator.u = u
@@ -1837,13 +1807,8 @@ function _fbdf_time_filter!(
     return false
 end
 
-function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
-    integrator.kshortsize = max_order + 1
-
-    resize!(integrator.k, integrator.kshortsize)
-    for i in 1:(max_order + 1)
-        integrator.k[i] = cache.dense[i]
-    end
+function initialize!(integrator, cache::FBDFCache)
+    initialize_bdf_interpolation!(integrator, cache.dense[1])
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
@@ -1858,7 +1823,7 @@ function perform_step!(
         repeat_step = false
     ) where {max_order}
     reinitFBDF!(integrator, cache)
-    (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
+    (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
     k = order
@@ -1997,19 +1962,8 @@ function perform_step!(
         end
     end
     if integrator.opts.calck
-        # Store dense output: resample Lagrange interpolant at Chebyshev nodes.
-        # Use _resample_at_chebyshev_direct_iip! to read from u and u_history
-        # directly, avoiding scratch buffer type mismatches during AD.
         dense_order = cache.time_filter ? max(k, cache.filter_order) : k
-        n = min(dense_order + 1, max_order + 1)
-        equi_ts[1] = one(eltype(equi_ts))
-        for j in 1:min(dense_order, max_order)
-            equi_ts[1 + j] = (ts[j] - t) / dt
-        end
-        _resample_at_chebyshev_direct_iip!(integrator.k, u, u_history, equi_ts, n)
-        for j in (n + 1):(max_order + 1)
-            fill!(integrator.k[j], zero(eltype(u)))
-        end
+        save_bdf_interpolation!(integrator, cache, u, min(dense_order, max_order) + 1)
     end
     _fbdf_finish_fixed_step!(integrator, cache)
     return nothing
