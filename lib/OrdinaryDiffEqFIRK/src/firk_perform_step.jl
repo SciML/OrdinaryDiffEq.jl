@@ -2154,7 +2154,8 @@ end
 
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt; cache.jage = 0)
-    new_W = do_newW(integrator, alg, new_jac, cache.W_γdt)
+    # An order change resets cache.step and changes the shifts in W.
+    new_W = cache.step == 1 || do_newW(integrator, alg, new_jac, cache.W_γdt)
     new_W && (cache.W_γdt = dt)
     if is_lazy_W(W1)
         set_W_gamma!(W1, γdt)

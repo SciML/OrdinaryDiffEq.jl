@@ -53,7 +53,7 @@ end
                 AdaptiveRadau(), AdaptiveRadau(threading = true),
             )
         prob_sparse = ODEProblem(
-            ODEFunction(firk_test_lin!; jac_prototype = J, mass_matrix = mm_sparse),
+            ODEFunction(firk_test_lin!; jac_prototype = copy(J), mass_matrix = mm_sparse),
             u0, tspan
         )
         prob_dense = ODEProblem(
@@ -77,6 +77,24 @@ end
         # paths by more than the solver tolerance (≈2e-5 for AdaptiveRadau here).
         for t in ts
             @test all(isapprox.(sol_sparse(t), sol_dense(t); atol = 1.0e-4))
+        end
+    end
+
+    @testset "AdaptiveRadau rebuilds stage matrices at an order change" begin
+        for threading in (false, true)
+            prob = ODEProblem(ODEFunction(firk_test_lin!; jac_prototype = copy(J)), u0, tspan)
+            integ = init(prob, AdaptiveRadau(; threading); abstol = 1.0e-8, reltol = 1.0e-8)
+            for _ in 1:15
+                step!(integ)
+                integ.cache.num_stages == 5 && break
+            end
+            @test integ.cache.num_stages == 5
+            failed_newton = integ.stats.nnonlinconvfail
+            t_before, u_before = integ.t, copy(integ.u)
+            step!(integ)
+            @test integ.stats.nnonlinconvfail == failed_newton
+            exact = exp(Matrix(J) * (integ.t - t_before)) * u_before
+            @test all(isapprox.(integ.u, exact; atol = 1.0e-8))
         end
     end
 end
