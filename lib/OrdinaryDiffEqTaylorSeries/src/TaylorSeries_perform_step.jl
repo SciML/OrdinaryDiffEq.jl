@@ -66,8 +66,10 @@ end
     out1 = make_taylor(k3, k2)
     f(out1, u1, p, t1)
     if !(out1 isa TaylorArray)
-        for i in eachindex(parent(k2))
-            parent(k2)[i] = parent(out1)[i].partials[1]
+        for i in eachindex(out1, k3, k2)
+            entry = out1[i]
+            k3[i] = TaylorDiff.get_coefficient(entry, 0)
+            k2[i] = TaylorDiff.get_coefficient(entry, 1)
         end
     end
     @.. u = uprev + dt * k1 + dt^2 / 2 * k2

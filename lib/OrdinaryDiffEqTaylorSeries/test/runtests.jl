@@ -78,6 +78,14 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
                 @test parent(sol.u[end]) ≈ exp(-0.1) .* parent(u0) rtol = 2.0e-6
             end
         end
+
+        @testset "Taylor2 stores the structured RHS value" begin
+            u0 = ComponentArray(x = 1.0, y = 2.0)
+            prob = ODEProblem{true, SciMLBase.FullSpecialize}(component_iip!, u0, (0.0, 0.1))
+            integrator = init(prob, ExplicitTaylor2(); dt = 0.01, adaptive = false)
+            step!(integrator)
+            @test integrator.k[3] == -u0
+        end
     end
 
     using ForwardDiff
