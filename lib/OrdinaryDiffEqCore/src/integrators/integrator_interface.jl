@@ -772,8 +772,7 @@ StatsDelta() = StatsDelta(0, 0, 0, 0, 0, 0)
     stats_sink(cache)
 
 The [`StatsDelta`](@ref) a cache accumulates into, or `nothing` when its counts
-go straight to `integrator.stats`. `hasfield` is resolved at compile time, so
-caches without a buffer keep the direct path with no added work.
+go straight to `integrator.stats`.
 """
 @inline function stats_sink(cache)
     return hasfield(typeof(cache), :stats_delta) ? getfield(cache, :stats_delta) : nothing

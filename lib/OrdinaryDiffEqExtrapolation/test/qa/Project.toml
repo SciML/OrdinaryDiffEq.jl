@@ -22,6 +22,3 @@ OrdinaryDiffEqCore = "4"
 OrdinaryDiffEqExtrapolation = "2"
 Polyester = "0.7"
 SciMLBase = "3"
-
-[sources.OrdinaryDiffEqCore]
-path = "../../../OrdinaryDiffEqCore"
