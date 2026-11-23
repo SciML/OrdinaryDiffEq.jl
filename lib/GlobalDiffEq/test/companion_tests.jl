@@ -62,9 +62,10 @@ end
 @testset "Error trajectory: $mode" for mode in MODES
     prob = ODEProblem(lv!, [1.0, 1.0], lv_tspan)
     ref = solve(prob, Tsit5(); abstol = 1.0e-13, reltol = 1.0e-13)
-    alg = GlobalErrorEstimation(Tsit5(); mode)
+    alg = GlobalErrorEstimation(Tsit5(); mode, scope = TrajectoryError)
     @test SciMLBase.has_global_error(alg)
-    @test !SciMLBase.has_global_error(GlobalErrorEstimation(Tsit5(); equation = ErrorTransport))
+    @test SciMLBase.has_global_error(GlobalErrorEstimation(Tsit5(); equation = ErrorTransport))
+    @test_throws ArgumentError GlobalErrorEstimation(Tsit5(); equation = ErrorTransport, scope = TrajectoryError)
 
     # Without gtol, the solve gives the error of each saved state at the given tolerances.
     sol = solve(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6)
@@ -79,12 +80,47 @@ end
 
     # Under global error control, the final solution has the error trajectory too.
     gsol = solve(
-        prob, GlobalErrorEstimation(Tsit5(); mode, gtol = 1.0e-7); abstol = 1.0e-3, reltol = 1.0e-3
+        prob, GlobalErrorEstimation(Tsit5(); mode, scope = TrajectoryError, gtol = 1.0e-7);
+        abstol = 1.0e-3, reltol = 1.0e-3
     )
     @test length(gsol.global_error) == length(gsol.u)
     gactual = [ref(t) .- u for (t, u) in zip(gsol.t, gsol.u)]
     @test all(
         norm(e - a) <= 1.0e-3 * maximum(norm, gactual) for (e, a) in zip(gsol.global_error, gactual)
+    )
+end
+
+@testset "The default scope keeps the saving options: $mode" for mode in MODES
+    # The review case: two states, `saveat` and `save_idxs`. EndpointError (the default)
+    # returns a solve with the user's saving options, as on master before the trajectory.
+    prob = ODEProblem((u, p, t) -> -u, [1.0, 2.0], (0.0, 1.0))
+    saving = (; saveat = [0.25, 0.75], save_idxs = 2)
+    sol = solve(
+        prob, GlobalErrorEstimation(Tsit5(); mode, gtol = 1.0e-5); abstol = 1.0e-3, reltol = 1.0e-3,
+        saving...
+    )
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.t == [0.25, 0.75]
+    @test eltype(sol.u) <: Real
+    # The final time is not saved, so no saved entry has the endpoint error.
+    @test sol.global_error === nothing
+    # Without gtol: the values of a plain solve at the given tolerances.
+    alg = GlobalErrorEstimation(Tsit5(); mode)
+    sol = solve(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6, saving...)
+    plain = solve(prob, Tsit5(); abstol = 1.0e-6, reltol = 1.0e-6, saving...)
+    @test sol.t == plain.t
+    @test sol.u == plain.u
+    # If the final time is saved, `global_error[end]` has the endpoint estimate.
+    sol = solve(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6, saveat = [0.5, 1.0])
+    @test sol.global_error[end] ≈ global_error_estimate(prob, alg; abstol = 1.0e-6, reltol = 1.0e-6)
+    @test all(iszero, sol.global_error[1:(end - 1)])
+    # TrajectoryError cannot keep these options, so it rejects them.
+    trajectory = GlobalErrorEstimation(Tsit5(); mode, scope = TrajectoryError)
+    @test_throws ArgumentError solve(prob, trajectory; saveat = [0.25])
+    @test_throws ArgumentError solve(prob, trajectory; save_idxs = 2)
+    @test_throws ArgumentError solve(
+        prob, GlobalErrorEstimation(Tsit5(); mode, scope = TrajectoryError, gtol = 1.0e-5);
+        save_everystep = false
     )
 end
 

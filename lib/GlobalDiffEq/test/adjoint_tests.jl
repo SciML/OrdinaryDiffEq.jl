@@ -107,6 +107,14 @@ end
         checked += 1
     end
     @test checked > 0
+    # TrajectoryError cannot keep saving options that ask for other entries, so it rejects
+    # them. EndpointError keeps them; without the final time, no entry has the estimate.
+    @test_throws ArgumentError solve(
+        linear_prob, GlobalAdjoint(Tsit5(); gtol, scope = TrajectoryError); saveat = [0.5]
+    )
+    end_sol = solve(linear_prob, GlobalAdjoint(Tsit5(); gtol); abstol = 1.0e-3, reltol = 1.0e-3, saveat = [0.5])
+    @test end_sol.t == [0.5]
+    @test end_sol.global_error === nothing
 
     # StepGridRefinement meets gtol via a non-adaptive re-solve on the accepted grid
     grid_sol = solve(

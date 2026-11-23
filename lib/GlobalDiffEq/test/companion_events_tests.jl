@@ -223,7 +223,7 @@ end
     )
     for callback in cases
         sol = solve(
-            ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0)), GlobalErrorEstimation(Tsit5(); mode);
+            ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0)), GlobalErrorEstimation(Tsit5(); mode, scope = TrajectoryError);
             callback, tstops = [0.5], abstol = 1.0e-6, reltol = 1.0e-6
         )
         doublings = [round(Int, log2(u[1] / exp(-t))) for (t, u) in zip(sol.t, sol.u)]
@@ -459,15 +459,19 @@ end
     @test est / abs(RESET_EXACT - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
     # Under global error control, only the final solve saves values. It repeats the
     # accepted solve, so it does not warn.
-    values = SavedValues(Float64, Float64)
-    sol = @test_logs min_level = Base.CoreLogging.Warn solve(
-        make_prob(), GlobalErrorEstimation(Tsit5(); mode, gtol = 1.0e-7);
-        callback = saving(values), abstol = 1.0e-3, reltol = 1.0e-3
-    )
-    @test SciMLBase.successful_retcode(sol)
-    # The solution saves an event time twice (before and after the affect), the
-    # SavingCallback once.
-    @test values.t == (saveat == () ? unique(sol.t) : saveat)
+    # With TrajectoryError, the final solve reuses the accepted trajectory; with
+    # EndpointError, it is a plain solve.
+    for scope in (EndpointError, TrajectoryError)
+        values = SavedValues(Float64, Float64)
+        sol = @test_logs min_level = Base.CoreLogging.Warn solve(
+            make_prob(), GlobalErrorEstimation(Tsit5(); mode, scope, gtol = 1.0e-7);
+            callback = saving(values), abstol = 1.0e-3, reltol = 1.0e-3
+        )
+        @test SciMLBase.successful_retcode(sol)
+        # The solution saves an event time twice (before and after the affect), the
+        # SavingCallback once.
+        @test values.t == (saveat == () ? unique(sol.t) : saveat)
+    end
 end
 
 @testset "A final forward solve that does not repeat the accepted one" begin
@@ -502,7 +506,7 @@ end
     reset_x(t) = exp(-(t - fld(t, log(2)) * log(2)))
     for tol in (1.0e-4, 1.0e-6)
         sol = solve(
-            ODEProblem(decay!, [1.0], (0.0, T)), GlobalErrorEstimation(Tsit5(); mode);
+            ODEProblem(decay!, [1.0], (0.0, T)), GlobalErrorEstimation(Tsit5(); mode, scope = TrajectoryError);
             callback = reset_callback(), abstol = tol, reltol = tol
         )
         actual = [reset_x(t) - u[1] for (t, u) in zip(sol.t, sol.u)]
@@ -513,7 +517,7 @@ end
     # A fixed-time doubling: the true solution jumps at the same time, so the entry before
     # the event and the entry after it have different errors.
     sol = solve(
-        ODEProblem(decay!, [1.0], (0.0, T)), GlobalErrorEstimation(Tsit5(); mode);
+        ODEProblem(decay!, [1.0], (0.0, T)), GlobalErrorEstimation(Tsit5(); mode, scope = TrajectoryError);
         callback = PresetTimeCallback([1.0], i -> (i.u[1] *= 2; nothing)),
         abstol = 1.0e-6, reltol = 1.0e-6
     )
@@ -530,7 +534,7 @@ end
             ODEFunction(cubic_dae!; mass_matrix = Diagonal([1.0, 0.0])),
             [1.0, cubic_z(1.0)], (0.0, T)
         ),
-        GlobalErrorEstimation(Rodas5P(); mode);
+        GlobalErrorEstimation(Rodas5P(); mode, scope = TrajectoryError);
         callback = ContinuousCallback(
             (u, t, i) -> u[1] - 0.5, i -> (i.u[1] = 1.0; nothing);
             initializealg = BrownFullBasicInit()

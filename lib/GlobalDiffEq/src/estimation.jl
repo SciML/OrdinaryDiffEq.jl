@@ -1,8 +1,38 @@
 """
+    GlobalAdjointScope
+
+What [`GlobalAdjoint`](@ref) and [`GlobalErrorEstimation`](@ref) estimate and report in
+`sol.global_error`. One of [`EndpointError`](@ref) or [`TrajectoryError`](@ref).
+"""
+@enum GlobalAdjointScope EndpointError TrajectoryError
+
+@doc """
+    EndpointError
+
+Estimate the global error 2-norm only at the final time: `sol.global_error[end]`
+holds it and earlier entries are zero. The returned solution follows the saving options
+of `solve` (`saveat`, `save_idxs`, ...); if they do not save the final time,
+`sol.global_error` is `nothing`. The default. For `GlobalAdjoint`, one adjoint
+solve per sample.
+""" EndpointError
+
+@doc """
+    TrajectoryError
+
+Estimate the global error at every saved time, filled along the whole trajectory. The
+returned solution is dense and saved at every solver step, so `solve` rejects saving
+options that conflict with that. For `GlobalAdjoint`, `sol.global_error[i]` is the
+estimated 2-norm at `sol.t[i]` (`sol.global_error[1] = 0`), at a cost of one
+reverse-adjoint solve per saved time per sample. For `GlobalErrorEstimation` with
+`DefectCorrection`, `sol.global_error[i]` is the estimated error vector
+`y(sol.t[i]) - sol.u[i]`, from the same companion solve.
+""" TrajectoryError
+
+"""
     GlobalErrorEstimation(alg; equation=DefectCorrection, mode=InterpolatingMode,
-                          companion_alg=alg, autodiff=ADTypes.AutoForwardDiff(),
-                          gtol=nothing, maxiters=6, safety=0.8,
-                          companion_abstol, companion_reltol)
+                          scope=EndpointError, companion_alg=alg,
+                          autodiff=ADTypes.AutoForwardDiff(), gtol=nothing, maxiters=6,
+                          safety=0.8, companion_abstol, companion_reltol)
 
 Wrap an ODE algorithm with global error estimation and control based on a
 defect-driven companion equation. After a dense forward solve producing the
@@ -39,16 +69,25 @@ solve(prob, GlobalErrorEstimation(Tsit5(); gtol = 1.0e-6))
 
 The solver then tightens local tolerances until the estimated endpoint global
 error 2-norm is at most `gtol`. Without `gtol`, the solve does one estimate at the
-given `abstol` and `reltol`, with no control.
+given `abstol` and `reltol`, with no control (`DefectCorrection` only).
 
-With `equation = DefectCorrection`, the returned solution has the error trajectory
-(`SciMLBase.has_global_error` is `true`): `sol.global_error[i]` is the estimated global
-error `y(sol.t[i]) - sol.u[i]` of each saved state, as a vector. The solution is dense
-and saved at each step of the forward solve (`saveat` does not apply). If an event time
-is saved twice, the first entry has the error before the events at that time and the
-second the error after them. Under global error control, the final solution costs one
-more forward solve in `InterpolatingMode` and one more estimate in `SimultaneousMode`.
-If the solve is deterministic, the user's callback objects see only that final solve.
+`scope` ([`GlobalAdjointScope`](@ref)) selects what the returned solution reports in
+`sol.global_error` (`SciMLBase.has_global_error` is `true`):
+
+  - [`EndpointError`](@ref) (default): the estimated endpoint error 2-norm in
+    `sol.global_error[end]`. The returned solution is a final solve with the saving
+    options of `solve` (`saveat`, `save_idxs`, ...), and the estimates run on a copy of the
+    callbacks, so the user's callback objects see only that final solve.
+  - [`TrajectoryError`](@ref) (`DefectCorrection` only): `sol.global_error[i]` is the
+    estimated global error `y(sol.t[i]) - sol.u[i]` of each saved state, as a vector. The
+    solution is dense and saved at each step of the forward solve, so `solve` rejects
+    `saveat`, `save_idxs` and the other saving options that conflict with that. If an
+    event time is saved twice, the first entry has the error before the events at that
+    time and the second the error after them. Under global error control, the final
+    solution costs one more forward solve in `InterpolatingMode` and one more estimate in
+    `SimultaneousMode`. If the solve is deterministic, the user's callback objects see
+    only that final solve.
+
 [`global_error_estimate`](@ref) gives only the endpoint error 2-norm, with no solution.
 
 `companion_alg` selects the solver for the companion equation (by default the forward
@@ -107,6 +146,7 @@ struct GlobalErrorEstimation{A, CA, AD, G, V} <: GlobalDiffEqAlgorithm
     companion_alg::CA
     equation::GlobalErrorEquation
     mode::GlobalErrorMode
+    scope::GlobalAdjointScope
     autodiff::AD
     gtol::G
     options::V
@@ -116,6 +156,7 @@ function GlobalErrorEstimation(
         alg;
         equation = DefectCorrection,
         mode = InterpolatingMode,
+        scope = EndpointError,
         companion_alg = nothing,
         autodiff = ADTypes.AutoForwardDiff(),
         gtol = nothing,
@@ -130,11 +171,16 @@ function GlobalErrorEstimation(
     (mode === InterpolatingMode || mode === SimultaneousMode) || throw(
         ArgumentError("`mode` must be InterpolatingMode or SimultaneousMode")
     )
+    scope isa GlobalAdjointScope ||
+        throw(ArgumentError("`scope` must be EndpointError or TrajectoryError"))
+    scope === TrajectoryError && equation !== DefectCorrection && throw(
+        ArgumentError("`scope = TrajectoryError` needs `equation = DefectCorrection`")
+    )
     options = _companion_options(
         gtol, maxiters, safety, companion_abstol, companion_reltol
     )
     return GlobalErrorEstimation(
-        alg, something(companion_alg, alg), equation, mode, autodiff, gtol, options
+        alg, something(companion_alg, alg), equation, mode, scope, autodiff, gtol, options
     )
 end
 
@@ -184,7 +230,7 @@ function global_error_estimate(
     return _estimate(prob, alg, args...; abstol, reltol, companion_abstol, companion_reltol, kwargs...)
 end
 
-SciMLBase.has_global_error(alg::GlobalErrorEstimation) = alg.equation === DefectCorrection
+SciMLBase.has_global_error(::GlobalErrorEstimation) = true
 
 # With `trajectory = true` (DefectCorrection only), returns `(; estimate, sol)`, where `sol`
 # has the estimated error of each saved state in `global_error`.
@@ -259,20 +305,32 @@ function SciMLBase.__solve(
     # The solve pipeline has already merged the problem's callback into `kwargs`. Remove it
     # from the problem, or the inner solves merge it again and an affect runs twice.
     prob = @set prob.kwargs = _without_callback(prob.kwargs)
-    alg.gtol === nothing &&
-        return _estimate(prob, alg, args...; abstol, reltol, trajectory = true, kwargs...).sol
+    scope_trajectory = alg.scope === TrajectoryError
+    scope_trajectory && _check_trajectory_saving(kwargs, "GlobalErrorEstimation")
+    # EndpointError: the estimates run on a copy of the callbacks, and the returned
+    # solution is a solve with the user's options, as without events.
+    endpoint_solve = function (local_abstol, local_reltol, estimate)
+        sol = SciMLBase.solve(prob, alg.alg, args...; abstol = local_abstol, reltol = local_reltol, kwargs...)
+        return @set sol.global_error = _endpoint_global_error(sol, estimate)
+    end
+    if alg.gtol === nothing
+        scope_trajectory &&
+            return _estimate(prob, alg, args...; abstol, reltol, trajectory = true, kwargs...).sol
+        estimate = _estimate(prob, alg, args...; abstol, reltol, _with_copied_callback(kwargs)...)
+        return endpoint_solve(abstol, reltol, estimate)
+    end
     # Each estimate runs on a copy of the callbacks, so that the user's callback objects
     # (for example the values of a SavingCallback) see only the final solve. Only
     # InterpolatingMode keeps the trajectory; SimultaneousMode keeps its O(1) memory.
-    trajectory = alg.equation === DefectCorrection && alg.mode === InterpolatingMode
+    trajectory = scope_trajectory && alg.mode === InterpolatingMode
     estimator = (local_abstol, local_reltol) -> _estimate(
         prob, alg, args...;
         abstol = local_abstol, reltol = local_reltol, trajectory, _with_copied_callback(kwargs)...
     )
-    final_solve = alg.equation === DefectCorrection ?
+    final_solve = scope_trajectory ?
         (local_abstol, local_reltol, accepted) -> _final_solve(
             prob, alg, accepted, args...; abstol = local_abstol, reltol = local_reltol, kwargs...
-        ) : nothing
+        ) : endpoint_solve
     return _refine_to_gtol(
         estimator, prob, alg.alg, alg.gtol, alg.options, args...;
         final_solve, abstol, reltol, kwargs...

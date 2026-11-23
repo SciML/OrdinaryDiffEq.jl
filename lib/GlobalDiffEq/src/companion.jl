@@ -197,6 +197,24 @@ const _DENSE_SOLVE_KWARGS = (;
     save_idxs = nothing,
 )
 
+# A `TrajectoryError` solution uses `_DENSE_SOLVE_KWARGS`, so reject a saving option that
+# asks for something else, not ignore it.
+function _check_trajectory_saving(kwargs, name)
+    for (key, value) in pairs(_DENSE_SOLVE_KWARGS)
+        haskey(kwargs, key) || continue
+        given = kwargs[key]
+        same = key === :saveat ? isempty(given) : isequal(given, value)
+        same || throw(
+            ArgumentError(
+                "$name with `scope = TrajectoryError` returns a dense solution saved at each " *
+                    "step, so it does not support `$key = $given`. Use `scope = EndpointError` " *
+                    "(the default) to keep the saving options."
+            )
+        )
+    end
+    return nothing
+end
+
 # Endpoint-error refinement loop: solve, estimate the endpoint global error, and
 # tighten the local tolerances until the estimate is at most gtol; then redo the
 # solve with the user's original saving options. If given, `final_solve(abstol, reltol,

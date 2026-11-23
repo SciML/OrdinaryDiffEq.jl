@@ -1,28 +1,4 @@
 """
-    GlobalAdjointScope
-
-What [`GlobalAdjoint`](@ref) estimates and reports in `sol.global_error`. One of
-[`EndpointError`](@ref) or [`TrajectoryError`](@ref).
-"""
-@enum GlobalAdjointScope EndpointError TrajectoryError
-
-@doc """
-    EndpointError
-
-Estimate the global error 2-norm only at the final time: `sol.global_error[end]`
-holds it and earlier entries are zero. The default; one adjoint solve per sample.
-""" EndpointError
-
-@doc """
-    TrajectoryError
-
-Estimate the global error 2-norm at every saved time: `sol.global_error[i]` is the
-estimate at `sol.t[i]` (`sol.global_error[1] = 0`), filled along the whole
-trajectory. Costs one reverse-adjoint solve per saved time per sample, and the
-returned solution is dense and saved at every solver step.
-""" TrajectoryError
-
-"""
     GlobalAdjointControl
 
 How [`GlobalAdjoint`](@ref) drives the solve to meet `gtol`. One of
@@ -460,8 +436,11 @@ end
 
 # Endpoint-mode global error: a vector aligned with the saved times carrying the
 # estimated endpoint 2-norm in the final slot (earlier times are not estimated in
-# endpoint mode).
+# endpoint mode). If the solution does not save the final time (for example with
+# `saveat`), no saved entry has that error, so the result is `nothing`.
 function _endpoint_global_error(sol, estimate)
+    (sol.retcode == SciMLBase.ReturnCode.Terminated || sol.t[end] == sol.prob.tspan[2]) ||
+        return nothing
     global_error = zeros(typeof(estimate), length(sol.t))
     global_error[end] = estimate
     return global_error
@@ -480,6 +459,7 @@ function SciMLBase.__solve(
     _validate_adjoint_problem(prob)
     _warn_if_low_order_quadrature(alg, kwargs)
 
+    alg.scope === TrajectoryError && _check_trajectory_saving(kwargs, "GlobalAdjoint")
     alg.control === StepGridRefinement && _has_callbacks(kwargs) && throw(
         ArgumentError("GlobalAdjoint does not support StepGridRefinement with callbacks")
     )

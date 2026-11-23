@@ -34,8 +34,10 @@ and [`GlobalErrorMode`](@ref) selects how it is integrated — [`InterpolatingMo
 (store the dense solution, integrate the companion in a second pass) or
 [`SimultaneousMode`](@ref) (advance the companion inline over each step for `O(1)`
 extra memory and no second solve). [`global_error_estimate`](@ref)`(prob, alg)`
-exposes the standalone estimator. With `DefectCorrection`, `solve` returns the estimated
-error of each saved state in `sol.global_error`.
+exposes the standalone estimator. With `DefectCorrection` and `scope = TrajectoryError`,
+`solve` returns the estimated error of each saved state in `sol.global_error`; the default
+`scope = EndpointError` keeps the saving options of `solve` and reports the endpoint
+estimate.
 
 To control the endpoint global error to a tolerance `gtol`, wrap any adaptive
 solver in [`GlobalAdjoint`](@ref) (adjoint-based, for endpoint functionals;
