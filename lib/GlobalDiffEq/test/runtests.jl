@@ -37,5 +37,13 @@ run_tests(;
         env = joinpath(@__DIR__, "qa"),
         body = joinpath(@__DIR__, "qa", "qa.jl"),
     ),
+    # ModelingToolkit group: in its own sub-env (test/modelingtoolkit/Project.toml), so
+    # that Core does not load ModelingToolkit.
+    groups = Dict(
+        "ModelingToolkit" => (;
+            env = joinpath(@__DIR__, "modelingtoolkit"),
+            body = joinpath(@__DIR__, "modelingtoolkit", "event_parameters_tests.jl"),
+        ),
+    ),
     all = ["Core"],
 )

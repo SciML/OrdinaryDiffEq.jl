@@ -61,25 +61,38 @@ end
 # term, applies z_d ← Sᵀ z_d, and skips to just before a, so the dual never enters the
 # window. If the new time is also a stop, the same call handles it. For a DAE, the callback
 # initialization makes z_a consistent.
+#
+# The event parameters π (`GlobalDiffEq._event_parameters`) are states with π' = 0, so
+# their dual μ has μ' = -fₚᵀ λ and no effect on λ between events. The same quadrature
+# integrates μ as components 2:end, starting from `μ0`, and the bridge applies the event
+# maps to [z_d; μ] (the event space). `parameter_vjp(t, λ)` gives fₚᵀ λ.
 function _bridged_adjoint(
         forced_sol, sensealg, adjoint_alg, vterm, terminal_time;
-        M, dif, alg_idx, knots, jumps, windows, abstol, reltol, reinit_abstol, defect
+        M, dif, alg_idx, knots, jumps, windows, abstol, reltol, reinit_abstol, defect,
+        μ0, parameter_vjp
     )
     n = length(vterm)
+    nd = length(dif)
+    m = length(μ0)
     isdae = !isempty(alg_idx)
     T = eltype(vterm)
     terminal! = (out, u, p, t, i) -> (copyto!(out, vterm); nothing)
     # The integrand uses the exact r = ∂F/∂ε, with the sign of SciMLSensitivity's adjoint
     # convention. A VJP through F (SciMLSensitivity's `GaussIntegrand`) is a finite
     # difference in ε for `autojacvec = false`, which loses the small r against f(u).
-    quad_values = DiffEqCallbacks.IntegrandValuesSum(zeros(T, 1))
-    quad_f = (out, u, t, integrator) -> (out[1] = -dot(u, defect(t)); nothing)
+    # The sum over the reverse steps gives +∫ λᵀ r dt and μ(t) = ∫ₜ fₚᵀ λ ds.
+    quad_values = DiffEqCallbacks.IntegrandValuesSum([zero(T); μ0])
+    quad_f = function (out, u, t, integrator)
+        out[1] = -dot(u, defect(t))
+        m == 0 || (out[2:end] .= .-parameter_vjp(t, u))
+        return nothing
+    end
     # The Gauss–Kronrod callback keeps its default absolute subdivision tolerance (1e-7).
     # Below it, it is a fixed Kronrod rule, which the validation catalog shows to be
     # sufficient; a tolerance near the roundoff of the integrand would never stop.
     quad = sensealg isa SciMLSensitivity.GaussAdjoint ?
-        DiffEqCallbacks.IntegratingSumCallback(quad_f, quad_values, zeros(T, 1); integrand_inplace = true) :
-        DiffEqCallbacks.IntegratingGKSumCallback(quad_f, quad_values, zeros(T, 1); integrand_inplace = true)
+        DiffEqCallbacks.IntegratingSumCallback(quad_f, quad_values, zeros(T, 1 + m); integrand_inplace = true) :
+        DiffEqCallbacks.IntegratingGKSumCallback(quad_f, quad_values, zeros(T, 1 + m); integrand_inplace = true)
     # The Gauss method of `ODEAdjointProblem` needs a `GaussIntegrand`, but only uses it for
     # checkpointing. `autojacvec = false` builds it without a ReverseDiff tape of f.
     integrand = SciMLSensitivity.GaussIntegrand(
@@ -108,10 +121,13 @@ function _bridged_adjoint(
         end
         for k in searchsorted(ends, t)
             w = active[k]
-            zb = integrator.u[dif]
+            # The quadrature has added the last step, so μ is μ(t) here.
+            μ = view(quad_values.integrand, 2:(1 + m))
+            zb = [integrator.u[dif]; μ]
             za = w.St(zb)
-            push!(pair_terms, dot(zb, w.eb[dif]) - dot(za, w.ea[dif]))
-            integrator.u[dif] .= za
+            push!(pair_terms, dot(zb, w.eb) - dot(za, w.ea))
+            integrator.u[dif] .= za[1:nd]
+            μ .= za[(nd + 1):end]
             target = prevfloat(w.a)
         end
         return target
@@ -149,7 +165,7 @@ function GlobalDiffEq._adjoint_defect_projection(
         data, sensealg, adjoint_alg, direction;
         abstol, reltol, terminal_index = lastindex(data.sol.t)
     )
-    (; prob, sol, knots, jumps, windows, dif, alg_idx, params) = data
+    (; prob, sol, knots, jumps, windows, dif, alg_idx, params, ep) = data
     terminal_time = sol.t[terminal_index]
     sensealg === nothing ||
         sensealg isa SciMLSensitivity.InterpolatingAdjoint ||
@@ -210,19 +226,28 @@ function GlobalDiffEq._adjoint_defect_projection(
     # The identity gives the error against P(t∓), and the saved state can differ from it
     # (for example, the dense output of Rosenbrock32 does not end at the step's state).
     shift = dot(direction, PT .- sol.u[terminal_index])
+    # The crossings act on the event space [z_d; μ], with μ(T) = 0.
+    nd = length(dif)
+    zw = [vterm[dif]; zeros(eltype(vterm), ep.m)]
     for w in reverse(before_entry)
         bridge = GlobalDiffEq._entry_bridge(w, terminal_index)
-        za = bridge.St(vterm[dif])
-        endpoint_term += dot(vterm[dif], bridge.eb[dif]) - dot(za, w.ea[dif])
-        vterm[dif] .= za
+        za = bridge.St(zw)
+        endpoint_term += dot(zw, bridge.eb) - dot(za, w.ea)
+        zw = za
     end
+    vterm[dif] .= zw[1:nd]
+    μ0 = zw[(nd + 1):end]
+    # fₚᵀ λ at the forward solution, on the same side as r.
+    parameter_vjp = (t, λ) -> GlobalDiffEq._parameter_vjp(
+        f, iip, sol(t; continuity = side(t)), p_at(t, side(t)), t, ep, λ
+    )
     # The dual starts one ulp before an interior terminal time, so that its first step reads
     # the forward solution and the parameters before the knot (as at the other knots).
     start = terminal_time < T ? prevfloat(terminal_time) : terminal_time
     solve_with(problem, sensealg) = _bridged_adjoint(
         (@set sol.prob = problem), sensealg, adjoint_alg, vterm, start;
         M, dif, alg_idx, knots, jumps, windows, abstol, reltol, reinit_abstol = abstol,
-        defect = r,
+        defect = r, μ0, parameter_vjp,
     )
     # One call per problem type, so that each adjoint solve has a concrete type.
     solve_terms(sensealg) = !isempty(alg_idx) && sensealg.autojacvec === false ?

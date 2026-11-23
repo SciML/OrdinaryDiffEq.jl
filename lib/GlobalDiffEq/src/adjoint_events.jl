@@ -23,7 +23,91 @@ function _semiexplicit_components(prob, name)
     return findall(isone, d), findall(iszero, d)
 end
 
-_rhs(f, iip, u, p, t) = iip ? (du = similar(u); f(du, u, p, t); du) : f(u, p, t)
+# For an in-place f, the output takes the element type of the parameters too, so that AD
+# through the parameters works. `T` overrides it for a parameter object without an
+# element type (such as a ModelingToolkit `MTKParameters`).
+_rhs(f, iip, u, p, t, T = _rhs_eltype(u, p)) =
+    iip ? (du = similar(u, T); f(du, u, p, t); du) : f(u, p, t)
+_rhs_eltype(u, p::AbstractArray{<:Number}) = promote_type(eltype(u), eltype(p))
+_rhs_eltype(u, p) = eltype(u)
+
+# The parameters that an affect changes (the "event parameters"), as a vector π with
+# `get(q) = π` and `set(q, π)`, the parameters q with these values (with the element type of
+# π, for AD). An affect can set a parameter to a value that depends on the state, so that
+# the error of the state before the event gives an error of the parameter after it.
+# GlobalAdjoint then carries these parameters as extra states with π' = 0 (see
+# `_event_saltation`).
+struct _EventParameters{G, S}
+    get::G
+    set::S
+    m::Int
+end
+const _NO_EVENT_PARAMETERS = _EventParameters(q -> Float64[], (q, π) -> q, 0)
+
+# The event parameters of the recorded parameter values. A vector of numbers uses indices.
+# Parameters with symbols (ModelingToolkit) use SymbolicIndexingInterface: `getp` and
+# `remake_buffer`, which promotes each buffer by itself. A changed integer or Bool
+# parameter (a mode) is piecewise constant, so it has no derivative and is not in π. Returns
+# nothing if a changed parameter is of another kind (`_check_parameter_dependence` then
+# rejects a dependence on the state). DiffEqBase can wrap the parameters in a
+# `DespecializedParameters`; `set` wraps the result again.
+function _event_parameters(prob, params)
+    unwrap = SciMLBase.unwrap_parameters
+    rewrap = (q, inner) -> q isa SciMLBase.DespecializedParameters ?
+        SciMLBase.DespecializedParameters(inner) : inner
+    values = map(unwrap, params.values)
+    p0 = first(values)
+    if all(v -> v isa AbstractVector{<:Number}, values)
+        idx = [i for i in eachindex(p0) if any(v -> !isequal(v[i], p0[i]), values)]
+        isempty(idx) && return _NO_EVENT_PARAMETERS
+        set = (q, π) -> rewrap(q, _with_indices(unwrap(q), idx, π))
+        return _EventParameters(q -> unwrap(q)[idx], set, length(idx))
+    end
+    syms = try
+        SymbolicIndexingInterface.parameter_symbols(prob)
+    catch err
+        err isa InterruptException && rethrow()
+        return nothing
+    end
+    (syms === nothing || isempty(syms)) && return nothing
+    changed = Any[]
+    for s in syms
+        read = SymbolicIndexingInterface.getp(prob, s)
+        v0 = read(p0)
+        any(v -> !isequal(read(v), v0), values) || continue
+        v0 isa AbstractFloat && (push!(changed, s); continue)
+        v0 isa Real || return nothing
+    end
+    isempty(changed) && return _NO_EVENT_PARAMETERS
+    read = SymbolicIndexingInterface.getp(prob, changed)
+    set = (q, π) -> rewrap(q, SymbolicIndexingInterface.remake_buffer(prob, unwrap(q), changed, π))
+    return _EventParameters(q -> collect(read(unwrap(q))), set, length(changed))
+end
+
+function _with_indices(p, idx, π)
+    q = similar(p, promote_type(eltype(p), eltype(π)))
+    copyto!(q, p)
+    q[idx] .= π
+    return q
+end
+
+# `p` with the event parameters set to π.
+_with_parameters(p, ep::_EventParameters, π) = ep.m == 0 ? p : ep.set(p, π)
+
+# fₚᵀ λ for the event parameters, the integrand of their dual μ (μ' = -fₚᵀ λ). ForwardDiff
+# over π (few components), or finite differences if ForwardDiff cannot run f.
+function _parameter_vjp(f, iip, u, p, t, ep, λ)
+    g = π -> LinearAlgebra.dot(
+        λ, _rhs(f, iip, u, _with_parameters(p, ep, π), t, promote_type(eltype(u), eltype(π)))
+    )
+    π0 = ep.get(p)
+    return try
+        DifferentiationInterface.gradient(g, ADTypes.AutoForwardDiff(), π0)
+    catch err
+        err isa InterruptException && rethrow()
+        vec(_fd_jacobian(π -> [g(π)], π0))
+    end
+end
 # Fall back to finite differences if ForwardDiff cannot run f, as the default sensealg falls
 # back to a numerical VJP. If f itself throws, `_fd_jacobian` throws the error again.
 function _rhs_jacobian(f, iip, u, p, t, verbose)
@@ -150,51 +234,61 @@ function _tied_affects(callback, labels, t, parent, args, tied, sol, P, reinit)
     end
 end
 
-# The saltation matrix of a forward event on the differential components,
+# The event space of the saltation maps: the differential components of the state and the
+# event parameters `ep` (`_EventParameters`), w = [x; π]. The parameters are states with
+# π' = 0, so φ = [f; 0].
+# Parameters of another type have no event parameters, and need no indexing.
+_event_vector(u, q, dif, ep) = ep.m == 0 ? u[dif] : [u[dif]; ep.get(q)]
+
+# The saltation matrix of a forward event on the event space w = [x; π],
 #     S = A + (φ⁺ - A φ⁻) ∇γᵀ / (∇γ ⋅ φ⁻ + γ_t),
-# with A the Jacobian of the affects (and the DAE reinitialization), γ the event condition
-# and φ the vector field of the reduced ODE x' = f_d(x, z(x)). Also the offset
-# c = (φ⁺ - A φ⁻) γ₀ / (∇γ ⋅ φ⁻ + γ_t), so that e⁺ = S e⁻ + c. Here γ₀ = γ(`u_event`) can be
-# nonzero: the forward root finding reads an interpolant, which is not consistent for a
-# condition on an algebraic variable. A DiscreteCallback does not move its time, so S = A
-# and c = 0.
+# with R(w, t) the composed reset (the affects and the DAE reinitialization), A = ∂R/∂w,
+# γ the event condition and φ the vector field of the reduced ODE x' = f_d(x, z(x)),
+# π' = 0. Also the offset c = (φ⁺ - A φ⁻) γ₀ / (∇γ ⋅ φ⁻ + γ_t), so that e⁺ = S e⁻ + c. Here γ₀ = γ(`u_event`) can be nonzero: the forward root finding
+# reads an interpolant, which is not consistent for a condition on an algebraic variable. A
+# DiscreteCallback does not move its time, so S = A and c = 0.
 # A, ∇γ, γ_t and φ⁻ use the state before the call: P(t⁻), or `u_before` for a later call at
 # the same time. φ⁺ uses the state `u_after` (default P(t⁺)) and the parameters `p_after`.
 function _event_saltation(
         callback, labels, t, p, parent, P, sol, prob, dif, alg_idx;
         u_event, p_after, u_after = nothing, u_before = nothing, args = nothing, tied = (),
-        verbose = DEVerbosity()
+        ep = _NO_EVENT_PARAMETERS, verbose = DEVerbosity()
     )
     f = SciMLBase.unwrapped_f(prob.f)
     iip = SciMLBase.isinplace(prob)
     p = deepcopy(p)
-    rhs_with = q -> (u -> _rhs(f, iip, u, q, t))
-    fu = rhs_with(p)
+    nd = length(dif)
+    rhs_with = (q, s) -> (u -> _rhs(f, iip, u, q, s))
     Pm = u_before === nothing ? sol(t; continuity = :left) : u_before
     Pp = u_after === nothing ? sol(t; continuity = :right) : u_after
-    full = x -> (u = copy(Pm); u[dif] .= x; _project_algebraic(fu, u, alg_idx))
-    xm = Pm[dif]
-    affect_all = _tied_affects(
-        callback, labels, t, parent, args, tied, sol, P, (u, q) -> _project_algebraic(rhs_with(q), u, alg_idx)
-    )
-    affected = x -> first(affect_all(full(x), p))[dif]
-    A = _fd_jacobian(affected, xm)
-    callback isa SciMLBase.DiscreteCallback && return A, zero(xm)
-    γ = x -> _trial_condition(callback, labels, full(x), t, parent, p, sol, P)
-    ∇γ = vec(_fd_jacobian(x -> [γ(x)], xm))
+    params = w -> _with_parameters(p, ep, w[(nd + 1):end])
+    full = (w, s) -> (u = copy(Pm); u[dif] .= w[1:nd]; _project_algebraic(rhs_with(params(w), s), u, alg_idx))
+    wm = _event_vector(Pm, p, dif, ep)
+    reset = function (w, s)
+        q = params(w)
+        affect_all = _tied_affects(
+            callback, labels, s, parent, args, tied, sol, P,
+            (u, q) -> _project_algebraic(rhs_with(q, s), u, alg_idx)
+        )
+        return _event_vector(affect_all(full(w, s), q)..., dif, ep)
+    end
+    A = _fd_jacobian(w -> reset(w, t), wm)
+    callback isa SciMLBase.DiscreteCallback && return A, zero(wm)
+    γ = w -> _trial_condition(callback, labels, full(w, t), t, parent, params(w), sol, P)
+    ∇γ = vec(_fd_jacobian(w -> [γ(w)], wm))
     h = sqrt(eps(typeof(t))) * max(1, abs(t))
     γt = (
         _trial_condition(callback, labels, Pm, t + h, parent, p, sol, P) -
             _trial_condition(callback, labels, Pm, t - h, parent, p, sol, P)
     ) / (2h)
-    φm = fu(full(xm))[dif]
-    φp = rhs_with(p_after)(Pp)[dif]
+    φm = [rhs_with(p, t)(full(wm, t))[dif]; zeros(eltype(wm), ep.m)]
+    φp = [rhs_with(p_after, t)(Pp)[dif]; zeros(eltype(wm), ep.m)]
     jump = (φp .- A * φm) ./ (LinearAlgebra.dot(∇γ, φm) + γt)
     S = A .+ jump * ∇γ'
     # γ₀ at the forward event state, not at P(t⁻): the mismatch m = P(t⁻) - u_f has its own
     # source term.
-    c = jump .* γ(u_event[dif])
-    all(isfinite, S) && all(isfinite, c) || return (_grazing_message(t, verbose); (A, zero(xm)))
+    c = jump .* γ(_event_vector(u_event, p, dif, ep))
+    all(isfinite, S) && all(isfinite, c) || return (_grazing_message(t, verbose); (A, zero(wm)))
     return S, c
 end
 
@@ -257,58 +351,74 @@ function _algebraic_projection(f, iip, t, dif, alg_idx, solver)
     end
 end
 
-# The matrix-free form of `_event_saltation` (see `_event_vjp`). With
-# j = (φ⁺ - A φ⁻) / (∇γ ⋅ φ⁻ + γ_t):
-#     Sᵀz = Aᵀz + ∇γ (j ⋅ z),   S x = A x + j (∇γ ⋅ x),   c = j γ₀.
-# Aᵀz uses ReverseDiff (a tracked-real state lets an affect write into it); A x uses
-# ForwardDiff. For a DAE, the maps act on the differential components, and the algebraic
-# projection (`_algebraic_projection`) comes before the affects and after each of them, as
-# in `_event_saltation`. The cost per event does not grow with the state size. Returns
-# nothing if the AD fails on the user callback: the trial products below catch that here,
-# not in the adjoint solve.
+# The matrix-free form of `_event_saltation` (see `_event_vjp`), on the same event space
+# w = [x; π]. With j = (φ⁺ - A φ⁻) / (∇γ ⋅ φ⁻ + γ_t):
+#     Sᵀz = Aᵀz + ∇γ (j ⋅ z),   S w = A w + j (∇γ ⋅ w),   c = j γ₀.
+# Aᵀz uses ReverseDiff (a tracked-real state lets an affect write into it); A w uses
+# ForwardDiff. For a DAE, the
+# maps act on the differential components, and the algebraic projection
+# (`_algebraic_projection`) comes before the affects and after each of them, as in
+# `_event_saltation`. The cost per event does not grow with the state size. Returns nothing
+# if the AD fails on the user callback: the trial products below catch that here, not in
+# the adjoint solve. Also nothing for a DAE with event parameters: the implicit-function
+# rule of the projection differentiates only through x, not through the parameters.
 function _saltation_vjp(
         callback, labels, t, p, parent, P, sol, prob, dif, alg_idx;
         u_event, p_after, u_after = nothing, u_before = nothing, args = nothing, tied = (),
-        verbose = DEVerbosity()
+        ep = _NO_EVENT_PARAMETERS, verbose = DEVerbosity()
     )
+    isempty(alg_idx) || ep.m == 0 || return nothing
     f = SciMLBase.unwrapped_f(prob.f)
     iip = SciMLBase.isinplace(prob)
     p = deepcopy(p)
+    nd = length(dif)
     Pm = u_before === nothing ? sol(t; continuity = :left) : u_before
     Pp = u_after === nothing ? sol(t; continuity = :right) : u_after
+    params = w -> _with_parameters(p, ep, w[(nd + 1):end])
     if isempty(alg_idx)
-        reinit, full, restrict, x0 = (u, q) -> u, identity, identity, Pm
+        reinit_at = s -> (u, q) -> u
+        full = (w, s) -> w[1:nd]
     else
-        project = _algebraic_projection(f, iip, t, dif, alg_idx, _algebraic_solver())
-        reinit = (u, q) -> project(u[dif], u[alg_idx], q)
-        full = x -> project(x, Pm[alg_idx], p)
-        restrict = u -> u[dif]
-        x0 = Pm[dif]
+        reinit_at = function (s)
+            project = _algebraic_projection(f, iip, s, dif, alg_idx, _algebraic_solver())
+            return (u, q) -> project(u[dif], u[alg_idx], q)
+        end
+        full = function (w, s)
+            project = _algebraic_projection(f, iip, s, dif, alg_idx, _algebraic_solver())
+            return project(w[1:nd], Pm[alg_idx], p)
+        end
     end
-    affect_all = _tied_affects(callback, labels, t, parent, args, tied, sol, P, reinit)
-    affect = x -> restrict(first(affect_all(full(x), p)))
-    condition = (u, s) -> _trial_condition(callback, labels, u, s, parent, p, sol, P)
+    w0 = _event_vector(Pm, p, dif, ep)
+    reset = function (w, s)
+        q = params(w)
+        affect_all = _tied_affects(callback, labels, s, parent, args, tied, sol, P, reinit_at(s))
+        return _event_vector(affect_all(full(w, s), q)..., dif, ep)
+    end
+    condition = (u, q, s) -> _trial_condition(callback, labels, u, s, parent, q, sol, P)
     Atz = z -> DifferentiationInterface.gradient(
-        x -> LinearAlgebra.dot(z, affect(collect(x))), ADTypes.AutoReverseDiff(), x0
+        w -> LinearAlgebra.dot(z, reset(collect(w), t)), ADTypes.AutoReverseDiff(), w0
     )
     Ax = x -> DifferentiationInterface.derivative(
-        h -> affect(x0 .+ h .* x), ADTypes.AutoForwardDiff(), zero(t)
+        h -> reset(w0 .+ h .* x, t), ADTypes.AutoForwardDiff(), zero(t)
     )
     return try
-        Atz(one.(x0))
-        Ax(one.(x0))
-        callback isa SciMLBase.DiscreteCallback && return Atz, Ax, zero(x0)
-        φm = restrict(_rhs(f, iip, full(x0), p, t))
-        φp = restrict(_rhs(f, iip, Pp, p_after, t))
+        Atz(one.(w0))
+        Ax(one.(w0))
+        callback isa SciMLBase.DiscreteCallback && return Atz, Ax, zero(w0)
+        zeroπ = zeros(eltype(w0), ep.m)
+        φm = [_rhs(f, iip, full(w0, t), p, t)[dif]; zeroπ]
+        φp = [_rhs(f, iip, Pp, p_after, t)[dif]; zeroπ]
         ∇γ = DifferentiationInterface.gradient(
-            x -> condition(full(collect(x)), t), ADTypes.AutoReverseDiff(), x0
+            w -> (w = collect(w); condition(full(w, t), params(w), t)), ADTypes.AutoReverseDiff(), w0
         )
         h = sqrt(eps(typeof(t))) * max(1, abs(t))
-        γt = (condition(Pm, t + h) - condition(Pm, t - h)) / (2h)
+        γt = (condition(Pm, p, t + h) - condition(Pm, p, t - h)) / (2h)
         j = (φp .- Ax(φm)) ./ (LinearAlgebra.dot(∇γ, φm) + γt)
-        all(isfinite, j) || return (_grazing_message(t, verbose); (Atz, Ax, zero(x0)))
+        all(isfinite, j) || return (_grazing_message(t, verbose); (Atz, Ax, zero(w0)))
+        wevent = _event_vector(u_event, p, dif, ep)
         (z -> Atz(z) .+ ∇γ .* LinearAlgebra.dot(j, z)),
-            (x -> Ax(x) .+ j .* LinearAlgebra.dot(∇γ, x)), j .* condition(full(restrict(u_event)), t)
+            (x -> Ax(x) .+ j .* LinearAlgebra.dot(∇γ, x)),
+            j .* condition(full(wevent, t), p, t)
     catch err
         err isa InterruptException && rethrow()
         nothing
@@ -318,13 +428,12 @@ end
 # Merge the zero-width windows of the calls at one event time. The calls act in order, so
 # the bridge composes their saltation maps, the first call's e(a⁻) stays, and an earlier
 # source goes through the later maps: e(b⁺) = S₂ e₁(b⁺) + e₂(b⁺) on `dif`.
-function _merge_windows(windows, dif)
+function _merge_windows(windows)
     merged = Any[]
     for w in sort(windows; by = w -> w.a)
         if !isempty(merged) && w.a == merged[end].b
             m = merged[end]
-            eb = copy(w.eb)
-            eb[dif] .+= w.Sx(m.eb[dif])
+            eb = w.eb .+ w.Sx(m.eb)
             St1, St2, Sx1, Sx2 = m.St, w.St, m.Sx, w.Sx
             merged[end] = (;
                 a = m.a, b = w.b, ea = m.ea, eb,
@@ -410,7 +519,13 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
     e0 = u_init .- sol(sol.t[1]; continuity = :right)
     calls = _forward_calls(marks, events)
     params = _parameter_record(calls, snapshots, deepcopy(integrator.p))
-    zero_e = zero(prob.u0)
+    # The event space of the windows is [x; π] (`_event_vector`). Parameters that are not a
+    # vector of numbers have no π, so an affect must not make them depend on the state.
+    ep = _event_parameters(prob, params)
+    known_parameters = ep !== nothing
+    ep = something(ep, _NO_EVENT_PARAMETERS)
+    nw = length(dif) + ep.m
+    zero_w = zeros(eltype(prob.u0), nw)
     # Calls at one time act in order: the state and parameters after a call are those before
     # the next one, and only the first call has the cut-step mismatch. After the last call,
     # the dense output starts at P(t⁺) (`_save_after_events`). A call that changes neither u
@@ -435,18 +550,19 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
         (; p, parent, args) = snapshots[k]
         callback = trial_callbacks[first(first(labels))]
         u_f = snapshots[k].u
-        # Δ of `_check_trial_affect`, or zero for an affect that changes nothing.
+        # Δ of `_check_trial_affect` on the event space, or zero for an affect that changes
+        # nothing.
         affect_error = after_states[k].changed ?
-            _check_trial_affect(callback, labels, tf, snapshots[k], after_states[k], P, sol) :
-            zero_e
+            _check_trial_affect(callback, labels, tf, snapshots[k], after_states[k], P, sol, dif, ep) :
+            zero_w
+        after_states[k].changed && !known_parameters && _check_parameter_dependence(
+            callback, labels, tf, snapshots[k], P, sol, dif
+        )
         if tied_to[k] != 0
             # Add Δ after the group, not through its later affects; this drops a term of
-            # size Δ (A - I). A new name, so that the closure `bridge` does not capture this
-            # variable in a box.
-            source = copy(zero_e)
-            source[dif] .-= affect_error[dif]
+            # size Δ (A - I).
             return (;
-                a = tf, b = tf, ea = copy(zero_e), eb = source, St = identity,
+                a = tf, b = tf, ea = copy(zero_w), eb = -affect_error, St = identity,
                 Sx = identity, saves = saves[k], group_saves = [saves[k]], partial = nothing,
                 after_states[k].changed,
             )
@@ -473,17 +589,18 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
             u_after = next === nothing ? nothing : next.u
             vjp = event_vjp && changed && (isempty(alg_idx) || _algebraic_solver() !== nothing)
             maps = if !changed
-                identity, identity, zero(u_f[dif])
+                identity, identity, copy(zero_w)
             elseif vjp
                 _saltation_vjp(
                     callback, labels, tf, p, parent, P, sol, prob, dif, alg_idx;
-                    u_event = u_f, p_after, u_after, u_before, args, tied, verbose
+                    u_event = u_f, p_after, u_after, u_before, args, tied, ep, verbose
                 )
             else
                 nothing
             end
             if maps === nothing
-                vjp && @SciMLMessage(
+                # A DAE with event parameters uses finite differences by design, so no message.
+                vjp && (isempty(alg_idx) || ep.m == 0) && @SciMLMessage(
                     "GlobalAdjoint uses the finite-difference saltation matrix at the event at " *
                         "t = $tf: ReverseDiff and ForwardDiff cannot differentiate the callback (or, for a " *
                         "DAE, the algebraic projection). " *
@@ -493,15 +610,13 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
                 )
                 S, c = _event_saltation(
                     callback, labels, tf, p, parent, P, sol, prob, dif, alg_idx;
-                    u_event = u_f, p_after, u_after, u_before, args, tied, verbose
+                    u_event = u_f, p_after, u_after, u_before, args, tied, ep, verbose
                 )
                 St, Sx = _saltation_maps(S)
             else
                 St, Sx, c = maps
             end
-            eb = copy(zero_e)
-            eb[dif] .= c .- affect_error[dif]
-            return (; St, Sx, eb)
+            return (; St, Sx, eb = c .- affect_error)
         end
         # Not `(; St, Sx, eb) = ...`: the closure `bridge` would then write to them.
         whole = bridge(length(group))
@@ -515,15 +630,17 @@ function _recorded_forward_solve(prob, alg, args...; abstol, reltol, kwargs...)
             partials = Dict{Int, Any}()
             m -> get!(() -> bridge(m), partials, m)
         end
-        ea = first_at_time ? u_f .- sol(tf; continuity = :left) : copy(zero_e)
+        # The forward parameters before the event are those of P, so π has no mismatch.
+        ea = first_at_time ? [(u_f .- sol(tf; continuity = :left))[dif]; zero_w[(length(dif) + 1):end]] :
+            copy(zero_w)
         (;
             a = tf, b = tf, ea, whole.eb, whole.St, whole.Sx, saves = saves[k], group_saves,
             partial, after_states[k].changed,
         )
     end
     return (;
-        prob, sol, knots, jumps, windows = _merge_windows(windows, dif), calls = windows, dif,
-        alg_idx, params, e0, verbose,
+        prob, sol, knots, jumps, windows = _merge_windows(windows), calls = windows, dif,
+        alg_idx, params, ep, e0, verbose,
     )
 end
 
@@ -531,9 +648,9 @@ end
 # call that changes u or p: a rerun at the state `before` the call must give the state
 # `after` it. An affect that reads the derivative or the interpolant differs by about the
 # local error, so the tolerance is 10 times the solver tolerances. An affect that reads a
-# counter fails. Returns the forward affect error Δ = u⁺ - affect(u_f), so that
-# e⁺ = S e⁻ + c - Δ.
-function _check_trial_affect(callback, labels, t, before, after, P, sol)
+# counter fails. Returns the forward affect error Δ = w⁺ - affect(w_f) on the event space
+# (`_event_vector`), so that e⁺ = S e⁻ + c - Δ.
+function _check_trial_affect(callback, labels, t, before, after, P, sol, dif, ep)
     u, p = _trial_affect(
         callback, labels, before.u, t, before.parent, before.p, sol, P; args = before.args
     )
@@ -549,7 +666,35 @@ function _check_trial_affect(callback, labels, t, before, after, P, sol)
                 "supports such affects."
         )
     )
-    return after.u .- u
+    return _event_vector(after.u, after.p, dif, ep) .- _event_vector(u, p, dif, ep)
+end
+
+# For parameters without event parameters (`_event_parameters` returns nothing): reject an
+# affect whose new parameters depend on the state or, for a continuous event, on the event
+# time. Run the affect at the state before the call, at that state moved along a fixed
+# direction, and one step later in time. An exact comparison suffices: a reset to a
+# constant or a counter gives the same values, and a dependence gives other values.
+function _check_parameter_dependence(callback, labels, t, before, P, sol, dif)
+    run = (u, s) -> last(
+        _trial_affect(callback, labels, u, s, before.parent, before.p, sol, P; args = before.args)
+    )
+    u = before.u
+    h = sqrt(eps(eltype(u)))
+    moved = copy(u)
+    moved[dif] .+= h .* (1 .+ abs.(u[dif])) .* (1 .+ (1:length(dif)) ./ length(dif))
+    q = run(u, t)
+    dependent = !_approx_same(q, run(moved, t)) ||
+        !(callback isa SciMLBase.DiscreteCallback) && !_approx_same(q, run(u, t + h * max(1, abs(t))))
+    dependent && throw(
+        ArgumentError(
+            "GlobalAdjoint: the affect of the event at t = $t sets parameters that depend on " *
+                "the state or on the event time. GlobalAdjoint supports that only for a vector " *
+                "of numbers or for parameters with symbols (ModelingToolkit) that have real " *
+                "values, not for a $(nameof(typeof(q))). GlobalErrorEstimation supports such " *
+                "affects."
+        )
+    )
+    return nothing
 end
 
 # Equality up to the tolerances (exact by default). Compare element by element or field by
@@ -638,6 +783,6 @@ function _unrecorded_data(prob, sol, verbose)
     params = (; times = eltype(sol.t)[], values = [sol.prob.p])
     return (;
         prob, sol, knots, jumps, windows = Any[], calls = Any[], dif, alg_idx, params,
-        e0 = zero(sol.u[1]), verbose,
+        ep = _NO_EVENT_PARAMETERS, e0 = zero(sol.u[1]), verbose,
     )
 end

@@ -141,7 +141,16 @@ of the callbacks give `S`: about `n` runs of the affect and the condition per ev
 `n × n` matrix.
 
 An affect can change the parameters; the adjoint uses the forward parameters on each
-interval between events. As in SciMLSensitivity, an affect must be a function of the
+interval between events. An affect can also set a parameter from the state (for example
+`p[1] = -3u[1]`). Then the error of the state before the event gives an error of that
+parameter after it. The real parameters that
+an affect changes are states with `p' = 0` in the linearization: their dual integrates
+`fₚᵀλ` between events and jumps with `S` at the events. This works for a vector of numbers
+and for parameters with symbols, such as the discrete parameters of a ModelingToolkit model
+(through SymbolicIndexingInterface). A changed integer or `Bool` parameter (a mode) has no
+derivative. For a DAE, these events use finite differences for `S`. For other parameter
+types, such an affect gives an `ArgumentError`, and a reset to a constant or a counter is
+supported. As in SciMLSensitivity, an affect must be a function of the
 state, the parameters and the time, and it can run more than once. The trial runs use one
 copy of the callbacks for the whole solve. An affect that depends on state kept in the
 callback (for example a counter) gives an `ArgumentError`; [`GlobalErrorEstimation`](@ref)

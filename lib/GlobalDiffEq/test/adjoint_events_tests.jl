@@ -51,6 +51,26 @@ below_half(u, t, i) = u[1] - 0.5
 double!(i) = (i.u .*= 2; nothing)
 fd = Rodas5P(autodiff = ADTypes.AutoFiniteDiff())
 
+# Affects that set the rate from the state.
+at_one(u, t, i) = t == 1.0
+rate_from_state!(i) = (i.p[1] = -3 * i.u[1]; nothing)
+rate_from_level!(i) = (i.p[1] = 4 * i.u[1]; nothing)
+rate_struct_from_state!(i) = (i.p.k[1] = -3 * i.u[1]; nothing)
+
+# The estimates of the default VJP products and of the finite-difference saltation matrix,
+# and the actual error of a plain solve at the final time.
+function compare_paths(prob, alg, tol, exact; adjoint_alg = Tsit5())
+    estimate(autojacvec) = adjoint_error_estimate(
+        prob, GlobalAdjoint(
+            alg; samples = length(prob.u0), adjoint_alg,
+            sensealg = GaussKronrodAdjoint(; autojacvec)
+        );
+        abstol = tol, reltol = tol
+    )
+    sol = solve(deepcopy(prob), alg; abstol = tol, reltol = tol)
+    return estimate(ReverseDiffVJP()), estimate(false), norm(exact(sol.t[end]) .- sol.u[end])
+end
+
 # Problems that more than one test set uses. Each call gives new parameters, because some
 # affects change the parameters in place.
 reset_callback() = ContinuousCallback(below_half, i -> (i.u[1] = 1.0; nothing))
@@ -414,6 +434,67 @@ end
     # The two runs differ only in the VJP of the adjoint ODE, so they agree to the adjoint
     # tolerance.
     @test fallback ≈ estimate(rigid, false) rtol = 1.0e-6
+end
+
+@testset "GlobalAdjoint: parameters that an affect sets from the state" begin
+    # After the event the parameter has an error too, δp = (∂p⁺/∂x) e. The event parameters
+    # are states with π' = 0, so the dual gets μ' = -fₚᵀλ and the saltation matrix maps
+    # [x; π].
+    τ = log(2.0)
+    cases = (
+        # A DiscreteCallback at t = 1 sets p = -3x.
+        (
+            ODEProblem(
+                decay, [1.0], (0.0, 2.0), [1.0];
+                callback = DiscreteCallback(at_one, rate_from_state!), tstops = [1.0]
+            ),
+            t -> [t <= 1 ? exp(-t) : exp(-1) * exp(3 * exp(-1) * (t - 1))],
+        ),
+        # A continuous event at x = 0.5 sets p = 4x = 2.
+        (
+            ODEProblem(decay, [1.0], (0.0, 2.0), [1.0]; callback = ContinuousCallback(below_half, rate_from_level!)),
+            t -> [t <= τ ? exp(-t) : 0.5 * exp(-2 * (t - τ))],
+        ),
+    )
+    for (prob, exact) in cases, tol in (1.0e-4, 1.0e-6)
+        vjp, finite, actual = compare_paths(prob, Tsit5(), tol, exact)
+        @test relerr(vjp, actual) < 1.0e-3
+        @test relerr(finite, actual) < 1.0e-3
+    end
+
+    # The review case: with local tolerances of 1e-4, the gtol solve met 1e-7 only on paper.
+    prob = first(first(cases))
+    sol = solve(deepcopy(prob), GlobalAdjoint(Tsit5(); gtol = 1.0e-7); abstol = 1.0e-4, reltol = 1.0e-4)
+    @test SciMLBase.successful_retcode(sol)
+    @test abs(sol.u[end][1] - exp(-1) * exp(3 * exp(-1))) <= 1.0e-7
+    @test relerr(sol.global_error[end], abs(sol.u[end][1] - exp(-1) * exp(3 * exp(-1)))) < 1.0e-2
+
+    # A DAE: the same reset for the differential state, with z³ + z = x. The VJP products
+    # do not go through the parameters of the algebraic projection, so this uses the
+    # finite-difference saltation matrix, without a message.
+    dae = cubic_dae(
+        [1.0, cubic_z(1.0)], (0.0, 2.0);
+        callback = DiscreteCallback(at_one, rate_from_state!; initializealg = BrownFullBasicInit()),
+        tstops = [1.0]
+    )
+    dae_exact = t -> (x = cases[1][2](t)[1]; [x, cubic_z(x)])
+    estimate, actual = @test_logs min_level = Base.CoreLogging.Warn compare(dae, Rodas5P(), 1.0e-6, dae_exact; adjoint_alg = fd)
+    @test relerr(estimate, actual) < 1.0e-2
+
+    # Parameters that are not a vector of numbers have no event space: an affect that sets
+    # them from the state gives an ArgumentError. A reset to a constant is fine.
+    rated(affect!) = ODEProblem(
+        rate_decay, [1.0, 1.0], (0.0, 2.0), RateParameter([1.0]);
+        callback = DiscreteCallback(at_one, affect!), tstops = [1.0]
+    )
+    @test_throws ArgumentError adjoint_error_estimate(rated(rate_struct_from_state!), GlobalAdjoint(Tsit5()))
+    @test adjoint_error_estimate(rated(i -> (set_rate!(i.p); nothing)), GlobalAdjoint(Tsit5())) isa Real
+
+    # GlobalErrorEstimation runs the affect on the true state, so it was correct already.
+    tol = 1.0e-6
+    sol = solve(deepcopy(prob), Tsit5(); abstol = tol, reltol = tol)
+    actual = abs(sol.u[end][1] - exp(-1) * exp(3 * exp(-1)))
+    @test relerr(global_error_estimate(prob, GlobalErrorEstimation(Tsit5()); abstol = tol, reltol = tol), actual) < 1.0e-2
 end
 
 @testset "GlobalAdjoint: the quadrature of the error integral" begin
