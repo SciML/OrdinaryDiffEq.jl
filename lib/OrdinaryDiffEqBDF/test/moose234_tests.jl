@@ -1,6 +1,6 @@
 using OrdinaryDiffEqBDF, Test
 using OrdinaryDiffEqCore: set_EEst!
-using LinearAlgebra: Diagonal
+using LinearAlgebra: Diagonal, Hermitian, Symmetric
 
 @testset "MOOSE234 variable-step order-four update" begin
     for iip in (false, true), mesh in ((0, -1, -2, -3), (0, -2, -3, -4)), h in (0.125, 0.0625)
@@ -92,13 +92,28 @@ end
 end
 
 @testset "MOOSE234 singular mass matrix" begin
-    for iip in (false, true)
+    mass_matrix = [1.0 0.0; 0.0 0.0]
+    for wrap in (Diagonal, Symmetric, Hermitian), iip in (false, true)
         f = iip ? ((du, u, p, t) -> (du .= (1.0, u[2] - exp(u[1])))) :
             ((u, p, t) -> [1.0, u[2] - exp(u[1])])
-        prob = ODEProblem(ODEFunction(f; mass_matrix = Diagonal([1.0, 0.0])), [0.0, 1.0], (0.0, 2.0))
+        prob = ODEProblem(ODEFunction(f; mass_matrix = wrap(mass_matrix)), [0.0, 1.0], (0.0, 2.0))
         @test_throws ArgumentError("MOOSE234 requires a nonsingular mass matrix.") init(
             prob, MOOSE234(); abstol = 1.0e-6, reltol = 1.0e-6
         )
+    end
+end
+
+@testset "MOOSE234 invertible indefinite mass matrix" begin
+    mass_matrix = [0.0 1.0; 1.0 0.0]
+    for wrap in (Symmetric, Hermitian), iip in (false, true)
+        @testset "$wrap, in-place = $iip" begin
+            f = iip ? ((du, u, p, t) -> (du .= -u)) : ((u, p, t) -> -u)
+            u0 = [1.0, 1.0]
+            prob = ODEProblem(ODEFunction(f; mass_matrix = wrap(mass_matrix)), u0, (0.0, 1.0))
+            sol = solve(prob, MOOSE234(); dt = 0.001, abstol = 1.0e-8, reltol = 1.0e-8)
+            @test sol.retcode == ReturnCode.Success
+            @test sol.u[end] ≈ exp(-1) .* u0 atol = 1.0e-8 rtol = 0
+        end
     end
 end
 

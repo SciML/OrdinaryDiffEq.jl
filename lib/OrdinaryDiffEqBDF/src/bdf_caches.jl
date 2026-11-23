@@ -973,6 +973,13 @@ end
 # MOOSE234 — Variable-stepsize, variable-order (2/3/4) embedded method
 # DeCaria et al., arXiv:1810.06670v1
 
+moose234_issingular(mass_matrix) = ArrayInterface.issingular(mass_matrix)
+
+function moose234_issingular(mass_matrix::Union{Hermitian, Symmetric})
+    # An invertible 2×2 pivot can have zero diagonal entries.
+    return !issuccess(bunchkaufman(mass_matrix; check = false))
+end
+
 @cache mutable struct MOOSE234ConstantCache{
         N, tsType, uuType, EEstType, coeffType, ddType,
     } <:
@@ -1001,7 +1008,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    ArrayInterface.issingular(f.mass_matrix) &&
+    moose234_issingular(f.mass_matrix) &&
         throw(ArgumentError("MOOSE234 requires a nonsingular mass matrix."))
     γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
     nlsolver = build_nlsolver(
@@ -1078,7 +1085,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    ArrayInterface.issingular(f.mass_matrix) &&
+    moose234_issingular(f.mass_matrix) &&
         throw(ArgumentError("MOOSE234 requires a nonsingular mass matrix."))
     γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
     fsalfirst = zero(rate_prototype)
