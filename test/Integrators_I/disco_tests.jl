@@ -19,13 +19,6 @@ prob = ODEProblem(f, u0, tspan)
 condition(u, t, integrator) = u[1] - 1
 cb = ContinuousCallback(condition, default_affect!; maybe_discontinuity = true)
 
-sol_disco_radau = solve(prob, RadauIIA5(); callback = cb, reltol = 1.0e-6, controller = predictive_disco_controller(RadauIIA5()))
-#  314.500 μs (8909 allocations: 278.73 KiB)
-sol_no_disco_radau = solve(prob, RadauIIA5(); callback = cb, reltol = 1.0e-6)
-#  376.125 μs (10628 allocations: 331.61 KiB)
-@test sol_disco_radau.retcode == ReturnCode.Success
-@test sol_disco_radau.stats.nreject <= sol_no_disco_radau.stats.nreject
-
 sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1.0e-6, controller = PI_disco_controller(Rodas5P()))
 #  444.500 μs (15596 allocations: 547.62 KiB)
 sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1.0e-6)

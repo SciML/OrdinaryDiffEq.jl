@@ -239,7 +239,7 @@ function nlsolve!(
         check_η_convergence = (
             iter > 1 ||
                 (
-                isadaptive(integrator.alg) &&
+                integrator.opts.adaptive &&
                     (
                     isnewton(nlsolver) ||
                         (
