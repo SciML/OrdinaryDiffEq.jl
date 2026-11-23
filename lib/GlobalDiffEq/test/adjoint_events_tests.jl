@@ -51,10 +51,13 @@ below_half(u, t, i) = u[1] - 0.5
 double!(i) = (i.u .*= 2; nothing)
 fd = Rodas5P(autodiff = ADTypes.AutoFiniteDiff())
 
-# Affects that set the rate from the state.
+# Affects that set the rate from the state or from the event time, and a reset that
+# depends on the event time.
 at_one(u, t, i) = t == 1.0
 rate_from_state!(i) = (i.p[1] = -3 * i.u[1]; nothing)
 rate_from_level!(i) = (i.p[1] = 4 * i.u[1]; nothing)
+rate_from_time!(i) = (i.p[1] = i.t; nothing)
+lift_and_stop!(i) = (i.u[1] = 1 + i.t; i.p[1] = 0.0; nothing)
 rate_struct_from_state!(i) = (i.p.k[1] = -3 * i.u[1]; nothing)
 
 # The estimates of the default VJP products and of the finite-difference saltation matrix,
@@ -436,10 +439,10 @@ end
     @test fallback ≈ estimate(rigid, false) rtol = 1.0e-6
 end
 
-@testset "GlobalAdjoint: parameters that an affect sets from the state" begin
-    # After the event the parameter has an error too, δp = (∂p⁺/∂x) e. The event parameters
-    # are states with π' = 0, so the dual gets μ' = -fₚᵀλ and the saltation matrix maps
-    # [x; π].
+@testset "GlobalAdjoint: parameters that an affect sets from the state or the event time" begin
+    # After the event the parameter has an error too, δp = (∂p⁺/∂x) e plus the shift of the
+    # event time. The event parameters are states with π' = 0, so the dual gets μ' = -fₚᵀλ
+    # and the saltation matrix maps [x; π].
     τ = log(2.0)
     cases = (
         # A DiscreteCallback at t = 1 sets p = -3x.
@@ -454,6 +457,11 @@ end
         (
             ODEProblem(decay, [1.0], (0.0, 2.0), [1.0]; callback = ContinuousCallback(below_half, rate_from_level!)),
             t -> [t <= τ ? exp(-t) : 0.5 * exp(-2 * (t - τ))],
+        ),
+        # A continuous event at x = 0.5 sets p = t, so the shift of the event time changes p.
+        (
+            ODEProblem(decay, [1.0], (0.0, 2.0), [1.0]; callback = ContinuousCallback(below_half, rate_from_time!)),
+            t -> [t <= τ ? exp(-t) : 0.5 * exp(-τ * (t - τ))],
         ),
     )
     for (prob, exact) in cases, tol in (1.0e-4, 1.0e-6)
@@ -495,6 +503,35 @@ end
     sol = solve(deepcopy(prob), Tsit5(); abstol = tol, reltol = tol)
     actual = abs(sol.u[end][1] - exp(-1) * exp(3 * exp(-1)))
     @test relerr(global_error_estimate(prob, GlobalErrorEstimation(Tsit5()); abstol = tol, reltol = tol), actual) < 1.0e-2
+end
+
+@testset "GlobalAdjoint: a reset that depends on the event time" begin
+    # The decay from 1 reaches 0.5 at τ = log 2, the reset sets x = 1 + t and stops the
+    # dynamics, so x(T) = 1 + log 2. A nearby solve resets at another time, so the numerator
+    # of the saltation matrix has -Rₜ. Without it, the estimate was zero.
+    τ = log(2.0)
+    lift = ODEProblem(decay, [1.0], (0.0, 1.0), [1.0]; callback = ContinuousCallback(below_half, lift_and_stop!))
+    exact = t -> [t <= τ ? exp(-t) : 1 + τ]
+    for tol in (1.0e-4, 1.0e-6)
+        vjp, finite, actual = compare_paths(lift, Tsit5(), tol, exact)
+        @test relerr(vjp, actual) < 1.0e-3
+        @test relerr(finite, actual) < 1.0e-3
+    end
+
+    # The same reset in a DAE with z³ + z = x.
+    dae = cubic_dae(
+        [1.0, cubic_z(1.0)], (0.0, 1.0);
+        callback = ContinuousCallback(below_half, lift_and_stop!; initializealg = BrownFullBasicInit())
+    )
+    dae_exact = t -> (x = exact(t)[1]; [x, cubic_z(x)])
+    estimate, actual = compare(dae, Rodas5P(), 1.0e-6, dae_exact; adjoint_alg = fd)
+    @test relerr(estimate, actual) < 1.0e-2
+
+    # GlobalErrorEstimation runs the reset on the true state, so it was correct already.
+    tol = 1.0e-6
+    sol = solve(deepcopy(lift), Tsit5(); abstol = tol, reltol = tol)
+    actual = abs(sol.u[end][1] - (1 + τ))
+    @test relerr(global_error_estimate(lift, GlobalErrorEstimation(Tsit5()); abstol = tol, reltol = tol), actual) < 1.0e-2
 end
 
 @testset "GlobalAdjoint: the quadrature of the error integral" begin

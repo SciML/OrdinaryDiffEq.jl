@@ -127,6 +127,8 @@ Events (`ContinuousCallback`, `VectorContinuousCallback`, `DiscreteCallback`) an
 semi-explicit mass-matrix DAEs (a diagonal mass matrix of zeros and ones) are supported.
 At each event, the adjoint jumps with the saltation matrix `S` of the event, `λ ← Sᵀ λ`.
 `S` is the linearized map of an error across the event, with the shift of the event time.
+A reset that depends on the time (for example `u[1] = 1 + t` at a `ContinuousCallback`)
+moves with that shift, so `S` includes its time derivative.
 
 As in SciMLSensitivity's callback adjoints, the `autojacvec` of the `sensealg` selects how
 `Sᵀλ` is computed. With a VJP choice (the default `ReverseDiffVJP()`), ReverseDiff and
@@ -141,9 +143,9 @@ of the callbacks give `S`: about `n` runs of the affect and the condition per ev
 `n × n` matrix.
 
 An affect can change the parameters; the adjoint uses the forward parameters on each
-interval between events. An affect can also set a parameter from the state (for example
-`p[1] = -3u[1]`). Then the error of the state before the event gives an error of that
-parameter after it. The real parameters that
+interval between events. An affect can also set a parameter from the state or, at a
+continuous event, from the event time (for example `p[1] = -3u[1]`). Then the error of the
+state before the event gives an error of that parameter after it. The real parameters that
 an affect changes are states with `p' = 0` in the linearization: their dual integrates
 `fₚᵀλ` between events and jumps with `S` at the events. This works for a vector of numbers
 and for parameters with symbols, such as the discrete parameters of a ModelingToolkit model

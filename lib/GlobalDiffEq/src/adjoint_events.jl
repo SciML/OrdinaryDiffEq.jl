@@ -241,10 +241,12 @@ end
 _event_vector(u, q, dif, ep) = ep.m == 0 ? u[dif] : [u[dif]; ep.get(q)]
 
 # The saltation matrix of a forward event on the event space w = [x; π],
-#     S = A + (φ⁺ - A φ⁻) ∇γᵀ / (∇γ ⋅ φ⁻ + γ_t),
+#     S = A + (φ⁺ - A φ⁻ - Rₜ) ∇γᵀ / (∇γ ⋅ φ⁻ + γ_t),
 # with R(w, t) the composed reset (the affects and the DAE reinitialization), A = ∂R/∂w,
-# γ the event condition and φ the vector field of the reduced ODE x' = f_d(x, z(x)),
-# π' = 0. Also the offset c = (φ⁺ - A φ⁻) γ₀ / (∇γ ⋅ φ⁻ + γ_t), so that e⁺ = S e⁻ + c. Here γ₀ = γ(`u_event`) can be nonzero: the forward root finding
+# Rₜ = ∂R/∂t, γ the event condition and φ the vector field of the reduced ODE
+# x' = f_d(x, z(x)), π' = 0. A nearby solve has its event at another time, so its reset
+# acts at another time: hence Rₜ. Also the offset c = (φ⁺ - A φ⁻ - Rₜ) γ₀ / (∇γ ⋅ φ⁻ + γ_t),
+# so that e⁺ = S e⁻ + c. Here γ₀ = γ(`u_event`) can be nonzero: the forward root finding
 # reads an interpolant, which is not consistent for a condition on an algebraic variable. A
 # DiscreteCallback does not move its time, so S = A and c = 0.
 # A, ∇γ, γ_t and φ⁻ use the state before the call: P(t⁻), or `u_before` for a later call at
@@ -281,9 +283,10 @@ function _event_saltation(
         _trial_condition(callback, labels, Pm, t + h, parent, p, sol, P) -
             _trial_condition(callback, labels, Pm, t - h, parent, p, sol, P)
     ) / (2h)
+    Rt = (reset(wm, t + h) .- reset(wm, t - h)) ./ (2h)
     φm = [rhs_with(p, t)(full(wm, t))[dif]; zeros(eltype(wm), ep.m)]
     φp = [rhs_with(p_after, t)(Pp)[dif]; zeros(eltype(wm), ep.m)]
-    jump = (φp .- A * φm) ./ (LinearAlgebra.dot(∇γ, φm) + γt)
+    jump = (φp .- A * φm .- Rt) ./ (LinearAlgebra.dot(∇γ, φm) + γt)
     S = A .+ jump * ∇γ'
     # γ₀ at the forward event state, not at P(t⁻): the mismatch m = P(t⁻) - u_f has its own
     # source term.
@@ -352,10 +355,10 @@ function _algebraic_projection(f, iip, t, dif, alg_idx, solver)
 end
 
 # The matrix-free form of `_event_saltation` (see `_event_vjp`), on the same event space
-# w = [x; π]. With j = (φ⁺ - A φ⁻) / (∇γ ⋅ φ⁻ + γ_t):
+# w = [x; π]. With j = (φ⁺ - A φ⁻ - Rₜ) / (∇γ ⋅ φ⁻ + γ_t):
 #     Sᵀz = Aᵀz + ∇γ (j ⋅ z),   S w = A w + j (∇γ ⋅ w),   c = j γ₀.
 # Aᵀz uses ReverseDiff (a tracked-real state lets an affect write into it); A w uses
-# ForwardDiff. For a DAE, the
+# ForwardDiff; Rₜ is a central difference in t (two runs of the affects). For a DAE, the
 # maps act on the differential components, and the algebraic projection
 # (`_algebraic_projection`) comes before the affects and after each of them, as in
 # `_event_saltation`. The cost per event does not grow with the state size. Returns nothing
@@ -413,7 +416,8 @@ function _saltation_vjp(
         )
         h = sqrt(eps(typeof(t))) * max(1, abs(t))
         γt = (condition(Pm, p, t + h) - condition(Pm, p, t - h)) / (2h)
-        j = (φp .- Ax(φm)) ./ (LinearAlgebra.dot(∇γ, φm) + γt)
+        Rt = (reset(w0, t + h) .- reset(w0, t - h)) ./ (2h)
+        j = (φp .- Ax(φm) .- Rt) ./ (LinearAlgebra.dot(∇γ, φm) + γt)
         all(isfinite, j) || return (_grazing_message(t, verbose); (Atz, Ax, zero(w0)))
         wevent = _event_vector(u_event, p, dif, ep)
         (z -> Atz(z) .+ ∇γ .* LinearAlgebra.dot(j, z)),
