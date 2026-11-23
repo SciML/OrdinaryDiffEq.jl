@@ -135,3 +135,58 @@ end
         end
     end
 end
+
+using DiffEqBase: ConditionWithDerivative
+@testset "Event times from a condition with its derivative" begin
+    # u' = -u crosses 1/2 at t = log(2).
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 2.0))
+    condition(u, t, integrator) = u - 0.5
+    derivative_calls = Ref(0)
+    derivative(u, t, integrator) = (derivative_calls[] += 1; -u)
+    for rootfind in (SciMLBase.LeftRootFind, SciMLBase.RightRootFind)
+        times = Float64[]
+        callback(c) = ContinuousCallback(c, integrator -> push!(times, integrator.t); rootfind)
+        solve_with(c) = solve(prob, Tsit5(); callback = callback(c), abstol = 1.0e-12, reltol = 1.0e-12)
+        solve_with(condition)
+        derivative_calls[] = 0
+        solve_with(ConditionWithDerivative(condition, derivative))
+        @test derivative_calls[] > 0
+        @test times[1] ≈ log(2) rtol = 1.0e-10
+        @test abs(times[2] - times[1]) <= 4 * eps(log(2))
+    end
+end
+
+@testset "Successive events of an in-place system, with idxs" begin
+    # x'' = -x from x(0) = 1, so x = cos(t) crosses zero at t = π/2 + kπ. The callback
+    # sees only (x, v), not the third component.
+    function oscillator!(du, u, p, t)
+        du[1] = u[2]
+        du[2] = -u[1]
+        du[3] = -u[3]
+        return nothing
+    end
+    condition(u, t, integrator) = u[1]
+    derivative(u, t, integrator) = u[2]   # dx/dt = v, as computed by oscillator!
+    expected = π / 2 .+ π .* (0:2)
+    @testset for specialize in (SciMLBase.AutoSpecialize, SciMLBase.FullSpecialize)
+        prob = ODEProblem{true, specialize}(oscillator!, [1.0, 0.0, 1.0], (0.0, 9.0))
+        function solve_with(c)
+            times = Float64[]
+            # No interior points, so that the counts below come from the root finding.
+            callback = ContinuousCallback(
+                c, integrator -> push!(times, integrator.t); idxs = 1:2, interp_points = 0
+            )
+            sol = solve(prob, Tsit5(); callback, abstol = 1.0e-12, reltol = 1.0e-12)
+            return times, sol, callback
+        end
+        times_modab, sol_modab, _ = solve_with(condition)
+        times_newton, sol_newton, callback = solve_with(ConditionWithDerivative(condition, derivative))
+        @test times_newton ≈ expected rtol = 1.0e-9
+        @test times_newton ≈ times_modab rtol = 1.0e-12
+        @test sol_newton.stats.ncondition < sol_modab.stats.ncondition
+
+        # The wrapping of the callbacks under `AutoSpecialize` keeps the derivative.
+        integrator = init(prob, Tsit5(); callback)
+        @test only(integrator.opts.callback.continuous_callbacks).condition isa ConditionWithDerivative
+    end
+end
