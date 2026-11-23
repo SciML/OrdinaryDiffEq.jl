@@ -163,18 +163,20 @@ end
 # The integrator that the user callbacks see: the true state u = P + e, the companion
 # parameters p̃, and the time. `_run_on_true_state!` writes changes to `u` back to e.
 # Integrator functions without a meaning for the true state throw a clear error.
-mutable struct _TrueStateIntegrator{U, P, T, I, S, C}
+mutable struct _TrueStateIntegrator{U, P, T, I, S, C, R}
     u::U
     p::P
     t::T
     parent::I
     sol::S
     interp::C
+    # The set of the stops that the user callbacks ask for (`add_tstop!`), or nothing.
+    stops::R
     # Set by `terminate!` (see below).
     terminated::Bool
 end
-function _TrueStateIntegrator(u, p, t, parent, sol, interp)
-    return _TrueStateIntegrator(u, p, t, parent, sol, interp, false)
+function _TrueStateIntegrator(u, p, t, parent, sol, interp, stops = nothing)
+    return _TrueStateIntegrator(u, p, t, parent, sol, interp, stops, false)
 end
 
 # The true state at a time in the current forward interval (a SavingCallback with `saveat`
@@ -223,8 +225,12 @@ SciMLBase.get_tmp_cache(integrator::_TrueStateIntegrator) = (similar(integrator.
 SciMLBase.u_modified!(::_TrueStateIntegrator, ::Bool) = nothing
 SciMLBase.derivative_discontinuity!(::_TrueStateIntegrator, ::Bool) = nothing
 SciMLBase.reeval_internals_due_to_modification!(::_TrueStateIntegrator, args...; kwargs...) = nothing
-# A tstop is a time, so it means the same for the true state (PresetTimeCallback).
+# A tstop is a time, so it means the same for the true state (PresetTimeCallback). The
+# companion records it too: a DiscreteCallback must see the stop that a callback of the
+# true solution asks for, also where the forward solve has no step end (an event that the
+# true solution has at another time schedules it at another time).
 function SciMLBase.add_tstop!(integrator::_TrueStateIntegrator, t)
+    integrator.stops === nothing || push!(integrator.stops, t)
     return SciMLBase.add_tstop!(integrator.parent, t)
 end
 # PeriodicCallback reads the last tstop before it adds the next one.
@@ -266,17 +272,17 @@ for name in (
     end
 end
 
-function _true_state_integrator(ũ, integrator, P)
+function _true_state_integrator(ũ, integrator, P, stops = nothing)
     return _TrueStateIntegrator(
-        ũ, integrator.p, integrator.t, integrator, _forward_solution(P), P
+        ũ, integrator.p, integrator.t, integrator, _forward_solution(P), P, stops
     )
 end
 
 # Run `f!(true_state_integrator, args...)` on u = P(t) + e and write the result back to e.
 # Returns whether `f!` called `terminate!`.
-function _run_on_true_state!(f!, integrator, P, args...)
+function _run_on_true_state!(f!, integrator, P, args...; stops = nothing)
     Pt = P(integrator.t)
-    true_state = _true_state_integrator(Pt .+ integrator.u, integrator, P)
+    true_state = _true_state_integrator(Pt .+ integrator.u, integrator, P, stops)
     f!(true_state, args...)
     integrator.u .= true_state.u .- Pt
     true_state.p === integrator.p || (integrator.p = true_state.p)
@@ -367,7 +373,7 @@ function _recording_true_state_affect(
     affect! === nothing && return nothing
     return function (integrator, args...)
         _record_event!(record.events, label, args...)
-        _run_on_true_state!(affect!, integrator, P, args...) &&
+        _run_on_true_state!(affect!, integrator, P, args...; record.stops) &&
             push!(record.terminations, integrator.t)
         _is_discrete(label) || (record.event_time[] = integrator.t)
         _reinitialize_true_state!(integrator, reinit)
@@ -438,13 +444,14 @@ end
 # checks it only at the knots of P and at the final time. P(t) + e is the true state there
 # on either side of the knot update. A continuous event ends a step in every solve, so the
 # companion checks a DiscreteCallback at the true event time (`record.event_time`), not at
-# the forward event time (`record.event_knots`).
+# the forward event time (`record.event_knots`). A stop that a companion callback asks for
+# (`record.stops`) is a step end of the true solution too, so the companion checks there.
 function _companion_callback(
         callback::SciMLBase.DiscreteCallback, P, record, number, reinit, after_call = nothing
     )
     condition = function (e, t, integrator)
         knot = _is_step_end(P, t) && !(t in record.event_knots)
-        knot || record.event_time[] == t || return false
+        knot || record.event_time[] == t || t in record.stops || return false
         ũ = P(t) .+ e
         return callback.condition(ũ, t, _true_state_integrator(ũ, integrator, P))
     end
@@ -669,7 +676,7 @@ function _defect_correction_callbacks(forward, P, prob, kwargs, companion_abstol
     T = float(eltype(prob.tspan))
     record = (;
         events = Tuple{Int, Int}[], terminations = T[], event_time = Ref(T(NaN)),
-        forward.event_knots,
+        forward.event_knots, stops = Set{T}(),
     )
     records, first_recorder, last_recorder, after_call = _trajectory_recorders(P, trajectory, T)
     callback = SciMLBase.CallbackSet(

@@ -360,6 +360,30 @@ end
     end
 end
 
+@testset "A DiscreteCallback at a stop that a continuous event schedules: $mode" for mode in MODES
+    # At x = 0.5 the continuous event schedules x *= 4 for 0.1 later, with `add_tstop!`.
+    # The true event is at another time, so the true solution stops at another time than
+    # the forward solve. The companion must check the DiscreteCallback at its own stop.
+    # Exact x(1) = 4/e. Before the fix, both modes saw one companion event and estimated 1.1.
+    scheduled_callbacks = function ()
+        scheduled = Ref(Inf)
+        schedule! = i -> (scheduled[] = i.t + 0.1; SciMLBase.add_tstop!(i, scheduled[]); nothing)
+        return CallbackSet(
+            ContinuousCallback((u, t, i) -> u[1] - 0.5, nothing, schedule!),
+            DiscreteCallback((u, t, i) -> t == scheduled[], i -> (i.u .*= 4; nothing))
+        )
+    end
+    prob = ODEProblem(decay, [1.0], (0.0, 1.0))
+    for tol in (1.0e-4, 1.0e-6)
+        sol = solve(prob, Tsit5(); callback = scheduled_callbacks(), abstol = tol, reltol = tol)
+        est = @test_logs min_level = Base.CoreLogging.Warn global_error_estimate(
+            prob, GlobalErrorEstimation(Tsit5(); mode); callback = scheduled_callbacks(),
+            abstol = tol, reltol = tol
+        )
+        @test est / abs(4 / exp(1) - sol.u[end][1]) ≈ 1 rtol = 1.0e-2
+    end
+end
+
 @testset "Callbacks at the forward event knots, integer time span, termination: $mode" for mode in MODES
     # The companion does not call a callback that acts at each step, such as a
     # SavingCallback, at the forward event time. The true solution ends a step at its own
