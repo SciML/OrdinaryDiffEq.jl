@@ -606,6 +606,11 @@ function SciMLBase.reinit!(
     integrator.t = t0
     integrator.tprev = t0
 
+    # A previous solve may have stopped on a failed step. Reset its flags
+    # before initialization or callbacks can set failure state for the new solve.
+    integrator.force_stepfail = false
+    integrator.last_stepfail = false
+
     # Initialization changes the ImplicitDiscrete start state, so run it before
     # save_start and preserve any InitialFailure instead of resetting it below.
     implicit_discrete = integrator.sol.prob isa SciMLBase.ImplicitDiscreteProblem
