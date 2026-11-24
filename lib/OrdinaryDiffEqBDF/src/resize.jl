@@ -12,6 +12,16 @@ fbdf_state_arrays(integrator) = (
     integrator.u, integrator.uprev, integrator.du, integrator.duprev,
 )
 
+function resize_bdf_buffers_zeroed!(buffers, i)
+    for buffer in buffers
+        buffer isa AbstractArray && ArrayInterface.ismutable(buffer) || continue
+        last = lastindex(buffer)
+        resize!(buffer, i)
+        fill!(view(buffer, (last + 1):lastindex(buffer)), zero(eltype(buffer)))
+    end
+    return nothing
+end
+
 function resize_non_user_cache!(
         integrator::OrdinaryDiffEqCore.ODEIntegrator,
         cache::FBDFLikeCache, i::Int
@@ -37,9 +47,9 @@ end
 function resize_non_user_cache!(
         integrator::OrdinaryDiffEqCore.ODEIntegrator, cache::QNDFCache, i::Int
     )
-    resize_bdf_buffers!(cache.D, i)
-    resize_bdf_buffers!(cache.Dtmp, i)
-    resize_bdf_buffers!(cache.prevD, i)
+    resize_bdf_buffers_zeroed!(cache.D, i)
+    resize_bdf_buffers_zeroed!(cache.Dtmp, i)
+    resize_bdf_buffers_zeroed!(cache.prevD, i)
     resize_bdf_buffers!(cache.dense, i)
     cache.order = 1
     cache.prevorder = 1
