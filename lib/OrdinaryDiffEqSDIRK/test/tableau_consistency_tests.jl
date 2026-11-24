@@ -24,6 +24,13 @@ all_algs = [
     end
 end
 
+@testset "Kvaerno stage-2 abscissa equals the Ai row sum" begin
+    for alg in (Kvaerno3(), Kvaerno4(), Kvaerno5())
+        tab = SDIRK.ESDIRKIMEXTableau(alg, Float64, Float64)
+        @test tab.c[2] ≈ sum(tab.Ai[2, :]) atol = 1.0e-9
+    end
+end
+
 @testset "Non-IMEX methods solve a SplitODEProblem as f1 + f2" begin
     # A method with no explicit part has nowhere to put `f2`, so it integrates the combined
     # right-hand side, the way a non-split solve of the same method does. Before #4149 the

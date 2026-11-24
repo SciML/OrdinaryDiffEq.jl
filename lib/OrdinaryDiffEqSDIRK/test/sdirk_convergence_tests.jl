@@ -288,6 +288,34 @@ end
     @test sim_iip.𝒪est[:l∞] ≈ 4 atol = testTol
 end
 
+# Regression test: Kvaerno3/4/5 must evaluate stage 2 at c₂ = 2γ (= Ai[2,1] + Ai[2,2]),
+# otherwise they lose order on non-autonomous problems (they are unaffected on autonomous ones).
+# u' = -u + cos(t) + sin(t)  =>  u(t) = sin(t) + exp(-t) * u0
+@testset "Kvaerno non-autonomous convergence" begin
+    f_oop = ODEFunction(
+        (u, p, t) -> -u .+ (cos(t) + sin(t));
+        analytic = (u0, p, t) -> sin(t) .+ exp(-t) .* u0
+    )
+    f_iip = ODEFunction(
+        (du, u, p, t) -> (du .= -u .+ (cos(t) + sin(t)));
+        analytic = (u0, p, t) -> sin(t) .+ exp(-t) .* u0
+    )
+    prob_oop = ODEProblem(f_oop, [1.0, 0.5], (0.0, 1.0))
+    prob_iip = ODEProblem(f_iip, [1.0, 0.5], (0.0, 1.0))
+    for (alg, order, dts) in (
+            (Kvaerno3(), 3, 1 .// 2 .^ (8:-1:4)),
+            (Kvaerno4(), 4, 1 .// 2 .^ (7:-1:3)),
+            (Kvaerno5(), 5, 1 .// 2 .^ (6:-1:3)),
+        )
+        @testset "$(nameof(typeof(alg)))" begin
+            sim = test_convergence(dts, prob_oop, alg)
+            @test sim.𝒪est[:l∞] ≈ order atol = testTol
+            sim = test_convergence(dts, prob_iip, alg)
+            @test sim.𝒪est[:l∞] ≈ order atol = testTol
+        end
+    end
+end
+
 @testset "IMEX methods without an embedded pair are not adaptive" begin
     f1 = (u, p, t) -> -u
     f2 = (u, p, t) -> 0.1 * u
