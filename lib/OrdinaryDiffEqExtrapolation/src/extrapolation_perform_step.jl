@@ -41,29 +41,29 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
             # Balance workload of threads by computing T[1,1] with T[max_order,1] on
             # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
             # first column of T matrix
-            @threaded alg.threading for i in 1:2
+            @threaded alg.threading slot for i in 1:2
                 startIndex = (i == 1) ? 1 : max_order
                 endIndex = (i == 1) ? max_order - 1 : max_order
                 for index in startIndex:endIndex
                     dt_temp = dt / (2^(index - 1))
                     # Solve using Euler method
-                    @muladd @.. broadcast = false u_tmps[Threads.threadid()] = uprev +
+                    @muladd @.. broadcast = false u_tmps[slot] = uprev +
                         dt_temp *
                         fsalfirst
                     f(
-                        k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p,
+                        k_tmps[slot], u_tmps[slot], p,
                         t + dt_temp
                     )
                     for j in 2:(2^(index - 1))
-                        @muladd @.. broadcast = false u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] +
+                        @muladd @.. broadcast = false u_tmps[slot] = u_tmps[slot] +
                             dt_temp *
-                            k_tmps[Threads.threadid()]
+                            k_tmps[slot]
                         f(
-                            k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p,
+                            k_tmps[slot], u_tmps[slot], p,
                             t + j * dt_temp
                         )
                     end
-                    @.. broadcast = false T[index, 1] = u_tmps[Threads.threadid()]
+                    @.. broadcast = false T[index, 1] = u_tmps[slot]
                 end
             end
         end
@@ -363,62 +363,62 @@ function perform_step!(
                 k_tmps = k_tmps, u_tmps = u_tmps, u_tmps2 = u_tmps2, diff1 = diff1,
                 diff2 = diff2, J = J
 
-            @threaded alg.threading for i in 1:2
+            @threaded alg.threading slot for i in 1:2
                 startIndex = (i == 1) ? 1 : n_curr + 1
                 endIndex = (i == 1) ? n_curr : n_curr + 1
                 for index in startIndex:endIndex
                     dt_temp = dt / sequence[index]
-                    jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_temp, J)
-                    @.. broadcast = false k_tmps[Threads.threadid()] = integrator.fsalfirst
-                    @.. broadcast = false u_tmps[Threads.threadid()] = uprev
+                    jacobian2W!(W[slot], integrator.f.mass_matrix, dt_temp, J)
+                    @.. broadcast = false k_tmps[slot] = integrator.fsalfirst
+                    @.. broadcast = false u_tmps[slot] = uprev
                     for j in 1:sequence[index]
-                        @.. broadcast = false linsolve_tmps[Threads.threadid()] = k_tmps[Threads.threadid()]
+                        @.. broadcast = false linsolve_tmps[slot] = k_tmps[slot]
 
-                        linsolve = cache.linsolve[Threads.threadid()]
+                        linsolve = cache.linsolve[slot]
 
                         if !repeat_step && j == 1
                             linres = dolinsolve(
                                 integrator, linsolve;
-                                A = W[Threads.threadid()],
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                A = W[slot],
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         else
                             linres = dolinsolve(
                                 integrator, linsolve; A = nothing,
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         end
 
-                        @.. broadcast = false u_tmps2[Threads.threadid()] = u_tmps[Threads.threadid()]
-                        @.. broadcast = false u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] -
-                            k_tmps[Threads.threadid()]
+                        @.. broadcast = false u_tmps2[slot] = u_tmps[slot]
+                        @.. broadcast = false u_tmps[slot] = u_tmps[slot] -
+                            k_tmps[slot]
                         if index <= 2 && j >= 2
                             # Deuflhard Stability check for initial two sequences
-                            @.. broadcast = false diff2[Threads.threadid()] = u_tmps[Threads.threadid()] -
-                                u_tmps2[Threads.threadid()]
-                            @.. broadcast = false diff2[Threads.threadid()] = 0.5 *
+                            @.. broadcast = false diff2[slot] = u_tmps[slot] -
+                                u_tmps2[slot]
+                            @.. broadcast = false diff2[slot] = 0.5 *
                                 (
-                                diff2[Threads.threadid()] -
-                                    diff1[Threads.threadid()]
+                                diff2[slot] -
+                                    diff1[slot]
                             )
-                            if integrator.opts.internalnorm(diff1[Threads.threadid()], t) <
-                                    integrator.opts.internalnorm(diff2[Threads.threadid()], t)
+                            if integrator.opts.internalnorm(diff1[slot], t) <
+                                    integrator.opts.internalnorm(diff2[slot], t)
                                 # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                                 integrator.force_stepfail = true
                                 return
                             end
                         end
-                        @.. broadcast = false diff1[Threads.threadid()] = u_tmps[Threads.threadid()] -
-                            u_tmps2[Threads.threadid()]
+                        @.. broadcast = false diff1[slot] = u_tmps[slot] -
+                            u_tmps2[slot]
                         f(
-                            k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p,
+                            k_tmps[slot], u_tmps[slot], p,
                             t + j * dt_temp
                         )
                     end
 
-                    @.. broadcast = false T[index, 1] = u_tmps[Threads.threadid()]
+                    @.. broadcast = false T[index, 1] = u_tmps[slot]
                 end
             end
         end
@@ -845,27 +845,27 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threaded alg.threading slot for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
                     for index in startIndex:endIndex
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
-                        @.. broadcast = false u_temp4[Threads.threadid()] = uprev
-                        @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
+                        @.. broadcast = false u_temp4[slot] = uprev
+                        @.. broadcast = false u_temp3[slot] = u_temp4[slot] +
                             dt_int_temp *
                             fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(
-                                k_tmps[Threads.threadid()],
-                                cache.u_temp3[Threads.threadid()],
+                                k_tmps[slot],
+                                cache.u_temp3[slot],
                                 p, t + (j - 1) * dt_int_temp
                             )
-                            @.. broadcast = false T[index + 1] = u_temp4[Threads.threadid()] +
+                            @.. broadcast = false T[index + 1] = u_temp4[slot] +
                                 2 * dt_int_temp *
-                                k_tmps[Threads.threadid()] # Explicit Midpoint rule
-                            @.. broadcast = false u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-                            @.. broadcast = false u_temp3[Threads.threadid()] = T[index + 1]
+                                k_tmps[slot] # Explicit Midpoint rule
+                            @.. broadcast = false u_temp4[slot] = u_temp3[slot]
+                            @.. broadcast = false u_temp3[slot] = T[index + 1]
                         end
                     end
                 end
@@ -875,25 +875,25 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threaded alg.threading slot for i in 0:(n_curr ÷ 2)
                     indices = (i, n_curr - i)
                     for index in indices
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
-                        @.. broadcast = false u_temp4[Threads.threadid()] = uprev
-                        @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
+                        @.. broadcast = false u_temp4[slot] = uprev
+                        @.. broadcast = false u_temp3[slot] = u_temp4[slot] +
                             dt_int_temp *
                             fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(
-                                k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], p,
+                                k_tmps[slot], u_temp3[slot], p,
                                 t + (j - 1) * dt_int_temp
                             )
-                            @.. broadcast = false T[index + 1] = u_temp4[Threads.threadid()] +
+                            @.. broadcast = false T[index + 1] = u_temp4[slot] +
                                 2 * dt_int_temp *
-                                k_tmps[Threads.threadid()] # Explicit Midpoint rule
-                            @.. broadcast = false u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-                            @.. broadcast = false u_temp3[Threads.threadid()] = T[index + 1]
+                                k_tmps[slot] # Explicit Midpoint rule
+                            @.. broadcast = false u_temp4[slot] = u_temp3[slot]
+                            @.. broadcast = false u_temp3[slot] = T[index + 1]
                         end
                         if indices[2] <= indices[1]
                             break
@@ -1362,7 +1362,7 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T, J = J
 
-                @threaded alg.threading for i in 1:2
+                @threaded alg.threading slot for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1370,86 +1370,86 @@ function perform_step!(
                         j_int_temp = 4 * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(
-                            W[Threads.threadid()], integrator.f.mass_matrix,
+                            W[slot], integrator.f.mass_matrix,
                             dt_int_temp, J
                         )
-                        @.. broadcast = false u_temp4[Threads.threadid()] = uprev
-                        @.. broadcast = false linsolve_tmps[Threads.threadid()] = fsalfirst
+                        @.. broadcast = false u_temp4[slot] = uprev
+                        @.. broadcast = false linsolve_tmps[slot] = fsalfirst
 
-                        linsolve = cache.linsolve[Threads.threadid()]
+                        linsolve = cache.linsolve[slot]
 
                         if !repeat_step
                             linres = dolinsolve(
                                 integrator, linsolve;
-                                A = W[Threads.threadid()],
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                A = W[slot],
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         else
                             linres = dolinsolve(
                                 integrator, linsolve; A = nothing,
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         end
 
-                        @.. broadcast = false k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
-                        @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
-                            k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast = false diff1[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                            u_temp4[Threads.threadid()]
+                        @.. broadcast = false k_tmps[slot] = -k_tmps[slot]
+                        @.. broadcast = false u_temp3[slot] = u_temp4[slot] +
+                            k_tmps[slot] # Euler starting step
+                        @.. broadcast = false diff1[slot] = u_temp3[slot] -
+                            u_temp4[slot]
                         for j in 2:j_int_temp
                             f(
-                                k_tmps[Threads.threadid()],
-                                cache.u_temp3[Threads.threadid()],
+                                k_tmps[slot],
+                                cache.u_temp3[slot],
                                 p, t + (j - 1) * dt_int_temp
                             )
-                            @.. broadcast = false linsolve_tmps[Threads.threadid()] = k_tmps[Threads.threadid()] -
+                            @.. broadcast = false linsolve_tmps[slot] = k_tmps[slot] -
                                 (
-                                u_temp3[Threads.threadid()] -
-                                    u_temp4[Threads.threadid()]
+                                u_temp3[slot] -
+                                    u_temp4[slot]
                             ) /
                                 dt_int_temp
 
-                            linsolve = cache.linsolve[Threads.threadid()]
+                            linsolve = cache.linsolve[slot]
 
                             if !repeat_step && j == 1
                                 linres = dolinsolve(
                                     integrator, linsolve;
-                                    A = W[Threads.threadid()],
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    A = W[slot],
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             else
                                 linres = dolinsolve(
                                     integrator, linsolve; A = nothing,
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             end
 
                             @.. broadcast = false T[index + 1] = 2 *
-                                u_temp3[Threads.threadid()] -
-                                u_temp4[Threads.threadid()] -
-                                2 * k_tmps[Threads.threadid()] # Explicit Midpoint rule
-                            @.. broadcast = false u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-                            @.. broadcast = false u_temp3[Threads.threadid()] = T[index + 1]
+                                u_temp3[slot] -
+                                u_temp4[slot] -
+                                2 * k_tmps[slot] # Explicit Midpoint rule
+                            @.. broadcast = false u_temp4[slot] = u_temp3[slot]
+                            @.. broadcast = false u_temp3[slot] = T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast = false diff2[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                                    u_temp4[Threads.threadid()]
-                                @.. broadcast = false diff2[Threads.threadid()] = 0.5 *
+                                @.. broadcast = false diff2[slot] = u_temp3[slot] -
+                                    u_temp4[slot]
+                                @.. broadcast = false diff2[slot] = 0.5 *
                                     (
-                                    diff2[Threads.threadid()] -
-                                        diff1[Threads.threadid()]
+                                    diff2[slot] -
+                                        diff1[slot]
                                 )
                                 if (
                                         integrator.opts.internalnorm(
-                                            diff1[Threads.threadid()],
+                                            diff1[slot],
                                             t
                                         ) <
                                             integrator.opts.internalnorm(
-                                            diff2[Threads.threadid()],
+                                            diff2[slot],
                                             t
                                         )
                                     )
@@ -1467,93 +1467,93 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T, J = J
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threaded alg.threading slot for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i) #Use flag to avoid union
                     for index in indices
                         index == -1 && continue
                         j_int_temp = 4 * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(
-                            W[Threads.threadid()], integrator.f.mass_matrix,
+                            W[slot], integrator.f.mass_matrix,
                             dt_int_temp, J
                         )
-                        @.. broadcast = false u_temp4[Threads.threadid()] = uprev
-                        @.. broadcast = false linsolve_tmps[Threads.threadid()] = fsalfirst
+                        @.. broadcast = false u_temp4[slot] = uprev
+                        @.. broadcast = false linsolve_tmps[slot] = fsalfirst
 
-                        linsolve = cache.linsolve[Threads.threadid()]
+                        linsolve = cache.linsolve[slot]
 
                         if !repeat_step
                             linres = dolinsolve(
                                 integrator, linsolve;
-                                A = W[Threads.threadid()],
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                A = W[slot],
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         else
                             linres = dolinsolve(
                                 integrator, linsolve; A = nothing,
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         end
 
-                        @.. broadcast = false k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
-                        @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
-                            k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast = false diff1[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                            u_temp4[Threads.threadid()]
+                        @.. broadcast = false k_tmps[slot] = -k_tmps[slot]
+                        @.. broadcast = false u_temp3[slot] = u_temp4[slot] +
+                            k_tmps[slot] # Euler starting step
+                        @.. broadcast = false diff1[slot] = u_temp3[slot] -
+                            u_temp4[slot]
                         for j in 2:j_int_temp
                             f(
-                                k_tmps[Threads.threadid()],
-                                cache.u_temp3[Threads.threadid()],
+                                k_tmps[slot],
+                                cache.u_temp3[slot],
                                 p, t + (j - 1) * dt_int_temp
                             )
-                            @.. broadcast = false linsolve_tmps[Threads.threadid()] = k_tmps[Threads.threadid()] -
+                            @.. broadcast = false linsolve_tmps[slot] = k_tmps[slot] -
                                 (
-                                u_temp3[Threads.threadid()] -
-                                    u_temp4[Threads.threadid()]
+                                u_temp3[slot] -
+                                    u_temp4[slot]
                             ) /
                                 dt_int_temp
 
-                            linsolve = cache.linsolve[Threads.threadid()]
+                            linsolve = cache.linsolve[slot]
 
                             if !repeat_step && j == 1
                                 linres = dolinsolve(
                                     integrator, linsolve;
-                                    A = W[Threads.threadid()],
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    A = W[slot],
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             else
                                 linres = dolinsolve(
                                     integrator, linsolve; A = nothing,
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             end
 
                             @.. broadcast = false T[index + 1] = 2 *
-                                u_temp3[Threads.threadid()] -
-                                u_temp4[Threads.threadid()] -
-                                2 * k_tmps[Threads.threadid()] # Explicit Midpoint rule
-                            @.. broadcast = false u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-                            @.. broadcast = false u_temp3[Threads.threadid()] = T[index + 1]
+                                u_temp3[slot] -
+                                u_temp4[slot] -
+                                2 * k_tmps[slot] # Explicit Midpoint rule
+                            @.. broadcast = false u_temp4[slot] = u_temp3[slot]
+                            @.. broadcast = false u_temp3[slot] = T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast = false diff2[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                                    u_temp4[Threads.threadid()]
-                                @.. broadcast = false diff2[Threads.threadid()] = 0.5 *
+                                @.. broadcast = false diff2[slot] = u_temp3[slot] -
+                                    u_temp4[slot]
+                                @.. broadcast = false diff2[slot] = 0.5 *
                                     (
-                                    diff2[Threads.threadid()] -
-                                        diff1[Threads.threadid()]
+                                    diff2[slot] -
+                                        diff1[slot]
                                 )
                                 if (
                                         integrator.opts.internalnorm(
-                                            diff1[Threads.threadid()],
+                                            diff1[slot],
                                             t
                                         ) <
                                             integrator.opts.internalnorm(
-                                            diff2[Threads.threadid()],
+                                            diff2[slot],
                                             t
                                         )
                                     )
@@ -2115,28 +2115,28 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T
 
-                @threaded alg.threading for i in 1:2
+                @threaded alg.threading slot for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
                     for index in startIndex:endIndex
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
-                        @.. broadcast = false u_temp4[Threads.threadid()] = uprev
-                        @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
+                        @.. broadcast = false u_temp4[slot] = uprev
+                        @.. broadcast = false u_temp3[slot] = u_temp4[slot] +
                             dt_int_temp *
                             fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(
-                                k_tmps[Threads.threadid()],
-                                cache.u_temp3[Threads.threadid()],
+                                k_tmps[slot],
+                                cache.u_temp3[slot],
                                 p, t + (j - 1) * dt_int_temp
                             )
-                            @.. broadcast = false T[index + 1] = u_temp4[Threads.threadid()] +
+                            @.. broadcast = false T[index + 1] = u_temp4[slot] +
                                 2 * dt_int_temp *
-                                k_tmps[Threads.threadid()] # Explicit Midpoint rule
-                            @.. broadcast = false u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-                            @.. broadcast = false u_temp3[Threads.threadid()] = T[index + 1]
+                                k_tmps[slot] # Explicit Midpoint rule
+                            @.. broadcast = false u_temp4[slot] = u_temp3[slot]
+                            @.. broadcast = false u_temp3[slot] = T[index + 1]
                         end
                     end
                 end
@@ -2146,27 +2146,27 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threaded alg.threading slot for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
                     for index in indices
                         index == -1 && continue
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
-                        @.. broadcast = false u_temp4[Threads.threadid()] = uprev
-                        @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] +
+                        @.. broadcast = false u_temp4[slot] = uprev
+                        @.. broadcast = false u_temp3[slot] = u_temp4[slot] +
                             dt_int_temp *
                             fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(
-                                k_tmps[Threads.threadid()],
-                                cache.u_temp3[Threads.threadid()],
+                                k_tmps[slot],
+                                cache.u_temp3[slot],
                                 p, t + (j - 1) * dt_int_temp
                             )
-                            @.. broadcast = false T[index + 1] = u_temp4[Threads.threadid()] +
+                            @.. broadcast = false T[index + 1] = u_temp4[slot] +
                                 2 * dt_int_temp *
-                                k_tmps[Threads.threadid()] # Explicit Midpoint rule
-                            @.. broadcast = false u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-                            @.. broadcast = false u_temp3[Threads.threadid()] = T[index + 1]
+                                k_tmps[slot] # Explicit Midpoint rule
+                            @.. broadcast = false u_temp4[slot] = u_temp3[slot]
+                            @.. broadcast = false u_temp3[slot] = T[index + 1]
                         end
                     end
                 end
@@ -3000,7 +3000,7 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T, J = J
 
-                @threaded alg.threading for i in 1:2
+                @threaded alg.threading slot for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -3008,90 +3008,90 @@ function perform_step!(
                         j_int_temp = 4 * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(
-                            W[Threads.threadid()], integrator.f.mass_matrix,
+                            W[slot], integrator.f.mass_matrix,
                             dt_int_temp, J
                         )
-                        @.. broadcast = false u_temp4[Threads.threadid()] = uprev
-                        @.. broadcast = false linsolve_tmps[Threads.threadid()] = fsalfirst
+                        @.. broadcast = false u_temp4[slot] = uprev
+                        @.. broadcast = false linsolve_tmps[slot] = fsalfirst
 
-                        linsolve = cache.linsolve[Threads.threadid()]
+                        linsolve = cache.linsolve[slot]
 
                         if !repeat_step
                             linres = dolinsolve(
                                 integrator, linsolve;
-                                A = W[Threads.threadid()],
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                A = W[slot],
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         else
                             linres = dolinsolve(
                                 integrator, linsolve; A = nothing,
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         end
 
-                        @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] -
-                            k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast = false diff1[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                            u_temp4[Threads.threadid()]
+                        @.. broadcast = false u_temp3[slot] = u_temp4[slot] -
+                            k_tmps[slot] # Euler starting step
+                        @.. broadcast = false diff1[slot] = u_temp3[slot] -
+                            u_temp4[slot]
                         for j in 2:(j_int_temp + 1)
                             f(
-                                k_tmps[Threads.threadid()],
-                                cache.u_temp3[Threads.threadid()],
+                                k_tmps[slot],
+                                cache.u_temp3[slot],
                                 p, t + (j - 1) * dt_int_temp
                             )
-                            @.. broadcast = false linsolve_tmps[Threads.threadid()] = k_tmps[Threads.threadid()] -
+                            @.. broadcast = false linsolve_tmps[slot] = k_tmps[slot] -
                                 (
-                                u_temp3[Threads.threadid()] -
-                                    u_temp4[Threads.threadid()]
+                                u_temp3[slot] -
+                                    u_temp4[slot]
                             ) /
                                 dt_int_temp
 
-                            linsolve = cache.linsolve[Threads.threadid()]
+                            linsolve = cache.linsolve[slot]
                             if !repeat_step && j == 1
                                 linres = dolinsolve(
                                     integrator, linsolve;
-                                    A = W[Threads.threadid()],
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    A = W[slot],
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             else
                                 linres = dolinsolve(
                                     integrator, linsolve; A = nothing,
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             end
 
                             @.. broadcast = false T[index + 1] = 2 *
-                                u_temp3[Threads.threadid()] -
-                                u_temp4[Threads.threadid()] -
-                                2 * k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                                u_temp3[slot] -
+                                u_temp4[slot] -
+                                2 * k_tmps[slot] # Explicit Midpoint rule
                             if (j == j_int_temp + 1)
                                 @.. broadcast = false T[index + 1] = 0.5(
                                     T[index + 1] +
-                                        u_temp4[Threads.threadid()]
+                                        u_temp4[slot]
                                 )
                             end
-                            @.. broadcast = false u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-                            @.. broadcast = false u_temp3[Threads.threadid()] = T[index + 1]
+                            @.. broadcast = false u_temp4[slot] = u_temp3[slot]
+                            @.. broadcast = false u_temp3[slot] = T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast = false diff2[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                                    u_temp4[Threads.threadid()]
-                                @.. broadcast = false diff2[Threads.threadid()] = 0.5 *
+                                @.. broadcast = false diff2[slot] = u_temp3[slot] -
+                                    u_temp4[slot]
+                                @.. broadcast = false diff2[slot] = 0.5 *
                                     (
-                                    diff2[Threads.threadid()] -
-                                        diff1[Threads.threadid()]
+                                    diff2[slot] -
+                                        diff1[slot]
                                 )
                                 if (
                                         integrator.opts.internalnorm(
-                                            diff1[Threads.threadid()],
+                                            diff1[slot],
                                             t
                                         ) <
                                             integrator.opts.internalnorm(
-                                            diff2[Threads.threadid()],
+                                            diff2[slot],
                                             t
                                         )
                                     )
@@ -3100,8 +3100,8 @@ function perform_step!(
                                     return
                                 end
                             end
-                            @.. broadcast = false diff1[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                                u_temp4[Threads.threadid()]
+                            @.. broadcast = false diff1[slot] = u_temp3[slot] -
+                                u_temp4[slot]
                         end
                     end
                 end
@@ -3111,8 +3111,8 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T, J = J
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
-                    tid = Threads.threadid()
+                @threaded alg.threading slot for i in 0:(n_curr ÷ 2)
+                    tid = slot
                     linsolvetmp = linsolve_tmps[tid]
                     ktmp = k_tmps[tid]
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i) #Use flag to avoid type union/branch
@@ -3811,7 +3811,7 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T, J = J
 
-                @threaded alg.threading for i in 1:2
+                @threaded alg.threading slot for i in 1:2
                     startIndex = (i == 1) ? 0 : n_curr
                     endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -3819,87 +3819,87 @@ function perform_step!(
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(
-                            W[Threads.threadid()], integrator.f.mass_matrix,
+                            W[slot], integrator.f.mass_matrix,
                             dt_int_temp, J
                         )
-                        @.. broadcast = false u_temp4[Threads.threadid()] = uprev
-                        @.. broadcast = false linsolve_tmps[Threads.threadid()] = fsalfirst
+                        @.. broadcast = false u_temp4[slot] = uprev
+                        @.. broadcast = false linsolve_tmps[slot] = fsalfirst
 
-                        linsolve = cache.linsolve[Threads.threadid()]
+                        linsolve = cache.linsolve[slot]
 
                         if !repeat_step
                             linres = dolinsolve(
                                 integrator, linsolve;
-                                A = W[Threads.threadid()],
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                A = W[slot],
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         else
                             linres = dolinsolve(
                                 integrator, linsolve; A = nothing,
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         end
 
-                        @.. broadcast = false k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
-                        @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] -
-                            k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast = false diff1[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                            u_temp4[Threads.threadid()]
+                        @.. broadcast = false k_tmps[slot] = -k_tmps[slot]
+                        @.. broadcast = false u_temp3[slot] = u_temp4[slot] -
+                            k_tmps[slot] # Euler starting step
+                        @.. broadcast = false diff1[slot] = u_temp3[slot] -
+                            u_temp4[slot]
                         for j in 2:(j_int_temp + 1)
                             f(
-                                k_tmps[Threads.threadid()],
-                                cache.u_temp3[Threads.threadid()],
+                                k_tmps[slot],
+                                cache.u_temp3[slot],
                                 p, t + (j - 1) * dt_int_temp
                             )
-                            @.. broadcast = false linsolve_tmps[Threads.threadid()] = k_tmps[Threads.threadid()]
+                            @.. broadcast = false linsolve_tmps[slot] = k_tmps[slot]
 
-                            linsolve = cache.linsolve[Threads.threadid()]
+                            linsolve = cache.linsolve[slot]
 
                             if !repeat_step && j == 1
                                 linres = dolinsolve(
                                     integrator, linsolve;
-                                    A = W[Threads.threadid()],
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    A = W[slot],
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             else
                                 linres = dolinsolve(
                                     integrator, linsolve; A = nothing,
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             end
 
-                            @.. broadcast = false T[index + 1] = u_temp3[Threads.threadid()] -
-                                k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast = false T[index + 1] = u_temp3[slot] -
+                                k_tmps[slot] # Explicit Midpoint rule
                             if (j == j_int_temp + 1)
                                 @.. broadcast = false T[index + 1] = 0.25(
                                     T[index + 1] +
                                         2 *
-                                        u_temp3[Threads.threadid()] +
-                                        u_temp4[Threads.threadid()]
+                                        u_temp3[slot] +
+                                        u_temp4[slot]
                                 )
                             end
-                            @.. broadcast = false u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-                            @.. broadcast = false u_temp3[Threads.threadid()] = T[index + 1]
+                            @.. broadcast = false u_temp4[slot] = u_temp3[slot]
+                            @.. broadcast = false u_temp3[slot] = T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast = false diff2[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                                    u_temp4[Threads.threadid()]
-                                @.. broadcast = false diff2[Threads.threadid()] = 0.5 *
+                                @.. broadcast = false diff2[slot] = u_temp3[slot] -
+                                    u_temp4[slot]
+                                @.. broadcast = false diff2[slot] = 0.5 *
                                     (
-                                    diff2[Threads.threadid()] -
-                                        diff1[Threads.threadid()]
+                                    diff2[slot] -
+                                        diff1[slot]
                                 )
                                 if (
                                         integrator.opts.internalnorm(
-                                            diff1[Threads.threadid()],
+                                            diff1[slot],
                                             t
                                         ) <
                                             integrator.opts.internalnorm(
-                                            diff2[Threads.threadid()],
+                                            diff2[slot],
                                             t
                                         )
                                     )
@@ -3908,8 +3908,8 @@ function perform_step!(
                                     return
                                 end
                             end
-                            @.. broadcast = false diff1[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                                u_temp4[Threads.threadid()]
+                            @.. broadcast = false diff1[slot] = u_temp3[slot] -
+                                u_temp4[slot]
                         end
                     end
                 end
@@ -3919,93 +3919,93 @@ function perform_step!(
                     dt = dt, u_temp3 = u_temp3, u_temp4 = u_temp4, k_tmps = k_tmps, p = p,
                     t = t, T = T, J = J
 
-                @threaded alg.threading for i in 0:(n_curr ÷ 2)
+                @threaded alg.threading slot for i in 0:(n_curr ÷ 2)
                     indices = i != n_curr - i ? (i, n_curr - i) : (-1, n_curr - i)
                     for index in indices
                         index == -1 && continue
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(
-                            W[Threads.threadid()], integrator.f.mass_matrix,
+                            W[slot], integrator.f.mass_matrix,
                             dt_int_temp, J
                         )
-                        @.. broadcast = false u_temp4[Threads.threadid()] = uprev
-                        @.. broadcast = false linsolve_tmps[Threads.threadid()] = fsalfirst
+                        @.. broadcast = false u_temp4[slot] = uprev
+                        @.. broadcast = false linsolve_tmps[slot] = fsalfirst
 
-                        linsolve = cache.linsolve[Threads.threadid()]
+                        linsolve = cache.linsolve[slot]
 
                         if !repeat_step
                             linres = dolinsolve(
                                 integrator, linsolve;
-                                A = W[Threads.threadid()],
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                A = W[slot],
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         else
                             linres = dolinsolve(
                                 integrator, linsolve; A = nothing,
-                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                linu = _vec(k_tmps[Threads.threadid()])
+                                b = _vec(linsolve_tmps[slot]),
+                                linu = _vec(k_tmps[slot])
                             )
                         end
 
-                        @.. broadcast = false u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] -
-                            k_tmps[Threads.threadid()] # Euler starting step
-                        @.. broadcast = false diff1[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                            u_temp4[Threads.threadid()]
+                        @.. broadcast = false u_temp3[slot] = u_temp4[slot] -
+                            k_tmps[slot] # Euler starting step
+                        @.. broadcast = false diff1[slot] = u_temp3[slot] -
+                            u_temp4[slot]
                         for j in 2:(j_int_temp + 1)
                             f(
-                                k_tmps[Threads.threadid()],
-                                cache.u_temp3[Threads.threadid()],
+                                k_tmps[slot],
+                                cache.u_temp3[slot],
                                 p, t + (j - 1) * dt_int_temp
                             )
-                            @.. broadcast = false linsolve_tmps[Threads.threadid()] = k_tmps[Threads.threadid()]
+                            @.. broadcast = false linsolve_tmps[slot] = k_tmps[slot]
 
-                            linsolve = cache.linsolve[Threads.threadid()]
+                            linsolve = cache.linsolve[slot]
 
                             if (!repeat_step && j == 1)
                                 linres = dolinsolve(
                                     integrator, linsolve;
-                                    A = W[Threads.threadid()],
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    A = W[slot],
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             else
                                 linres = dolinsolve(
                                     integrator, linsolve; A = nothing,
-                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                    linu = _vec(k_tmps[Threads.threadid()])
+                                    b = _vec(linsolve_tmps[slot]),
+                                    linu = _vec(k_tmps[slot])
                                 )
                             end
 
-                            @.. broadcast = false T[index + 1] = u_temp3[Threads.threadid()] -
-                                k_tmps[Threads.threadid()] # Explicit Midpoint rule
+                            @.. broadcast = false T[index + 1] = u_temp3[slot] -
+                                k_tmps[slot] # Explicit Midpoint rule
                             if (j == j_int_temp + 1)
                                 @.. broadcast = false T[index + 1] = 0.25(
                                     T[index + 1] +
                                         2 *
-                                        u_temp3[Threads.threadid()] +
-                                        u_temp4[Threads.threadid()]
+                                        u_temp3[slot] +
+                                        u_temp4[slot]
                                 )
                             end
-                            @.. broadcast = false u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-                            @.. broadcast = false u_temp3[Threads.threadid()] = T[index + 1]
+                            @.. broadcast = false u_temp4[slot] = u_temp3[slot]
+                            @.. broadcast = false u_temp3[slot] = T[index + 1]
                             if (index <= 1)
                                 # Deuflhard Stability check for initial two sequences
-                                @.. broadcast = false diff2[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                                    u_temp4[Threads.threadid()]
-                                @.. broadcast = false diff2[Threads.threadid()] = 0.5 *
+                                @.. broadcast = false diff2[slot] = u_temp3[slot] -
+                                    u_temp4[slot]
+                                @.. broadcast = false diff2[slot] = 0.5 *
                                     (
-                                    diff2[Threads.threadid()] -
-                                        diff1[Threads.threadid()]
+                                    diff2[slot] -
+                                        diff1[slot]
                                 )
                                 if (
                                         integrator.opts.internalnorm(
-                                            diff1[Threads.threadid()],
+                                            diff1[slot],
                                             t
                                         ) <
                                             integrator.opts.internalnorm(
-                                            diff2[Threads.threadid()],
+                                            diff2[slot],
                                             t
                                         )
                                     )
@@ -4014,8 +4014,8 @@ function perform_step!(
                                     return
                                 end
                             end
-                            @.. broadcast = false diff1[Threads.threadid()] = u_temp3[Threads.threadid()] -
-                                u_temp4[Threads.threadid()]
+                            @.. broadcast = false diff1[slot] = u_temp3[slot] -
+                                u_temp4[slot]
                         end
                     end
                 end
