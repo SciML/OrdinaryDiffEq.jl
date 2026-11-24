@@ -1,8 +1,24 @@
+function _reject_failed_rosenbrock_step!(integrator)
+    integrator.force_stepfail = true
+    # force_dtmin permits error-test failures at the minimum, but a failed
+    # linear solve cannot produce a step to accept or retry at the same dt.
+    if integrator.opts.adaptive && integrator.opts.force_dtmin &&
+            abs(integrator.dt) <= timedepentdtmin(integrator)
+        SciMLBase.terminate!(integrator, SciMLBase.ReturnCode.ConvergenceFailure)
+    end
+    return nothing
+end
+
 # Matches the Newton solve, which does not treat a `Default` retcode as a failure.
 function _reject_failed_linsolve!(integrator, linres)
     failed = !SciMLBase.successful_retcode(linres.retcode) &&
         linres.retcode != SciMLBase.ReturnCode.Default
-    failed && (integrator.force_stepfail = true)
+    if failed
+        # Mutable stages use u as scratch space. The endpoint saver must see
+        # the last accepted state if this failure ends the solve.
+        RecursiveArrayTools.recursivecopy!(integrator.u, integrator.uprev)
+        _reject_failed_rosenbrock_step!(integrator)
+    end
     return failed
 end
 
@@ -285,7 +301,7 @@ end
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
-        integrator.force_stepfail = true
+        _reject_failed_rosenbrock_step!(integrator)
         return nothing
     end
 
@@ -369,7 +385,7 @@ end
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
-        integrator.force_stepfail = true
+        _reject_failed_rosenbrock_step!(integrator)
         return nothing
     end
 
@@ -459,7 +475,7 @@ end
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
-        integrator.force_stepfail = true
+        _reject_failed_rosenbrock_step!(integrator)
         return nothing
     end
 
