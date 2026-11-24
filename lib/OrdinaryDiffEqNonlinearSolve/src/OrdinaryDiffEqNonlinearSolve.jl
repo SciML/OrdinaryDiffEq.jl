@@ -11,7 +11,7 @@ using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
     NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem,
     get_tmp_cache, ReturnCode,
     AbstractNonlinearProblem, LinearAliasSpecifier,
-    _vec, _reshape, postamble!, alg_order, isadaptive
+    _vec, _reshape, postamble!, alg_order
 import DiffEqBase
 import DiffEqBase: OrdinaryDiffEqTag, calculate_residuals, calculate_residuals!,
     BrownFullBasicInit, ShampineCollocationInit
