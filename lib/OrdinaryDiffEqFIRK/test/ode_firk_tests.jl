@@ -300,6 +300,30 @@ end
     @test integ.kshortsize == bare.kshortsize
 end
 
+@testset "AdaptiveRadau dense output across stage-count changes" begin
+    f!(du, u, p, t) = (du .= cos(t) .* u; nothing)
+    f(u, p, t) = cos(t) .* u
+    exact(t) = exp(sin(t)) .* [1.0, 2.0]
+    for prob in (ODEProblem(f!, [1.0, 2.0], (0.0, 4.0)), ODEProblem(f, [1.0, 2.0], (0.0, 4.0)))
+        sol = solve(prob, AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+        @test maximum(maximum(abs.(sol(t) - exact(t))) for t in 0:0.01:4) < 1.0e-5
+        @test sol.stats.naccept < 40
+    end
+end
+
+@testset "AdaptiveRadau dense output for mass-matrix DAEs (#5027)" begin
+    # x' = -x + z, 0 = x - 2z  =>  x(t) = exp(-t/2), z(t) = x(t) / 2
+    M = [1.0 0.0; 0.0 0.0]
+    fiip = ODEFunction((du, u, p, t) -> (du[1] = -u[1] + u[2]; du[2] = u[1] - 2u[2]; nothing); mass_matrix = M)
+    foop = ODEFunction((u, p, t) -> [-u[1] + u[2], u[1] - 2u[2]]; mass_matrix = M)
+    for f in (fiip, foop)
+        prob = ODEProblem(f, [1.0, 0.5], (0.0, 5.0))
+        sol = solve(prob, AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-8)
+        @test maximum(abs(sol(t)[1] - exp(-t / 2)) for t in 0:0.01:5) < 1.0e-6
+        @test maximum(abs(sol(t)[2] - exp(-t / 2) / 2) for t in 0:0.01:5) < 1.0e-6
+    end
+end
+
 @testset "AdaptiveRadau Newton tolerance follows the stage count" begin
     prob = prob_ode_rober
     ref = solve(prob, RadauIIA5(); abstol = 1.0e-12, reltol = 1.0e-12, save_everystep = false)
@@ -310,6 +334,10 @@ end
         @test sol.u[end][3] ≈ ref.u[end][3] rtol = 1.0e-7
         @test abs(sum(sol.u[end]) - 1) < 1.0e-8
     end
+    vdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 100 * ((1 - u[1]^2) * u[2] - u[1]); nothing)
+    vdp = ODEProblem(vdp!, [2.0, 0.0], (0.0, 2.0))
+    scalar = solve(vdp, AdaptiveRadau(); reltol = 1.0e-6, abstol = 1.0e-7)
+    @test solve(vdp, AdaptiveRadau(); reltol = [1.0e-6, 1.0e-6], abstol = [1.0e-7, 1.0e-7]).u == scalar.u
 end
 
 @testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
@@ -338,4 +366,14 @@ end
         prob_rober, AutoTsit5(AdaptiveRadau(autodiff = AutoFiniteDiff()); stiffalgfirst = true)
     )
     @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
+end
+
+@testset "Out-of-place AdaptiveRadau with a mass matrix" begin
+    M = Diagonal([2.0, 0.5])
+    fiip = ODEFunction((du, u, p, t) -> (du .= [-u[1] + cos(t), -u[2] + u[1]]; nothing); mass_matrix = M)
+    foop = ODEFunction((u, p, t) -> [-u[1] + cos(t), -u[2] + u[1]]; mass_matrix = M)
+    iip = solve(ODEProblem(fiip, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+    oop = solve(ODEProblem(foop, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+    @test oop.retcode == ReturnCode.Success
+    @test oop.u[end] ≈ iip.u[end] rtol = 1.0e-8
 end
