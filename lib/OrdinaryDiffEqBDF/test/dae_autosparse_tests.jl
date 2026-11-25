@@ -212,19 +212,36 @@ end
     @test successful_retcode(sol)
     @test sol.u[end] ≈ [1.5, 1.5] rtol = 1.0e-6
 
-    # The combined stage Jacobian has 8 - 8 = 0 at (1, 2) for dt = 0.125, but the two
-    # partials do not, so the storage must hold that entry.
-    function cancelling!(r, du, u, p, t)
-        r[1] = du[1] + u[1] + du[2] - 8 * u[2]
+    # The construction trace samples du[2] = 8, where the branch is constant, so the
+    # automatic storage misses (1, 2); at the real du[2] = -1 the partial is -2.
+    function incomplete!(r, du, u, p, t)
+        r[1] = du[1] + u[1] + (du[2] < 8 ? du[2]^2 - 1 : 0.0)
         r[2] = du[2] + u[2]
         return nothing
     end
-    cancelling_prob = DAEProblem(
-        cancelling!, [8.0, -1.0], [1.0, 1.0], (0.0, 0.5); differential_vars = [true, true]
+    incomplete_prob = DAEProblem(
+        incomplete!, [-1.0, -1.0], [1.0, 1.0], (0.0, 0.5); differential_vars = [true, true]
     )
-    kwargs = (; initializealg = NoInit(), dt = 0.125, abstol = 1.0e-8, reltol = 1.0e-8)
-    sol_sparse = solve(cancelling_prob, DFBDF(autodiff = local_sparse); kwargs...)
-    sol_dense = solve(cancelling_prob, DFBDF(); kwargs...)
-    @test successful_retcode(sol_sparse)
-    @test sol_sparse.u[end] ≈ sol_dense.u[end] rtol = 1.0e-6
+    @test_throws "does not hold" solve(
+        incomplete_prob, DFBDF(autodiff = local_sparse); initializealg = NoInit(), dt = 0.125
+    )
+end
+
+# A detector may return a sparse Boolean pattern with stored `false` entries.
+struct StoredFalseDetector <: ADTypes.AbstractSparsityDetector end
+const stored_false_pattern = sparse([1, 2, 1], [1, 2, 2], [true, true, false], 2, 2)
+ADTypes.jacobian_sparsity(f, x, ::StoredFalseDetector) = stored_false_pattern
+ADTypes.jacobian_sparsity(f!, y, x, ::StoredFalseDetector) = stored_false_pattern
+
+@testset "Stored false entries of a detected pattern detect nothing" begin
+    decoupled!(r, du, u, p, t) = (r .= du .+ u; nothing)
+    backend = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = StoredFalseDetector(),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    f = DAEFunction(decoupled!; jac_prototype = sparse([1, 2], [1, 2], [1.0, 1.0]))
+    prob = DAEProblem(f, [-1.0, -1.0], [1.0, 1.0], (0.0, 0.5); differential_vars = [true, true])
+    sol = solve(prob, DFBDF(autodiff = backend); initializealg = NoInit(), abstol = 1.0e-10, reltol = 1.0e-10)
+    @test successful_retcode(sol)
+    @test sol.u[end] ≈ fill(exp(-0.5), 2) rtol = 1.0e-6
 end

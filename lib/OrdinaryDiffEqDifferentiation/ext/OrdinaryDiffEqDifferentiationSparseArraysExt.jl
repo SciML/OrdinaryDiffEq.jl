@@ -27,7 +27,10 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
     detected isa SparseMatrixCSC || (detected = SparseMatrixCSC(detected))
     rows = rowvals(J)
     detected_rows = rowvals(detected)
+    detected_vals = nonzeros(detected)
     for j in 1:size(detected, 2), idx in nzrange(detected, j)
+        # A sparse Boolean pattern can store `false` entries, which detect nothing.
+        iszero(detected_vals[idx]) && continue
         i = detected_rows[idx]
         stored = nzrange(J, j)
         k = searchsortedfirst(rows, i, first(stored), last(stored), Base.Order.Forward)
