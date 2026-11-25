@@ -315,21 +315,22 @@ end
 # `J_u` and `J_du` are stored in `J`'s sparsity pattern (the union of dF/du and dF/d(du)),
 # and sparse AD decompresses only into the exact pattern it colored, so the separated
 # configs must color `J`'s pattern rather than detect their own. That is only sound if `J`
-# stores every entry of a known pattern, stored zeros included; otherwise the derivatives
-# missing from `J` would be silently skipped.
-function with_jac_sparsity(alg, J, uf, du1, u)
+# stores every entry of the pattern the detector finds (stored zeros of a known pattern
+# included); otherwise the derivatives missing from `J` would be silently skipped.
+function with_jac_sparsity(alg, J, uf_u, uf_du, du1, u)
     ad = alg_autodiff(alg)
     (ad isa ADTypes.AutoSparse && J isa SparseMatrixCSC) || return alg
     detector = ADTypes.sparsity_detector(ad)
-    if detector isa ADTypes.KnownJacobianSparsityDetector
-        known = sparse(ADTypes.jacobian_sparsity(uf, du1, u, detector))
-        stored(A) = zip(findnz(A)[1], findnz(A)[2])
-        issubset(stored(known), Set(stored(J))) || throw(
+    stored(A) = zip(findnz(A)[1], findnz(A)[2])
+    stored_J = Set(stored(J))
+    for (wrapper, x) in ((uf_u, u), (uf_du, uf_u.du_fixed))
+        detected = sparse(ADTypes.jacobian_sparsity(wrapper, du1, x, detector))
+        issubset(stored(detected), stored_J) || throw(
             DimensionMismatch(
-                "The Jacobian storage does not hold every entry of the known sparsity \
-                pattern (stored zeros included), so the DAE Jacobians cannot be \
-                decompressed into it. Make `jac_prototype` cover the sparsity pattern, or \
-                update OrdinaryDiffEqDifferentiation."
+                "The Jacobian storage does not hold every entry of the sparsity pattern \
+                (stored zeros included), so the DAE Jacobians cannot be decompressed into \
+                it. Make `jac_prototype` cover the sparsity pattern, or update \
+                OrdinaryDiffEqDifferentiation."
             )
         )
     end
@@ -962,6 +963,16 @@ function build_nlsolver(
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
+            separated_dae_ad = isdae && !(
+                islinear(f) || SciMLBase.has_jac(f) ||
+                    (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
+            )
+            # Checked before the linear solver is built from a `J` that cannot hold the pattern.
+            if separated_dae_ad
+                uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
+                uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
+                dae_jac_alg = with_jac_sparsity(alg, J, uf_u, uf_du, du1, u)
+            end
             linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
             linsolver = default_krylov_warm_start(alg.linsolve)
             precs = if isnothing(linsolver)
@@ -981,17 +992,13 @@ function build_nlsolver(
 
             # Build separated DAE Jacobian cache if applicable
             if isdae
-                if islinear(f) || SciMLBase.has_jac(f) ||
-                        (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
+                if !separated_dae_ad
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage
                     J_du = fill!(similar(J), false)
                     dae_jacobians = DAEJacobiansCache(
                         J_du, nothing, nothing, nothing, nothing
                     )
                 else
-                    uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
-                    uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
-                    dae_jac_alg = with_jac_sparsity(alg, J, uf, du1, u)
                     jac_config_u = build_jac_config(
                         dae_jac_alg, nf, uf_u, du1, uprev, u, ztmp, dz
                     )

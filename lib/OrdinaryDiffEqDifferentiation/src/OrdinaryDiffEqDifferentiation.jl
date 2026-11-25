@@ -59,6 +59,10 @@ import DiffEqBase: OrdinaryDiffEqTag
 is_sparse(::Any) = false
 is_sparse_csc(::Any) = false
 
+# Throws a `DimensionMismatch` if the sparsity `alg`'s detector finds in `f` (at `x`, with
+# output `fx`) an entry that the sparse `J` does not store. Overloaded by the extension.
+check_pattern_stored(alg, f, fx, x, J) = nothing
+
 # Allocate a Jacobian with `pattern`'s structure. A known pattern may hold stored zeros,
 # which are structural entries the coloring decompresses into, but broadcasting drops them.
 jac_from_pattern(::Type{T}, pattern) where {T} = convert.(T, pattern)

@@ -1,8 +1,8 @@
-using OrdinaryDiffEqBDF, SparseArrays, Test
+using OrdinaryDiffEqBDF, OrdinaryDiffEqDifferentiation, LinearSolve, SparseArrays, Test
 import ADTypes, SciMLBase
 using ADTypes: AutoFiniteDiff, AutoForwardDiff, AutoSparse
 using SciMLBase: DAEFunction, DAEProblem, NoInit, isinplace, successful_retcode
-using SparseConnectivityTracer: TracerSparsityDetector
+using SparseConnectivityTracer: TracerSparsityDetector, TracerLocalSparsityDetector
 using SparseMatrixColorings: GreedyColoringAlgorithm
 
 const sparse_fd = AutoSparse(
@@ -97,5 +97,78 @@ end
     # Storage that cannot hold the known pattern must fail rather than skip derivatives.
     f_short = DAEFunction(decay!; jac_prototype = sparse([1, 2], [1, 2], [1.0, 1.0]))
     prob_short = DAEProblem(f_short, [-1.0, -1.0], [1.0, 1.0], (0.0, 0.4); differential_vars = [true, false])
-    @test_throws DimensionMismatch init(prob_short, DFBDF(autodiff = backend); initializealg = NoInit())
+    # An explicit tracer detects the missing (2, 1) entry as well and must not be trusted
+    # to fit the prototype either.
+    for detector in (ADTypes.KnownJacobianSparsityDetector(P), TracerSparsityDetector())
+        backend_short = AutoSparse(
+            AutoForwardDiff(); sparsity_detector = detector,
+            coloring_algorithm = GreedyColoringAlgorithm()
+        )
+        @test_throws "does not hold every entry" init(
+            prob_short, DFBDF(autodiff = backend_short); initializealg = NoInit()
+        )
+    end
+end
+
+# Rows 2 and 3 swap at t = 0.5, so the pattern of ∂F/∂u changes from I to the swap of
+# columns 2 and 3 while the exact state exp.((-t, -2t, -3t)) is the same on both sides.
+function switching!(r, du, u, p, t)
+    r[1] = du[1] + u[1]
+    a = u[2] - exp(-2t)
+    b = u[3] - exp(-3t)
+    r[2] = t < 0.5 ? a : u[3] - exp(-3t)
+    r[3] = t < 0.5 ? b : u[2] - exp(-2t)
+    return nothing
+end
+
+@testset "DAE AutoSparse with a pattern that changes in time" begin
+    switching_prob = DAEProblem(
+        switching!, [-1.0, -2.0, -3.0], [1.0, 1.0, 1.0], (0.0, 1.0);
+        differential_vars = [true, false, false]
+    )
+    exact(t) = [exp(-t), exp(-2t), exp(-3t)]
+    solve_kwargs = (; initializealg = NoInit(), dt = 0.01, tstops = [0.5])
+    J_u_late = [1.0 0.0 0.0; 0.0 0.0 1.0; 0.0 1.0 0.0]
+    J_du = [1.0 0.0 0.0; 0.0 0.0 0.0; 0.0 0.0 0.0]
+    # The union of both patterns, which the caller supplies when it is known.
+    union_pattern = sparse(
+        [1, 2, 3, 2, 3], [1, 2, 3, 3, 2], ones(5), 3, 3
+    )
+
+    # An automatically detected pattern is frozen at the initial state, so the first
+    # refresh that needs a stored entry the pattern lacks must fail rather than
+    # decompress into the stale coloring.
+    for detector in (TracerSparsityDetector(), TracerLocalSparsityDetector())
+        backend = AutoSparse(
+            AutoForwardDiff(); sparsity_detector = detector,
+            coloring_algorithm = GreedyColoringAlgorithm()
+        )
+        alg = DFBDF(autodiff = backend, linsolve = LUFactorization())
+        integrator = init(switching_prob, alg; solve_kwargs...)
+        integrator.t = 0.75
+        nlsolver = integrator.cache.nlsolver
+        @test_throws DimensionMismatch OrdinaryDiffEqDifferentiation.calc_W!(
+            nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+        )
+        @test_throws DimensionMismatch solve(switching_prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, solve_kwargs...)
+    end
+
+    # A known union is fixed by the caller, so it keeps the sparse path and stays correct.
+    known = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = ADTypes.KnownJacobianSparsityDetector(union_pattern),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    alg = DFBDF(autodiff = known, linsolve = LUFactorization())
+    sol = solve(switching_prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, solve_kwargs...)
+    @test successful_retcode(sol)
+    @test sol.t[end] == 1.0
+    @test maximum(abs, sol.u[end] - exact(1.0)) < 1.0e-6
+    integrator = init(switching_prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, solve_kwargs...)
+    solve!(integrator)
+    nlsolver = integrator.cache.nlsolver
+    OrdinaryDiffEqDifferentiation.calc_W!(
+        nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+    )
+    @test Matrix(nlsolver.cache.J) ≈ J_u_late atol = 1.0e-8
+    @test Matrix(nlsolver.cache.dae_jacobians.J_du) ≈ J_du atol = 1.0e-8
 end
