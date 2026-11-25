@@ -23,9 +23,8 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
         OrdinaryDiffEqDifferentiation.ADTypes.NoSparsityDetector,
     } && return nothing
     # Detectors may return a dense Boolean matrix.
-    detected = SparseMatrixCSC(
-        OrdinaryDiffEqDifferentiation.ADTypes.jacobian_sparsity(f, fx, x, detector)
-    )
+    detected = OrdinaryDiffEqDifferentiation.ADTypes.jacobian_sparsity(f, fx, x, detector)
+    detected isa SparseMatrixCSC || (detected = SparseMatrixCSC(detected))
     rows = rowvals(J)
     for j in 1:size(detected, 2), i in rowvals(detected)[nzrange(detected, j)]
         range = nzrange(J, j)
@@ -33,10 +32,10 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
         k <= length(range) && rows[range[k]] == i && continue
         throw(
             DimensionMismatch(
-                "The automatically detected sparsity pattern of the DAE Jacobian grew to \
-                include entry ($i, $j), which the stored Jacobian pattern, fixed when the \
-                integrator was built, does not hold. The pattern must not change during \
-                the solve: pass a `KnownJacobianSparsityDetector` with a `jac_prototype` \
+                "The detected sparsity pattern of the DAE Jacobian includes entry ($i, $j), \
+                which the stored Jacobian pattern, fixed when the integrator was built, \
+                does not hold. Either `jac_prototype` does not cover the pattern, or the \
+                pattern changed during the solve, which is not supported: pass a `KnownJacobianSparsityDetector` with a `jac_prototype` \
                 holding the union of all the patterns, or use a dense `autodiff`."
             )
         )

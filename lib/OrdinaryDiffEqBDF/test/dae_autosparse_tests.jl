@@ -104,7 +104,8 @@ end
             AutoForwardDiff(); sparsity_detector = detector,
             coloring_algorithm = GreedyColoringAlgorithm()
         )
-        @test_throws "does not hold every entry" init(
+        # A tracer is checked at the first Jacobian refresh, at the real evaluation point.
+        @test_throws "does not hold" solve(
             prob_short, DFBDF(autodiff = backend_short); initializealg = NoInit()
         )
     end
@@ -187,4 +188,43 @@ end
         @test successful_retcode(sol)
         @test sol.u[end] ≈ fill(exp(-0.5), 2) rtol = 1.0e-6
     end
+end
+
+@testset "Tracer-detected sparsity on valid DAEs" begin
+    local_sparse = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = TracerLocalSparsityDetector(),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    # The residual is only defined for du[1] > 1/2, so nothing may be traced at du = 0.
+    function sqrt_residual!(r, du, u, p, t)
+        r[1] = sqrt(du[1] - 0.5) - sqrt(0.5)
+        r[2] = du[2] - 1
+        return nothing
+    end
+    prototype = sparse([1, 2], [1, 2], [1.0, 1.0])
+    prob = DAEProblem(
+        DAEFunction(sqrt_residual!; jac_prototype = prototype), [1.0, 1.0], [1.0, 1.0],
+        (0.0, 0.5); differential_vars = [true, true]
+    )
+    sol = solve(
+        prob, DNordsieckBDF(autodiff = local_sparse); initializealg = NoInit(), dt = 0.125
+    )
+    @test successful_retcode(sol)
+    @test sol.u[end] ≈ [1.5, 1.5] rtol = 1.0e-6
+
+    # The combined stage Jacobian has 8 - 8 = 0 at (1, 2) for dt = 0.125, but the two
+    # partials do not, so the storage must hold that entry.
+    function cancelling!(r, du, u, p, t)
+        r[1] = du[1] + u[1] + du[2] - 8 * u[2]
+        r[2] = du[2] + u[2]
+        return nothing
+    end
+    cancelling_prob = DAEProblem(
+        cancelling!, [8.0, -1.0], [1.0, 1.0], (0.0, 0.5); differential_vars = [true, true]
+    )
+    kwargs = (; initializealg = NoInit(), dt = 0.125, abstol = 1.0e-8, reltol = 1.0e-8)
+    sol_sparse = solve(cancelling_prob, DFBDF(autodiff = local_sparse); kwargs...)
+    sol_dense = solve(cancelling_prob, DFBDF(); kwargs...)
+    @test successful_retcode(sol_sparse)
+    @test sol_sparse.u[end] ≈ sol_dense.u[end] rtol = 1.0e-6
 end

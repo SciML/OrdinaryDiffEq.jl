@@ -312,31 +312,61 @@ struct DAEJacobiansConstantCache{JduType, ufuType, ufduType}
     uf_du::ufduType
 end
 
+# Add the stored entries of `extra` to the pattern of `A` in place, keeping `A`'s values and
+# every array that aliases it.
+function grow_pattern!(A::SparseMatrixCSC, extra::SparseMatrixCSC)
+    rows, cols, vals = findnz(A)
+    extra_rows, extra_cols, _ = findnz(extra)
+    grown = sparse(
+        [rows; extra_rows], [cols; extra_cols],
+        [vals; zeros(eltype(A), length(extra_rows))], size(A)...
+    )
+    copyto!(A.colptr, grown.colptr)
+    resize!(A.rowval, length(grown.rowval)); copyto!(A.rowval, grown.rowval)
+    resize!(A.nzval, length(grown.rowval)); copyto!(A.nzval, grown.nzval)
+    return A
+end
+
 # `J_u` and `J_du` are stored in `J`'s sparsity pattern (the union of dF/du and dF/d(du)),
 # and sparse AD decompresses only into the exact pattern it colored, so the separated
 # configs must color `J`'s pattern rather than detect their own. That is only sound if `J`
-# stores every entry of the pattern the detector finds (stored zeros of a known pattern
-# included); otherwise the derivatives missing from `J` would be silently skipped.
-function with_jac_sparsity(alg, J, uf_u, uf_du, du1, u)
+# stores every entry of the pattern, so
+#   - a known pattern is checked against `J` here (stored zeros included);
+#   - an explicit prototype with a tracer is checked at the first Jacobian refresh, which
+#     traces at the real `(t, u, du)`: the zeros available here are not a valid evaluation
+#     point for every residual;
+#   - automatically allocated storage, built from the combined stage Jacobian, is grown
+#     to the union of the two partial patterns, since entries can cancel in the combined
+#     one. Tracing at a fabricated point is best effort; the refresh check remains.
+function with_jac_sparsity(alg, f, J, W, uf_u, uf_du, du1, u)
     ad = alg_autodiff(alg)
     (ad isa ADTypes.AutoSparse && J isa SparseMatrixCSC) || return alg
     detector = ADTypes.sparsity_detector(ad)
-    # `NoSparsityDetector` detects nothing: its all-true pattern is only a fallback, and
-    # `J` supplies the coloring.
-    wrappers = detector isa ADTypes.NoSparsityDetector ? () :
-        ((uf_u, u), (uf_du, uf_u.du_fixed))
-    stored(A) = zip(findnz(A)[1], findnz(A)[2])
-    stored_J = Set(stored(J))
-    for (wrapper, x) in wrappers
-        detected = sparse(ADTypes.jacobian_sparsity(wrapper, du1, x, detector))
-        issubset(stored(detected), stored_J) || throw(
-            DimensionMismatch(
-                "The Jacobian storage does not hold every entry of the sparsity pattern \
-                (stored zeros included), so the DAE Jacobians cannot be decompressed into \
-                it. Make `jac_prototype` cover the sparsity pattern, or update \
-                OrdinaryDiffEqDifferentiation."
+    wrappers = ((uf_u, u), (uf_du, uf_u.du_fixed))
+    if detector isa ADTypes.KnownJacobianSparsityDetector
+        stored(A) = zip(findnz(A)[1], findnz(A)[2])
+        stored_J = Set(stored(J))
+        for (wrapper, x) in wrappers
+            detected = sparse(ADTypes.jacobian_sparsity(wrapper, du1, x, detector))
+            issubset(stored(detected), stored_J) || throw(
+                DimensionMismatch(
+                    "The Jacobian storage does not hold every entry of the known sparsity \
+                    pattern (stored zeros included), so the DAE Jacobians cannot be \
+                    decompressed into it. Make `jac_prototype` cover the sparsity pattern, \
+                    or update OrdinaryDiffEqDifferentiation."
+                )
             )
-        )
+        end
+    elseif !(detector isa ADTypes.NoSparsityDetector) && f.jac_prototype === nothing
+        for (wrapper, x) in wrappers
+            detected = try
+                sparse(ADTypes.jacobian_sparsity(wrapper, du1, x, detector))
+            catch
+                continue
+            end
+            grow_pattern!(J, detected)
+            W isa SparseMatrixCSC && grow_pattern!(W, detected)
+        end
     end
     autodiff = ADTypes.AutoSparse(
         ADTypes.dense_ad(ad);
@@ -975,7 +1005,7 @@ function build_nlsolver(
             if separated_dae_ad
                 uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
                 uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
-                dae_jac_alg = with_jac_sparsity(alg, J, uf_u, uf_du, du1, u)
+                dae_jac_alg = with_jac_sparsity(alg, f, J, W, uf_u, uf_du, du1, u)
             end
             linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
             linsolver = default_krylov_warm_start(alg.linsolve)
