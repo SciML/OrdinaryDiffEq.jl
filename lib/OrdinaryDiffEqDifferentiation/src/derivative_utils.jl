@@ -496,7 +496,8 @@ function _calc_J_dae!(alg_member, integrator, J_u, J_du, cache)
         # The colorings are fixed to `J`'s stored pattern, so an automatically detected
         # pattern that grew since `J` was built would be decompressed into the wrong
         # entries. Fail instead of returning a wrong Jacobian.
-        explicit = integrator.f.jac_prototype !== nothing
+        # Mirrors `build_J_W`: storage comes from the user's `jac_prototype` or `sparsity`.
+        explicit = integrator.f.jac_prototype !== nothing || integrator.f.sparsity !== nothing
         check_pattern_stored(alg_member, uf_u, du1, uprev, J_u, explicit)
         check_pattern_stored(alg_member, uf_du, du1, uf_u.du_fixed, J_u, explicit)
 

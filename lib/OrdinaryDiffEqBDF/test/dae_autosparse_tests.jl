@@ -276,6 +276,19 @@ end
         nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
     ) == (true, true)
     @test Matrix(nlsolver.cache.J) ≈ [-1.0 0.0; 0.0 1.0] atol = 1.0e-8
+
+    # A pattern supplied as `sparsity` is user-owned storage too.
+    f_sparsity = DAEFunction(untraceable!; sparsity = sparse([1, 2], [1, 2], [true, true]))
+    prob_sparsity = DAEProblem(
+        f_sparsity, [-1.0, -1.0], [1.0, 1.0], (0.0, 1.0); differential_vars = [true, true]
+    )
+    integrator = init(prob_sparsity, DFBDF(autodiff = backend); initializealg = NoInit())
+    integrator.t = 0.75
+    integrator.uprev .= -1.0
+    nlsolver = integrator.cache.nlsolver
+    @test OrdinaryDiffEqDifferentiation.calc_W!(
+        nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+    ) == (true, true)
 end
 
 @testset "Untraceable refresh with automatically derived storage fails loudly" begin

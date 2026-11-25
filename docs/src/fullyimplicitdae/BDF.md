@@ -84,6 +84,12 @@ union once, when the integrator is built.
     integrator is built, and a tracer at the first Jacobian evaluation; either throws a
     `DimensionMismatch` if the detector finds an entry the prototype does not store. Stored
     zeros of a known pattern count as stored entries.
+  - **Known limitations.** A global tracer (`TracerSparsityDetector`) cannot trace a residual
+    that branches on `u` or `du`, even when a complete `jac_prototype` is supplied, because the
+    combined stage Jacobian is traced once when the integrator is built (this predates sparse
+    DAE support for separated Jacobians); use `TracerLocalSparsityDetector` or a
+    `KnownJacobianSparsityDetector`. The two validation residual evaluations per fresh sparse
+    Jacobian are not counted in `stats.nf` and add cost.
   - The number of colors, and so of residual evaluations per Jacobian, depends on the union
     pattern, not on each partial Jacobian alone.
 
