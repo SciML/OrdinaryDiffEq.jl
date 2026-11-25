@@ -26,17 +26,19 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
     detected = OrdinaryDiffEqDifferentiation.ADTypes.jacobian_sparsity(f, fx, x, detector)
     detected isa SparseMatrixCSC || (detected = SparseMatrixCSC(detected))
     rows = rowvals(J)
-    for j in 1:size(detected, 2), i in rowvals(detected)[nzrange(detected, j)]
-        range = nzrange(J, j)
-        k = searchsortedfirst(view(rows, range), i)
-        k <= length(range) && rows[range[k]] == i && continue
+    detected_rows = rowvals(detected)
+    for j in 1:size(detected, 2), idx in nzrange(detected, j)
+        i = detected_rows[idx]
+        stored = nzrange(J, j)
+        k = searchsortedfirst(rows, i, first(stored), last(stored), Base.Order.Forward)
+        k <= last(stored) && rows[k] == i && continue
         throw(
             DimensionMismatch(
                 "The detected sparsity pattern of the DAE Jacobian includes entry ($i, $j), \
                 which the stored Jacobian pattern, fixed when the integrator was built, \
                 does not hold. Either `jac_prototype` does not cover the pattern, or the \
-                pattern changed during the solve, which is not supported: pass a `KnownJacobianSparsityDetector` with a `jac_prototype` \
-                holding the union of all the patterns, or use a dense `autodiff`."
+                pattern changed during the solve, which is not supported: \
+                pass a `KnownJacobianSparsityDetector` with a `jac_prototype` holding the union of all the patterns, or use a dense `autodiff`."
             )
         )
     end

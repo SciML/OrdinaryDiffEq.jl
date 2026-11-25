@@ -64,20 +64,21 @@ Jacobians ``\partial F/\partial u`` and ``\partial F/\partial(du)`` are both sto
 `SparseMatrixCSC` holding the union of their patterns, and sparse differentiation colors that
 union once, when the integrator is built.
 
-  - **The union must not change during the solve.** An automatically detected pattern
-    (`TracerSparsityDetector`, `TracerLocalSparsityDetector`) is detected at the initial state,
-    so a residual whose structure depends on time, the state or parameters can gain entries
-    later. Every fresh Jacobian evaluation re-runs the detector at its actual evaluation point
-    and throws a `DimensionMismatch` if it finds an entry the stored pattern does not hold,
-    rather than returning a wrong Jacobian. Such a problem needs a
-    `KnownJacobianSparsityDetector` holding the union of all its patterns, or a dense
-    `autodiff`.
+  - **The pattern must hold every entry seen during the solve.** An automatically detected
+    pattern (`TracerSparsityDetector`, `TracerLocalSparsityDetector`) fixes the storage when
+    the integrator is built, from the combined stage Jacobian at its initial point. Every fresh
+    Jacobian evaluation re-runs the detector on both partial Jacobians at their real
+    `(t, u, du)` and throws a `DimensionMismatch` if it finds an entry the storage does not
+    hold, rather than returning a wrong Jacobian. Storage is never grown during the solve. For a
+    state-dependent pattern, supply a `KnownJacobianSparsityDetector` holding the union of all
+    its patterns (or a `jac_prototype` holding it), or use a dense `autodiff`.
   - **A known pattern is trusted.** With a `KnownJacobianSparsityDetector` the pattern is not
     re-detected during the solve, so it must hold every entry the residual can ever have.
   - **An explicit `jac_prototype` must cover the pattern.** When `jac_prototype` is a
-    `SparseMatrixCSC` it is the storage, and construction throws a `DimensionMismatch` if the
-    detector (known or tracer) finds an entry it does not store. Stored zeros of a known
-    pattern count as stored entries.
+    `SparseMatrixCSC` it is the storage. A known pattern is checked against it when the
+    integrator is built, and a tracer at the first Jacobian evaluation; either throws a
+    `DimensionMismatch` if the detector finds an entry the prototype does not store. Stored
+    zeros of a known pattern count as stored entries.
   - The number of colors, and so of residual evaluations per Jacobian, depends on the union
     pattern, not on each partial Jacobian alone.
 
