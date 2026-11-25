@@ -324,6 +324,15 @@ const DAE_KRYLOV_METHODS = (:gmres!, :fgmres!, :bicgstab!)
 const DAE_KRYLOV_OWN_KWARGS = (:M, :N, :W, :atol, :rtol)
 
 function check_dae_krylov(linsolver)
+    linsolver isa LinearSolve.IterativeSolversJL && throw(
+        ArgumentError(
+            "`IterativeSolversJL` is not supported for a matrix-free Krylov solve of a DAE " *
+                "Newton system: the Newton convergence test sets the linear tolerances " *
+                "through `LinearSolve.update_tolerances!`, which the IterativeSolvers.jl " *
+                "wrapper does not support. Use KrylovJL_GMRES, KrylovJL_FGMRES or " *
+                "KrylovJL_BICGSTAB."
+        )
+    )
     linsolver isa LinearSolve.KrylovJL || return nothing
     kwargs = linsolver.kwargs
     keeps_defaults = get(kwargs, :ldiv, true) &&
@@ -1025,7 +1034,8 @@ function build_nlsolver(
                 ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
                 linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t,
-                dae_jacobians
+                dae_jacobians,
+                matrix_free_dae ? zero(dz) : atmp, matrix_free_dae ? zero(dz) : atmp
             )
         end
     elseif nlalg isa NLFunctional

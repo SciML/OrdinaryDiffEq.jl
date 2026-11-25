@@ -1,9 +1,7 @@
 using OrdinaryDiffEqBDF, LinearSolve, ADTypes, SciMLBase, Test
-using LinearAlgebra: I, mul!, norm
+using LinearAlgebra: I, Diagonal
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
-using SciMLBase: DAEProblem, DAEFunction, successful_retcode
-using SciMLOperators: update_coefficients!
-using OrdinaryDiffEqDifferentiation: dae_jvp_cache, set_dae_jvp_cj!
+using SciMLBase: DAEProblem, successful_retcode
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1673
 
@@ -63,24 +61,14 @@ p = DAEProblem(f!, -ones(4), ones(4), (0.0, 1.0))
 end
 
 # Nonlinear in `du`, with exact solution `[exp(-t), exp(-2t)]` (the second factor of the
-# first residual is positive). At `u = [1, 1]`, `du = [-1, -2]` its Newton matrix is
-# `[3(cj + 1) 0; -2 1]`.
+# first residual is positive).
 function manufactured!(r, d, u, p, t)
     r[1] = (d[1] + u[1]) * (1 + d[1]^2 + u[2]^2)
     r[2] = u[2] - u[1]^2
     return nothing
 end
 
-@testset "Matrix-free DAE Newton matrix at a large cj" begin
-    u, du, v = [1.0, 1.0], [-1.0, -2.0], [1.0, 0.5]
-    for autodiff in (AutoForwardDiff(), AutoFiniteDiff()), cj in (1.0, 1.0e6, 1.0e10)
-        J = dae_jvp_cache(DAEFunction{true}(manufactured!), copy(u), nothing, 0.0; autodiff)
-        update_coefficients!(J, copy(u), nothing, 0.0; du = copy(du))
-        set_dae_jvp_cj!(J, cj)
-        exact = [3(cj + 1) 0; -2 1] * v
-        @test norm(mul!(zeros(2), J, v) - exact) <= 1.0e-6 * norm(exact)
-    end
-
+@testset "Matrix-free DAE Newton solve with a large cj" begin
     prob = DAEProblem(
         manufactured!, [-1.0, -2.0], [1.0, 1.0], (0.0, 1.0); differential_vars = [true, false]
     )
@@ -95,10 +83,10 @@ end
 end
 
 # The matrix-free Newton test measures the Krylov residual through `Pl` applied by `ldiv!`.
-# Under `ldiv = false`, with Krylov.jl's own `M`, `W` or `atol`, with DQGMRES, which
-# LinearSolve calls without preconditioners, or with MINRES, which measures
-# `sqrt(r' * (Pl \ r))`, the solve tests another norm, and `ldiv = false` returned
-# `Success` with `u = u0`.
+# Under `ldiv = false`, with Krylov.jl's own `M`, `W` or `atol`, or with CG or MINRES, which
+# measure `sqrt(r' * (Pl \ r))`, the solve tests another norm, and `ldiv = false` returned
+# `Success` with `u = u0`. IterativeSolvers.jl wrappers are rejected because
+# `LinearSolve.update_tolerances!` throws on them.
 function swapped!(res, du, u, p, t)
     res[1] = du[2] + 2u[1] - sin(t)
     res[2] = du[1] + 2u[2] - cos(t)
@@ -110,8 +98,11 @@ end
     opts = (; abstol = 1.0e-8, reltol = 1.0e-8)
     reference = solve(prob, DFBDF(); opts...)
     for linsolve in (
-            KrylovJL_GMRES(; ldiv = false), KrylovJL(; KrylovAlg = LinearSolve.Krylov.dqgmres!),
-            KrylovJL_MINRES(), KrylovJL_GMRES(; W = 1.0e-20I), KrylovJL_GMRES(; M = 1.0e20I),
+            KrylovJL_GMRES(; ldiv = false), KrylovJL_CG(),
+            KrylovJL_MINRES(),
+            # What `IterativeSolversJL_BICGSTAB()` builds once IterativeSolvers is loaded.
+            LinearSolve.IterativeSolversJL(identity, 0, nothing, (), (;)),
+            KrylovJL_GMRES(; W = 1.0e-20I), KrylovJL_GMRES(; M = 1.0e20I),
             KrylovJL_GMRES(; atol = 1.0e20),
         )
         @test_throws ArgumentError solve(prob, DFBDF(; linsolve); opts...)
@@ -120,5 +111,36 @@ end
         sol = solve(prob, DFBDF(; linsolve); opts...)
         @test successful_retcode(sol)
         @test sol.u[end] ≈ reference.u[end] rtol = 1.0e-5
+    end
+end
+
+# One fixed step of DFBDF is implicit Euler: `(u₁ - u₀) / dt + u₁ = 0`. The Krylov tolerance
+# is measured in the left preconditioner the solve uses, and a Krylov solver can report
+# convergence at `dz = 0` when that preconditioner is badly scaled, so a successful step must
+# satisfy the equation.
+@testset "Krylov preconditioners and the implicit Euler step" begin
+    prob = DAEProblem(decay!, [-1.0], [1.0], (0.0, 0.1))
+    function euler_residual(precs, warm_start)
+        linsolve = KrylovJL_GMRES(; precs, warm_start)
+        integrator = init(
+            prob, DFBDF(; linsolve); dt = 0.1, adaptive = false,
+            initializealg = SciMLBase.NoInit()
+        )
+        step!(integrator)
+        u₁ = only(integrator.u)
+        return successful_retcode(integrator.sol), (u₁ - 1) / 0.1 + u₁
+    end
+
+    # `precs` returns a scalar diagonal until it sees the actual initial derivative,
+    # which only the system being solved carries.
+    changing = (A, ctx) -> (Diagonal([iszero(only(ctx[1])) ? 1.0e-20 : 1.0]), I)
+    for warm_start in (LinearSolve.WarmStart.Auto, LinearSolve.WarmStart.None)
+        success, residual = euler_residual(changing, warm_start)
+        @test success
+        @test abs(residual) < 1.0e-12
+
+        # `Success` with `u = u₀` is the failure; a rejected step is acceptable.
+        success, residual = euler_residual(Returns((Diagonal([1.0e20]), I)), warm_start)
+        @test !success || abs(residual) < 1.0e-12
     end
 end

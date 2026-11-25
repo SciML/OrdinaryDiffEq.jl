@@ -36,12 +36,80 @@ function set_linear_reltol!(linsolve, reltol; default_algorithm = false)
 end
 
 """
+    ScaledResidualTolerance(b₁, work, reltol, recompute)
+
+Absolute tolerance `reltol * ‖Pl \\ b₁‖` for an iterative solve, measured in the left
+preconditioner `Pl` the solve will use. `work` is scratch of `b₁`'s size. The norm is taken
+only once `Pl` is installed, since a `precs` callback may return a different `Pl` for the
+system being solved, and is recomputed when `recompute` is true or the preconditioners were
+refreshed for this solve; otherwise the cache keeps the tolerance of the earlier solve.
+"""
+struct ScaledResidualTolerance{B, W, T}
+    b₁::B
+    work::W
+    reltol::T
+    recompute::Bool
+end
+
+"""
+    refresh_precs!(linsolve) -> Bool
+
+Install the preconditioners `linsolve.alg.precs` returns for the cache's current `A` and `p`
+if they are stale, as `solve!` would, and return whether it did. `solve!` then finds them
+fresh, so a `precs` callback runs once per refresh and the tolerances of the solve can be
+measured in the preconditioner it uses.
+"""
+function refresh_precs!(linsolve)
+    (hasproperty(linsolve.alg, :precs) && !isnothing(linsolve.alg.precs)) || return false
+    linsolve.precsisfresh || return false
+    linsolve.Pl, linsolve.Pr = linsolve.alg.precs(linsolve.A, linsolve.p)
+    linsolve.precsisfresh = false
+    return true
+end
+
+set_linear_abstol!(linsolve, abstol::Number, refreshed) =
+    LinearSolve.update_tolerances!(linsolve; abstol)
+function set_linear_abstol!(linsolve, tol::ScaledResidualTolerance, refreshed)
+    (tol.recompute || refreshed) || return nothing
+    LinearAlgebra.ldiv!(tol.work, linsolve.Pl, tol.b₁)
+    return LinearSolve.update_tolerances!(linsolve; abstol = tol.reltol * LinearAlgebra.norm(tol.work))
+end
+
+"""
+    linear_residual_converged!(integrator, linsolve, rlin, work) -> Bool
+
+Whether `linsolve.u` solves `linsolve.A * u = linsolve.b` to the tolerances the cache holds,
+`‖Pl \\ (b - A u)‖ ≤ abstol + rtol * ‖Pl \\ b‖`, checked on the true residual. A Krylov
+solver can report convergence on its recurrence residual while the iterate is far from the
+solution: a badly scaled preconditioner can end it at `u = 0` after one iteration. `rlin` and
+`work` are scratch of `b`'s size. Charges `stats.nf` for the product with `A`.
+
+`rtol` is the cache's `reltol` floored at `cbrt(eps)`. A matrix-free `A` applied by finite
+differences is linear only to about `sqrt(eps)`, and it is applied to the whole correction
+here but to unit Krylov vectors in the solve, so the true residual of a converged solve
+can exceed a tighter bound by a factor of tens. The floor leaves a gross failure, such as
+the zero correction, to be caught.
+"""
+function linear_residual_converged!(integrator, linsolve, rlin, work)
+    (; A, b, u, Pl, abstol, reltol) = linsolve
+    LinearAlgebra.mul!(rlin, A, u)
+    drain_jvp_count!(integrator, unwrap_alg(integrator, true), A)
+    @. rlin = b - rlin
+    LinearAlgebra.ldiv!(work, Pl, rlin)
+    residual = LinearAlgebra.norm(work)
+    LinearAlgebra.ldiv!(work, Pl, b)
+    rtol = max(reltol, cbrt(eps(real(eltype(b)))))
+    return residual <= abstol + rtol * LinearAlgebra.norm(work)
+end
+
+"""
     dolinsolve(integrator, linsolve; alg = unwrap_alg(integrator, true), A = nothing, linu = nothing, b = nothing, reltol = …, abstol = nothing) -> linres
 
 Solve the linear system with the LinearSolve.jl cache `linsolve`, optionally
 resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerances
 `reltol` (see `set_linear_reltol!`) and `abstol` (left unchanged when `nothing`; set only
-for an iterative solver). `alg` is the integrator's concrete member
+for an iterative solver; a `ScaledResidualTolerance` is evaluated once the preconditioners
+the solve uses are installed). `alg` is the integrator's concrete member
 algorithm; callers holding a cache that stores it (e.g. `cache.alg`) should
 pass it so the call stays a static dispatch. Charges `stats.nf` for the
 Jacobian-vector products the solve applied (see `drain_jvp_count!`) and
@@ -74,7 +142,7 @@ function _dolinsolve(_alg, integrator, linsolve, A, reltol, abstol)
         default_algorithm = hasproperty(_alg, :linsolve) && isnothing(_alg.linsolve)
     )
     if abstol !== nothing && !LinearSolve.needs_concrete_A(linsolve.alg)
-        LinearSolve.update_tolerances!(linsolve; abstol)
+        set_linear_abstol!(linsolve, abstol, refresh_precs!(linsolve))
     end
     linres = solve!(linsolve)
 

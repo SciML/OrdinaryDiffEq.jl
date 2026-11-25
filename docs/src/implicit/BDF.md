@@ -33,6 +33,19 @@ BDF methods are recommended for:
   - **`QNDF`**: Adaptive order quasi-constant timestep BDF, best general choice for large systems
   - **`FBDF`**: Fixed-leading coefficient BDF, often more efficient than QNDF
 
+## Matrix-free Krylov solves of DAEs
+
+`DFBDF` can solve a `DAEProblem` without forming the Jacobian by giving it a Krylov
+`linsolve`, for example `DFBDF(; linsolve = KrylovJL_GMRES())`. The Newton matrix
+`∂F/∂u + (α/(γ h)) ∂F/∂du` is then applied as a Jacobian-vector product, and
+`stats.njacs` stays zero. The solvers supported for this are `KrylovJL_GMRES`,
+`KrylovJL_FGMRES` and `KrylovJL_BICGSTAB`. The Newton iteration sets the linear tolerances
+and measures the residual in the left preconditioner of the solve, so these are rejected with
+an `ArgumentError`: other Krylov.jl methods, `KrylovJL` with `ldiv = false` or the Krylov.jl
+keywords `M`, `N`, `W`, `atol` and `rtol`, and the `IterativeSolversJL*` wrappers. Pass
+preconditioners through `precs` and tolerances to `solve`. A Krylov solve that reports
+convergence is accepted only if its true residual meets the tolerance in the same norm.
+
 ## Optional FBDF time filtering
 
 `FBDF(time_filter = true)` adds embedded candidates to the fixed-coefficient

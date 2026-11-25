@@ -797,13 +797,16 @@ end
 
     # Inexact Newton for the matrix-free DAE `W`: every Krylov solve of the step stops at
     # `‖P(b - W dz)‖ ≤ reltol * (‖P b‖ + ‖P b₁‖)`, where `b₁` is the step's first Newton
-    # residual. Both terms scale with `F`, so a rescaled residual gets the same `dz`, and
-    # `dz = 0` is accepted only once `F` has fallen to `reltol` of its value at the
-    # predictor. `‖P b₁‖` keeps a late iterate, whose `b` is near the roundoff floor of
-    # `W * dz`, from being held to `reltol` of that floor, which it cannot reach.
-    linabstol = if matrix_free_dae && iter == 1 && reltol isa Number
-        ldiv!(_vec(atmp), linsolve.Pl, _vec(b))
-        (; abstol = reltol * norm(atmp))
+    # residual and `P` the left preconditioner the solve uses. Both terms scale with `F`,
+    # so a rescaled residual gets the same `dz`, and `dz = 0` is accepted only once `F` has
+    # fallen to `reltol` of its value at the predictor. `‖P b₁‖` keeps a late iterate,
+    # whose `b` is near the roundoff floor of `W * dz`, from being held to `reltol` of that
+    # floor, which it cannot reach. `P` can change when `precs` is called for the solve, so
+    # `dolinsolve` measures `b₁` in it once installed. The solver's own convergence report
+    # is then checked against the true residual in `P`'s norm.
+    linabstol = if matrix_free_dae && reltol isa Number
+        iter == 1 && copyto!(cache.b₁, b)
+        (; abstol = ScaledResidualTolerance(_vec(cache.b₁), _vec(atmp), reltol, iter == 1))
     else
         (;)
     end
@@ -822,6 +825,11 @@ end
 
     if !SciMLBase.successful_retcode(linres.retcode) &&
             linres.retcode != SciMLBase.ReturnCode.Default
+        return convert(eltype(atmp), Inf)
+    end
+
+    if matrix_free_dae && reltol isa Number &&
+            !linear_residual_converged!(integrator, linsolve, _vec(cache.rlin), _vec(atmp))
         return convert(eltype(atmp), Inf)
     end
 
@@ -1157,6 +1165,9 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
     resize!(nlcache.atmp, i)
     resize!(nlcache.dz, i)
     resize!(nlcache.du1, i)
+    # Aliased to `atmp` unless the DAE `W` is matrix-free.
+    nlcache.b₁ === nlcache.atmp || resize!(nlcache.b₁, i)
+    nlcache.rlin === nlcache.atmp || resize!(nlcache.rlin, i)
 
     resize_jac_config!(nlcache, integrator)
     resize!(nlcache.weight, i)
