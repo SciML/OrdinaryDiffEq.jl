@@ -84,17 +84,25 @@ solver can report convergence on its recurrence residual while the iterate is fa
 solution: a badly scaled preconditioner can end it at `u = 0` after one iteration. `rlin` and
 `work` are scratch of `b`'s size. Charges `stats.nf` for the product with `A`.
 
-`rtol` is the cache's `reltol` floored at `cbrt(eps)`. A matrix-free `A` applied by finite
-differences is linear only to about `sqrt(eps)`, and it is applied to the whole correction
-here but to unit Krylov vectors in the solve, so the true residual of a converged solve
-can exceed a tighter bound by a factor of tens. The floor leaves a gross failure, such as
-the zero correction, to be caught.
+`A` is applied to `u / ‖u‖` and the product scaled by `‖u‖`, so a finite-difference `A`
+perturbs by the same size as in the solve. `rtol` is the cache's `reltol` floored at
+`cbrt(eps)`: such an `A` is linear only to about `sqrt(eps)`, so the true residual of a
+converged solve can exceed a tighter bound by a factor of tens. The floor leaves a gross
+failure, such as the zero correction, to be caught.
 """
 function linear_residual_converged!(integrator, linsolve, rlin, work)
     (; A, b, u, Pl, abstol, reltol) = linsolve
-    LinearAlgebra.mul!(rlin, A, u)
-    drain_jvp_count!(integrator, unwrap_alg(integrator, true), A)
-    @. rlin = b - rlin
+    unorm = LinearAlgebra.norm(u)
+    if iszero(unorm)
+        copyto!(rlin, b)
+    else
+        # `A` is linear, so apply it to the unit vector `u / ‖u‖`, as the solve does to its
+        # basis vectors: a finite-difference step sized for a tiny `u` can round away.
+        @. work = u / unorm
+        LinearAlgebra.mul!(rlin, A, work)
+        drain_jvp_count!(integrator, unwrap_alg(integrator, true), A)
+        @. rlin = b - unorm * rlin
+    end
     LinearAlgebra.ldiv!(work, Pl, rlin)
     residual = LinearAlgebra.norm(work)
     LinearAlgebra.ldiv!(work, Pl, b)

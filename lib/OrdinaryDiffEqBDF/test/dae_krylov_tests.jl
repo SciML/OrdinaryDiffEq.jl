@@ -116,11 +116,12 @@ end
 
 # One fixed step of DFBDF is implicit Euler: `(u₁ - u₀) / dt + u₁ = 0`. The Krylov tolerance
 # is measured in the left preconditioner the solve uses, and a Krylov solver can report
-# convergence at `dz = 0` when that preconditioner is badly scaled, so a successful step must
-# satisfy the equation.
+# convergence at `dz = 0` when that preconditioner is badly scaled. Whether the step was
+# accepted is read from `integrator.t`, since `integrator.sol.retcode` is only set when the
+# solve is finalized.
 @testset "Krylov preconditioners and the implicit Euler step" begin
     prob = DAEProblem(decay!, [-1.0], [1.0], (0.0, 0.1))
-    function euler_residual(precs, warm_start)
+    function euler_step(precs, warm_start)
         linsolve = KrylovJL_GMRES(; precs, warm_start)
         integrator = init(
             prob, DFBDF(; linsolve); dt = 0.1, adaptive = false,
@@ -128,19 +129,33 @@ end
         )
         step!(integrator)
         u₁ = only(integrator.u)
-        return successful_retcode(integrator.sol), (u₁ - 1) / 0.1 + u₁
+        return integrator.t == 0.1, (u₁ - 1) / 0.1 + u₁
     end
 
     # `precs` returns a scalar diagonal until it sees the actual initial derivative,
     # which only the system being solved carries.
     changing = (A, ctx) -> (Diagonal([iszero(only(ctx[1])) ? 1.0e-20 : 1.0]), I)
     for warm_start in (LinearSolve.WarmStart.Auto, LinearSolve.WarmStart.None)
-        success, residual = euler_residual(changing, warm_start)
-        @test success
+        accepted, residual = euler_step(changing, warm_start)
+        @test accepted
         @test abs(residual) < 1.0e-12
 
-        # `Success` with `u = u₀` is the failure; a rejected step is acceptable.
-        success, residual = euler_residual(Returns((Diagonal([1.0e20]), I)), warm_start)
-        @test !success || abs(residual) < 1.0e-12
+        # Accepting `u = u₀` is the failure; a rejected step is acceptable.
+        accepted, residual = euler_step(Returns((Diagonal([1.0e20]), I)), warm_start)
+        @test !accepted
     end
+end
+
+# The Newton correction here is 1e-10, so a finite-difference product with it rather than
+# with a unit vector perturbs `u = 1` by less than a rounding error.
+@testset "Finite-difference validation of a tiny Newton correction" begin
+    algebraic!(res, du, u, p, t) = (res[1] = (u[1] - 1) - t; nothing)
+    prob = DAEProblem(algebraic!, [0.0], [1.0], (0.0, 1.0e-10); differential_vars = [false])
+    integrator = init(
+        prob, DFBDF(; autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES());
+        dt = 1.0e-10, adaptive = false, initializealg = SciMLBase.NoInit()
+    )
+    step!(integrator)
+    @test integrator.t == 1.0e-10
+    @test only(integrator.u) ≈ 1 + 1.0e-10 atol = 1.0e-14
 end
