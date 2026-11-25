@@ -11,7 +11,7 @@ OrdinaryDiffEqDifferentiation.jac_from_pattern(::Type{T}, pattern::SparseMatrixC
     SparseMatrixCSC{T}(pattern)
 
 function OrdinaryDiffEqDifferentiation.check_pattern_stored(
-        alg, f, fx, x, J::SparseMatrixCSC
+        alg, f, fx, x, J::SparseMatrixCSC, explicit::Bool
     )
     ad = OrdinaryDiffEqDifferentiation.alg_autodiff(alg)
     ad isa OrdinaryDiffEqDifferentiation.AutoSparse || return nothing
@@ -23,12 +23,23 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
         OrdinaryDiffEqDifferentiation.ADTypes.NoSparsityDetector,
     } && return nothing
     # Detectors may return a dense Boolean matrix.
-    # Tracing can fail on a residual that the prototype-based AD handles (for example a
-    # comparison on a global tracer); validation is then skipped for this refresh.
+    # Storage holding every entry cannot miss one.
+    length(nonzeros(J)) == length(J) && return nothing
     detected = try
         OrdinaryDiffEqDifferentiation.ADTypes.jacobian_sparsity(f, fx, x, detector)
     catch
-        return nothing
+        # Storage the user supplied is theirs to vouch for, so a residual the tracer cannot
+        # evaluate here skips validation. A coloring derived automatically must not be used
+        # unvalidated: it could fold a missing entry into the wrong one.
+        explicit && return nothing
+        throw(
+            DimensionMismatch(
+                "The automatically detected sparsity pattern of the DAE Jacobian cannot be \
+                validated here because the detector cannot trace the residual at this \
+                point. Supply a `KnownJacobianSparsityDetector` holding the union of the \
+                patterns, or a `jac_prototype`."
+            )
+        )
     end
     detected isa SparseMatrixCSC || (detected = SparseMatrixCSC(detected))
     rows = rowvals(J)

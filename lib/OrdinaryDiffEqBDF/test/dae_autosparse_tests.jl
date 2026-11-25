@@ -277,3 +277,28 @@ end
     ) == (true, true)
     @test Matrix(nlsolver.cache.J) ≈ [-1.0 0.0; 0.0 1.0] atol = 1.0e-8
 end
+
+@testset "Untraceable refresh with automatically derived storage fails loudly" begin
+    # No prototype: the initial trace (t = 0) stores the diagonal only. At t >= 0.5 the
+    # tracer cannot evaluate `u[1] < 0`, and an unvalidated diagonal coloring would fold the
+    # branch's dF1/du2 into the diagonal.
+    function branching!(r, du, u, p, t)
+        r[1] = du[1] + u[1] + (t >= 0.5 && u[1] < 0 ? u[2] : 0.0)
+        r[2] = du[2] + u[2]
+        return nothing
+    end
+    backend = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = TracerSparsityDetector(),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    prob = DAEProblem(
+        branching!, [-1.0, -1.0], [1.0, 1.0], (0.0, 1.0); differential_vars = [true, true]
+    )
+    integrator = init(prob, DFBDF(autodiff = backend); initializealg = NoInit())
+    integrator.t = 0.75
+    integrator.uprev .= -1.0
+    nlsolver = integrator.cache.nlsolver
+    @test_throws "cannot trace the residual" OrdinaryDiffEqDifferentiation.calc_W!(
+        nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+    )
+end

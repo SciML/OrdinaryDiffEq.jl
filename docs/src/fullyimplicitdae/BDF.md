@@ -69,9 +69,12 @@ union once, when the integrator is built.
     the integrator is built, from the combined stage Jacobian at its initial point. Every fresh
     Jacobian evaluation re-runs the detector on both partial Jacobians at their real
     `(t, u, du)` and throws a `DimensionMismatch` if it finds an entry the storage does not
-    hold, rather than returning a wrong Jacobian. If the detector cannot trace the residual at
-    the refresh point (for example a comparison on a global tracer), validation is skipped for
-    that refresh instead of failing the solve. Storage is never grown during the solve. For a
+    hold, rather than returning a wrong Jacobian. If the detector cannot trace the residual at the
+    refresh point (for example a comparison on a global tracer), the two cases differ: with a
+    user-supplied `jac_prototype` validation is skipped for that refresh, because the storage is
+    the user's; with automatically derived storage a `DimensionMismatch` is thrown, since an
+    unvalidated automatic coloring could return a wrong Jacobian. Storage that already holds
+    every entry is never validated. Storage is never grown during the solve. For a
     state-dependent pattern, supply a `KnownJacobianSparsityDetector` holding the union of all
     its patterns (or a `jac_prototype` holding it), or use a dense `autodiff`.
   - **A known pattern is trusted.** With a `KnownJacobianSparsityDetector` the pattern is not

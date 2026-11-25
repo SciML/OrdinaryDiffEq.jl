@@ -60,8 +60,9 @@ is_sparse(::Any) = false
 is_sparse_csc(::Any) = false
 
 # Throws a `DimensionMismatch` if the sparsity `alg`'s detector finds in `f` (at `x`, with
-# output `fx`) an entry that the sparse `J` does not store. Overloaded by the extension.
-check_pattern_stored(alg, f, fx, x, J) = nothing
+# output `fx`) an entry that the sparse `J` does not store; `explicit` marks a user-supplied
+# `jac_prototype`. Overloaded by the extension.
+check_pattern_stored(alg, f, fx, x, J, explicit) = nothing
 
 # Allocate a Jacobian with `pattern`'s structure. A known pattern may hold stored zeros,
 # which are structural entries the coloring decompresses into, but broadcasting drops them.
