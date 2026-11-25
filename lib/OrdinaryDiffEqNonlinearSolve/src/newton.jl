@@ -1044,19 +1044,30 @@ function relax!(
             res = resid(z)
             return res
         end
+        α0 = one(eltype(ustep))
+        ϕ0 = ϕ(zero(α0))
+        ϵ, dϕ0 = let h = sqrt(eps())
+            slope = (ϕ(h) - ϕ0) / h
+            if slope > 0
+                z_norm = norm(z, Inf)
+                dz_norm = norm(dz, Inf)
+                if zero(dz_norm) < dz_norm < z_norm
+                    # A small Newton update amplifies roundoff in the residual difference.
+                    h = min(one(h), h * sqrt(z_norm / dz_norm))
+                    slope = (ϕ(h) - ϕ0) / h
+                end
+            end
+            h, slope
+        end
         function dϕ(α)
-            ϵ = sqrt(eps())
             return (ϕ(α + ϵ) - ϕ(α)) / ϵ
         end
         function ϕdϕ(α)
-            ϵ = sqrt(eps())
             ϕ_1 = ϕ(α)
             ϕ_2 = ϕ(α + ϵ)
             ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
             return ϕ_1, ∂ϕ∂α
         end
-        α0 = one(eltype(ustep))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
         return dz
