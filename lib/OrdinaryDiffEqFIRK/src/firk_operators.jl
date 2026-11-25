@@ -142,7 +142,11 @@ real stage matrix `W1` is concrete, and a lazily-applied [`ComplexWOperator`](@r
 `W1` is itself an operator (matrix-free Jacobian and/or Krylov `linsolve`).
 """
 function build_complex_W(alg, f, u, J, W1)
-    is_lazy_W(W1) || return recursivefill!(similar(J, Complex{eltype(W1)}), false)
+    if !is_lazy_W(W1)
+        W = recursivefill!(similar(J, Complex{eltype(W1)}), false)
+        W isa SparseMatrixCSC && fill!(nonzeros(W), one(eltype(W)))
+        return W
+    end
     if alg.linsolve isa LinearSolve.LHLFactorization && !(J isa AbstractSciMLOperator)
         # Same split `-MM/gamma + J` shape as the real stage, only with a complex `gamma`
         # slot. The Jacobian object is shared with the real stage — one `calc_J!` serves
