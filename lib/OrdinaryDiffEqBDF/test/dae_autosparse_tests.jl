@@ -245,3 +245,35 @@ ADTypes.jacobian_sparsity(f!, y, x, ::StoredFalseDetector) = stored_false_patter
     @test successful_retcode(sol)
     @test sol.u[end] ≈ fill(exp(-0.5), 2) rtol = 1.0e-6
 end
+
+@testset "A residual the tracer cannot trace at a refresh point still solves" begin
+    # The global tracer fails on `u[1] < 0` once t >= 0.5, but the prototype covers
+    # every derivative, so the solve must not fail because validation could not trace.
+    function untraceable!(r, du, u, p, t)
+        r[1] = du[1] + u[1] + (t >= 0.5 && u[1] < 0 ? u[1]^2 : 0.0)
+        r[2] = du[2] + u[2]
+        return nothing
+    end
+    backend = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = TracerSparsityDetector(),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    f = DAEFunction(untraceable!; jac_prototype = sparse([1, 2], [1, 2], [1.0, 1.0]))
+    prob = DAEProblem(f, [-1.0, -1.0], [1.0, 1.0], (0.0, 1.0); differential_vars = [true, true])
+    sol = solve(
+        prob, DFBDF(autodiff = backend); initializealg = NoInit(),
+        abstol = 1.0e-10, reltol = 1.0e-10, tstops = [0.5]
+    )
+    @test successful_retcode(sol)
+    @test sol.u[end] ≈ fill(exp(-1.0), 2) rtol = 1.0e-6
+
+    # Force a fresh Jacobian at a point the global tracer cannot trace.
+    integrator = init(prob, DFBDF(autodiff = backend); initializealg = NoInit())
+    integrator.t = 0.75
+    integrator.uprev .= -1.0
+    nlsolver = integrator.cache.nlsolver
+    @test OrdinaryDiffEqDifferentiation.calc_W!(
+        nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+    ) == (true, true)
+    @test Matrix(nlsolver.cache.J) ≈ [-1.0 0.0; 0.0 1.0] atol = 1.0e-8
+end

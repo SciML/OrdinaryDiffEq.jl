@@ -23,7 +23,13 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
         OrdinaryDiffEqDifferentiation.ADTypes.NoSparsityDetector,
     } && return nothing
     # Detectors may return a dense Boolean matrix.
-    detected = OrdinaryDiffEqDifferentiation.ADTypes.jacobian_sparsity(f, fx, x, detector)
+    # Tracing can fail on a residual that the prototype-based AD handles (for example a
+    # comparison on a global tracer); validation is then skipped for this refresh.
+    detected = try
+        OrdinaryDiffEqDifferentiation.ADTypes.jacobian_sparsity(f, fx, x, detector)
+    catch
+        return nothing
+    end
     detected isa SparseMatrixCSC || (detected = SparseMatrixCSC(detected))
     rows = rowvals(J)
     detected_rows = rowvals(detected)
