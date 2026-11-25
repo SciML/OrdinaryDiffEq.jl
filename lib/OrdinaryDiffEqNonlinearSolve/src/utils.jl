@@ -321,9 +321,13 @@ function with_jac_sparsity(alg, J, uf_u, uf_du, du1, u)
     ad = alg_autodiff(alg)
     (ad isa ADTypes.AutoSparse && J isa SparseMatrixCSC) || return alg
     detector = ADTypes.sparsity_detector(ad)
+    # `NoSparsityDetector` detects nothing: its all-true pattern is only a fallback, and
+    # `J` supplies the coloring.
+    wrappers = detector isa ADTypes.NoSparsityDetector ? () :
+        ((uf_u, u), (uf_du, uf_u.du_fixed))
     stored(A) = zip(findnz(A)[1], findnz(A)[2])
     stored_J = Set(stored(J))
-    for (wrapper, x) in ((uf_u, u), (uf_du, uf_u.du_fixed))
+    for (wrapper, x) in wrappers
         detected = sparse(ADTypes.jacobian_sparsity(wrapper, du1, x, detector))
         issubset(stored(detected), stored_J) || throw(
             DimensionMismatch(

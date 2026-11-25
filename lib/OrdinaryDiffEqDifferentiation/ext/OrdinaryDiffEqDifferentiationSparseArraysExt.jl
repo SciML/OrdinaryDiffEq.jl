@@ -16,10 +16,16 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
     ad = OrdinaryDiffEqDifferentiation.alg_autodiff(alg)
     ad isa OrdinaryDiffEqDifferentiation.AutoSparse || return nothing
     detector = OrdinaryDiffEqDifferentiation.ADTypes.sparsity_detector(ad)
-    # A known pattern is fixed by the caller and was checked against `J` when it was built.
-    detector isa OrdinaryDiffEqDifferentiation.ADTypes.KnownJacobianSparsityDetector &&
-        return nothing
-    detected = OrdinaryDiffEqDifferentiation.ADTypes.jacobian_sparsity(f, fx, x, detector)
+    # A known pattern is fixed by the caller and was checked against `J` when it was built;
+    # `NoSparsityDetector` detects nothing, its all-true pattern is only a fallback.
+    detector isa Union{
+        OrdinaryDiffEqDifferentiation.ADTypes.KnownJacobianSparsityDetector,
+        OrdinaryDiffEqDifferentiation.ADTypes.NoSparsityDetector,
+    } && return nothing
+    # Detectors may return a dense Boolean matrix.
+    detected = SparseMatrixCSC(
+        OrdinaryDiffEqDifferentiation.ADTypes.jacobian_sparsity(f, fx, x, detector)
+    )
     rows = rowvals(J)
     for j in 1:size(detected, 2), i in rowvals(detected)[nzrange(detected, j)]
         range = nzrange(J, j)

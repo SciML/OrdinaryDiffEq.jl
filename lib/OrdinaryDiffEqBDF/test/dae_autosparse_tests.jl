@@ -172,3 +172,19 @@ end
     @test Matrix(nlsolver.cache.J) ≈ J_u_late atol = 1.0e-8
     @test Matrix(nlsolver.cache.dae_jacobians.J_du) ≈ J_du atol = 1.0e-8
 end
+
+@testset "Explicit sparse jac_prototype with the default NoSparsityDetector" begin
+    # The default detector detects nothing, so the prototype supplies the coloring.
+    decoupled!(r, du, u, p, t) = (r .= du .+ u; nothing)
+    backend = AutoSparse(AutoForwardDiff(); coloring_algorithm = GreedyColoringAlgorithm())
+    for prototype in (sparse([1, 2], [1, 2], [1.0, 1.0]), sparse(ones(2, 2)))
+        f = DAEFunction(decoupled!; jac_prototype = prototype)
+        prob = DAEProblem(f, [-1.0, -1.0], [1.0, 1.0], (0.0, 0.5); differential_vars = [true, true])
+        sol = solve(
+            prob, DFBDF(autodiff = backend); initializealg = NoInit(),
+            abstol = 1.0e-10, reltol = 1.0e-10
+        )
+        @test successful_retcode(sol)
+        @test sol.u[end] ≈ fill(exp(-0.5), 2) rtol = 1.0e-6
+    end
+end
