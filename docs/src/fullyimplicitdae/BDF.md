@@ -57,6 +57,30 @@ prob = DAEProblem(f2, du₀, u₀, tspan; differential_vars)
 sol = solve(prob, DFBDF())
 ```
 
+## Sparse Jacobians
+
+`DFBDF` and the other BDF DAE methods accept an `ADTypes.AutoSparse` `autodiff`. The separated
+Jacobians ``\partial F/\partial u`` and ``\partial F/\partial(du)`` are both stored in one
+`SparseMatrixCSC` holding the union of their patterns, and sparse differentiation colors that
+union once, when the integrator is built.
+
+  - **The union must not change during the solve.** An automatically detected pattern
+    (`TracerSparsityDetector`, `TracerLocalSparsityDetector`) is detected at the initial state,
+    so a residual whose structure depends on time, the state or parameters can gain entries
+    later. Every fresh Jacobian evaluation re-runs the detector at its actual evaluation point
+    and throws a `DimensionMismatch` if it finds an entry the stored pattern does not hold,
+    rather than returning a wrong Jacobian. Such a problem needs a
+    `KnownJacobianSparsityDetector` holding the union of all its patterns, or a dense
+    `autodiff`.
+  - **A known pattern is trusted.** With a `KnownJacobianSparsityDetector` the pattern is not
+    re-detected during the solve, so it must hold every entry the residual can ever have.
+  - **An explicit `jac_prototype` must cover the pattern.** When `jac_prototype` is a
+    `SparseMatrixCSC` it is the storage, and construction throws a `DimensionMismatch` if the
+    detector (known or tracer) finds an entry it does not store. Stored zeros of a known
+    pattern count as stored entries.
+  - The number of colors, and so of residual evaluations per Jacobian, depends on the union
+    pattern, not on each partial Jacobian alone.
+
 ## Solver Selection Guide
 
 ### Recommended DAE Methods
