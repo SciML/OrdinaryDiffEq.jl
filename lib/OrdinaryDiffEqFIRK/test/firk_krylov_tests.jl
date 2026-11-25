@@ -112,6 +112,42 @@ end
     )
 end
 
+@testset "AdaptiveRadau reuses stage solvers with fixed steps" begin
+    n = 12
+    A = -50 * Matrix(SymTridiagonal(fill(2.0, n), fill(-1.0, n - 1)))
+    u0 = ones(n)
+    tspan = (0.0, 1 / 8)
+    exact = exp(A * last(tspan)) * u0
+    linear!(du, u, p, t) = mul!(du, A, u)
+    for (name, f) in (
+            ("operator RHS", ODEFunction(MatrixOperator(A))),
+            ("operator Jacobian", ODEFunction(linear!; jac_prototype = MatrixOperator(copy(A)))),
+        )
+        @testset "$name" begin
+            prob = ODEProblem(f, u0, tspan)
+            precs_calls = Ref(0)
+            function precs(W, p)
+                precs_calls[] += 1
+                return I, I
+            end
+            integ = init(
+                prob, AdaptiveRadau(linsolve = KrylovJL_GMRES(; precs));
+                dt = 1 / 1024, adaptive = false, reltol = 1.0e-10, abstol = 1.0e-10
+            )
+            step!(integ)
+            @test integ.stats.naccept == 1
+            calls_after_first_step = precs_calls[]
+            @test calls_after_first_step == 6
+
+            solve!(integ)
+            @test SciMLBase.successful_retcode(integ.sol)
+            @test integ.stats.naccept == 128
+            @test precs_calls[] == calls_after_first_step
+            @test norm(integ.u - exact, Inf) < 1.0e-8
+        end
+    end
+end
+
 @testset "$alg counts matrix-free Jacobian-vector products" for alg in firk_algs
     nf = Ref(0)
     counted!(du, u, p, t) = (nf[] += 1; brusselator_1d!(du, u, p, t))

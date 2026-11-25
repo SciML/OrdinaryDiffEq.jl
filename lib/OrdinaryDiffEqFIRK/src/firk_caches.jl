@@ -633,6 +633,7 @@ mutable struct AdaptiveRadauCache{
     atol::aTol
     dtprev::Dt
     W_γdt::Dt
+    W_index::Int
     status::NLStatus
     step_limiter!::StepLimiter
     num_stages::Int
@@ -747,7 +748,7 @@ function alg_cache(
         J, W1, W2,
         uf, tabs, κ, one(uToltype), 10000, tmp,
         atmp, jac_config,
-        linsolve1, linsolve2, rtol, atol, one(dt), dt,
+        linsolve1, linsolve2, rtol, atol, one(dt), dt, 0,
         Convergence, alg.step_limiter!, num_stages, 1, 0.0, index,
         zero(uToltype), zero(dt), 0, 0
     )

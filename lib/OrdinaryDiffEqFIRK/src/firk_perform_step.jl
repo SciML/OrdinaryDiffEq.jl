@@ -40,7 +40,15 @@ function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
     integrator.iter <= 1 && return true
     repeat_step && return false
     first(islinearfunction(integrator)) && return false
-    integrator.opts.adaptive || return true
+    if !integrator.opts.adaptive
+        f = integrator.f
+        return !(
+            cache isa AdaptiveRadauCache && !integrator.derivative_discontinuity &&
+                f isa ODEFunction && f.W_prototype === nothing &&
+                cache.J isa SciMLOperators.MatrixOperator && SciMLOperators.isconstant(cache.J) &&
+                SciMLOperators.isconstant(f.mass_matrix)
+        )
+    end
     alg_can_repeat_jac(alg) || return true
     integrator.derivative_discontinuity && return true
     # below is Newton specific logic, so we return non-Newton algs here
@@ -2152,11 +2160,16 @@ end
     end
     (; rtol, atol) = cache
 
-    (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
-        (firk_new_J!(J, W1, integrator, cache, W2); cache.W_γdt = dt; cache.jage = 0)
-    # An order change resets cache.step and changes the shifts in W.
-    new_W = cache.step == 1 || do_newW(integrator, alg, new_jac, cache.W_γdt)
-    new_W && (cache.W_γdt = dt)
+    new_jac = do_newJ(integrator, alg, cache, repeat_step)
+    if new_jac
+        firk_new_J!(J, W1, integrator, cache, W2)
+        cache.jage = 0
+    end
+    new_W = cache.W_index != index || do_newW(integrator, alg, new_jac, cache.W_γdt)
+    if new_W
+        cache.W_γdt = dt
+        cache.W_index = index
+    end
     if is_lazy_W(W1)
         set_W_gamma!(W1, γdt)
         for i in 1:((num_stages - 1) ÷ 2)
