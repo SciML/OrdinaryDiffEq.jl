@@ -44,7 +44,7 @@ function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
         f = integrator.f
         return !(
             cache isa AdaptiveRadauCache && !integrator.derivative_discontinuity &&
-                f isa ODEFunction && f.W_prototype === nothing &&
+                f isa SciMLBase.ODEFunction && f.W_prototype === nothing &&
                 cache.J isa SciMLOperators.MatrixOperator && SciMLOperators.isconstant(cache.J) &&
                 SciMLOperators.isconstant(f.mass_matrix)
         )
