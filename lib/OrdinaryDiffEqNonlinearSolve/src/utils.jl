@@ -954,7 +954,7 @@ function build_nlsolver(
             if isdae
                 # cuSPARSE matrices have no `fill!`, so sparse J_du is zeroed through its stored values
                 J_du = similar(J)
-                if J isa AbstractSparseMatrix
+                if J_du isa AbstractSparseMatrix
                     nonzeros(J_du) .= false
                 else
                     fill!(J_du, false)

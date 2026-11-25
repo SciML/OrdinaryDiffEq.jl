@@ -1,6 +1,6 @@
 #fixing gpu tolerances
 using OrdinaryDiffEqBDF, CUDA, CUDSS, LinearAlgebra, SparseArrays, Test
-using CUDA.CUSPARSE: CuSparseMatrixCSR
+using CUDA.cuSPARSE: CuSparseMatrixCSR
 CUDA.allowscalar(false)
 
 function f_gpu!(du, u, p, t)

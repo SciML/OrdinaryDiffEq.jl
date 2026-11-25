@@ -3,6 +3,7 @@ using SciMLBase: DAEFunction, DAEProblem, NoInit
 using ADTypes: AutoFiniteDiff
 using LinearAlgebra: I
 using SparseArrays
+using SciMLBase
 
 function dae_lin!(res, du, u, p, t)
     @. res = du - u
@@ -65,4 +66,40 @@ SparseArrays.nnz(M::NoSetindexSparse) = nnz(M.A)
             @test all(iszero, nonzeros(J_du))
         end
     end
+end
+
+# A sparse prototype whose typed `similar` keeps the wrapper but whose untyped `similar`
+# returns a dense matrix, so `J` is sparse while the allocated `J_du` is dense.
+struct DenseSimilarSparse{T} <: SparseArrays.AbstractSparseMatrix{T, Int}
+    A::SparseMatrixCSC{T, Int}
+end
+Base.size(M::DenseSimilarSparse) = size(M.A)
+Base.getindex(M::DenseSimilarSparse, i::Int, j::Int) = M.A[i, j]
+Base.similar(M::DenseSimilarSparse, ::Type{T}) where {T} = DenseSimilarSparse(similar(M.A, T))
+Base.similar(M::DenseSimilarSparse{T}) where {T} = Matrix{T}(undef, size(M))
+SparseArrays.nonzeros(M::DenseSimilarSparse) = nonzeros(M.A)
+SparseArrays.rowvals(M::DenseSimilarSparse) = rowvals(M.A)
+SparseArrays.nzrange(M::DenseSimilarSparse, j::Integer) = nzrange(M.A, j)
+SparseArrays.nnz(M::DenseSimilarSparse) = nnz(M.A)
+
+@testset "DAE J_du dense while J is sparse" begin
+    dense_dae!(res, du, u, p, t) = (res .= du .+ u; nothing)
+    function dense_dae_jac!(J, du, u, p, gamma, t)
+        J isa SparseArrays.AbstractSparseMatrix ? (nonzeros(J) .= 1 + gamma) :
+            copyto!(J, (1 + gamma) * I(4))
+        return nothing
+    end
+    f = DAEFunction{true}(
+        dense_dae!; jac = dense_dae_jac!, jac_prototype = DenseSimilarSparse(sparse(1.0I, 4, 4))
+    )
+    prob = DAEProblem(f, fill(-1.0, 4), ones(4), (0.0, 1.0))
+    integrator = init(
+        prob, DFBDF(autodiff = AutoFiniteDiff(), concrete_jac = false); initializealg = NoInit()
+    )
+    J_du = integrator.cache.nlsolver.cache.dae_jacobians.J_du
+    @test J_du isa Matrix{Float64}
+    @test all(iszero, J_du)
+    sol = solve!(integrator)
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.u[end] ≈ fill(exp(-1), 4) rtol = 1.0e-2
 end
