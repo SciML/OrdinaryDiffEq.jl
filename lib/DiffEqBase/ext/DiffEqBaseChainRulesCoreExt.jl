@@ -1,10 +1,10 @@
 module DiffEqBaseChainRulesCoreExt
 
-using DiffEqBase
-import DiffEqBase: numargs, AbstractSensitivityAlgorithm, AbstractDEProblem
+import DiffEqBase
+import SciMLBase: AbstractSensitivityAlgorithm, AbstractDEProblem
+import SciMLBase
 
 import ChainRulesCore
-import ChainRulesCore: NoTangent
 
 function ChainRulesCore.frule(
         ::typeof(DiffEqBase.solve_up), prob,

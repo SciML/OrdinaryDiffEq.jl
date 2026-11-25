@@ -1,27 +1,28 @@
 module DiffEqBaseTrackerExt
 
-using DiffEqBase
-import DiffEqBase: value
+import DiffEqBase
 import Tracker
 import RecursiveArrayTools
+import SciMLBase: AbstractDEProblem, value
+import SciMLBase
 
 # Support adaptive with non-tracked time
 @inline function DiffEqBase.ODE_DEFAULT_NORM(u::Tracker.TrackedArray, t)
-    return sqrt(sum(abs2, DiffEqBase.value(u)) / length(u))
+    return sqrt(sum(abs2, value(u)) / length(u))
 end
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
         u::AbstractArray{<:Tracker.TrackedReal, N},
         t
     ) where {N}
-    return sqrt(sum(x -> abs2(DiffEqBase.value(x)), u) / max(length(u), 1))
+    return sqrt(sum(x -> abs2(value(x)), u) / max(length(u), 1))
 end
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
         u::Array{<:Tracker.TrackedReal, N},
         t
     ) where {N}
-    return sqrt(sum(x -> abs2(DiffEqBase.value(x)), u) / max(length(u), 1))
+    return sqrt(sum(x -> abs2(value(x)), u) / max(length(u), 1))
 end
-@inline DiffEqBase.ODE_DEFAULT_NORM(u::Tracker.TrackedReal, t) = abs(DiffEqBase.value(u))
+@inline DiffEqBase.ODE_DEFAULT_NORM(u::Tracker.TrackedReal, t) = abs(value(u))
 
 # Support TrackedReal time, don't drop tracking on the adaptivity there
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
@@ -45,7 +46,7 @@ end
 @inline DiffEqBase.ODE_DEFAULT_NORM(u::Tracker.TrackedReal, t::Tracker.TrackedReal) = abs(u)
 
 function DiffEqBase.solve_up(
-        prob::DiffEqBase.AbstractDEProblem,
+        prob::AbstractDEProblem,
         sensealg::Union{
             SciMLBase.AbstractOverloadingSensitivityAlgorithm,
             Nothing,
@@ -56,7 +57,7 @@ function DiffEqBase.solve_up(
 end
 
 function DiffEqBase.solve_up(
-        prob::DiffEqBase.AbstractDEProblem,
+        prob::AbstractDEProblem,
         sensealg::Union{
             SciMLBase.AbstractOverloadingSensitivityAlgorithm,
             Nothing,
@@ -67,7 +68,7 @@ function DiffEqBase.solve_up(
 end
 
 function DiffEqBase.solve_up(
-        prob::DiffEqBase.AbstractDEProblem,
+        prob::AbstractDEProblem,
         sensealg::Union{
             SciMLBase.AbstractOverloadingSensitivityAlgorithm,
             Nothing,
