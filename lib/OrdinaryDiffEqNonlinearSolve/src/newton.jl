@@ -984,6 +984,15 @@ function _compute_rhs!(
     return _vec(ztmp), ustep
 end
 
+# LineSearches rejects a positive initial slope. The unscaled Newton step is
+# the update used when no line search runs, so keep it.
+function _linesearch_α(linesearch, ϕ, dϕ, ϕdϕ, α0)
+    ϕ0, dϕ0 = ϕdϕ(zero(α0))
+    dϕ0 > zero(dϕ0) && return α0
+    α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+    return α
+end
+
 ## relax!
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF}
     return relax!(dz, nlsolver, integrator, f, relax(nlsolver))
@@ -1056,8 +1065,7 @@ function relax!(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(ustep))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = _linesearch_α(linesearch, ϕ, dϕ, ϕdϕ, α0)
         @.. dz = dz * α
         return dz
     end
@@ -1124,8 +1132,7 @@ function relax(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(dz))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = _linesearch_α(linesearch, ϕ, dϕ, ϕdϕ, α0)
         dz = dz * α
         return dz
     end
