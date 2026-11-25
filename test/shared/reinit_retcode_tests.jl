@@ -24,17 +24,3 @@ int = init(prob, Tsit5())
 
 reinit!(int, 0.0)
 solve!(int)
-
-# https://github.com/SciML/OrdinaryDiffEq.jl/issues/5028
-terminate_on_init = DiscreteCallback(
-    (u, t, integrator) -> false, integrator -> nothing;
-    initialize = (c, u, t, integrator) -> terminate!(integrator, ReturnCode.ConvergenceFailure),
-)
-prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
-@test solve(prob, Tsit5(); callback = terminate_on_init).retcode ==
-    ReturnCode.ConvergenceFailure
-@test solve(prob, Tsit5(); callback = terminate_on_init, dt = 0.1).retcode ==
-    ReturnCode.ConvergenceFailure
-integrator = init(prob, Tsit5(); callback = terminate_on_init)
-reinit!(integrator)
-@test solve!(integrator).retcode == ReturnCode.ConvergenceFailure

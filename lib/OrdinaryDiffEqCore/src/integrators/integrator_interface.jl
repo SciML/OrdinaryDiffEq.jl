@@ -723,12 +723,15 @@ Convenience wrapper that calls [`ode_determine_initdt`](@ref) with the fields of
 """
 function _determine_initdt(integrator)
     tdir = integrator.tdir
-    dtmax = tdir * min(
-        abs(integrator.opts.dtmax), abs(first_tstop(integrator) - tdir * integrator.t)
-    )
+    # An empty stop queue (e.g. a callback terminated or popped the last stop
+    # during `initialize`) has no stop to bound the first step against.
+    dtmax = abs(integrator.opts.dtmax)
+    if has_tstop(integrator)
+        dtmax = min(dtmax, abs(first_tstop(integrator) - tdir * integrator.t))
+    end
     return ode_determine_initdt(
         integrator.u, integrator.t,
-        tdir, dtmax,
+        tdir, tdir * dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator
@@ -736,7 +739,6 @@ function _determine_initdt(integrator)
 end
 
 function SciMLBase.auto_dt_reset!(integrator::ODEIntegrator)
-    has_tstop(integrator) || return nothing  # terminated: no step left to size
     integrator.dt = _determine_initdt(integrator)
     integrator.dtpropose = integrator.dt
     return increment_nf!(integrator.stats, 2)
