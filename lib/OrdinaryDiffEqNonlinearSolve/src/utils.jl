@@ -952,10 +952,16 @@ function build_nlsolver(
 
             # Build separated DAE Jacobian cache if applicable
             if isdae
+                # cuSPARSE matrices have no `fill!`, so sparse J_du is zeroed through its stored values
+                J_du = similar(J)
+                if J_du isa AbstractSparseMatrix
+                    nonzeros(J_du) .= false
+                else
+                    fill!(J_du, false)
+                end
                 if islinear(f) || SciMLBase.has_jac(f) ||
                         (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage
-                    J_du = fill!(similar(J), false)
                     dae_jacobians = DAEJacobiansCache(
                         J_du, nothing, nothing, nothing, nothing
                     )
@@ -968,7 +974,6 @@ function build_nlsolver(
                     jac_config_du = build_jac_config(
                         alg, nf, uf_du, du1, uprev, u, ztmp, dz
                     )
-                    J_du = fill!(similar(J), false)
                     dae_jacobians = DAEJacobiansCache(
                         J_du, uf_u, uf_du, jac_config_u, jac_config_du
                     )
@@ -1405,7 +1410,7 @@ function qrdelete!(Q::AbstractMatrix, R::AbstractMatrix, k::Int)
     end
 
     # move columns of R
-    @inbounds for j in 1:(k - 1)
+    for j in 1:(k - 1)
         for i in 1:(k - 1)
             R[i, j] = R[i, j + 1]
         end
@@ -1427,7 +1432,7 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::AbstractVector, k::Int)
     m == LinearAlgebra.checksquare(R) || throw(DimensionMismatch())
     1 ≤ k ≤ m || throw(ArgumentError())
 
-    @inbounds for i in 1:(k - 1)
+    for i in 1:(k - 1)
         q = view(Q, :, i)
         r = dot(q, v)
 
@@ -1435,11 +1440,9 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::AbstractVector, k::Int)
         axpy!(-r, q, v)
     end
 
-    @inbounds begin
-        d = norm(v)
-        R[k, k] = d
-        @.. broadcast = false @view(Q[:, k]) = v / d
-    end
+    d = norm(v)
+    R[k, k] = d
+    @.. broadcast = false @view(Q[:, k]) = v / d
 
     return Q, R
 end
