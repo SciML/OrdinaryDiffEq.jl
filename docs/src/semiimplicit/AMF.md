@@ -159,4 +159,5 @@ sol = solve(prob, AMF(ROS34PW1a; autodiff = AutoFiniteDiff()))
 OrdinaryDiffEqAMF.AMF
 OrdinaryDiffEqAMF.AMFOperator
 OrdinaryDiffEqAMF.build_amf_function
+OrdinaryDiffEqAMF.SciMLOpFactorization
 ```
