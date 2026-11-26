@@ -3,7 +3,12 @@ using SciMLTesting, DiffEqBase, Aqua, Test
 run_qa(
     DiffEqBase;
     # `@reexport using SciMLBase` deliberately reexports SciMLBase's public API.
-    reexports_allow = union(public_api_names(SciMLBase), (:SciMLBase,)),
+    # SciMLBase declares these with `@public`; Julia 1.10's API introspection
+    # only sees exports, so the documented facade names need explicit approval.
+    reexports_allow = union(
+        public_api_names(SciMLBase),
+        (:SciMLBase, :AutoDePSpecialize, :AutoDespecialize, :AutoRespecialize, :NoInit, :OverrideInit),
+    ),
     # `piracies` and the two sub-checks with hand-rolled bounds below are run
     # manually: the ambiguity check keeps the existing <=4 bound on ambiguities
     # located in DiffEqBase, and the unbound-args check keeps the direct

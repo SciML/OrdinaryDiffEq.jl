@@ -16,10 +16,9 @@ outer type. SciML function calls recover the original concrete parameter at a dy
 function barrier, allowing precompiled solver code to be shared across parameter layouts.
 `AutoSpecialize` retains its existing behavior and does not select this container.
 
-`AutoRespecialize` is the constrained, non-dynamic policy formerly named
-`AutoDePSpecialize`. Supported paths pack compatible parameters into an opaque container
-and recover the original concrete type without dynamic dispatch. The deprecated
-`AutoDePSpecialize` name remains available as an alias.
+`AutoRespecialize` is the constrained, non-dynamic policy. Supported paths pack compatible
+parameters into an opaque container and recover the original concrete type without dynamic
+dispatch. `AutoDePSpecialize` remains available as a deprecated alias.
 
 OrdinaryDiffEq re-exports `AutoDespecialize`, `AutoRespecialize`, and the deprecated
 `AutoDePSpecialize` alias. Their canonical API documentation is on the linked SciMLBase
