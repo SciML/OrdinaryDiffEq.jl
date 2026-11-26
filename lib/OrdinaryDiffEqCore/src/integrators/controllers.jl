@@ -475,10 +475,14 @@ sync_controllers!(::OrdinaryDiffEqCache, ::OrdinaryDiffEqCache) = nothing
 """
     snapshot_controller(cache)
 
-Capture the per-solve state of the controller cache `cache` so that
+Capture the controller scratch state of `cache` so that
 [`restore_controller!`](@ref) can put it back. Solvers use the pair to
 pseudo-step the controller, e.g. to compare the step size each candidate
 order would get, without leaking that state into the real step.
+
+The error estimate `EEst` is not part of this contract, and the built-in
+snapshots omit it. A caller that changes it while pseudo-stepping must
+preserve it itself with [`get_EEst`](@ref) and [`set_EEst!`](@ref).
 
 The default returns `deepcopy(cache)`, which `restore_controller!` writes
 back with [`sync_controllers!`](@ref), so a custom controller only has to
@@ -496,6 +500,9 @@ snapshot_controller(cache) = deepcopy(cache)
 Write `snapshot`, taken from `cache` by [`snapshot_controller`](@ref), back
 into `cache`. The default calls `sync_controllers!(cache, snapshot)`.
 Returns `nothing`.
+
+Only controller scratch state is restored. Callers must preserve `EEst`
+themselves, see [`snapshot_controller`](@ref).
 """
 function restore_controller!(cache, snapshot)
     sync_controllers!(cache, snapshot)
