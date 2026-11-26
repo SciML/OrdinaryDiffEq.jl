@@ -484,6 +484,8 @@ const RodasTableauAlgorithms = Union{
     RosenbrockW6S4OS,
 }
 
+check_reversediff_compatibility(u, alg) = nothing
+
 function alg_cache(
         alg::RodasTableauAlgorithms,
         u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -525,6 +527,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    check_reversediff_compatibility(u, alg)
     tab = tabtype(alg)(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     # Initialize vectors: kshortsize depends on whether H has rows
     H_rows = size(tab.H, 1)
