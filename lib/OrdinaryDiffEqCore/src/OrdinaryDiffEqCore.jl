@@ -472,7 +472,7 @@ include("precompilation_setup.jl")
             :_get_fwd_chunksize, :_get_fwd_chunksize_int, :_fixup_ad, :diffdir,
             :error_constant, :unitfulvalue,
             # Integrator step / cache / initialization hooks.
-            :_ode_init, :_determine_initdt, :ode_determine_initdt, :_initialize_dae!,
+            :_ode_init, :_determine_initdt, :ode_determine_initdt, :initial_timestep_order, :_initialize_dae!,
             :find_algebraic_vars_eqs, :apply_step!, :reset_alg_dependent_opts!,
             :_is_identity_massmatrix, :_is_zero_massmatrix, :_diff_alg_vars,
             :handle_callback_modifiers!, :resolve_basic, :resolve_stage_step_limiters,
