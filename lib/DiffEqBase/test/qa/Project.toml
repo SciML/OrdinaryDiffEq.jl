@@ -1,13 +1,21 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
+Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
 [compat]
 Aqua = "0.8.11"
+ChainRulesCore = "1"
 DiffEqBase = "7"
+ExplicitImports = "1.15"
+Measurements = "2"
 SciMLBase = "3"
 SciMLTesting = "2.8"
+Tracker = "0.2"
 julia = "1.10"

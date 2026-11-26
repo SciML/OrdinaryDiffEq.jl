@@ -141,3 +141,22 @@ run_qa(
     @warn "Number of method ambiguities: $(length(ambs))"
     @test length(ambs) ≤ 4
 end
+
+# The weak dependencies are loaded after the package-wide checks so that those
+# see DiffEqBase without extensions.
+import ChainRulesCore, Measurements, Tracker
+using ExplicitImports
+
+@testset "Extension import ownership" begin
+    @testset "$(nameof(pkg))" for pkg in (ChainRulesCore, Measurements, Tracker)
+        ext = Base.get_extension(DiffEqBase, Symbol(:DiffEqBase, nameof(pkg), :Ext))
+        @test ext !== nothing
+        @test check_no_implicit_imports(ext) === nothing
+        @test check_no_stale_explicit_imports(ext) === nothing
+        @test check_all_explicit_imports_via_owners(ext) === nothing
+        @test check_all_qualified_accesses_via_owners(ext) === nothing
+        if pkg === Measurements
+            @test check_all_qualified_accesses_are_public(ext; from = (Measurements,)) === nothing
+        end
+    end
+end
