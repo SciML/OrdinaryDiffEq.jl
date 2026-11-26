@@ -1,5 +1,16 @@
 using OrdinaryDiffEqRKN, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
 
+@testset "SharpFineRKN6 mixed precision acceleration" begin
+    function constant_acceleration!(ddu, du, u, p, t)
+        ddu .= 1.0e-50
+    end
+    prob = SecondOrderODEProblem(constant_acceleration!, [0.0], Float32[0], (0.0, 1.0))
+    sol = solve(prob, SharpFineRKN6(); adaptive = false, dt = 0.125)
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.t[end] == 1.0
+    @test sol.u[end].x[1][1] ≈ 1.0e-50 rtol = 1.0e-14 atol = 0
+end
+
 u0 = fill(0.0, 2)
 v0 = ones(2)
 function f1_harmonic(dv, v, u, p, t)
@@ -370,7 +381,7 @@ sol = solve(prob, FineRKN4())
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 20
 @test SciMLBase.successful_retcode(sol)
-sol = solve(prob, FineRKN5())
+sol = solve(prob, SharpFineRKN6())
 @test length(sol.u) < 25
 @test SciMLBase.successful_retcode(sol)
 
@@ -480,11 +491,29 @@ end
         @test sol_i.stats.naccept == sol_o.stats.naccept
         @test 19 <= sol_i.stats.naccept <= 21
         @test abs(sol_i.stats.nf - 8 * sol_i.stats.naccept) < 4
-        # adaptive time step - IIP vs OOP may diverge version-dependently
-        sol_i = solve(ode_i, alg)
-        sol_o = solve(ode_o, alg)
-        @test_skip sol_i.t ≈ sol_o.t
-        @test_skip sol_i.u ≈ sol_o.u
+        for prob in (ode_i, ode_o)
+            errors = Float64[]
+            for tol in (1.0e-4, 1.0e-8)
+                sol = solve(prob, alg; dt = 1.0, abstol = tol, reltol = tol)
+                @test SciMLBase.successful_retcode(sol)
+                @test sol.t[end] == 10.0
+                if tol == 1.0e-8
+                    @test sol.stats.nreject > 0
+                end
+                ts = range(0.0, 10.0; length = 65)
+                err = maximum(ts) do t
+                    theta = sqrt(15) * t / 4
+                    position = exp(-t / 4) * (cos(theta) + sin(theta) / sqrt(15))
+                    velocity = -4 * exp(-t / 4) * sin(theta) / sqrt(15)
+                    state = sol(t)
+                    max(abs(state.x[1][1] - velocity), abs(state.x[2][1] - position))
+                end
+                push!(errors, err)
+            end
+            @test errors[2] < errors[1]
+            @test errors[1] < 1.0e-3
+            @test errors[2] < 1.0e-6
+        end
     end
 
     # The velocity-independent DPRKN methods no longer silently integrate this

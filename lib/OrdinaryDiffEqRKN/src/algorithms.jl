@@ -66,7 +66,7 @@ In particular, this method allows the acceleration equation to depend on the vel
     volume={42},
     number={3},
     pages={279--291},
-    year={1992}", "", ""
+    year={1992}}", "", ""
 )
 struct SharpFineRKN6 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 

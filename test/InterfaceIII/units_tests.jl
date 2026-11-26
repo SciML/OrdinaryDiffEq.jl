@@ -2,6 +2,19 @@ using OrdinaryDiffEq, RecursiveArrayTools, Unitful
 using LinearAlgebra, Test, ADTypes
 using OrdinaryDiffEqExplicitRK, OrdinaryDiffEqFeagin, OrdinaryDiffEqHighOrderRK,
     OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSSPRK
+using OrdinaryDiffEqRKN: SharpFineRKN6
+
+@testset "SharpFineRKN6 unitful acceleration" begin
+    function damped!(ddu, du, u, p, t)
+        @. ddu = -u / (1u"s")^2 - 0.5 * du / (1u"s")
+    end
+    prob = SecondOrderODEProblem(damped!, [0.0u"m/s"], [1.0u"m"], (0.0u"s", 1.0u"s"))
+    sol = solve(prob, SharpFineRKN6(); adaptive = false, dt = 0.125u"s")
+    theta = sqrt(15) / 4
+    @test successful_retcode(sol)
+    @test sol.u[end].x[1][1] ≈ (-4 * exp(-1 / 4) * sin(theta) / sqrt(15))u"m/s" rtol = 1.0e-6
+    @test sol.u[end].x[2][1] ≈ (exp(-1 / 4) * (cos(theta) + sin(theta) / sqrt(15)))u"m" rtol = 1.0e-6
+end
 
 @testset "Algorithms" begin
     algs = [

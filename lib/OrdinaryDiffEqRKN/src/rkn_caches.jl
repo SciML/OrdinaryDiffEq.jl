@@ -142,7 +142,7 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{true}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    reduced_rate_prototype = rate_prototype.x[2]
+    reduced_rate_prototype = rate_prototype.x[1]
     tab = SharpFineRKN6Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     nstages = length(tab.b)
     k1 = zero(rate_prototype)
