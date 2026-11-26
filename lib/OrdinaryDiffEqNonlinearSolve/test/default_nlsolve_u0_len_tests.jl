@@ -1,21 +1,16 @@
 using OrdinaryDiffEqNonlinearSolve, OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqNonlinearSolve: default_nlsolve, _init_autodiff
 using NonlinearSolve
+using SCCNonlinearSolve
 using SciMLBase
 using SciMLBase: OverrideInitData, OverrideInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
 using ForwardDiff
+import ArrayInterface
 using Test
 
-# SciML/OrdinaryDiffEq.jl#5005: the default initialization solver has to tell
-# `FastShortcutNonlinearPolyalg` how big the system is, the same way `solve(prob, nothing)`
-# does in NonlinearSolve. Small systems then start at NewtonRaphson instead of Broyden,
-# which could wander off to a far-away root and still report Success.
-#
-# Starting at Newton means the init solve now takes a ForwardDiff Jacobian right away, so the
-# backend's tag has to match how NonlinearSolve wrapped the init function.
-
 start_index(alg) = alg.start_index
+newton_first(alg) = first(alg.algs).name === :NewtonRaphson
 
 small_oop = NonlinearProblem((u, p) -> u .^ 2 .- 4, [1.5, 1.5])
 small_iip = NonlinearProblem((du, u, p) -> (du .= u .^ 2 .- 4; nothing), [1.5, 1.5])
@@ -24,21 +19,21 @@ edge_oop = NonlinearProblem((u, p) -> u .^ 2 .- 4, fill(1.5, 25))
 
 @testset "polyalg start follows the init problem size" begin
     for ad in (false, true)
-        @test start_index(default_nlsolve(nothing, Val(false), small_oop.u0, small_oop, ad)) == 3
-        @test start_index(default_nlsolve(nothing, Val(true), small_iip.u0, small_iip, ad)) == 3
+        @test newton_first(default_nlsolve(nothing, Val(false), small_oop.u0, small_oop, ad)) == true
+        @test newton_first(default_nlsolve(nothing, Val(true), small_iip.u0, small_iip, ad)) == true
         # NonlinearSolve's cutoff is `u0_len <= 25`
-        @test start_index(default_nlsolve(nothing, Val(false), edge_oop.u0, edge_oop, ad)) == 3
-        @test start_index(default_nlsolve(nothing, Val(false), big_oop.u0, big_oop, ad)) == 1
+        @test newton_first(default_nlsolve(nothing, Val(false), edge_oop.u0, edge_oop, ad)) == true
+        @test newton_first(default_nlsolve(nothing, Val(false), big_oop.u0, big_oop, ad)) == false
     end
 end
 
 @testset "size comes from the problem, not from `u`" begin
     # BrownFullBasicInit passes the whole state as `u` but only solves the algebraic part,
     # so a big ODE with a handful of algebraic variables should still start with Newton...
-    @test start_index(default_nlsolve(nothing, Val(true), zeros(100), small_iip)) == 3
-    @test start_index(default_nlsolve(nothing, Val(false), zeros(100), small_oop)) == 3
+    @test newton_first(default_nlsolve(nothing, Val(true), zeros(100), small_iip)) == true
+    @test newton_first(default_nlsolve(nothing, Val(false), zeros(100), small_oop)) == true
     # ...and a short `u` must not make a big problem look small.
-    @test start_index(default_nlsolve(nothing, Val(false), [0.0], big_oop)) == 1
+    @test newton_first(default_nlsolve(nothing, Val(false), [0.0], big_oop)) == false
 end
 
 # Stand-in for a GPU array: anything that says scalar indexing is slow. Newton would need a
@@ -48,13 +43,13 @@ struct SlowIndexVector{T} <: AbstractVector{T}
 end
 Base.size(v::SlowIndexVector) = size(v.x)
 Base.getindex(v::SlowIndexVector, i::Int) = v.x[i]
-OrdinaryDiffEqNonlinearSolve.ArrayInterface.fast_scalar_indexing(::Type{<:SlowIndexVector}) = false
+ArrayInterface.fast_scalar_indexing(::Type{<:SlowIndexVector}) = false
 
 @testset "arrays without fast scalar indexing keep the old order" begin
     slow = NonlinearProblem((u, p) -> u .^ 2 .- 4, SlowIndexVector([1.5, 1.5]))
-    @test start_index(default_nlsolve(nothing, Val(false), slow.u0, slow)) == 1
+    @test newton_first(default_nlsolve(nothing, Val(false), slow.u0, slow)) == false
     # a slow `u` alone is enough, e.g. Brown's full state living on the GPU
-    @test start_index(default_nlsolve(nothing, Val(false), SlowIndexVector(zeros(4)), small_oop)) == 1
+    @test newton_first(default_nlsolve(nothing, Val(false), SlowIndexVector(zeros(4)), small_oop)) == false
 end
 
 const explicit = (Returns(nothing), Returns(nothing))
@@ -69,13 +64,13 @@ const explicit = (Returns(nothing), Returns(nothing))
     slow_block = NonlinearProblem((u, p) -> u .^ 2 .- 4, SlowIndexVector([1.5, 1.5]))
     slow = SCCNonlinearProblem((small_oop, slow_block), explicit, nothing, Val(true))
     for iip in (Val(true), Val(false)), ad in (false, true)
-        @test start_index(default_nlsolve(nothing, iip, zeros(4), small, ad)) == 3
-        @test start_index(default_nlsolve(nothing, iip, zeros(50), edge, ad)) == 3
-        @test start_index(default_nlsolve(nothing, iip, zeros(28), big, ad)) == 1
+        @test newton_first(default_nlsolve(nothing, iip, zeros(4), small, ad)) == true
+        @test newton_first(default_nlsolve(nothing, iip, zeros(50), edge, ad)) == true
+        @test newton_first(default_nlsolve(nothing, iip, zeros(28), big, ad)) == false
         # one GPU block keeps the Broyden-first order for the whole problem...
-        @test start_index(default_nlsolve(nothing, iip, zeros(4), slow, ad)) == 1
+        @test newton_first(default_nlsolve(nothing, iip, zeros(4), slow, ad)) == false
         # ...and so does a GPU `u`
-        @test start_index(default_nlsolve(nothing, iip, SlowIndexVector(zeros(4)), small, ad)) == 1
+        @test newton_first(default_nlsolve(nothing, iip, SlowIndexVector(zeros(4)), small, ad)) == false
     end
 end
 
@@ -118,21 +113,18 @@ tagof(::AutoForwardDiff{CS, T}) where {CS, T} = T
         @test sol.u ≈ [2.0, 2.0]
     end
 
-    # An SCC problem uses one backend for all of its blocks, so a single AutoSpecialize block
-    # is enough to leave the tag to NonlinearSolve.
     full_scc = SCCNonlinearProblem((full, full), explicit, nothing, Val(true))
     mixed_scc = SCCNonlinearProblem((full, auto), explicit, nothing, Val(true))
-    @test _init_autodiff(u, mixed_scc, false, Val(1)) isa AutoFiniteDiff
-    @test tagof(_init_autodiff(u, full_scc, true, Val(1))) <: ForwardDiff.Tag
-    @test tagof(_init_autodiff(u, mixed_scc, true, Val(1))) === Nothing
-    # Every block of the mixed problem gets through Newton's Jacobian with that algorithm,
-    # which is how the SCC solve uses it.
-    alg = default_nlsolve(nothing, Val(true), zeros(4), mixed_scc, true)
-    @test start_index(alg) == 3
-    for block in mixed_scc.probs
-        sol = solve(block, alg; abstol = 1.0e-12)
-        @test SciMLBase.successful_retcode(sol)
-        @test sol.u ≈ [2.0, 2.0]
+    for prob in (full_scc, mixed_scc)
+        alg = default_nlsolve(nothing, Val(true), zeros(4), prob, true)
+        @test newton_first(alg)
+        @test first(alg.algs).autodiff isa AutoFiniteDiff
+        @test alg.algs[2].start_index == 1
+        for block in prob.probs
+            sol = solve(block, alg; abstol = 1.0e-12)
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.u ≈ [2.0, 2.0]
+        end
     end
 end
 
@@ -173,4 +165,53 @@ end
         prob, Rodas5P(); initializealg = BrownFullBasicInit(), abstol = 1.0e-10, reltol = 1.0e-10
     )
     @test integ.u ≈ intended atol = 1.0e-8
+end
+
+function override_initialization(nlprob, u0; nlsolve = nothing)
+    data = OverrideInitData(nlprob, nothing, sol -> copy(sol.u), nothing)
+    f = ODEFunction((du, u, p, t) -> (du .= -u; nothing); initialization_data = data)
+    prob = ODEProblem(f, u0, (0.0, 1.0))
+    return init(
+        prob, Rodas5P(); initializealg = OverrideInit(; nlsolve),
+        abstol = 1.0e-10, reltol = 1.0e-10
+    )
+end
+
+@testset "Newton initialization retains Jacobian-free fallback" begin
+    cubic! = (r, u, p) -> (r .= u .^ 3 .- 1; nothing)
+    block = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(cubic!), [0.0])
+    scc = SCCNonlinearProblem((block, block), explicit, nothing, Val(false))
+    for (prob, n) in ((block, 1), (scc, 2))
+        integ = override_initialization(prob, zeros(n))
+        @test integ.sol.retcode == SciMLBase.ReturnCode.Default
+        @test all(abs.(integ.u .- 1) .< 1.0e-10)
+        @test all(abs.(integ.u .^ 3 .- 1) .< 1.0e-10)
+    end
+end
+
+function strict_init_residual!(r::Vector{Float64}, u::Vector{Float64}, p)
+    r .= u .- 2
+    return nothing
+end
+
+@testset "SCC initialization accepts different residual requirements" begin
+    raw! = (du, u, p, t) -> (du .= u .- 2; nothing)
+    ode = ODEFunction{true, SciMLBase.AutoSpecialize}(raw!)
+    wrapped = init(ODEProblem(ode, [1.5], (0.0, 1.0)), Rodas5P()).f
+    wblock = NonlinearProblem(
+        NonlinearFunction{true, SciMLBase.FullSpecialize}((du, u, p) -> wrapped(du, u, p, 0.0)), [1.5]
+    )
+    ablock = NonlinearProblem(
+        NonlinearFunction{true, SciMLBase.AutoSpecialize}((du, u, p) -> (du .= u .- 3; nothing)), [1.5]
+    )
+    strict = NonlinearProblem(
+        NonlinearFunction{true, SciMLBase.FullSpecialize}(strict_init_residual!), [1.5]
+    )
+    for (blocks, expected) in (((wblock, ablock), [2.0, 3.0]), ((strict, strict), [2.0, 2.0]))
+        prob = SCCNonlinearProblem(blocks, explicit, nothing, Val(false))
+        integ = override_initialization(prob, [1.5, 1.5])
+        @test integ.sol.retcode == SciMLBase.ReturnCode.Default
+        @test integ.u ≈ expected atol = 1.0e-10
+        @test maximum(abs, integ.u .- expected) <= 1.0e-10
+    end
 end
