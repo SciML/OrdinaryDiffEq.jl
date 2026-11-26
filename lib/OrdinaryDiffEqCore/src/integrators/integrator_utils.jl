@@ -84,6 +84,9 @@ end
 function loopheader!(integrator)
     # Apply right after iterators / callbacks
 
+    _has_ks(integrator) && length(integrator.k) > integrator.kshortsize &&
+        resize!(integrator.k, integrator.kshortsize)
+
     # Manual derivative_discontinuity! (any iter, including after the first step)
     # must reinit DAEs *before* accept/update_uprev, otherwise a broken u is
     # committed into uprev (#3932). Callbacks already call initialize_dae! via
