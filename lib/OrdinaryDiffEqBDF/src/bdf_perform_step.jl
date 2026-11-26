@@ -1287,7 +1287,7 @@ function _fbdf_run_rk_start!(integrator, cache, repeat_step)
 end
 
 # Without history FBDF can only take a BDF1 step. Instead take an L-stable SDIRK2 step
-# and leave (t + γdt, t) in u_history so the next step (after `reinitFBDF!` shifts in
+# and seed u_history with values at (t + γdt, t) so the next step (after `reinitFBDF!` shifts in
 # t + dt) has three points and runs BDF2.
 function _fbdf_rk_start!(
         integrator, cache::FBDFConstantCache{max_order}, repeat_step
@@ -1381,7 +1381,7 @@ function initialize!(integrator, cache::FBDFConstantCache{max_order}) where {max
 
     derivative_discontinuity = integrator.derivative_discontinuity
     integrator.derivative_discontinuity = true
-    # History from a previous solve (`reinit!`) is not valid for the restart dt rescale.
+    # Treat reinit! as a fresh start with no accepted steps.
     cache.iters_from_event = 0
     reinitFBDF!(integrator, cache)
     return integrator.derivative_discontinuity = derivative_discontinuity
@@ -1632,7 +1632,7 @@ function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
 
     derivative_discontinuity = integrator.derivative_discontinuity
     integrator.derivative_discontinuity = true
-    # History from a previous solve (`reinit!`) is not valid for the restart dt rescale.
+    # Treat reinit! as a fresh start with no accepted steps.
     cache.iters_from_event = 0
     reinitFBDF!(integrator, cache)
     return integrator.derivative_discontinuity = derivative_discontinuity
