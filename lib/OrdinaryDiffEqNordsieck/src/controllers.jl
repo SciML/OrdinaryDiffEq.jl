@@ -23,8 +23,8 @@ JVODEController(alg; kwargs...) = JVODEController(Float64, alg; kwargs...)
 JVODEController(::Type{QT}, alg; kwargs...) where {QT} =
     JVODEController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
-mutable struct JVODEControllerCache{T, E, C, NLPType} <: AbstractControllerCache
-    controller::JVODEController{CommonControllerOptions{T, NLPType}}
+mutable struct JVODEControllerCache{J <: JVODEController, C, E} <: AbstractControllerCache
+    controller::J
     cache::C
     EEst::E
 end
@@ -33,26 +33,21 @@ function setup_controller_cache(
         alg::JVODE, cache, controller::JVODEController, ::Type{E}, disco_probs,
     ) where {E}
     QT = _resolved_QT(controller.basic)
-    basic = resolve_basic(controller.basic, alg, QT; disco_probs)
-    resolved = JVODEController(basic)
-    return JVODEControllerCache{QT, E, typeof(cache), eltype(disco_probs)}(resolved, cache, oneunit(E))
+    resolved = JVODEController(resolve_basic(controller.basic, alg, QT; disco_probs))
+    return JVODEControllerCache(resolved, cache, oneunit(E))
 end
 
 function setup_controller_cache(
         alg::JVODE, cache, ::DummyController, ::Type{E}, disco_probs,
     ) where {E}
-    bounds = (;
+    basic = (;
         qmin = alg.qmin, qmax = alg.qmax,
         qsteady_min = alg.qsteady_min, qsteady_max = alg.qsteady_max,
+        qmax_first_step = qmax_first_step_default(alg), gamma = gamma_default(alg),
+        failfactor = failfactor_default(alg), discontinuity_detection = false, disco_probs,
     )
-    QT = _exact_bounds_QT(_resolved_QT(bounds))
-    controller = JVODEController(QT, alg; bounds...)
-    return setup_controller_cache(alg, cache, controller, E, disco_probs)
+    return JVODEControllerCache(JVODEController(basic), cache, oneunit(E))
 end
-
-# Rational bounds stay exact in a type wide enough for the controller defaults.
-_exact_bounds_QT(::Type{T}) where {T <: Rational} = promote_type(T, Rational{Int})
-_exact_bounds_QT(::Type{T}) where {T} = T
 
 # Algorithm owns the stepsize logic; controller cache delegates back to
 # alg-level dispatch (mirroring how DummyControllerCache used to behave).

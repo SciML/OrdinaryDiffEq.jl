@@ -509,8 +509,8 @@ end
 Hook called by implicit-solver perform-step routines after a Newton
 iteration fails to converge. The default behavior is to shrink
 `integrator.dt` by [`get_failfactor`](@ref)`(integrator)` so the step is
-retried with a smaller dt. BDF / Nordsieck controllers override this to
-also reduce the working order on repeated Newton failures.
+retried with a smaller dt. Some BDF controllers also lower the working
+order after repeated failures. JVODE keeps its working order.
 """
 function post_newton_controller!(integrator, alg)
     return post_newton_controller!(integrator, integrator.controller_cache, alg)

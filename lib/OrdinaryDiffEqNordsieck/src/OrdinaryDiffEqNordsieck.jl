@@ -9,6 +9,7 @@ import SciMLBase: alg_order, resize_non_user_cache!
 import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqCore: alg_adaptive_order,
     qmin_default, qmax_default, qsteady_min_default, qsteady_max_default,
+    qmax_first_step_default, gamma_default, failfactor_default,
     get_current_alg_order,
     AbstractController, AbstractControllerCache, DummyController, OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,

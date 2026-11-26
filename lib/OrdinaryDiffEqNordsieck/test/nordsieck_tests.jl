@@ -155,6 +155,24 @@ end
     end
 end
 
+@testset "JVODE DummyController retry with rational time" begin
+    h = 1 // 2^26
+    prob = ODEProblem((u, p, t) -> -u / h, 1.0, (0 // 1, h))
+    bounds = map(Float16, (; qmin = 0.25, qmax = 5, qsteady_min = 0.25, qsteady_max = 1.5))
+    alg = JVODE_BDF(; bounds...)
+    tol = 0.1
+    opts = (; dt = h, controller = DummyController(), abstol = tol, reltol = tol)
+
+    integrator = init(prob, alg; opts...)
+    post_newton_controller!(integrator, alg)
+    @test integrator.dt == h / 2
+
+    sol = solve(prob, alg; opts...)
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.t[end] == h
+    @test sol.u[end] ≈ exp(-1) atol = tol rtol = 0
+end
+
 @testset "JVODE_BDF uses BDF formulas" begin
     oscillator!(du, u, p, t) = (du[1] = u[2]; du[2] = -u[1]; nothing)
     prob = ODEProblem(oscillator!, [1.0, 0.0], (0.0, 10.0))
