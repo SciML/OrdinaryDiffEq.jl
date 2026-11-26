@@ -76,19 +76,21 @@ function set_linear_abstol!(linsolve, tol::ScaledResidualTolerance, refreshed)
 end
 
 """
-    linear_residual!(integrator, linsolve, rlin, work, b₁) -> (; residual, bnorm, roundoff, rtol, zero_correction)
+    linear_residual!(integrator, linsolve, rlin, work) -> (; residual, bnorm, roundoff, rtol, zero_correction)
 
-Leave the true residual `b - A u` of `linsolve` in `rlin` and return its norm `residual`
-in the left preconditioner `Pl`, with `bnorm = ‖Pl \\ b‖`, the `roundoff`
-`100 eps (‖Pl \\ b‖ + ‖Pl \\ A u‖ + ‖Pl \\ b₁‖)` of forming it and of evaluating `b`
-itself, which is at the scale of the first residual `b₁`, and the cache's relative
-tolerance `rtol`, and whether the solution `u` is exactly zero (`zero_correction`). `work` is scratch of `b`'s size. Charges `stats.nf` for the product with `A`.
+Leave the true residual `b - A u` of `linsolve` in `rlin` and return its norm `residual` in
+the left preconditioner `Pl`, with `bnorm = ‖Pl \\ b‖`, the `roundoff = 100 eps (‖Pl \\ b‖ +
+‖Pl \\ A u‖)` of forming it, the cache's relative tolerance `rtol`, and whether the solution
+`u` is exactly zero (`zero_correction`). Only the current right-hand side and product enter:
+the first residual of the step is an allowance for the Krylov stopping test
+(`ScaledResidualTolerance`) and says nothing about whether this system was solved. `work` is
+scratch of `b`'s size. Charges `stats.nf` for the product with `A`.
 
 `A` is applied to `u / ‖u‖` and the product scaled by `‖u‖`, so a finite-difference `A`
 perturbs by the same size as in the solve. A finite-difference `A` is linear only to about
 `sqrt(eps)`, so `rtol` is floored at `cbrt(eps)` for it; an exact `A` keeps `reltol`.
 """
-function linear_residual!(integrator, linsolve, rlin, work, b₁)
+function linear_residual!(integrator, linsolve, rlin, work)
     (; A, b, u, Pl, reltol) = linsolve
     T = real(eltype(b))
     unorm = LinearAlgebra.norm(u)
@@ -110,30 +112,28 @@ function linear_residual!(integrator, linsolve, rlin, work, b₁)
     residual = LinearAlgebra.norm(work)
     LinearAlgebra.ldiv!(work, Pl, b)
     bnorm = LinearAlgebra.norm(work)
-    LinearAlgebra.ldiv!(work, Pl, b₁)
-    roundoff = 100 * eps(T) * (bnorm + Auscaled + LinearAlgebra.norm(work))
+    roundoff = 100 * eps(T) * (bnorm + Auscaled)
     rtol = uses_finite_differences(A) ? max(reltol, cbrt(eps(T))) : reltol
     return (; residual, bnorm, roundoff, rtol, zero_correction = iszero(unorm))
 end
 
 """
-    linear_residual_converged!(integrator, linsolve, rlin, work, b₁; evidence = false) -> Bool
+    linear_residual_converged!(integrator, linsolve, rlin, work; evidence = false) -> Bool
 
 Whether `linsolve.u` solves `linsolve.A * u = linsolve.b` to the cache's relative tolerance on
-its true residual (see `linear_residual!`): `residual ≤ rtol * ‖Pl \\ b‖ + roundoff`.
-`abstol` is deliberately not part of the bound: a Krylov solve may stop on it, but an
-allowance taken from another residual can swallow the whole of this one, so it must not
-decide accuracy. A solver can also report convergence on its recurrence residual while the
-iterate is far from the solution: a badly scaled preconditioner can end it at `u = 0` after
-one iteration. With `evidence = true` the tolerance is `sqrt(rtol)`, a guard against gross
-failure that accepts an iterate that clearly reduced the residual. A zero `u` is rejected for
-a nonzero `b` in either case.
+its true residual (see `linear_residual!`): `residual ≤ rtol * ‖Pl \\ b‖ + roundoff`, judged
+against the current iterate only. `abstol` and the first residual are deliberately not part of
+the bound: a Krylov solve may stop on them, but an allowance taken from another residual can
+swallow the whole of this one. A solver can also report convergence on its recurrence residual
+while the iterate is far from the solution: a badly scaled preconditioner can end it at
+`u = 0` after one iteration. With `evidence = true` the tolerance is `sqrt(rtol)`, a guard
+against gross failure that accepts an iterate that clearly reduced the residual. A zero `u` is
+rejected for a nonzero `b` in either case.
 """
-function linear_residual_converged!(integrator, linsolve, rlin, work, b₁; evidence = false)
+function linear_residual_converged!(integrator, linsolve, rlin, work; evidence = false)
     (; residual, bnorm, roundoff, rtol, zero_correction) =
-        linear_residual!(integrator, linsolve, rlin, work, b₁)
-    # A zero correction for a nonzero right-hand side is never accepted: the roundoff term
-    # includes the first residual, which can exceed the whole of this one.
+        linear_residual!(integrator, linsolve, rlin, work)
+    # A zero correction for a nonzero right-hand side is never accepted.
     zero_correction && bnorm > 0 && return false
     return residual <= (evidence ? sqrt(rtol) : rtol) * bnorm + roundoff
 end

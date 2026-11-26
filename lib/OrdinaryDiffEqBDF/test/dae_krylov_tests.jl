@@ -317,3 +317,54 @@ end
         @test entries > sol.stats.nnonliniter
     end
 end
+
+# Acceptance is judged against the current iterate only: the first residual (here `1e14`)
+# allows the Krylov solve to stop early, but must not excuse a retry that left the algebraic
+# constraint unresolved. With one GMRES iteration the cold retry cannot satisfy it and the
+# step is rejected; with two it can.
+@testset "Retry that does not resolve the constraint is rejected" begin
+    h = 1.0e-14
+    prob = DAEProblem(
+        (r, du, u, p, t) -> (
+            r[1] = du[1] - (t / h) / h + u[1]^2 / 64; r[2] = u[2] - u[1]^2 / 4; nothing
+        ),
+        [0.0, 0.0], [0.0, 0.0], (0.0, h)
+    )
+    solve_with(itmax) = solve(
+        prob,
+        DFBDF(;
+            linsolve = KrylovJL_GMRES(;
+                precs = Returns((I, I)), warm_start = LinearSolve.WarmStart.None, itmax
+            )
+        );
+        initializealg = SciMLBase.NoInit(), dt = h, adaptive = false, reltol = 1.0e-3,
+        abstol = 1.0e-8
+    )
+    sol = solve_with(1)
+    @test !successful_retcode(sol)
+    @test sol.t[end] == 0.0
+
+    sol = solve_with(2)
+    @test successful_retcode(sol)
+    @test sol.t[end] == h
+    @test sol.u[end] ≈ [1.0, 0.25] atol = 1.0e-8
+    @test abs(sol.u[end][2] - sol.u[end][1]^2 / 4) <= 1.0e-8
+end
+
+# A rejected cold retry still charges both linear solves.
+@testset "Rejected retry is counted in stats.nsolve" begin
+    prob = DAEProblem(decay!, [-1.0], [1.0], (0.0, 0.1))
+    trace = IOBuffer()
+    linsolve = KrylovJL_GMRES(;
+        precs = Returns((Diagonal([1.0e20]), I)), warm_start = LinearSolve.WarmStart.None,
+        verbose = 1, iostream = trace
+    )
+    sol = solve(
+        prob, DFBDF(; linsolve); initializealg = SciMLBase.NoInit(), dt = 0.1, adaptive = false
+    )
+    @test sol.retcode == SciMLBase.ReturnCode.ConvergenceFailure
+    @test sol.t[end] == 0.0
+    entries = count("GMRES", String(take!(trace)))
+    @test entries == 2
+    @test sol.stats.nsolve == 2
+end

@@ -806,15 +806,15 @@ end
         reltol
     end
 
-    # Inexact Newton for the matrix-free DAE `W`: every Krylov solve of the step stops at
-    # `‖P(b - W dz)‖ ≤ reltol * (‖P b‖ + ‖P b₁‖)`, where `b₁` is the step's first Newton
-    # residual and `P` the left preconditioner the solve uses. Both terms scale with `F`,
-    # so a rescaled residual gets the same `dz`, and `dz = 0` is accepted only once `F` has
-    # fallen to `reltol` of its value at the predictor. `‖P b₁‖` keeps a late iterate,
-    # whose `b` is near the roundoff floor of `W * dz`, from being held to `reltol` of that
-    # floor, which it cannot reach. `P` can change when `precs` is called for the solve, so
-    # `dolinsolve` measures `b₁` in it once installed. The solver's own convergence report
-    # is then checked against the true residual in `P`'s norm.
+    # Inexact Newton for the matrix-free DAE `W`: a Krylov solve stops at
+    # `‖P(b - W dz)‖ ≤ reltol * ‖P b‖ + abstol`, where `b` is the current Newton residual, `P`
+    # the left preconditioner the solve uses and `abstol = reltol * ‖P b₁‖` an allowance taken
+    # from the step's first residual `b₁`. Both terms scale with `F`, so a rescaled residual
+    # gets the same `dz`. The allowance keeps a late iterate, whose `b` is near the roundoff
+    # floor of `W * dz`, from being held to `reltol` of that floor, which it cannot reach. It
+    # is a stopping tolerance only: whether the correction is accepted is judged below against
+    # the current iterate alone. `P` can change when `precs` is called for the solve, so
+    # `dolinsolve` measures `b₁` in it once installed.
     linabstol = if matrix_free_dae
         iter == 1 && copyto!(cache.b₁, b)
         (; abstol = ScaledResidualTolerance(_vec(cache.b₁), _vec(atmp), linreltol, true))
@@ -835,16 +835,16 @@ end
     end
 
     if matrix_free_dae
-        # The Krylov tolerance includes an allowance taken from the first residual, which keeps
-        # late iterations from chasing roundoff but can swallow a small residual in another
-        # component. The correction is accepted only if its true residual meets the tolerance
-        # relative to this iterate's own residual (plus roundoff); otherwise one cold retry
-        # without the allowance decides, and the step is rejected unless the retry clearly
-        # reduced the residual. The solver's return code is not consulted: Krylov.jl reports
-        # breakdowns as failures with a correct iterate, and the true residual is the test.
-        ok = linear_residual_converged!(
-            integrator, linsolve, _vec(cache.rlin), _vec(atmp), _vec(cache.b₁)
-        )
+        # Every linear solve is charged as it returns, a retry that is rejected included.
+        if SciMLBase.has_stats(integrator)
+            integrator.stats.nsolve += 1
+        end
+        # The correction is accepted only if its true residual meets the tolerance relative to
+        # this iterate's own residual (plus roundoff). Otherwise one cold retry without the
+        # allowance decides, and the step is rejected unless the retry supplies a nonzero
+        # correction that clearly reduced the residual. The solver's return code is not
+        # consulted: Krylov.jl reports breakdowns as failures with a correct iterate.
+        ok = linear_residual_converged!(integrator, linsolve, _vec(cache.rlin), _vec(atmp))
         if !ok
             fill!(dz, zero(eltype(dz)))
             dolinsolve(
@@ -855,17 +855,17 @@ end
                 integrator.stats.nsolve += 1
             end
             ok = linear_residual_converged!(
-                integrator, linsolve, _vec(cache.rlin), _vec(atmp), _vec(cache.b₁);
-                evidence = true
+                integrator, linsolve, _vec(cache.rlin), _vec(atmp); evidence = true
             )
         end
         ok || return convert(eltype(atmp), Inf)
-    elseif !linsolve_succeeded(linres)
-        return convert(eltype(atmp), Inf)
-    end
-
-    if SciMLBase.has_stats(integrator)
-        integrator.stats.nsolve += 1
+    else
+        if !linsolve_succeeded(linres)
+            return convert(eltype(atmp), Inf)
+        end
+        if SciMLBase.has_stats(integrator)
+            integrator.stats.nsolve += 1
+        end
     end
 
     # relaxed Newton

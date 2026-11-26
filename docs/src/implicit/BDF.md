@@ -61,12 +61,14 @@ and tolerances to `solve`.
 A Krylov solve takes one scalar relative tolerance. It is the requested `reltol` (also for a
 fixed step); a vector `reltol` is reduced to its smallest component, and the result is floored
 at working precision (`eps`), so a zero component cannot make the stopping tolerances zero.
-The integration tolerances stay componentwise. A correction is accepted only if its true
-residual meets that tolerance relative to the residual of the same Newton iteration, plus
-roundoff, and a zero correction is never accepted for a nonzero right-hand side, however large
-the first residual is; otherwise one cold retry decides, and the step is rejected unless the
-retry supplies a nonzero correction that clearly reduced the residual. Every linear solve,
-the retry included, is counted in `stats.nsolve`. Because the stopping test is on a residual norm, rows of the residual
+The integration tolerances stay componentwise. A correction is accepted only if its true residual meets that tolerance relative to the residual of
+the same Newton iteration, plus the roundoff of forming it: the right-hand side and product of the
+current iterate alone. The allowance taken from the step's first residual only lets the Krylov
+solve stop early; it never excuses an unresolved correction. A zero correction is never accepted for
+a nonzero right-hand side. Otherwise one cold retry without the allowance decides, and the step is
+rejected unless the retry supplies a nonzero correction that clearly reduced the residual
+(`sqrt(reltol)` of the right-hand side). Every linear solve, a rejected retry included, is counted in
+`stats.nsolve`. Because the stopping test is on a residual norm, rows of the residual
 scaled orders of magnitude below the others are invisible to it: give such a problem a
 preconditioner that equilibrates the rows. DFBDF cannot shrink the state dimension after
 initialization on the matrix-free path.
