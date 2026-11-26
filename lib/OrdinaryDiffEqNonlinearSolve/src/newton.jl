@@ -1023,7 +1023,7 @@ function linesearch_directional_slope(merit, f, internalnorm, z, dz, ztmp, ustep
     T <: AbstractFloat || return nothing
     norm = internalnorm === DiffEqBase.ODE_DEFAULT_NORM ? linesearch_rms_norm : internalnorm
     try
-        return ForwardDiff.derivative(zero(T)) do step
+        return DifferentiationInterface.derivative(AutoForwardDiff(), zero(T)) do step
             scratch(buffer) = similar(buffer, promote_type(eltype(buffer), typeof(step)))
             trial = scratch(atmp)
             @.. trial = z - dz * step
@@ -1113,9 +1113,15 @@ function relax!(
                         # A stateful mass operator may cache coefficients from the probe.
                         if isfinite(slope_full) && slope_full < 0 &&
                                 (isdae || !(f.mass_matrix isa AbstractSciMLOperator))
-                            directional_slope = linesearch_directional_slope(
-                                merit, f, opts.internalnorm, z, dz, ztmp, ustep, k, atmp
+                            directional_slope = nothing
+                            autodiff = OrdinaryDiffEqCore.get_current_alg_autodiff(
+                                integrator.alg, integrator.cache
                             )
+                            if ADTypes.dense_ad(autodiff) isa AutoForwardDiff
+                                directional_slope = linesearch_directional_slope(
+                                    merit, f, opts.internalnorm, z, dz, ztmp, ustep, k, atmp
+                                )
+                            end
                             if directional_slope !== nothing && isfinite(directional_slope) && directional_slope < 0
                                 slope = directional_slope
                             end

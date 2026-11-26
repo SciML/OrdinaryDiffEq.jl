@@ -1,6 +1,7 @@
 using OrdinaryDiffEqNonlinearSolve: NLNewton
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
+using ADTypes: AutoFiniteDiff
 using DiffEqDevTools
 using DiffEqBase
 using LineSearches
@@ -137,6 +138,41 @@ end
     )
     @test sol.retcode == SciMLBase.ReturnCode.Success
     @test sol.u[end] == [1 - δ]
+end
+
+@testset "in-place line search keeps a finite-diff primal-only RHS" begin
+    δ = 2.0^-28
+    mass = 1.0
+    function rhs!(du, u, p, t)
+        x = reinterpret(Float64, reinterpret(UInt64, u[1]))
+        du[1] = x - (1 - x) / δ
+        return nothing
+    end
+    jac!(J, u, p, t) = (J[1, 1] = 1 + inv(δ); nothing)
+    predictor!(upred, uprev, p, t, dt) = (upred[1] = 1; nothing)
+    prob = ODEProblem(
+        ODEFunction(rhs!; jac = jac!, mass_matrix = Diagonal([mass])), [1.0], (0.0, 1.0)
+    )
+    measured = Float64[]
+    function check_slopes(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+        push!(measured, dϕ0)
+        @test dϕ0 == 0.0
+        return BackTracking()(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+    end
+    sol = solve(
+        prob,
+        ImplicitEuler(
+            autodiff = AutoFiniteDiff(),
+            nlsolve = NLNewton(predictor = predictor!, relax = check_slopes),
+        );
+        dt = 1.0, adaptive = false, abstol = 0.1, reltol = 0.0
+    )
+    @test sol.retcode == SciMLBase.ReturnCode.Success
+    @test sol.u[end] == [1 - δ]
+    @test measured == [0.0]
+    rhs = similar(sol.u[end])
+    rhs!(rhs, sol.u[end], prob.p, sol.t[end])
+    @test abs(mass * (sol.u[end][1] - prob.u0[1]) - rhs[1]) <= 0.1
 end
 
 @testset "fixed-step ImplicitEuler respects solve-level adaptivity (#4905)" begin
