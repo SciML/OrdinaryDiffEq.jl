@@ -38,7 +38,7 @@ using OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplici
     isnewton,
     set_new_W!, set_W_γdt!, diffdir,
     get_W, isfirstcall, isfirststage, isJcurrent,
-    get_new_W_γdt_cutoff, isWmethod,
+    get_new_W_γdt_cutoff, isWmethod, _current_alg,
     TryAgain,
     Divergence, constvalue, @SciMLMessage
 
@@ -70,6 +70,16 @@ concrete_mass_matrix(mm::AbstractSciMLOperator) = convert(AbstractMatrix, mm)
 # `findall` visits all n² entries of a `Diagonal`, so that case only looks at the diagonal.
 mass_matrix_nonzeros(mm) = findall(!iszero, mm)
 mass_matrix_nonzeros(mm::Diagonal) = map(i -> CartesianIndex(i, i), findall(!iszero, mm.diag))
+
+"""
+    has_mass_matrix(f)
+
+Whether `f` is a function type that carries a `mass_matrix` field. `DAEFunction` is fully
+implicit — its residual already contains the `du` coefficients — so it has none, and the
+mass-matrix seeding below is skipped for it entirely: a DAE `jac_prototype` must already
+be the complete pattern of `∂F/∂u + γ ∂F/∂(du)`.
+"""
+has_mass_matrix(f) = hasfield(typeof(f), :mass_matrix)
 
 # These will error if called without the extension, but should never be called
 # on non-sparse types due to the is_sparse checks
