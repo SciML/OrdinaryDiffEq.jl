@@ -37,6 +37,10 @@ function SciMLBase.forwarddiffs_model(alg::CompositeAlgorithm)
     return any(_autodiff_is_forward, alg.algs)
 end
 
+function SciMLBase.has_lazy_interpolation(alg::CompositeAlgorithm)
+    return any(SciMLBase.has_lazy_interpolation, alg.algs)
+end
+
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 
 function SciMLBase.forwarddiff_chunksize(
