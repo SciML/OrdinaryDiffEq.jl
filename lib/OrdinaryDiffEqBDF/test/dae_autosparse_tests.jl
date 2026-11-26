@@ -413,7 +413,13 @@ end
 end
 
 @testset "The finite-difference fallback holds complex-step perturbations" begin
-    complex_step_residual!(r, du, u, p, t) = (r .= du .+ 2 .* u; nothing)
+    # The comparison on `u` defeats the global tracer once armed, so ∂F/∂u goes through the
+    # uncompressed fallback; ∂F/∂du holds `u` fixed and stays traceable.
+    function complex_step_residual!(r, du, u, p, t)
+        r .= du .+ 2 .* u
+        r[1] += t >= 0.5 && real(u[1]) < 0 ? u[1] : 0.0
+        return nothing
+    end
     armed = Ref(false)
     backend = AutoSparse(
         AutoFiniteDiff(fdjtype = Val(:complex)); sparsity_detector = ArmedDetector(armed),
@@ -428,7 +434,7 @@ end
         nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
     )
     @test Matrix(nlsolver.cache.J) ≈ [2.0 0.0; 0.0 2.0] atol = 1.0e-10
-    # J_du is traced, so it takes the compressed path, which is only accurate to ~2e-8 here.
+    # J_du takes the compressed path, which is only accurate to ~2e-8 here.
     @test Matrix(nlsolver.cache.dae_jacobians.J_du) ≈ [1.0 0.0; 0.0 1.0] atol = 1.0e-6
 end
 
