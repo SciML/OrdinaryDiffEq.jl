@@ -610,13 +610,11 @@ function alg_cache(
     return MEBDF2ConstantCache(nlsolver)
 end
 
-# Tableau for the `rk_start` restart step. It only runs without a usable previous-step
-# interpolant, where the interpolant predictors seed u = uprev (the Hermite branch, which
-# would misread FBDF's Chebyshev-node `k`, is never reached). Unsmoothed, the SDIRK
-# estimate grows like hλ in stiff components and rejects far smaller steps than BDF1.
+# Restart attempts cannot use a previous-step interpolant. Smooth the embedded
+# estimate so stiff components do not force smaller steps than BDF1.
 function _fbdf_start_tableau(T, T2)
     return AlexanderSDIRK2ESDIRKIMEXTableau(
-        T, T2; predictor = OrdinaryDiffEqCore.Predictor.MaxOrder, smooth_est = true
+        T, T2; predictor = Val(:constant_state), smooth_est = true
     )
 end
 

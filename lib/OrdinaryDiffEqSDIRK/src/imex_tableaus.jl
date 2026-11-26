@@ -29,7 +29,7 @@ struct ESDIRKIMEXTableau{T, T2, E}
     stage1_extrapolation::Bool
     # Overrides for callers that run the step body under an algorithm other than the
     # tableau's own (e.g. FBDF's restart step); `nothing` defers to the algorithm.
-    predictor::Union{Nothing, Predictor.T}
+    predictor::Union{Nothing, Predictor.T, Val{:constant_state}}
     smooth_est::Union{Nothing, Bool}
 end
 
@@ -2600,18 +2600,26 @@ function TRBDF2ESDIRKIMEXTableau(T, T2)
     )
 end
 
-# Alexander's 2-stage SDIRK (order 2, L-stable, stiffly accurate) with the embedded
-# order-1 pair b̂ = [1, 0]. Neither the method nor its estimate evaluates f(uprev),
-# which suits restarts after a state jump, where f(uprev) is off the slow manifold.
+"""
+    AlexanderSDIRK2ESDIRKIMEXTableau(T, T2; kwargs...)
+
+Construct Alexander's two-stage, L-stable, stiffly accurate SDIRK tableau with
+second-order weights and embedded first-order weights `[1, 0]`. Use `T` for
+coefficients and `T2` for stage abscissae. Forward keyword options to
+`ESDIRKIMEXTableau`.
+
+For FBDF restarts, `predictor = Val(:constant_state)` starts both implicit
+stage solves at the current state without accessing a previous-step interpolant.
+"""
 function AlexanderSDIRK2ESDIRKIMEXTableau(T, T2; kwargs...)
     s = 2
-    γ = convert(T, 1 - sqrt(2) / 2)
+    γ = inv(T(2) + sqrt(T(2)))
     Ai = zeros(T, s, s)
     Ai[1, 1] = γ
     Ai[2, 1] = 1 - γ
     Ai[2, 2] = γ
     bi = T[1 - γ, γ]
-    c = T2[convert(T2, 1 - sqrt(2) / 2), one(T2)]
+    c = T2[inv(T2(2) + sqrt(T2(2))), one(T2)]
     btilde = T[-γ, γ]
     return ESDIRKIMEXTableau(
         Ai, bi, Matrix{T}(undef, 0, 0), T[], c, btilde, T[], Vector{T2}[],

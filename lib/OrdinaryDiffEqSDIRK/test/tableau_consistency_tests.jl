@@ -43,3 +43,12 @@ end
         end
     end
 end
+
+@testset "Alexander SDIRK2 BigFloat order conditions" begin
+    tab = SDIRK.AlexanderSDIRK2ESDIRKIMEXTableau(BigFloat, BigFloat)
+    tol = 4eps(BigFloat)
+    @test abs(sum(tab.bi) - 1) <= tol
+    @test maximum(abs, tab.Ai * ones(BigFloat, 2) - tab.c) <= tol
+    @test abs(sum(tab.bi .* tab.c) - 1 // 2) <= tol
+    @test haskey(Base.Docs.meta(SDIRK), Base.Docs.Binding(SDIRK, :AlexanderSDIRK2ESDIRKIMEXTableau))
+end

@@ -158,7 +158,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[2] > 0
             copyto!(zs[2], zs[split_guess[2]])
         else
-            if predictor == Predictor.Trivial
+            if predictor === Val(:constant_state)
+                # Start Newton at uprev: the stage state is tmp + γ*z.
+                @.. broadcast = false zs[2] = (uprev - tmp) / γ
+            elseif predictor == Predictor.Trivial
                 fill!(zs[2], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[2], zs[1])
@@ -167,10 +170,8 @@ end
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
                 # A rejected attempt overwrites `integrator.k`, so after `last_stepfail`
                 # it no longer holds the interpolation data for [tprev, t] and the
-                # previous-step interpolant cannot seed the retry. Predict u = uprev
-                # instead: z = 0 would mean u = tmp, which carries the explicit stages'
-                # extrapolation and is far off for large stiff steps.
-                @.. broadcast = false zs[2] = (uprev - tmp) * inv(γ)
+                # previous-step interpolant cannot seed the retry.
+                fill!(zs[2], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -262,7 +263,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[3] = zs[2] + (zs[2] - zs[1]) * ((c[3] - c[2]) / (c[2] - c[1]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[3] = (uprev - tmp) * inv(γ)
+                fill!(zs[3], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -352,7 +353,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[4] = zs[3] + (zs[3] - zs[2]) * ((c[4] - c[3]) / (c[3] - c[2]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[4] = (uprev - tmp) * inv(γ)
+                fill!(zs[4], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -443,7 +444,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[5] = zs[4] + (zs[4] - zs[3]) * ((c[5] - c[4]) / (c[4] - c[3]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[5] = (uprev - tmp) * inv(γ)
+                fill!(zs[5], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -535,7 +536,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[6] = zs[5] + (zs[5] - zs[4]) * ((c[6] - c[5]) / (c[5] - c[4]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[6] = (uprev - tmp) * inv(γ)
+                fill!(zs[6], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -628,7 +629,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[7] = zs[6] + (zs[6] - zs[5]) * ((c[7] - c[6]) / (c[6] - c[5]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[7] = (uprev - tmp) * inv(γ)
+                fill!(zs[7], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -722,7 +723,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[8] = zs[7] + (zs[7] - zs[6]) * ((c[8] - c[7]) / (c[7] - c[6]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[8] = (uprev - tmp) * inv(γ)
+                fill!(zs[8], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -817,7 +818,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[9] = zs[8] + (zs[8] - zs[7]) * ((c[9] - c[8]) / (c[8] - c[7]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[9] = (uprev - tmp) * inv(γ)
+                fill!(zs[9], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -913,7 +914,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[10] = zs[9] + (zs[9] - zs[8]) * ((c[10] - c[9]) / (c[9] - c[8]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[10] = (uprev - tmp) * inv(γ)
+                fill!(zs[10], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -1010,7 +1011,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[11] = zs[10] + (zs[10] - zs[9]) * ((c[11] - c[10]) / (c[10] - c[9]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[11] = (uprev - tmp) * inv(γ)
+                fill!(zs[11], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -1108,7 +1109,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 @.. broadcast = false zs[12] = zs[11] + (zs[11] - zs[10]) * ((c[12] - c[11]) / (c[11] - c[10]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                @.. broadcast = false zs[12] = (uprev - tmp) * inv(γ)
+                fill!(zs[12], zero(eltype(u)))
             elseif predictor == Predictor.MaxOrder
                 SciMLBase.addsteps!(integrator)
                 if _uses_hermite_interp(alg)
@@ -1445,14 +1446,16 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if predictor === Val(:constant_state)
+                z_guess = (uprev - tmp) / γ
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z1
             elseif predictor == Predictor.StageExtrap
                 z_guess = z1
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[2] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -1520,7 +1523,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z2 + (z2 - z1) * ((c[3] - c[2]) / (c[2] - c[1]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[3] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -1585,7 +1588,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z3 + (z3 - z2) * ((c[4] - c[3]) / (c[3] - c[2]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[4] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -1650,7 +1653,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z4 + (z4 - z3) * ((c[5] - c[4]) / (c[4] - c[3]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[5] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -1715,7 +1718,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z5 + (z5 - z4) * ((c[6] - c[5]) / (c[5] - c[4]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[6] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -1780,7 +1783,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z6 + (z6 - z5) * ((c[7] - c[6]) / (c[6] - c[5]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[7] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -1845,7 +1848,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z7 + (z7 - z6) * ((c[8] - c[7]) / (c[7] - c[6]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[8] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -1910,7 +1913,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z8 + (z8 - z7) * ((c[9] - c[8]) / (c[8] - c[7]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[9] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -1975,7 +1978,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z9 + (z9 - z8) * ((c[10] - c[9]) / (c[9] - c[8]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[10] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -2040,7 +2043,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z10 + (z10 - z9) * ((c[11] - c[10]) / (c[10] - c[9]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[11] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
@@ -2105,7 +2108,7 @@ end
             elseif predictor == Predictor.StageExtrap
                 z_guess = z11 + (z11 - z10) * ((c[12] - c[11]) / (c[11] - c[10]))
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder) && (integrator.success_iter == 0 || integrator.reeval_fsal || integrator.last_stepfail)
-                z_guess = (uprev - tmp) * inv(γ)
+                z_guess = zero(u)
             elseif predictor in (Predictor.MaxOrder, Predictor.VariableOrder, Predictor.CutoffOrder)
                 SciMLBase.addsteps!(integrator)
                 Θ_pred = (t + c[12] * dt - integrator.tprev) / (integrator.t - integrator.tprev)
