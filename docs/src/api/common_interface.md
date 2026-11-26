@@ -146,6 +146,30 @@ Filter = x -> x === SciMLOperators.AbstractSciMLOperator
 
 ## Default algorithm
 
+For stiff ODE systems above 500 states, `DefaultODEAlgorithm` and
+`DefaultImplicitODEAlgorithm` use `FBDF` with a storage-specific linear solver when
+the Jacobian prototype supports it. The same policy applies to `solve(prob)`.
+An explicit `linsolve` passed to either algorithm takes precedence.
+
+| Jacobian prototype | Linear solve for the stiff branch |
+|:--|:--|
+| `SparseMatrixCSC` | LinearSolve's sparse factorization, including its build-dependent GPL and non-GPL choices |
+| CPU strided-vector-backed `Diagonal`, `Bidiagonal`, or `Tridiagonal` | LinearSolve's corresponding diagonal or banded solve |
+| CPU `BandedMatrix` with a stored diagonal | Banded QR through LinearSolve |
+| CPU `AlmostBandedMatrix` with a stored diagonal | LinearSolve's almost-banded solve |
+| CPU `BlockDiagonal` with square dense blocks | Blockwise LU with LinearSolve 5.15 or later |
+| `BlockBandedMatrix` or `BandedBlockBandedMatrix` | Block-banded QR for in-place ODE functions with aligned block partitions, a stored diagonal, and a `UniformScaling` mass matrix |
+| `CuSparseMatrixCSR` with CUDSS loaded | CUDSS sparse LU |
+
+The optional solver packages activate through extensions when loaded. Matrix-free
+GMRES remains the default for dense or missing prototypes, for `CuSparseMatrixCSC`
+and GPU CSR without CUDSS, and for storage the Jacobian or shifted-matrix cache
+cannot assemble. Examples include `Symmetric`, `Hermitian`, `SymTridiagonal`,
+triangular wrappers such as `UpperTriangular`, fixed-pattern `FixedSparseCSC`,
+and CPU CSR from SparseMatricesCSR.jl. The CPU CSR type's `similar` produces a
+dense matrix, and the fixed CSC type's index storage cannot be resized by the
+sparse solve cache.
+
 ```@docs
 OrdinaryDiffEqDefault.DefaultODEAlgorithm
 OrdinaryDiffEqDefault.DefaultImplicitODEAlgorithm
