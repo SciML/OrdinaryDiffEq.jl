@@ -532,6 +532,10 @@ methods that own the actual logic. The per-knob accessors
 ([`get_qmin`](@ref) etc.) fall back to fields on `integrator.alg` for
 SDE algorithms still using this transitional path.
 
+For `OrdinaryDiffEqNordsieck.JVODE`, selecting `DummyController()` uses a
+`JVODEController` cache initialized from the algorithm's step-size options.
+The dedicated cache handles corrector failures through the controller hook.
+
 New code should prefer dedicated controllers like
 [`OrdinaryDiffEqBDF.BDFController`](@ref) or
 [`OrdinaryDiffEqNordsieck.JVODEController`](@ref), which expose the

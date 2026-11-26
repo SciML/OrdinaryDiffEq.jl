@@ -10,7 +10,7 @@ import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
 import OrdinaryDiffEqCore: alg_adaptive_order,
     qmin_default, qmax_default, qsteady_min_default, qsteady_max_default,
     get_current_alg_order,
-    AbstractController, AbstractControllerCache, OrdinaryDiffEqAdaptiveAlgorithm,
+    AbstractController, AbstractControllerCache, DummyController, OrdinaryDiffEqAdaptiveAlgorithm,
     OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
     alg_cache, OrdinaryDiffEqMutableCache,
     OrdinaryDiffEqConstantCache,

@@ -1,8 +1,7 @@
 using OrdinaryDiffEqNordsieck
 using OrdinaryDiffEqNordsieck: JVODEController
-using OrdinaryDiffEqCore: AbstractController, AbstractControllerCache, loopfooter!,
-    loopheader!, perform_step!
-import OrdinaryDiffEqCore: post_newton_controller!, setup_controller_cache
+using OrdinaryDiffEqCore: AbstractController, AbstractControllerCache, DummyController, get_qmax
+import OrdinaryDiffEqCore: get_EEst, post_newton_controller!, set_EEst!, setup_controller_cache
 using OrdinaryDiffEqTsit5: Tsit5
 using DiffEqDevTools, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_bigfloatlinear,
@@ -43,24 +42,40 @@ end
     end
 end
 
+const JVODEFailureSnapshot = @NamedTuple{
+    dt::Float64, force_stepfail::Bool, dts::Vector{Float64}, retry_dt::Float64,
+}
+
 struct JVODEHookController <: AbstractController
-    failed_dts::Vector{Float64}
+    snapshots::Vector{JVODEFailureSnapshot}
+    quarter_step::Bool
 end
 
-mutable struct JVODEHookControllerCache{C, E} <: AbstractControllerCache
+struct JVODEHookControllerCache{C, S} <: AbstractControllerCache
     controller::C
-    EEst::E
-    failed_dts::Vector{Float64}
+    stock::S
+    snapshots::Vector{JVODEFailureSnapshot}
+    quarter_step::Bool
 end
 
 function setup_controller_cache(alg, cache, controller::JVODEHookController, ::Type{E}, disco_probs) where {E}
-    stock = setup_controller_cache(alg, cache, JVODEController(; failfactor = 2), E, disco_probs)
-    return JVODEHookControllerCache(stock.controller, stock.EEst, controller.failed_dts)
+    stock = setup_controller_cache(alg, cache, JVODEController(; failfactor = 3), E, disco_probs)
+    return JVODEHookControllerCache(stock.controller, stock, controller.snapshots, controller.quarter_step)
 end
 
+get_EEst(cache::JVODEHookControllerCache) = get_EEst(cache.stock)
+set_EEst!(cache::JVODEHookControllerCache, val) = set_EEst!(cache.stock, val)
+
 function post_newton_controller!(integrator, cache::JVODEHookControllerCache, alg)
-    push!(cache.failed_dts, integrator.dt)
-    integrator.dt /= 4
+    dt = integrator.dt
+    force_stepfail = integrator.force_stepfail
+    dts = copy(integrator.cache.dts)
+    if cache.quarter_step
+        integrator.dt /= 4
+    else
+        post_newton_controller!(integrator, cache.stock, alg)
+    end
+    push!(cache.snapshots, (; dt, force_stepfail, dts, retry_dt = integrator.dt))
     return nothing
 end
 
@@ -76,28 +91,39 @@ end
     @testset "$(alg.algorithm), in-place = $(SciMLBase.isinplace(prob))" for
         alg in (JVODE_Adams(), JVODE_BDF()),
             prob in (ODEProblem(f!, [1.0], (0.0, 1.0)), ODEProblem(f, [1.0], (0.0, 1.0)))
-        @testset "Custom post-Newton hook" begin
-            failed_dts = Float64[]
-            sol = solve(prob, alg; opts..., controller = JVODEHookController(failed_dts))
-            @test first(failed_dts, 2) == [1.0, 0.25]
+        @testset "DummyController" begin
+            @testset "Direct failure hook" begin
+                alg_with_qmax = JVODE(alg.algorithm; qmax = 5.0)
+                integrator = init(prob, alg_with_qmax; opts..., controller = DummyController())
+                @test get_qmax(integrator) == 5
+                @test integrator.dt == opts.dt
+                post_newton_controller!(integrator, alg_with_qmax)
+                @test integrator.dt == opts.dt / 2
+            end
+
+            sol = solve(prob, alg; opts..., controller = DummyController())
             @test SciMLBase.successful_retcode(sol)
             @test sol.t[end] == 1.0
             @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
         end
 
-        @testset "Step history and configured failure factor" begin
-            integrator = init(prob, alg; opts..., controller = JVODEController(; failfactor = 3))
+        @testset "$name" for (name, quarter_step, factor) in (
+                ("Custom post-Newton hook", true, 4),
+                ("Configured failure factor", false, 3),
+            )
+            snapshots = JVODEFailureSnapshot[]
+            controller = JVODEHookController(snapshots, quarter_step)
+            integrator = init(prob, alg; opts..., controller)
             history = copy(integrator.cache.dts)
             # The first trial initializes the leading history entry before shifting it.
             history[1] = opts.dt
-            for trial_dt in (1.0, 1 / 3)
-                loopheader!(integrator)
-                @test integrator.dt == trial_dt
-                perform_step!(integrator, integrator.cache)
-                @test integrator.force_stepfail
-                @test integrator.cache.dts == history
-                loopfooter!(integrator)
-                @test integrator.dt == trial_dt / 3
+            step!(integrator)
+            trials = first(snapshots, 2)
+            @test [trial.dt for trial in trials] == [1.0, 1 / factor]
+            for trial in trials
+                @test trial.force_stepfail
+                @test trial.dts == history
+                @test trial.retry_dt == trial.dt / factor
             end
             sol = solve!(integrator)
             @test SciMLBase.successful_retcode(sol)

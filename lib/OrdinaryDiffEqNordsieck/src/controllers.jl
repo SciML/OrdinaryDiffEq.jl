@@ -38,6 +38,16 @@ function setup_controller_cache(
     return JVODEControllerCache{QT, E, typeof(cache), eltype(disco_probs)}(resolved, cache, oneunit(E))
 end
 
+function setup_controller_cache(
+        alg::JVODE, cache, ::DummyController, ::Type{E}, disco_probs,
+    ) where {E}
+    controller = JVODEController(;
+        qmin = alg.qmin, qmax = alg.qmax,
+        qsteady_min = alg.qsteady_min, qsteady_max = alg.qsteady_max,
+    )
+    return setup_controller_cache(alg, cache, controller, E, disco_probs)
+end
+
 # Algorithm owns the stepsize logic; controller cache delegates back to
 # alg-level dispatch (mirroring how DummyControllerCache used to behave).
 @inline stepsize_controller!(integrator, ::JVODEControllerCache, alg) =
