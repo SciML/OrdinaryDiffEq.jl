@@ -47,23 +47,23 @@ end
     prob = ODEProblem((u, p, t) -> 1.0, 41.0, (0.0, 1.0))
 
     sol = solve(prob, VCABM3())
-    @test sol.u[end] ≈ 42.0 atol = 1e-9
+    @test sol.u[end] ≈ 42.0 atol = 1.0e-9
     sol = solve(prob, VCABM4())
-    @test sol.u[end] ≈ 42.0 atol = 1e-9
+    @test sol.u[end] ≈ 42.0 atol = 1.0e-9
     sol = solve(prob, VCABM5())
-    @test sol.u[end] ≈ 42.0 atol = 1e-9
+    @test sol.u[end] ≈ 42.0 atol = 1.0e-9
 
     sol = solve(prob, VCABM())
-    @test sol.u[end] ≈ 42.0 atol = 1e-9
+    @test sol.u[end] ≈ 42.0 atol = 1.0e-9
 
     prob = ODEProblem((du, u, p, t) -> (du .= 1.0), [41.0], (0.0, 1.0))
     sol = solve(prob, VCABM3())
-    @test sol.u[end][1] ≈ 42.0 atol = 1e-9
+    @test sol.u[end][1] ≈ 42.0 atol = 1.0e-9
     sol = solve(prob, VCABM4())
-    @test sol.u[end][1] ≈ 42.0 atol = 1e-9
+    @test sol.u[end][1] ≈ 42.0 atol = 1.0e-9
     sol = solve(prob, VCABM5())
-    @test sol.u[end][1] ≈ 42.0 atol = 1e-9
+    @test sol.u[end][1] ≈ 42.0 atol = 1.0e-9
 
     sol = solve(prob, VCABM())
-    @test sol.u[end][1] ≈ 42.0 atol = 1e-9
+    @test sol.u[end][1] ≈ 42.0 atol = 1.0e-9
 end
