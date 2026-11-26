@@ -123,10 +123,12 @@ end
 """
     strip_cache(cache)
 
-Return a lightweight copy of `cache` with all fields set to `nothing`, used by
-`SciMLBase.strip_interpolation` to drop the (potentially large) working buffers
-from a solution's interpolation object before serialization. Has a special path
-for [`DefaultCache`](@ref).
+Return a lightweight copy of `cache` for `SciMLBase.strip_interpolation`, which
+drops function information and working buffers from a solution's interpolation
+object before serialization. Fields are set to `nothing` except the tableau
+(`tab`, `tabs`, `B_interp`), numbers and fields whose type cannot hold `nothing`,
+since the interpolant reads these; kept arrays of non-numbers are emptied.
+[`DefaultCache`](@ref) and `CompositeCache` strip each of their sub-caches.
 
 # Developer API
 
@@ -135,21 +137,67 @@ should call `solve` and use solution APIs, rather than construct caches or
 depend on cache fields and their serialized representation.
 """
 function strip_cache(cache)
-    if !(cache isa OrdinaryDiffEqCore.DefaultCache)
-        cache = ConstructionBase.constructorof(typeof(cache))(
-            [
-                nothing
-                    for name in
-                    fieldnames(typeof(cache))
-            ]...
-        )
-    else
-        # need to do something special for default cache
-        cache = OrdinaryDiffEqCore.DefaultCache{
-            Nothing, Nothing, Nothing, Nothing,
-            Nothing, Nothing, Nothing, Nothing,
-        }(nothing, nothing, 0, nothing)
+    T = typeof(cache)
+    declared = _declared_fieldtypes(T)
+    eltypevars = map(i -> isdefined(cache, i) ? _nothing_eltype(declared[i], getfield(cache, i)) : nothing, 1:fieldcount(T))
+    keep = map(1:fieldcount(T)) do i
+        isdefined(cache, i) || return !_accepts_nothing(declared[i])
+        value = getfield(cache, i)
+        return fieldname(T, i) in (:tab, :tabs, :B_interp) || value isa Number ||
+            !(_accepts_nothing(declared[i]) || eltypevars[i] !== nothing)
     end
+    while true
+        pinned = findfirst(eachindex(keep)) do j
+            var = declared[j] isa TypeVar ? declared[j] : eltypevars[j]
+            return !keep[j] && var !== nothing &&
+                any(i -> keep[i] && _mentions(declared[i], var), eachindex(keep))
+        end
+        pinned === nothing && break
+        keep[pinned] = true
+    end
+    fields = map(1:fieldcount(T)) do i
+        keep[i] && isdefined(cache, i) && return _strip_kept(fieldname(T, i), getfield(cache, i))
+        eltypevars[i] === nothing && return nothing
+        return Array{Nothing}(undef, map(zero, size(getfield(cache, i))))
+    end
+    return ConstructionBase.constructorof(T)(fields...)
+end
 
-    return cache
+# A field declared `Array{E}` holding non-numbers, with `E` a parameter that admits `nothing`,
+# can become an empty `Array{Nothing}` so that `E` no longer names user function types.
+_nothing_eltype(declared, value) = value isa Array && !(eltype(value) <: Number) &&
+    declared isa DataType && declared.name.wrapper === Array &&
+    declared.parameters[1] isa TypeVar && _accepts_nothing(declared.parameters[1]) ?
+    declared.parameters[1] : nothing
+
+# Arrays the interpolant does not read, such as per-stage linear solvers, are emptied.
+_strip_kept(name, value) = name in (:tab, :tabs) || !(value isa Array) || eltype(value) <: Number ?
+    value : similar(value, ntuple(_ -> 0, ndims(value)))
+
+function _declared_fieldtypes(T)
+    wrapper = T.name.wrapper
+    while wrapper isa UnionAll
+        wrapper = wrapper.body
+    end
+    return fieldtypes(wrapper)
+end
+
+_accepts_nothing(declared::TypeVar) = Nothing <: declared.ub
+_accepts_nothing(declared) = Nothing <: declared
+
+_mentions(declared, var) = declared === var ||
+    (declared isa DataType && any(p -> _mentions(p, var), declared.parameters)) ||
+    (declared isa Union && (_mentions(declared.a, var) || _mentions(declared.b, var)))
+
+function strip_cache(cache::DefaultCache)
+    names = (:cache1, :cache2, :cache3, :cache4, :cache5, :cache6)
+    caches = map(n -> isdefined(cache, n) ? strip_cache(getfield(cache, n)) : nothing, names)
+    types = map((c, n) -> isdefined(cache, n) ? typeof(c) : Nothing, caches, names)
+    stripped = DefaultCache{types..., Nothing, Nothing}(nothing, nothing, cache.current, nothing)
+    foreach((c, n) -> isdefined(cache, n) && setfield!(stripped, n, c), caches, names)
+    return stripped
+end
+
+function strip_cache(cache::CompositeCache)
+    return CompositeCache(map(strip_cache, cache.caches), nothing, cache.current)
 end
