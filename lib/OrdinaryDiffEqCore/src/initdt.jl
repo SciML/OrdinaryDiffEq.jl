@@ -297,9 +297,14 @@ end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end
 
-# ODE iip entry point
-# Algorithms can override the order used in the initial timestep exponent independently
-# of the order used by their step-size controllers.
+"""
+    initial_timestep_order(alg, cache) -> Int
+
+Return the denominator of the exponent in the automatic ODE initial timestep
+estimate. Defaults to [`get_current_alg_order`](@ref). Solver sublibraries can
+extend this hook to select the startup order independently of the step-size
+controller.
+"""
 initial_timestep_order(alg, cache) = get_current_alg_order(alg, cache)
 
 """

@@ -356,6 +356,7 @@ OrdinaryDiffEqCore.increment_accept!
 OrdinaryDiffEqCore.increment_reject!
 OrdinaryDiffEqCore.increment_nf!
 OrdinaryDiffEqCore.ode_determine_initdt
+OrdinaryDiffEqCore.initial_timestep_order
 OrdinaryDiffEqCore._determine_initdt
 OrdinaryDiffEqCore._ode_init
 OrdinaryDiffEqCore._initialize_dae!
