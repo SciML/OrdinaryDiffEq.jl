@@ -48,7 +48,7 @@ monaghan2005 = """
 )
 struct VerletLeapfrog <: OrdinaryDiffEqPartitionedAlgorithm end
 
-default_linear_interpolation(alg::VerletLeapfrog, prob) = true
+default_linear_interpolation(prob, alg::VerletLeapfrog) = true
 
 @doc generic_solver_docstring(
     "2nd order explicit symplectic integrator. Drift-kick-drift form of `VerletLeapfrog`
@@ -59,7 +59,7 @@ designed to work when `f1` depends on `v`. Requires two evaluation of `f1` per s
 )
 struct LeapfrogDriftKickDrift <: OrdinaryDiffEqPartitionedAlgorithm end
 
-default_linear_interpolation(alg::LeapfrogDriftKickDrift, prob) = true
+default_linear_interpolation(prob, alg::LeapfrogDriftKickDrift) = true
 
 @doc generic_solver_docstring(
     "2nd order explicit symplectic integrator.",

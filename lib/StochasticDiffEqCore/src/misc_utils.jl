@@ -130,6 +130,9 @@ ForwardDiff chunk size configured on `x`, or `0` when `x` does not configure one
 get_chunksize(x) = 0
 get_chunksize(x::NLSOLVEJL_SETUP) = OrdinaryDiffEqCore._get_fwd_chunksize_int(x.autodiff)
 
+_is_vector_of(typ, el) = typ isa Expr && typ.head === :curly &&
+    length(typ.args) == 2 && typ.args[1] === :Vector && typ.args[2] === el
+
 """
     @cache struct MyAlgCache{...} <: StochasticDiffEqMutableCache
         ...
@@ -142,11 +145,13 @@ noise machinery has to know which of them are noise-shaped rather than state-sha
 Rather than writing those accessors by hand for each cache, `@cache` emits them from
 the declared field types:
 
-  - `full_cache` — fields typed `uType`, `rateType`, `kType`, or `uNoUnitsType`, plus
-    the `du`/`dual_du` pair of a `DiffCacheType` field and the duals of `JCType` and
-    `GCType` fields.
-  - `rand_cache` — fields typed `randType`.
-  - `ratenoise_cache` — fields typed `rateNoiseType` or `rateNoiseCollectionType`.
+  - `full_cache` — fields typed `uType`, `rateType`, `kType`, or `uNoUnitsType`,
+    plus each element of a `Vector{uType}` / `Vector{rateType}` / `Vector{kType}` /
+    `Vector{uNoUnitsType}` field, the `du`/`dual_du` pair of a `DiffCacheType` field,
+    and the duals of `JCType` and `GCType` fields.
+  - `rand_cache` — fields typed `randType`, plus each element of `Vector{randType}`.
+  - `ratenoise_cache` — fields typed `rateNoiseType` or `rateNoiseCollectionType`,
+    plus each element of a `Vector` of those types.
   - `jac_iter` — fields typed `JType` or `WType`.
 
 Fields whose type parameter is none of the above are left out of all four accessors,
@@ -163,6 +168,9 @@ macro cache(expr)
         if x.args[2] == :uType || x.args[2] == :rateType ||
                 x.args[2] == :kType || x.args[2] == :uNoUnitsType #|| x.args[2] == :possibleRateType
             push!(cache_vars, :(c.$(x.args[1])))
+        elseif _is_vector_of(x.args[2], :uType) || _is_vector_of(x.args[2], :rateType) ||
+                _is_vector_of(x.args[2], :kType) || _is_vector_of(x.args[2], :uNoUnitsType)
+            push!(cache_vars, :(c.$(x.args[1])...))
         elseif x.args[2] == :JCType
             push!(cache_vars, :(c.$(x.args[1]).duals...))
         elseif x.args[2] == :GCType
@@ -174,9 +182,14 @@ macro cache(expr)
             push!(jac_vars, x.args[1] => :(c.$(x.args[1])))
         elseif x.args[2] == :randType
             push!(rand_vars, :(c.$(x.args[1])))
+        elseif _is_vector_of(x.args[2], :randType)
+            push!(rand_vars, :(c.$(x.args[1])...))
         elseif x.args[2] == :rateNoiseType || x.args[2] == :rateNoiseCollectionType
             # Should be a pair for handling non-diagonal
             push!(ratenoise_vars, :(c.$(x.args[1])))
+        elseif _is_vector_of(x.args[2], :rateNoiseType) ||
+                _is_vector_of(x.args[2], :rateNoiseCollectionType)
+            push!(ratenoise_vars, :(c.$(x.args[1])...))
         end
     end
     return esc(

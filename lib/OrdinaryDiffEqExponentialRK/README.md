@@ -17,6 +17,8 @@ While completely independent and usable on its own, users wanting the full ODE s
 - `ETDRK4`
 - `HochOst4`
 - `Friedli`
+- `ERK32ZB`
+- `ERK43ZB`
 - `Exp4`
 - `EPIRK4s3A`
 - `EPIRK5s3`
