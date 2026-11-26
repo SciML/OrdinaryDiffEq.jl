@@ -21,14 +21,17 @@ sol_dde2 = solve(prob_dde)
 
 @test sol_dde == sol_dde2
 
-stiff_dde(u, h, p, t) = -1000.0 * (u - h(p, t - 1.0))
+stiff_exact(t) = 0.5 + 0.25 * sin(t)
+stiff_dde(u, h, p, t) = 0.25 * cos(t) +
+    1000.0 * (h(p, t - 1.0) - stiff_exact(t - 1.0) - (u - stiff_exact(t)))
 function stiff_dde!(du, u, h, p, t)
-    du[1] = -1000.0 * (u[1] - h(p, t - 1.0)[1])
+    du[1] = 0.25 * cos(t) +
+        1000.0 * (h(p, t - 1.0)[1] - stiff_exact(t - 1.0) - (u[1] - stiff_exact(t)))
     return nothing
 end
 stiff_probs = (
-    DDEProblem(stiff_dde, 1.0, (p, t) -> 0.5, (0.0, 5.0); constant_lags = [1.0]),
-    DDEProblem(stiff_dde!, [1.0], (p, t) -> [0.5], (0.0, 5.0); constant_lags = [1.0]),
+    DDEProblem(stiff_dde, stiff_exact(0.0), (p, t) -> stiff_exact(t), (0.0, 5.0); constant_lags = [1.0]),
+    DDEProblem(stiff_dde!, [stiff_exact(0.0)], (p, t) -> [stiff_exact(t)], (0.0, 5.0); constant_lags = [1.0]),
 )
 @testset "Switch to $stiffalg, iip = $(isinplace(prob))" for prob in stiff_probs,
         (reltol, stiffalg) in (
@@ -36,8 +39,10 @@ stiff_probs = (
             (1.0e-8, OrdinaryDiffEqDefault.DefaultSolverChoice.Rodas5P),
         )
 
-    sol = solve(prob; reltol)
+    abstol = 1.0e-6
+    sol = solve(prob; reltol, abstol)
     @test sol.retcode == ReturnCode.Success
     @test Int(stiffalg) in sol.alg_choice
-    @test first(sol.u[end]) ≈ 0.5 atol = 1.0e-6
+    @test maximum(abs(first(sol(t)) - stiff_exact(t)) for t in 0.05:0.1:4.95) <
+        2 * (abstol + 0.75 * reltol)
 end
