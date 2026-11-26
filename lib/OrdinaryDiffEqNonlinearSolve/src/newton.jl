@@ -1007,6 +1007,12 @@ function relax!(
     return dz
 end
 
+function linesearch_roundoff_step(x, dx)
+    iszero(dx) && return 0.0
+    scale = abs(x)
+    return roundoff_level(typeof(scale)) * (scale / abs(dx))
+end
+
 function relax!(
         dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch
@@ -1046,28 +1052,52 @@ function relax!(
         end
         α0 = one(eltype(ustep))
         ϕ0 = ϕ(zero(α0))
-        ϵ, dϕ0 = let h = sqrt(eps())
-            slope = (ϕ(h) - ϕ0) / h
-            if slope > 0
-                z_norm = norm(z, Inf)
-                dz_norm = norm(dz, Inf)
-                if zero(dz_norm) < dz_norm < z_norm
-                    # A small Newton update amplifies roundoff in the residual difference.
-                    h = min(one(h), h * sqrt(z_norm / dz_norm))
-                    slope = (ϕ(h) - ϕ0) / h
+        ϵ = sqrt(eps())
+        dϕ0 = let slope = (ϕ(ϵ) - ϕ0) / ϵ
+            if isfinite(slope) && slope >= 0 && !iszero(ϕ0)
+                multistep = !isdae && method === COEFFICIENT_MULTISTEP
+                stage = multistep ? z : ustep
+                stage_scale = isdae || multistep ? one(γ) : γ
+                h = zero(ϵ)
+                for i in eachindex(z, dz, stage)
+                    iszero(dz[i]) && continue
+                    local_step = max(
+                        linesearch_roundoff_step(z[i], dz[i]),
+                        linesearch_roundoff_step(stage[i], stage_scale * dz[i])
+                    )
+                    if isdae
+                        local_step = max(
+                            local_step,
+                            linesearch_roundoff_step(ztmp[i], (α * invγdt) * dz[i])
+                        )
+                    end
+                    # A resolved active component can account for a genuine ascent.
+                    if local_step < ϵ
+                        h = zero(ϵ)
+                        break
+                    end
+                    h = max(h, local_step)
+                end
+                if ϵ <= h <= 2.0^-11
+                    # Keep both retry probes local and above the roundoff scale.
+                    h = min(4h, 2.0^-10)
+                    slope_half = (ϕ(h / 2) - ϕ0) / (h / 2)
+                    if isfinite(slope_half) && slope_half < 0
+                        slope_full = (ϕ(h) - ϕ0) / h
+                        if isfinite(slope_full) && slope_full < 0
+                            slope = slope_half
+                        end
+                    end
                 end
             end
-            h, slope
-        end
-        function dϕ(α)
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
+            slope
         end
         function ϕdϕ(α)
+            iszero(α) && return ϕ0, dϕ0
             ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, ∂ϕ∂α
+            return ϕ_1, (ϕ(α + ϵ) - ϕ_1) / ϵ
         end
+        dϕ(α) = last(ϕdϕ(α))
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
         return dz
