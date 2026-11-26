@@ -58,9 +58,9 @@ OrdinaryDiffEqCore.CompositeController
 
 ## CommonControllerOptions
 
-Every controller embeds a `CommonControllerOptions{T}` as its `basic`
-field. This holds the seven standard step-size scalars and is the
-target of [`resolve_basic`](@ref).
+Controllers commonly store the seven standard step-size scalars in a
+`CommonControllerOptions{T}` as their `basic` field. JVODE’s `DummyController()`
+adapter uses a `NamedTuple` to preserve the types of the algorithm’s bounds.
 
 ```@docs
 OrdinaryDiffEqCore.CommonControllerOptions

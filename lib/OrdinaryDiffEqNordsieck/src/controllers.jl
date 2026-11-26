@@ -42,6 +42,7 @@ const JVODEResolvedOptions = NamedTuple{
         :qmin, :qmax, :qsteady_min, :qsteady_max, :qmax_first_step, :gamma, :failfactor,
         :discontinuity_detection, :disco_probs,
     ),
+    <:Tuple{Any, Any, Any, Any, Any, Any, Any, Bool, Vector},
 }
 
 _resolve_jvode_options(basic, alg, disco_probs) =

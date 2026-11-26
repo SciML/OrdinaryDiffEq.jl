@@ -201,6 +201,37 @@ end
     end
 end
 
+@testset "JVODE discontinuity options are independent of keyword order" begin
+    prob = ODEProblem((u, p, t) -> -20 * (u - cos(t)) - sin(t), 1.0, (0.0, 1.0))
+    alg = JVODE_BDF()
+    overrides = (;
+        qmin = 0.25, qmax = 5, qsteady_min = 0.25, qsteady_max = 1.5,
+        qmax_first_step = 10000, gamma = 0.9, failfactor = 3, discontinuity_detection = 0,
+    )
+    @testset "$order" for (order, kwargs) in (
+            ("disco_probs last", (; overrides..., disco_probs = 0)),
+            ("disco_probs first", (; disco_probs = 0, overrides...)),
+        )
+        events = Ref(0)
+        callback = ContinuousCallback(
+            (u, t, integrator) -> t - 0.5, integrator -> (events[] += 1);
+            maybe_discontinuity = true,
+        )
+        integrator = init(
+            prob, alg; controller = JVODEController(; kwargs...), callback,
+            reltol = 1.0e-7, abstol = 1.0e-7,
+        )
+        basic = integrator.controller_cache.controller.basic
+        @test basic.discontinuity_detection === false
+        @test length(basic.disco_probs) == 1
+        sol = solve!(integrator)
+        @test events[] == 1
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t[end] == 1.0
+        @test sol.u[end] ≈ cos(1) atol = 1.0e-6
+    end
+end
+
 @testset "JVODE_BDF uses BDF formulas" begin
     oscillator!(du, u, p, t) = (du[1] = u[2]; du[2] = -u[1]; nothing)
     prob = ODEProblem(oscillator!, [1.0, 0.0], (0.0, 10.0))
