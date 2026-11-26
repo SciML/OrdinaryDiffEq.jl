@@ -175,23 +175,6 @@ function calc_finite_difference_weights(ts, t, order, ::Val{N}) where {N}
     return c
 end
 
-# The pre-restart dt was tuned for order k, but the restart step is controlled by an
-# order-1 estimate. Shrink dt so ½h²‖y''‖ ≈ 1/2, with y'' from the last three
-# pre-event history points (the post-event uprev may have jumped).
-function _fbdf_restart_dt(integrator, cache)
-    (; ts, u_history, iters_from_event) = cache
-    (; dt, uprev, t, opts) = integrator
-    iters_from_event >= 3 || return dt
-    d1 = (u_history[1] - u_history[2]) / (ts[1] - ts[2])
-    d2 = (u_history[2] - u_history[3]) / (ts[2] - ts[3])
-    est = (dt^2 / (ts[1] - ts[3])) * (d1 - d2) # ½dt²y'' with y'' ≈ 2 f[t₁,t₂,t₃]
-    E₁ = opts.internalnorm(
-        calculate_residuals(est, uprev, uprev, opts.abstol, opts.reltol, opts.internalnorm, t), t
-    )
-    (isfinite(E₁) && E₁ > 0) || return dt
-    return dt * min(one(E₁), sqrt(inv(2E₁)))
-end
-
 function reinitFBDF!(integrator, cache)
     # This function is used to initialize arrays that store past history information.
     # It will be used in the first-time step advancing and event handling.
@@ -205,7 +188,6 @@ function reinitFBDF!(integrator, cache)
         # Only on the first attempt after an event (retries and t₀ see
         # iters_from_event == 0). FBDF only: DFBDF has not been evaluated with these.
         if iters_from_event > 0 && cache isa Union{FBDFCache, FBDFConstantCache}
-            integrator.dt = _fbdf_restart_dt(integrator, cache)
             # J at the pre-event state is the wrong linearization after a jump.
             isnewton(cache.nlsolver) && (cache.nlsolver.cache.firstcall = true)
         end
