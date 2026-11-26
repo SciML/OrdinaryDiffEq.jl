@@ -283,8 +283,9 @@ _set_dt_before_tstop!(integrator, dt) = nothing
 
 function _dt_shortened_for_tstop(integrator::ODEIntegrator)
     (
-        _get_next_step_tstop(integrator) && !integrator.is_disco_step &&
-            resumes_dt_after_tstop(integrator.alg)
+        integrator.resume_dt_after_tstop && _get_next_step_tstop(integrator) &&
+            !integrator.is_disco_step &&
+            get_current_resumes_dt_after_tstop(integrator.alg, integrator.cache)
     ) || return nothing
     dt = integrator.tdir * min(abs(integrator.dt_before_tstop), abs(integrator.opts.dtmax))
     return abs(dt) > abs(integrator.dt) ? dt : nothing

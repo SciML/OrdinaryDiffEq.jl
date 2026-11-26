@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, Test, Random, StaticArrays, DiffEqCallbacks
-using OrdinaryDiffEqCore: add_tstop!
+using OrdinaryDiffEqCore: add_tstop!, PIController
 import ODEProblemLibrary: prob_ode_linear
 using OrdinaryDiffEqLowOrderRK
 using OrdinaryDiffEqFIRK
@@ -322,7 +322,10 @@ end
         free = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
         j = length(free.t) ÷ 2
         tstop = free.t[j] + 0.01 * (free.t[j + 1] - free.t[j])
-        integ = init(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, tstops = [tstop])
+        integ = init(
+            prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, tstops = [tstop],
+            resume_dt_after_tstop = true
+        )
         while integ.t + integ.dtpropose < tstop
             step!(integ)
         end
@@ -330,9 +333,28 @@ end
         step!(integ)
         @test integ.t == tstop
         @test integ.t - integ.tprev < 0.02proposed
+        @test abs(get_proposed_dt(integ) - proposed) <= 2eps(tstop)
         step!(integ)
         @test integ.t - integ.tprev > 0.5proposed
         @test integ.t - integ.tprev <= proposed * (1 + 1.0e-12)
+    end
+end
+
+@testset "The step after a tstop respects qmax unless resume_dt_after_tstop is set" begin
+    prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 1.0))
+    tstop = 0.125 + 2.0^-16
+    for (kwargs, next_dt) in (((;), 2.0^-15), ((; resume_dt_after_tstop = true), 0.125))
+        integ = init(
+            prob, Tsit5(); controller = PIController(Tsit5(); qmax = 2),
+            dt = 0.125, dtmax = 0.125, tstops = [tstop], kwargs...
+        )
+        while integ.t < tstop
+            step!(integ)
+        end
+        @test integ.t - integ.tprev == 2.0^-16
+        @test get_proposed_dt(integ) == next_dt
+        step!(integ)
+        @test integ.t - integ.tprev == next_dt
     end
 end
 
@@ -363,11 +385,14 @@ end
 
 @testset "PredictiveController records a step shortened onto a tstop at its accepted length" begin
     prob = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 10.0))
-    for alg in (RadauIIA5(), AdaptiveRadau())
+    for alg in (RadauIIA5(), AdaptiveRadau()), resume_dt_after_tstop in (false, true)
         free = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
         j = length(free.t) ÷ 2
         tstop = free.t[j] + 0.01 * (free.t[j + 1] - free.t[j])
-        integ = init(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, tstops = [tstop])
+        integ = init(
+            prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, tstops = [tstop],
+            resume_dt_after_tstop
+        )
         while integ.t + integ.dtpropose < tstop
             step!(integ)
         end

@@ -192,6 +192,7 @@ mutable struct ODEIntegrator{
     next_step_tstop::Bool
     tstop_target::tType
     dt_before_tstop::tType
+    resume_dt_after_tstop::Bool
     do_error_check::Bool
     event_last_time::Int
     vector_event_last_time::Int

@@ -112,6 +112,27 @@ For example, the BDF family overrides `qmax_default(::QNDF) = 5 // 1`
 and `qsteady_max_default(::QNDF) = 12 // 10` to match the historical
 `QNDF(qmax=5, qsteady_max=12//10)` defaults.
 
+## Steps after a tstop
+
+When a tstop falls inside a step, the step is shortened to land on it.
+The controller always sees the step that was actually taken: its
+accept hooks record the shortened length (Nordsieck `tau`,
+`PredictiveController`'s `dtacc`), and the next step is the controller's
+proposal from that step, so the growth bound `qmax` holds relative to
+the shortened step.
+
+`solve(prob, alg; resume_dt_after_tstop = true)` instead resumes the
+step size the controller had proposed before the shortening, clamped to
+`dtmax`. The controller's factor from the shortened step may reduce it
+but not increase it, and the result is never smaller than the
+controller's own proposal. The resumed step is not limited by `qmax`
+relative to the shortened step, so after a stop placed 1% into a step
+the next step can be about 100 times the landing step. Algorithms opt
+out through
+[`resumes_dt_after_tstop`](@ref OrdinaryDiffEqCore.resumes_dt_after_tstop);
+the Nordsieck BDF methods do, and for a `CompositeAlgorithm` the
+currently active member decides.
+
 ## Implementing a custom controller
 
 To plug in a new step-size strategy, you implement two types — the
