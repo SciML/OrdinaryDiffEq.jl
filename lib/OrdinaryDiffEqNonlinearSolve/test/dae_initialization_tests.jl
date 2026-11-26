@@ -165,13 +165,10 @@ integrator = init(
         du[2] = u[1]^2 - u[2]^2
     end
     prob = ODEProblem(fn, [2.0, 0.0], (0.0, 1.0))
-    integ = init(prob, Rodas5P())
-    # The init solve runs at the integrator's default abstol (1e-6), and Newton stops as soon
-    # as it is inside that, so only ask for that much here. What this is checking is that
-    # `reinit!` brings u[2] back to 2 instead of leaving it at the 0 guess.
-    @test integ.u ≈ [2.0, 2.0] atol = 1.0e-6
+    integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+    @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8
     reinit!(integ)
-    @test integ.u ≈ [2.0, 2.0] atol = 1.0e-6
+    @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8
     step!(integ, 0.01, true)
     @test SciMLBase.successful_retcode(integ.sol.retcode)
     reinit!(integ, reinit_dae = false)
