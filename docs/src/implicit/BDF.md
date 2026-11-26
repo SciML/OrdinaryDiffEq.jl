@@ -35,8 +35,9 @@ BDF methods are recommended for:
 
 ## Matrix-free Krylov solves of DAEs
 
-`DFBDF` can solve a `DAEProblem` without forming the Jacobian by giving it a Krylov
-`linsolve`, for example `DFBDF(; linsolve = KrylovJL_GMRES())`. The Newton matrix
+For an in-place `DAEProblem`, `DFBDF` with its default Newton solver can apply the Newton
+matrix without forming it by passing a supported Krylov `linsolve` and leaving `concrete_jac`
+unset or false, for example `DFBDF(; linsolve = KrylovJL_GMRES())`. The Newton matrix
 `∂F/∂u + (α/(γ h)) ∂F/∂du` is then applied as a Jacobian-vector product, and
 `stats.njacs` stays zero. The solvers supported for this are `KrylovJL_GMRES`,
 `KrylovJL_FGMRES` and `KrylovJL_BICGSTAB`. The Newton iteration sets the linear tolerances
@@ -45,6 +46,9 @@ an `ArgumentError`: other Krylov.jl methods, `KrylovJL` with `ldiv = false` or t
 keywords `M`, `N`, `W`, `atol` and `rtol`, and the `IterativeSolversJL*` wrappers. Pass
 preconditioners through `precs` and tolerances to `solve`. A Krylov solve that reports
 convergence is accepted only if its true residual meets the tolerance in the same norm.
+A Krylov solve takes one scalar relative tolerance, so a vector `reltol` is reduced to its
+smallest component for the linear solves and for that check; the integration tolerances stay
+componentwise.
 
 ## Optional FBDF time filtering
 

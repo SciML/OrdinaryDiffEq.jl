@@ -794,6 +794,8 @@ end
     else
         reltol = eps(real(one(eltype(dz))))
     end
+    # A Krylov solve has one scalar tolerance: the smallest component is the conservative one.
+    linreltol = matrix_free_dae && !(reltol isa Number) ? minimum(reltol) : reltol
 
     # Inexact Newton for the matrix-free DAE `W`: every Krylov solve of the step stops at
     # `‖P(b - W dz)‖ ≤ reltol * (‖P b‖ + ‖P b₁‖)`, where `b₁` is the step's first Newton
@@ -804,9 +806,9 @@ end
     # floor, which it cannot reach. `P` can change when `precs` is called for the solve, so
     # `dolinsolve` measures `b₁` in it once installed. The solver's own convergence report
     # is then checked against the true residual in `P`'s norm.
-    linabstol = if matrix_free_dae && reltol isa Number
+    linabstol = if matrix_free_dae
         iter == 1 && copyto!(cache.b₁, b)
-        (; abstol = ScaledResidualTolerance(_vec(cache.b₁), _vec(atmp), reltol, iter == 1))
+        (; abstol = ScaledResidualTolerance(_vec(cache.b₁), _vec(atmp), linreltol, iter == 1))
     else
         (;)
     end
@@ -814,12 +816,12 @@ end
     if is_always_new(nlsolver) || (iter == 1 && new_W)
         linres = dolinsolve(
             integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
-            reltol, linabstol...
+            reltol = linreltol, linabstol...
         )
     else
         linres = dolinsolve(
             integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
-            reltol, linabstol...
+            reltol = linreltol, linabstol...
         )
     end
 
@@ -828,7 +830,7 @@ end
         return convert(eltype(atmp), Inf)
     end
 
-    if matrix_free_dae && reltol isa Number &&
+    if matrix_free_dae &&
             !linear_residual_converged!(integrator, linsolve, _vec(cache.rlin), _vec(atmp))
         return convert(eltype(atmp), Inf)
     end

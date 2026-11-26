@@ -117,7 +117,8 @@ include("operators.jl")
             :jacobian!, :jacobian2W!, :update_W!,
             :resize_grad_config!, :resize_jac_config!,
             :dolinsolve, :wrapprecs, :is_always_new, :islinearfunction, :issuccess_W,
-            :drain_jvp_count!, :jvp_counter, :set_linear_reltol!
+            :drain_jvp_count!, :jvp_counter, :set_linear_reltol!,
+            :ScaledResidualTolerance, :linear_residual_converged!
         )
     )
 end

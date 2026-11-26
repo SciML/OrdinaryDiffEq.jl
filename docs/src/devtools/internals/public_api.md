@@ -311,6 +311,8 @@ OrdinaryDiffEqDifferentiation.issuccess_W
 OrdinaryDiffEqDifferentiation.drain_jvp_count!
 OrdinaryDiffEqDifferentiation.jvp_counter
 OrdinaryDiffEqDifferentiation.set_linear_reltol!
+OrdinaryDiffEqDifferentiation.ScaledResidualTolerance
+OrdinaryDiffEqDifferentiation.linear_residual_converged!
 ```
 
 ## Integrator step, cache construction, and initialization hooks

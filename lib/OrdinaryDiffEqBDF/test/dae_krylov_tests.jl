@@ -159,3 +159,25 @@ end
     @test integrator.t == 1.0e-10
     @test only(integrator.u) ≈ 1 + 1.0e-10 atol = 1.0e-14
 end
+
+# A vector `reltol` once skipped the scaled tolerance and the true-residual check, and a
+# preconditioner scaled by `1e20` made the solve return `Success` at `u = u0`. The linear
+# solve takes the smallest component as its scalar tolerance.
+@testset "Vector reltol on the matrix-free DAE path" begin
+    prob = DAEProblem(decay!, -ones(2), ones(2), (0.0, 1.0))
+    opts = (;
+        dt = 0.1, abstol = 1.0e-8, reltol = fill(1.0e-8, 2),
+        initializealg = SciMLBase.NoInit(), maxiters = 200,
+    )
+    badly_scaled = KrylovJL_GMRES(;
+        precs = Returns((Diagonal(fill(1.0e20, 2)), I)), warm_start = LinearSolve.WarmStart.None
+    )
+    sol = solve(prob, DFBDF(; linsolve = badly_scaled); opts...)
+    @test !successful_retcode(sol) || isapprox(sol.u[end], fill(exp(-1), 2); atol = 1.0e-5)
+
+    sol = solve(
+        prob, DFBDF(; linsolve = KrylovJL_GMRES()); abstol = 1.0e-8, reltol = [1.0e-8, 1.0e-6]
+    )
+    @test successful_retcode(sol)
+    @test sol.u[end] ≈ fill(exp(-1), 2) atol = 1.0e-5
+end
