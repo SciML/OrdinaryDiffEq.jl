@@ -106,3 +106,17 @@ end
     @test integ.controller_cache.errold == errold_before
     @test integ.controller_cache.q11 == q11_before
 end
+
+@testset "PID history on reinit!" begin
+    integ = init(
+        ODEProblem((u, p, t) -> -20u, 1.0, (0.0, 1.0)), Tsit5();
+        controller = PIDController(0.7, -0.4)
+    )
+    step!(integ)
+    history = Tuple(integ.controller_cache.err)
+    @test any(!isone, history)
+    reinit!(integ; reinit_controller = false)
+    @test Tuple(integ.controller_cache.err) == history
+    reinit!(integ)
+    @test all(isone, integ.controller_cache.err)
+end

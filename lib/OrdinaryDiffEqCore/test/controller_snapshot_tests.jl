@@ -13,7 +13,7 @@ end
 function perturb!(cache)
     for n in scratch_fields(cache)
         v = getfield(cache, n)
-        v isa AbstractArray ? (v .= 2 .* v .+ 1) : setfield!(cache, n, 2 * v + 1)
+        v isa AbstractArray ? (v .= 2 .* v .+ 1) : setfield!(cache, n, 2 .* v .+ 1)
     end
     return cache
 end
@@ -43,6 +43,15 @@ prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0))
 
     roundtrip_allocs(cache)
     @test roundtrip_allocs(cache) == 0
+end
+
+@testset "PID snapshot retains ordered error estimates" begin
+    cache = init(prob, Tsit5(); controller = PIDController(0.7, -0.4)).controller_cache
+    cache.err = (2.0, 3.0, 5.0)
+    snap = snapshot_controller(cache)
+    cache.err = reverse(cache.err)
+    restore_controller!(cache, snap)
+    @test cache.err == (2.0, 3.0, 5.0)
 end
 
 mutable struct HistoryControllerCache{E} <: AbstractControllerCache

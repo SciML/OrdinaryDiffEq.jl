@@ -51,7 +51,7 @@ end
         cache.step = 1
     end
     cnt = cache.step
-    if cache.step <= 2
+    ReactantCore.@trace track_numbers = false if cache.step <= 2
         cache.step += 1
         ttmp = t + 2dt / 3
         ralk2 = f(uprev + 2dt / 3 * k1, p, ttmp)       #Ralston Method
@@ -78,31 +78,34 @@ end
 
 @muladd function perform_step!(integrator, cache::AB3Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, fsalfirst, k2, k3, ralk2, k, thread) = cache
+    (; tmp, k2, k3, ralk2, k, thread) = cache
     k1 = integrator.fsalfirst
     if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
-    if cache.step <= 2
-        cache.step += 1
+    stats = integrator.stats
+    ReactantCore.@trace track_numbers = false if cnt <= 2
         ttmp = t + 2dt / 3
         @.. broadcast = false thread = thread tmp = uprev + 2dt / 3 * k1
         f(ralk2, tmp, p, ttmp)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        OrdinaryDiffEqCore.increment_nf!(stats, 1)
         @.. broadcast = false thread = thread u = uprev + (dt / 4) * (k1 + 3 * ralk2)        #Ralston Method
-        if cnt == 1
-            @.. broadcast = false thread = thread cache.k3 = k1
-        else
-            @.. broadcast = false thread = thread cache.k2 = k1
-        end
     else
         @.. broadcast = false thread = thread u = uprev + (dt / 12) * (23 * k1 - 16 * k2 + 5 * k3)
-        cache.k2, cache.k3 = k3, k2
-        @.. broadcast = false thread = thread cache.k2 = k1
     end
+    cache.step = min(cnt + 1, 3)
+    ReactantCore.@trace track_numbers = false if cnt == 1
+        @.. broadcast = false thread = thread k3 = k1
+    elseif cnt == 2
+        @.. broadcast = false thread = thread k2 = k1
+    else
+        k3, k2 = k2, k3
+        @.. broadcast = false thread = thread k2 = k1
+    end
+    cache.k3, cache.k2 = k3, k2
     f(k, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    OrdinaryDiffEqCore.increment_nf!(stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::ABM32ConstantCache, repeat_step = false)
@@ -189,28 +192,29 @@ end
         cache.step = 1
     end
     cnt = cache.step
-    if cache.step <= 3
+    ReactantCore.@trace track_numbers = false if cache.step <= 3
         cache.step += 1
         halfdt = dt / 2
         ttmp = t + halfdt
-        k2 = f(uprev + halfdt * k1, p, ttmp)
-        k3 = f(uprev + halfdt * k2, p, ttmp)
-        k4 = f(uprev + dt * k3, p, t + dt)
+        rk2 = f(uprev + halfdt * k1, p, ttmp)
+        rk3 = f(uprev + halfdt * rk2, p, ttmp)
+        rk4 = f(uprev + dt * rk3, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
-        u = uprev + (dt / 6) * (2 * (k2 + k3) + (k1 + k4))   #RK4
+        u = uprev + (dt / 6) * (2 * (rk2 + rk3) + (k1 + rk4))   #RK4
         if cnt == 1
-            cache.k4 = k1
+            k4 = k1
         elseif cnt == 2
-            cache.k3 = k1
+            k3 = k1
         else
-            cache.k2 = k1
+            k2 = k1
         end
     else
         u = uprev + (dt / 24) * (55 * k1 - 59 * k2 + 37 * k3 - 9 * k4)
-        cache.k4 = k3
-        cache.k3 = k2
-        cache.k2 = k1
+        k4 = k3
+        k3 = k2
+        k2 = k1
     end
+    cache.k2, cache.k3, cache.k4 = k2, k3, k4
     integrator.fsallast = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
@@ -220,14 +224,14 @@ end
 
 @muladd function perform_step!(integrator, cache::AB4Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, thread) = cache
+    (; tmp, k2, k3, k4, ralk2, k, t2, t3, t4, thread) = cache
     k1 = integrator.fsalfirst
     if integrator.derivative_discontinuity
         cache.step = 1
     end
     cnt = cache.step
-    if cache.step <= 3
-        cache.step += 1
+    stats = integrator.stats
+    ReactantCore.@trace track_numbers = false if cnt <= 3
         halfdt = dt / 2
         ttmp = t + halfdt
         @.. broadcast = false thread = thread tmp = uprev + halfdt * k1
@@ -236,25 +240,28 @@ end
         f(t3, tmp, p, ttmp)
         @.. broadcast = false thread = thread tmp = uprev + dt * t3
         f(t4, tmp, p, t + dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
+        OrdinaryDiffEqCore.increment_nf!(stats, 3)
         @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
-        if cnt == 1
-            cache.k4 .= k1
-        elseif cnt == 2
-            cache.k3 .= k1
-        else
-            cache.k2 .= k1
-        end
     else
         @.. broadcast = false thread = thread u = uprev +
             (dt / 24) *
             (55 * k1 - 59 * k2 + 37 * k3 - 9 * k4)
-        cache.k4, cache.k3 = k3, k4
-        cache.k3 .= k2
-        cache.k2 .= k1
     end
+    cache.step = min(cnt + 1, 4)
+    ReactantCore.@trace track_numbers = false if cnt == 1
+        k4 .= k1
+    elseif cnt == 2
+        k3 .= k1
+    elseif cnt == 3
+        k2 .= k1
+    else
+        k4, k3 = k3, k4
+        k3 .= k2
+        k2 .= k1
+    end
+    cache.k4, cache.k3, cache.k2 = k4, k3, k2
     f(k, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    OrdinaryDiffEqCore.increment_nf!(stats, 1)
 end
 
 @muladd function perform_step!(integrator, cache::ABM43ConstantCache, repeat_step = false)

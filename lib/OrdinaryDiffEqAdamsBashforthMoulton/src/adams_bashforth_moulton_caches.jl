@@ -4,7 +4,14 @@ get_fsalfirstlast(cache::ABMMutableCache, u) = (cache.fsalfirst, cache.k)
 function get_fsalfirstlast(cache::ABMVariableCoefficientMutableCache, u)
     return (cache.fsalfirst, cache.k4)
 end
-@cache mutable struct AB3Cache{uType, rateType, Thread} <: ABMMutableCache
+adams_initial_step() = ReactantCore.within_compile() ? ReactantCore.promote_to_traced(1) : 1
+
+function adams_initial_step(alg::Union{AB5, ABM32, ABM43})
+    ReactantCore.within_compile() && throw(ArgumentError("$(nameof(typeof(alg))) startup counters and derivative history are not supported inside Reactant compilation"))
+    return 1
+end
+
+@cache mutable struct AB3Cache{uType, rateType, Thread, Step} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -13,14 +20,14 @@ end
     ralk2::rateType
     k::rateType
     tmp::uType
-    step::Int
+    step::Step
     thread::Thread
 end
 
-@cache mutable struct AB3ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct AB3ConstantCache{rateType, Step} <: OrdinaryDiffEqConstantCache
     k2::rateType
     k3::rateType
-    step::Int
+    step::Step
 end
 
 function alg_cache(
@@ -35,7 +42,7 @@ function alg_cache(
     ralk2 = zero(rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
-    return AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, 1, alg.thread)
+    return AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, adams_initial_step(), alg.thread)
 end
 
 function alg_cache(
@@ -46,7 +53,7 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
-    return AB3ConstantCache(k2, k3, 1)
+    return AB3ConstantCache(k2, k3, adams_initial_step())
 end
 
 @cache mutable struct ABM32Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -66,7 +73,7 @@ end
     k2::rateType
     k3::rateType
     step::Int
-    abcache::AB3ConstantCache{rateType}
+    abcache::AB3ConstantCache{rateType, Int}
 end
 
 function alg_cache(
@@ -81,7 +88,7 @@ function alg_cache(
     ralk2 = zero(rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
-    return ABM32Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, 1, alg.thread)
+    return ABM32Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, adams_initial_step(alg), alg.thread)
 end
 
 function alg_cache(
@@ -92,10 +99,10 @@ function alg_cache(
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k2 = rate_prototype
     k3 = rate_prototype
-    return ABM32ConstantCache(k2, k3, 1, AB3ConstantCache(k2, k3, 1))
+    return ABM32ConstantCache(k2, k3, adams_initial_step(alg), AB3ConstantCache(k2, k3, 1))
 end
 
-@cache mutable struct AB4Cache{uType, rateType, Thread} <: ABMMutableCache
+@cache mutable struct AB4Cache{uType, rateType, Thread, Step} <: ABMMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -108,15 +115,15 @@ end
     t2::rateType
     t3::rateType
     t4::rateType
-    step::Int
+    step::Step
     thread::Thread
 end
 
-@cache mutable struct AB4ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct AB4ConstantCache{rateType, Step} <: OrdinaryDiffEqConstantCache
     k2::rateType
     k3::rateType
     k4::rateType
-    step::Int
+    step::Step
 end
 
 function alg_cache(
@@ -135,7 +142,7 @@ function alg_cache(
     t2 = zero(rate_prototype)
     t3 = zero(rate_prototype)
     t4 = zero(rate_prototype)
-    return AB4Cache(u, uprev, fsalfirst, k2, k3, k4, ralk2, k, tmp, t2, t3, t4, 1, alg.thread)
+    return AB4Cache(u, uprev, fsalfirst, k2, k3, k4, ralk2, k, tmp, t2, t3, t4, adams_initial_step(), alg.thread)
 end
 
 function alg_cache(
@@ -147,7 +154,7 @@ function alg_cache(
     k2 = rate_prototype
     k3 = rate_prototype
     k4 = rate_prototype
-    return AB4ConstantCache(k2, k3, k4, 1)
+    return AB4ConstantCache(k2, k3, k4, adams_initial_step())
 end
 
 @cache mutable struct ABM43Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -174,7 +181,7 @@ end
     k3::rateType
     k4::rateType
     step::Int
-    abcache::AB4ConstantCache{rateType}
+    abcache::AB4ConstantCache{rateType, Int}
 end
 
 function alg_cache(
@@ -197,7 +204,7 @@ function alg_cache(
     t7 = zero(rate_prototype)
     return ABM43Cache(
         u, uprev, fsalfirst, k2, k3, k4, k,
-        tmp, t2, t3, t4, t5, t6, t7, 1, alg.thread
+        tmp, t2, t3, t4, t5, t6, t7, adams_initial_step(alg), alg.thread
     )
 end
 
@@ -210,7 +217,7 @@ function alg_cache(
     k2 = rate_prototype
     k3 = rate_prototype
     k4 = rate_prototype
-    return ABM43ConstantCache(k2, k3, k4, 1, AB4ConstantCache(k2, k3, k4, 1))
+    return ABM43ConstantCache(k2, k3, k4, adams_initial_step(alg), AB4ConstantCache(k2, k3, k4, 1))
 end
 
 @cache mutable struct AB5Cache{uType, rateType, Thread} <: ABMMutableCache
@@ -254,7 +261,7 @@ function alg_cache(
     t2 = zero(rate_prototype)
     t3 = zero(rate_prototype)
     t4 = zero(rate_prototype)
-    return AB5Cache(u, uprev, fsalfirst, k2, k3, k4, k5, k, tmp, t2, t3, t4, 1, alg.thread)
+    return AB5Cache(u, uprev, fsalfirst, k2, k3, k4, k5, k, tmp, t2, t3, t4, adams_initial_step(alg), alg.thread)
 end
 
 function alg_cache(
@@ -267,7 +274,7 @@ function alg_cache(
     k3 = rate_prototype
     k4 = rate_prototype
     k5 = rate_prototype
-    return AB5ConstantCache(k2, k3, k4, k5, 1)
+    return AB5ConstantCache(k2, k3, k4, k5, adams_initial_step(alg))
 end
 
 @cache mutable struct ABM54Cache{uType, rateType, Thread} <: ABMMutableCache
