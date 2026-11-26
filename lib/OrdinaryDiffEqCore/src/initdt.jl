@@ -300,10 +300,11 @@ end
 """
     initial_timestep_order(alg, cache) -> Int
 
-Return the denominator of the exponent in the automatic ODE initial timestep
-estimate. Defaults to [`get_current_alg_order`](@ref). Solver sublibraries can
-extend this hook to select the startup order independently of the step-size
-controller.
+Return the order `p` used in the Hairer–Wanner automatic ODE initial
+timestep estimate, where the scaled derivative term is raised to the power
+`1 / p`. Defaults to [`get_current_alg_order`](@ref). Solver sublibraries can
+extend this hook when the startup estimate uses a different order from the
+step-size controller.
 """
 initial_timestep_order(alg, cache) = get_current_alg_order(alg, cache)
 

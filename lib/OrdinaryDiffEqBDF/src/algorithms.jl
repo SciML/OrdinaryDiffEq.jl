@@ -498,9 +498,10 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
         Extra `f` evaluations are required; efficiency depends on the problem.
         Default: `false`.
     - `rk_start`: when there is no usable history (the first step and after
-        discontinuities), take an L-stable 2-stage SDIRK step and seed the history
-        with its stage values so integration resumes at order 2 instead of order 1.
-        Adaptive stepping only. Default: `false`.
+        discontinuities), take an L-stable two-stage SDIRK step. A quadratic
+        through the endpoint states with the SDIRK endpoint derivative supplies
+        dense output and seeds the history so integration resumes at order 2.
+        Requires adaptive stepping and `max_order >= 2`. Default: `false`.
     """,
     extra_keyword_default = """
     κ = nothing,

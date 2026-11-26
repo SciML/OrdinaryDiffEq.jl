@@ -1250,9 +1250,9 @@ function _fbdf_rk_start!(
     (; ts, ts_tmp, u_history) = cache
     (; abstol, reltol, internalnorm) = integrator.opts
     γ = cache.rkcache.tab.c[1]
-    # The stage value is not exposed out of place. Use the quadratic through uprev, u
-    # and u'(t + dt): O(dt³), enough for BDF2, and free of f(uprev), which is
-    # inconsistent right after a state jump.
+    # Sample the quadratic determined by the two endpoint values and the final
+    # derivative at the first stage time. This gives an O(dt³) seed for BDF2 and
+    # supplies the same polynomial for dense output in both cache paths.
     uᵧ = @.. uprev + γ * (2 - γ) * (u - uprev) + γ * (γ - 1) * dt * fsallast
 
     ts[1], ts[2] = t + γ * dt, t
@@ -1288,13 +1288,12 @@ function _fbdf_rk_start!(
         integrator, cache::FBDFCache{max_order}, repeat_step
     ) where {max_order}
     _fbdf_run_rk_start!(integrator, cache, repeat_step) || return
-    (; t, dt, uprev, u) = integrator
-    (; ts, ts_tmp, u_history, atmp, terk_tmp, equi_ts, rkcache) = cache
+    (; t, dt, uprev, u, fsallast) = integrator
+    (; ts, ts_tmp, u_history, atmp, terk_tmp, equi_ts) = cache
     (; abstol, reltol, internalnorm) = integrator.opts
-    (; Ai, c) = rkcache.tab
-    γ = c[1]
+    γ = cache.rkcache.tab.c[1]
     copyto!(u_history[2], uprev)
-    @.. broadcast = false u_history[1] = uprev + Ai[1, 1] * rkcache.zs[1]
+    @.. broadcast = false u_history[1] = uprev + γ * (2 - γ) * (u - uprev) + γ * (γ - 1) * dt * fsallast
 
     ts[1], ts[2] = t + γ * dt, t
     cache.rk_seeded = true

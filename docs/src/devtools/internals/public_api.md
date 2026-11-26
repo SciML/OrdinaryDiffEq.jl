@@ -522,6 +522,7 @@ They are not stable application-facing cache layouts.
 OrdinaryDiffEqSDIRK.ESDIRKIMEXCache
 OrdinaryDiffEqSDIRK.ESDIRKIMEXConstantCache
 OrdinaryDiffEqSDIRK.ImplicitEulerESDIRKIMEXTableau
+OrdinaryDiffEqSDIRK.AlexanderSDIRK2ESDIRKIMEXTableau
 ```
 
 ### Cross-sublibrary cache hooks
