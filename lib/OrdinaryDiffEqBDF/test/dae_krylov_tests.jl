@@ -286,3 +286,34 @@ end
         @test sol.u[end] ≈ [0.1 / 11, 0.1] rtol = 1.0e-10
     end
 end
+
+# A zero Newton correction for a nonzero right-hand side is never accepted, however large the
+# first residual (its allowance, `reltol * ‖P b₁‖`, can exceed the whole of a later residual).
+# At `h = 1e-14` the first residual is `1e14`, the algebraic one `0.25`, and the first Krylov
+# solve takes no iterations; the cold retry then supplies the correction. Each linear solve,
+# a retry included, is counted in `stats.nsolve`.
+@testset "Zero correction and linear solve count" begin
+    for h in (1.0e-14, 1.0e-6)
+        prob = DAEProblem(
+            (r, du, u, p, t) -> (r[1] = du[1] - (t / h) / h; r[2] = u[2] - u[1]^2 / 4; nothing),
+            [0.0, 0.0], [0.0, 0.0], (0.0, h)
+        )
+        trace = IOBuffer()
+        linsolve = KrylovJL_GMRES(;
+            precs = Returns((I, I)), warm_start = LinearSolve.WarmStart.None,
+            verbose = 1, iostream = trace
+        )
+        sol = solve(
+            prob, DFBDF(; linsolve); initializealg = SciMLBase.NoInit(), dt = h,
+            adaptive = false, reltol = 1.0e-3, abstol = 1.0e-8
+        )
+        @test successful_retcode(sol)
+        @test sol.t[end] == h
+        @test sol.u[end] ≈ [1.0, 0.25] atol = 1.0e-8
+        @test abs(sol.u[end][2] - sol.u[end][1]^2 / 4) <= 1.0e-8
+        entries = count("GMRES", String(take!(trace)))
+        # One more than the Newton iterations: the cold retry ran.
+        @test entries == sol.stats.nsolve
+        @test entries > sol.stats.nnonliniter
+    end
+end

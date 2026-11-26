@@ -851,6 +851,9 @@ end
                 integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
                 reltol = linreltol, abstol = zero(linreltol)
             )
+            if SciMLBase.has_stats(integrator)
+                integrator.stats.nsolve += 1
+            end
             ok = linear_residual_converged!(
                 integrator, linsolve, _vec(cache.rlin), _vec(atmp), _vec(cache.b₁);
                 evidence = true
