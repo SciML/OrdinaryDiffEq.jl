@@ -4,6 +4,7 @@ using ADTypes: AutoFiniteDiff, AutoForwardDiff, AutoSparse
 using SciMLBase: DAEFunction, DAEProblem, NoInit, isinplace, successful_retcode
 using SparseConnectivityTracer: TracerSparsityDetector, TracerLocalSparsityDetector
 using SparseMatrixColorings: GreedyColoringAlgorithm
+using OrdinaryDiffEqNonlinearSolve: NLNewton
 
 const sparse_fd = AutoSparse(
     AutoForwardDiff(); sparsity_detector = TracerSparsityDetector(),
@@ -314,4 +315,60 @@ end
     @test_throws "cannot trace the residual" OrdinaryDiffEqDifferentiation.calc_W!(
         nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
     )
+end
+
+@testset "Untraceable late branch with a fixed diagonal pattern still solves" begin
+    # Automatic storage is diagonal and stays so; only the global tracer cannot evaluate
+    # `u[1] < 0` once t >= 0.5. Uncompressed differentiation finds nothing outside storage.
+    function late_branch!(r, du, u, p, t)
+        r .= du .+ u
+        r[1] += t >= 0.5 && u[1] < 0 ? u[1]^2 : 0.0
+        return nothing
+    end
+    backend = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = TracerSparsityDetector(),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    prob = DAEProblem(
+        late_branch!, -ones(2), ones(2), (0.0, 1.0); differential_vars = [true, true]
+    )
+    sol = solve(
+        prob, DFBDF(autodiff = backend, nlsolve = NLNewton(always_new = true));
+        initializealg = NoInit(), abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    @test successful_retcode(sol)
+    @test sol.u[end] ≈ fill(exp(-1.0), 2) rtol = 1.0e-6
+end
+
+# Behaves like the tracer until armed, then throws as an interrupt would.
+struct InterruptibleDetector{D} <: ADTypes.AbstractSparsityDetector
+    inner::D
+    armed::Base.RefValue{Bool}
+end
+function ADTypes.jacobian_sparsity(f!, y, x, d::InterruptibleDetector)
+    d.armed[] && throw(InterruptException())
+    return ADTypes.jacobian_sparsity(f!, y, x, d.inner)
+end
+function ADTypes.jacobian_sparsity(f, x, d::InterruptibleDetector)
+    d.armed[] && throw(InterruptException())
+    return ADTypes.jacobian_sparsity(f, x, d.inner)
+end
+
+@testset "A refresh check propagates InterruptException" begin
+    for prototype in (nothing, sparse([1, 2], [1, 2], [1.0, 1.0]))
+        armed = Ref(false)
+        backend = AutoSparse(
+            AutoForwardDiff(); sparsity_detector = InterruptibleDetector(TracerSparsityDetector(), armed),
+            coloring_algorithm = GreedyColoringAlgorithm()
+        )
+        decoupled!(r, du, u, p, t) = (r .= du .+ u; nothing)
+        f = DAEFunction(decoupled!; jac_prototype = prototype)
+        prob = DAEProblem(f, [-1.0, -1.0], [1.0, 1.0], (0.0, 1.0); differential_vars = [true, true])
+        integrator = init(prob, DFBDF(autodiff = backend); initializealg = NoInit())
+        nlsolver = integrator.cache.nlsolver
+        armed[] = true
+        @test_throws InterruptException OrdinaryDiffEqDifferentiation.calc_W!(
+            nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+        )
+    end
 end

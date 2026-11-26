@@ -321,6 +321,10 @@ end
 function with_jac_sparsity(alg, J, uf_u, uf_du, du1, u)
     ad = alg_autodiff(alg)
     (ad isa ADTypes.AutoSparse && J isa SparseMatrixCSC) || return alg
+    # Coloring `J`'s fixed pattern is only safe with the refresh check that
+    # OrdinaryDiffEqDifferentiation applies; an older release keeps the separated configs
+    # detecting their own patterns.
+    isdefined(OrdinaryDiffEqDifferentiation, :check_pattern_stored) || return alg
     detector = ADTypes.sparsity_detector(ad)
     if detector isa ADTypes.KnownJacobianSparsityDetector
         stored(A) = zip(findnz(A)[1], findnz(A)[2])
@@ -966,15 +970,18 @@ function build_nlsolver(
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
-            separated_dae_ad = isdae && !(
-                islinear(f) || SciMLBase.has_jac(f) ||
-                    (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
-            )
-            # Checked before the linear solver is built from a `J` that cannot hold the pattern.
-            if separated_dae_ad
+            # The two partial wrappers and the algorithm prepared for them, or `nothing` when
+            # the user supplies the Jacobian(s). Prepared before the linear solver is built
+            # from a `J` that cannot hold the pattern.
+            separated = if isdae && !(
+                    islinear(f) || SciMLBase.has_jac(f) ||
+                        (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
+                )
                 uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
                 uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
-                dae_jac_alg = with_jac_sparsity(alg, J, uf_u, uf_du, du1, u)
+                (uf_u, uf_du, with_jac_sparsity(alg, J, uf_u, uf_du, du1, u))
+            else
+                nothing
             end
             linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
             linsolver = default_krylov_warm_start(alg.linsolve)
@@ -995,13 +1002,14 @@ function build_nlsolver(
 
             # Build separated DAE Jacobian cache if applicable
             if isdae
-                if !separated_dae_ad
+                if separated === nothing
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage
                     J_du = fill!(similar(J), false)
                     dae_jacobians = DAEJacobiansCache(
                         J_du, nothing, nothing, nothing, nothing
                     )
                 else
+                    uf_u, uf_du, dae_jac_alg = separated
                     jac_config_u = build_jac_config(
                         dae_jac_alg, nf, uf_u, du1, uprev, u, ztmp, dz
                     )

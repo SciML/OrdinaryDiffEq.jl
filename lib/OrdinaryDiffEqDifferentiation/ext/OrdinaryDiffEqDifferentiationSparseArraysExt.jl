@@ -1,6 +1,9 @@
 module OrdinaryDiffEqDifferentiationSparseArraysExt
 
 using OrdinaryDiffEqDifferentiation
+import ADTypes
+import DifferentiationInterface as DI
+import OrdinaryDiffEqCore: alg_autodiff
 import SparseArrays
 import SparseArrays: nonzeros, nzrange, rowvals, spzeros, SparseMatrixCSC, AbstractSparseMatrix
 
@@ -10,28 +13,32 @@ OrdinaryDiffEqDifferentiation.is_sparse_csc(::SparseMatrixCSC) = true
 OrdinaryDiffEqDifferentiation.jac_from_pattern(::Type{T}, pattern::SparseMatrixCSC) where {T} =
     SparseMatrixCSC{T}(pattern)
 
-function OrdinaryDiffEqDifferentiation.check_pattern_stored(
-        alg, f, fx, x, J::SparseMatrixCSC, explicit::Bool
+function _missing_entry_error(i, j, reason)
+    return DimensionMismatch(
+        "$reason entry ($i, $j), which the stored Jacobian pattern, fixed when the \
+        integrator was built, does not hold. Either `jac_prototype` does not cover the \
+        pattern, or the pattern changed during the solve, which is not supported: pass a \
+        `KnownJacobianSparsityDetector` with a `jac_prototype` holding the union of all \
+        the patterns, or use a dense `autodiff`."
     )
-    ad = OrdinaryDiffEqDifferentiation.alg_autodiff(alg)
-    ad isa OrdinaryDiffEqDifferentiation.AutoSparse || return nothing
-    detector = OrdinaryDiffEqDifferentiation.ADTypes.sparsity_detector(ad)
-    # A known pattern is fixed by the caller and was checked against `J` when it was built;
-    # `NoSparsityDetector` detects nothing, its all-true pattern is only a fallback.
-    detector isa Union{
-        OrdinaryDiffEqDifferentiation.ADTypes.KnownJacobianSparsityDetector,
-        OrdinaryDiffEqDifferentiation.ADTypes.NoSparsityDetector,
-    } && return nothing
-    # Detectors may return a dense Boolean matrix.
-    # Storage holding every entry cannot miss one.
-    length(nonzeros(J)) == length(J) && return nothing
-    detected = try
-        OrdinaryDiffEqDifferentiation.ADTypes.jacobian_sparsity(f, fx, x, detector)
-    catch
-        # Storage the user supplied is theirs to vouch for, so a residual the tracer cannot
-        # evaluate here skips validation. A coloring derived automatically must not be used
-        # unvalidated: it could fold a missing entry into the wrong one.
-        explicit && return nothing
+end
+
+# Whether column `j` of `J` stores row `i`.
+function _is_stored(J::SparseMatrixCSC, i, j)
+    rows = rowvals(J)
+    stored = nzrange(J, j)
+    k = searchsortedfirst(rows, i, first(stored), last(stored), Base.Order.Forward)
+    return k <= last(stored) && rows[k] == i
+end
+
+# The detector cannot trace `f` here, so find the entries that matter at this point by
+# differentiating without compression. Entries that are zero at this point add nothing to
+# a compressed Jacobian, so only nonzeros outside `J` are errors.
+function _check_dense_stored(ad, f, fx, x, J)
+    dense = try
+        DI.jacobian(f, fx, ADTypes.dense_ad(ad), x)
+    catch err
+        err isa InterruptException && rethrow()
         throw(
             DimensionMismatch(
                 "The automatically detected sparsity pattern of the DAE Jacobian cannot be \
@@ -41,26 +48,51 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
             )
         )
     end
+    for j in axes(dense, 2), i in axes(dense, 1)
+        iszero(dense[i, j]) || _is_stored(J, i, j) ||
+            throw(
+            _missing_entry_error(
+                i, j,
+                "The detector cannot trace the residual at this point, and uncompressed \
+                differentiation finds a nonzero derivative at"
+            )
+        )
+    end
+    return nothing
+end
+
+function OrdinaryDiffEqDifferentiation.check_pattern_stored(
+        alg, f, fx, x, J::SparseMatrixCSC, explicit::Bool
+    )
+    ad = alg_autodiff(alg)
+    ad isa ADTypes.AutoSparse || return nothing
+    detector = ADTypes.sparsity_detector(ad)
+    # A known pattern is fixed by the caller and was checked against `J` when it was built;
+    # `NoSparsityDetector` detects nothing, its all-true pattern is only a fallback.
+    detector isa Union{ADTypes.KnownJacobianSparsityDetector, ADTypes.NoSparsityDetector} &&
+        return nothing
+    # Storage holding every entry cannot miss one.
+    length(nonzeros(J)) == length(J) && return nothing
+    detected = try
+        ADTypes.jacobian_sparsity(f, fx, x, detector)
+    catch err
+        err isa InterruptException && rethrow()
+        # Storage the user supplied is theirs to vouch for. Automatically derived storage
+        # must not be used unvalidated: a coloring could fold a missing entry into the
+        # wrong one.
+        explicit && return nothing
+        return _check_dense_stored(ad, f, fx, x, J)
+    end
+    # Detectors may return a dense Boolean matrix.
     detected isa SparseMatrixCSC || (detected = SparseMatrixCSC(detected))
-    rows = rowvals(J)
     detected_rows = rowvals(detected)
     detected_vals = nonzeros(detected)
     for j in 1:size(detected, 2), idx in nzrange(detected, j)
         # A sparse Boolean pattern can store `false` entries, which detect nothing.
         iszero(detected_vals[idx]) && continue
         i = detected_rows[idx]
-        stored = nzrange(J, j)
-        k = searchsortedfirst(rows, i, first(stored), last(stored), Base.Order.Forward)
-        k <= last(stored) && rows[k] == i && continue
-        throw(
-            DimensionMismatch(
-                "The detected sparsity pattern of the DAE Jacobian includes entry ($i, $j), \
-                which the stored Jacobian pattern, fixed when the integrator was built, \
-                does not hold. Either `jac_prototype` does not cover the pattern, or the \
-                pattern changed during the solve, which is not supported: \
-                pass a `KnownJacobianSparsityDetector` with a `jac_prototype` holding the union of all the patterns, or use a dense `autodiff`."
-            )
-        )
+        _is_stored(J, i, j) ||
+            throw(_missing_entry_error(i, j, "The detected sparsity pattern of the DAE Jacobian includes"))
     end
     return nothing
 end
