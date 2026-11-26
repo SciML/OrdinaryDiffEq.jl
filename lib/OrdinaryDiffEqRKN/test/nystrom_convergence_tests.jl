@@ -1,4 +1,4 @@
-using OrdinaryDiffEqRKN, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
+using OrdinaryDiffEqRKN, Test, RecursiveArrayTools, DiffEqDevTools, Statistics, StaticArrays
 
 u0 = fill(0.0, 2)
 v0 = ones(2)
@@ -172,9 +172,10 @@ sim = test_convergence(dts, prob, Nystrom4VelocityIndependent(), dense_errors = 
 @test_broken sim = test_convergence(dts, prob, IRKN3(), dense_errors = true)
 @test_broken sim.𝒪est[:l2] ≈ 3 rtol = 1.0e-1
 @test_broken sim.𝒪est[:L2] ≈ 3 rtol = 1.0e-1
-@test_broken sim = test_convergence(dts, prob, IRKN4(), dense_errors = true)
-#@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
-#@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+let sim = test_convergence(dts, prob, IRKN4(), dense_errors = true)
+    @test sim.𝒪est[:l2] ≈ 4 rtol = 1.0e-1
+    @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+end
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
 sim = test_convergence(dts, prob, Nystrom5VelocityIndependent(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1.0e-1
@@ -483,10 +484,10 @@ const VDErr = OrdinaryDiffEqRKN.RKNVelocityDependenceError
         @test SciMLBase.successful_retcode(solve(prob_iip, alg, dt = 0.05, adaptive = false))
     end
 
-    # Out-of-place scalar form. IRKN3/IRKN4 have a pre-existing out-of-place perform_step!
-    # bug (they are @test_broken out-of-place above), unrelated to the velocity probe.
+    # Out-of-place scalar form. IRKN3 still has a pre-existing out-of-place perform_step!
+    # bug (it is @test_broken out-of-place above), unrelated to the velocity probe.
     @testset "velocity-independent problem still solves (out-of-place): $(nameof(typeof(alg)))" for alg in
-        filter(a -> !(a isa IRKN3 || a isa IRKN4), collect(velocity_independent_algs))
+        filter(a -> !(a isa IRKN3), collect(velocity_independent_algs))
         prob_oop = DynamicalODEProblem(
             (v, u, p, t) -> -u, (v, u, p, t) -> v,
             1.0, 0.0, (0.0, 5.0)
@@ -558,4 +559,116 @@ const VDErr = OrdinaryDiffEqRKN.RKNVelocityDependenceError
         u_exact = exp(-5.0 / 4) * (cos(w * 5.0) + (0.25 / w) * sin(w * 5.0))
         @test sol_iip.u[end].x[2][1] ≈ u_exact atol = 1.0e-2
     end
+end
+
+@testset "IRKN4 out-of-place SVector Kepler" begin
+    function kepler_acc!(ddu, du, u, p, t)
+        r2 = sum(u .* u)
+        r3 = r2 * sqrt(r2)
+        @. ddu = -u / r3
+        return nothing
+    end
+    function kepler_acc(du, u, p, t)
+        r2 = sum(u .* u)
+        r3 = r2 * sqrt(r2)
+        return @. -u / r3
+    end
+    function kepler_analytic(y0, p, t)
+        return ArrayPartition(SVector(-sin(t), cos(t)), SVector(cos(t), sin(t)))
+    end
+    ff_kepler = DynamicalODEFunction(
+        kepler_acc, (v, u, p, t) -> v; analytic = kepler_analytic
+    )
+    du0 = SVector(0.0, 1.0)
+    u0 = SVector(1.0, 0.0)
+    tspan = (0.0, 5.0)
+    dt = 0.01
+    prob_oop = SecondOrderODEProblem(ff_kepler, du0, u0, tspan)
+    prob_iip = SecondOrderODEProblem(kepler_acc!, Vector(du0), Vector(u0), tspan)
+
+    sol_oop = solve(prob_oop, IRKN4(), dt = dt, adaptive = false)
+    sol_iip = solve(prob_iip, IRKN4(), dt = dt, adaptive = false)
+    @test SciMLBase.successful_retcode(sol_oop)
+    @test SciMLBase.successful_retcode(sol_iip)
+    @test sol_oop.u[end].x[1] ≈ SVector(sol_iip.u[end].x[1]...) atol = 1.0e-12
+    @test sol_oop.u[end].x[2] ≈ SVector(sol_iip.u[end].x[2]...) atol = 1.0e-12
+
+    dts = 1 .// 2 .^ (9:-1:6)
+    sim = test_convergence(dts, prob_oop, IRKN4())
+    @test sim.𝒪est[:l2] ≈ 4 rtol = 1.0e-1
+end
+
+# After a DiscreteCallback changes p, IRKN4 must rebuild its multistep stage
+# history via the one-step bootstrap; otherwise the next step is only first-order.
+@testset "IRKN4 restart after derivative discontinuity" begin
+    oscillator_acc!(ddu, du, u, p, t) = (ddu .= -p[1] .* u; nothing)
+    oscillator_acc(du, u, p, t) = -p[1] * u
+
+    function jump_local_error(oop, dt)
+        cb = DiscreteCallback(
+            (u, t, integrator) -> integrator.iter == 10,
+            integrator -> (integrator.p[1] = 4.0);
+            save_positions = (false, false)
+        )
+        if oop
+            prob = SecondOrderODEProblem(
+                oscillator_acc, SVector(0.0), SVector(1.0), (0.0, 5.0), [1.0]
+            )
+        else
+            prob = SecondOrderODEProblem(
+                oscillator_acc!, [0.0], [1.0], (0.0, 5.0), [1.0]
+            )
+        end
+        integrator = init(
+            prob, IRKN4();
+            dt, adaptive = false, save_everystep = false, dense = false, callback = cb
+        )
+        for _ in 1:10
+            step!(integrator)
+        end
+        v = integrator.u.x[1][1]
+        u = integrator.u.x[2][1]
+        step!(integrator)
+        exact_v = v * cos(2dt) - 2u * sin(2dt)
+        exact_u = u * cos(2dt) + v * sin(2dt) / 2
+        return max(abs(integrator.u.x[1][1] - exact_v), abs(integrator.u.x[2][1] - exact_u))
+    end
+
+    dts = (0.01, 0.005, 0.0025)
+    for oop in (true, false)
+        local_errors = [jump_local_error(oop, dt) for dt in dts]
+        # Order-4 local truncation is O(dt^5); the stale-history bug is O(dt).
+        @test local_errors[1] / dts[1]^5 < 50
+        @test local_errors[2] / dts[2]^5 < 50
+        @test local_errors[3] / dts[3]^5 < 50
+        ratios = local_errors[1:(end - 1)] ./ local_errors[2:end]
+        @test all(r -> r > 20, ratios)  # ~2^5 when dt halves, not ~2
+    end
+
+    function global_error(dt)
+        cb = DiscreteCallback(
+            (u, t, integrator) -> integrator.iter == 10,
+            integrator -> (integrator.p[1] = 4.0);
+            save_positions = (false, false)
+        )
+        # Exact: u=cos(t) on [0, 10dt], then u=A cos(2(t-t*))+B sin(2(t-t*))
+        # with continuity of u,u' at t*=10dt.
+        tstar = 10dt
+        A = cos(tstar)
+        B = -sin(tstar) / 2
+        tf = 30dt
+        exact_u = A * cos(2(tf - tstar)) + B * sin(2(tf - tstar))
+        exact_v = -2A * sin(2(tf - tstar)) + 2B * cos(2(tf - tstar))
+        sol = solve(
+            SecondOrderODEProblem(
+                oscillator_acc!, [0.0], [1.0], (0.0, tf), [1.0]
+            ),
+            IRKN4();
+            dt, adaptive = false, save_everystep = false, dense = false, callback = cb
+        )
+        return max(abs(sol.u[end].x[1][1] - exact_v), abs(sol.u[end].x[2][1] - exact_u))
+    end
+    global_errors = [global_error(dt) for dt in dts]
+    orders = log2.(global_errors[1:(end - 1)] ./ global_errors[2:end])
+    @test all(o -> o > 3.5, orders)
 end

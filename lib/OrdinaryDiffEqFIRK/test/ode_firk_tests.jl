@@ -1,9 +1,85 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
+using SparseArrays
 using OrdinaryDiffEqTsit5: AutoTsit5
 using ADTypes: AutoFiniteDiff
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
 
 testTol = 0.5
+
+@testset "Sparse FIRK stage matrix assembly" begin
+    J = sparse([1, 1, 2], [1, 2, 3], [2.0, 0.0, 4.0], 3, 3)
+    for (mass_matrix, scale) in (
+            (sparse([3, 2], [1, 2], [5.0, 0.0], 3, 3), -2.5),
+            (I, -2.5), (I, -2.5 - 0.4im),
+            (Diagonal([1.2, 0.5, 0.8]), -2.5),
+            (Diagonal([1.2, 0.5, 0.8]), -2.5 - 0.4im),
+        )
+        T = scale isa Complex ? ComplexF64 : Float64
+        W = similar(J, T)
+        expected = similar(J, T)
+        OrdinaryDiffEqFIRK.firk_W!(W, J, mass_matrix, scale)
+        @inbounds for II in CartesianIndices(J)
+            expected[II] = muladd(scale, mass_matrix[Tuple(II)...], J[II])
+        end
+
+        @test W == expected
+        if !(scale isa Complex)
+            # entrywise setindex! densifies the pattern with signed zeros on
+            # complex scales; on real scales the merged pattern is identical
+            @test all(c -> nzrange(W, c) == nzrange(expected, c), axes(W, 2))
+            @test rowvals(W) == rowvals(expected)
+        end
+    end
+end
+
+@testset "Sparse FIRK solves vs dense jac_prototype" begin
+    n = 50
+    function firk_test_lin!(du, u, p, t)
+        @inbounds for i in 1:n
+            du[i] = -100u[i] + (i > 1 ? 10u[i - 1] : 0) + (i < n ? 10u[i + 1] : 0)
+        end
+    end
+    J = spdiagm(
+        -1 => fill(10.0, n - 1), 0 => fill(-100.0, n), 1 => fill(10.0, n - 1)
+    )
+    mass_matrix = spdiagm(0 => collect(range(0.8, 1.2; length = n)))
+    u0 = ones(n)
+    tspan = (0.0, 0.1)
+    ts = [0.01, 0.05, 0.1]
+    for (mm_sparse, mm_dense) in (
+                (I, I), (mass_matrix, Matrix(mass_matrix)),
+            ), alg in (
+                RadauIIA3(), RadauIIA5(), RadauIIA9(),
+                AdaptiveRadau(), AdaptiveRadau(threading = true),
+            )
+        prob_sparse = ODEProblem(
+            ODEFunction(firk_test_lin!; jac_prototype = J, mass_matrix = mm_sparse),
+            u0, tspan
+        )
+        prob_dense = ODEProblem(
+            ODEFunction(
+                firk_test_lin!;
+                jac_prototype = Matrix(J), mass_matrix = mm_dense
+            ),
+            u0, tspan
+        )
+        sol_sparse = solve(
+            prob_sparse, alg; abstol = 1.0e-8, reltol = 1.0e-8,
+            save_everystep = true, dense = true
+        )
+        sol_dense = solve(
+            prob_dense, alg; abstol = 1.0e-8, reltol = 1.0e-8,
+            save_everystep = true, dense = true
+        )
+        @test sol_sparse.retcode == ReturnCode.Success
+        @test sol_sparse.u[end] ≈ sol_dense.u[end] atol = 1.0e-6
+        # Dense-output interpolation can differ between the sparse and dense LU
+        # paths by more than the solver tolerance (≈2e-5 for AdaptiveRadau here).
+        for t in ts
+            @test all(isapprox.(sol_sparse(t), sol_dense(t); atol = 1.0e-4))
+        end
+    end
+end
 
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
     sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob, RadauIIA5(), dense_errors = true)
@@ -224,6 +300,30 @@ end
     @test integ.kshortsize == bare.kshortsize
 end
 
+@testset "AdaptiveRadau dense output across stage-count changes" begin
+    f!(du, u, p, t) = (du .= cos(t) .* u; nothing)
+    f(u, p, t) = cos(t) .* u
+    exact(t) = exp(sin(t)) .* [1.0, 2.0]
+    for prob in (ODEProblem(f!, [1.0, 2.0], (0.0, 4.0)), ODEProblem(f, [1.0, 2.0], (0.0, 4.0)))
+        sol = solve(prob, AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+        @test maximum(maximum(abs.(sol(t) - exact(t))) for t in 0:0.01:4) < 1.0e-5
+        @test sol.stats.naccept < 40
+    end
+end
+
+@testset "AdaptiveRadau dense output for mass-matrix DAEs (#5027)" begin
+    # x' = -x + z, 0 = x - 2z  =>  x(t) = exp(-t/2), z(t) = x(t) / 2
+    M = [1.0 0.0; 0.0 0.0]
+    fiip = ODEFunction((du, u, p, t) -> (du[1] = -u[1] + u[2]; du[2] = u[1] - 2u[2]; nothing); mass_matrix = M)
+    foop = ODEFunction((u, p, t) -> [-u[1] + u[2], u[1] - 2u[2]]; mass_matrix = M)
+    for f in (fiip, foop)
+        prob = ODEProblem(f, [1.0, 0.5], (0.0, 5.0))
+        sol = solve(prob, AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-8)
+        @test maximum(abs(sol(t)[1] - exp(-t / 2)) for t in 0:0.01:5) < 1.0e-6
+        @test maximum(abs(sol(t)[2] - exp(-t / 2) / 2) for t in 0:0.01:5) < 1.0e-6
+    end
+end
+
 @testset "AdaptiveRadau Newton tolerance follows the stage count" begin
     prob = prob_ode_rober
     ref = solve(prob, RadauIIA5(); abstol = 1.0e-12, reltol = 1.0e-12, save_everystep = false)
@@ -234,6 +334,10 @@ end
         @test sol.u[end][3] ≈ ref.u[end][3] rtol = 1.0e-7
         @test abs(sum(sol.u[end]) - 1) < 1.0e-8
     end
+    vdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 100 * ((1 - u[1]^2) * u[2] - u[1]); nothing)
+    vdp = ODEProblem(vdp!, [2.0, 0.0], (0.0, 2.0))
+    scalar = solve(vdp, AdaptiveRadau(); reltol = 1.0e-6, abstol = 1.0e-7)
+    @test solve(vdp, AdaptiveRadau(); reltol = [1.0e-6, 1.0e-6], abstol = [1.0e-7, 1.0e-7]).u == scalar.u
 end
 
 @testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
@@ -262,4 +366,14 @@ end
         prob_rober, AutoTsit5(AdaptiveRadau(autodiff = AutoFiniteDiff()); stiffalgfirst = true)
     )
     @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
+end
+
+@testset "Out-of-place AdaptiveRadau with a mass matrix" begin
+    M = Diagonal([2.0, 0.5])
+    fiip = ODEFunction((du, u, p, t) -> (du .= [-u[1] + cos(t), -u[2] + u[1]]; nothing); mass_matrix = M)
+    foop = ODEFunction((u, p, t) -> [-u[1] + cos(t), -u[2] + u[1]]; mass_matrix = M)
+    iip = solve(ODEProblem(fiip, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+    oop = solve(ODEProblem(foop, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+    @test oop.retcode == ReturnCode.Success
+    @test oop.u[end] ≈ iip.u[end] rtol = 1.0e-8
 end

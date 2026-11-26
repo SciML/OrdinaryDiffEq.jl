@@ -103,14 +103,6 @@ end
     return cache.tab.B_interp
 end
 
-@inline function get_bi(cache::ExplicitRKConstantCache)
-    return cache.bi
-end
-
-@inline function get_bi(cache::ExplicitRKCache)
-    return cache.tab.bi
-end
-
 # Generate interpolant methods for derivative orders 0-3
 # Only dispatch when B_interp is available; otherwise fall through to Hermite default.
 for order in 0:3
@@ -132,8 +124,7 @@ for order in 0:3
                     idxs, T, dv
                 )
             end
-            bi = get_bi(cache)
-            return generic_rk_interpolant(Θ, dt, y₀, k, B_interp, bi; idxs, order = $order)
+            return generic_rk_interpolant(Θ, dt, y₀, k, B_interp; idxs, order = $order)
         end
 
         @muladd function _ode_interpolant!(
@@ -152,8 +143,7 @@ for order in 0:3
                     idxs, T, dv
                 )
             end
-            bi = get_bi(cache)
-            return generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp, bi; idxs, order = $order)
+            return generic_rk_interpolant!(out, Θ, dt, y₀, k, B_interp; idxs, order = $order)
         end
     end
 end
