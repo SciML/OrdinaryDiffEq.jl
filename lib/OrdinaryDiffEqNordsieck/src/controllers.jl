@@ -41,12 +41,18 @@ end
 function setup_controller_cache(
         alg::JVODE, cache, ::DummyController, ::Type{E}, disco_probs,
     ) where {E}
-    controller = JVODEController(;
+    bounds = (;
         qmin = alg.qmin, qmax = alg.qmax,
         qsteady_min = alg.qsteady_min, qsteady_max = alg.qsteady_max,
     )
+    QT = _exact_bounds_QT(_resolved_QT(bounds))
+    controller = JVODEController(QT, alg; bounds...)
     return setup_controller_cache(alg, cache, controller, E, disco_probs)
 end
+
+# Rational bounds stay exact in a type wide enough for the controller defaults.
+_exact_bounds_QT(::Type{T}) where {T <: Rational} = promote_type(T, Rational{Int})
+_exact_bounds_QT(::Type{T}) where {T} = T
 
 # Algorithm owns the stepsize logic; controller cache delegates back to
 # alg-level dispatch (mirroring how DummyControllerCache used to behave).

@@ -1,6 +1,7 @@
 using OrdinaryDiffEqNordsieck
 using OrdinaryDiffEqNordsieck: JVODEController
-using OrdinaryDiffEqCore: AbstractController, AbstractControllerCache, DummyController, get_qmax
+using OrdinaryDiffEqCore: AbstractController, AbstractControllerCache, DummyController,
+    get_qmin, get_qmax, get_qsteady_min, get_qsteady_max
 import OrdinaryDiffEqCore: get_EEst, post_newton_controller!, set_EEst!, setup_controller_cache
 using OrdinaryDiffEqTsit5: Tsit5
 using DiffEqDevTools, Test, LinearAlgebra
@@ -99,6 +100,27 @@ end
                 @test integrator.dt == opts.dt
                 post_newton_controller!(integrator, alg_with_qmax)
                 @test integrator.dt == opts.dt / 2
+            end
+
+            @testset "Compact rational step-size options" begin
+                bounds = map(
+                    Rational{Int8},
+                    (; qmin = 1 // 4, qmax = 5 // 1, qsteady_min = 9 // 8, qsteady_max = 7 // 4),
+                )
+                compact_alg = JVODE(alg.algorithm; bounds...)
+                integrator = init(prob, compact_alg; opts..., controller = DummyController())
+                getters = (get_qmin, get_qmax, get_qsteady_min, get_qsteady_max)
+                resolved = map(getter -> getter(integrator), getters)
+                @test resolved == values(bounds)
+                @test all(q -> q isa Rational, resolved)
+                @test integrator.dt == opts.dt
+                post_newton_controller!(integrator, compact_alg)
+                @test integrator.dt == opts.dt / 2
+
+                sol = solve(prob, compact_alg; opts..., controller = DummyController())
+                @test SciMLBase.successful_retcode(sol)
+                @test sol.t[end] == 1.0
+                @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
             end
 
             sol = solve(prob, alg; opts..., controller = DummyController())
