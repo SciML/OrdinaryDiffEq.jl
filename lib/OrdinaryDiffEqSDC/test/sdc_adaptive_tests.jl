@@ -14,7 +14,12 @@ final_error(sol) = maximum(abs.(sol.u[end] .- rotation_exact(sol.t[end])))
         alg = SDC(num_nodes = 4, num_sweeps = K)
         @test OrdinaryDiffEqSDC.alg_adaptive_order(alg) ==
             max(1, OrdinaryDiffEqSDC.alg_order(alg) - 1)
+        @test SciMLBase.isadaptive(alg)
     end
+    @test !SciMLBase.isadaptive(SDC(num_sweeps = 0))
+    @test_throws ArgumentError solve(ROTATION, SDC(num_sweeps = 0))
+    # With a `dt`, zero sweeps is forward Euler.
+    @test solve(ROTATION, SDC(num_sweeps = 0); dt = 0.1).u[2] ≈ [1.0, 0.1]
 end
 
 @testset "SDC honours the requested tolerance" begin
@@ -94,4 +99,27 @@ end
     end
     @test length(many.t) < length(few.t) / 10
     @test many.stats.nsolve < few.stats.nsolve / 10
+end
+
+@testset "SDC rejects a step whose node solve failed" begin
+    # Only defined for u > -1000, which a diverged Newton iterate leaves far behind.
+    f!(du, u, p, t) = (du[1] = -100 * u[1]^3 + 1.0e-3 * sqrt(u[1] + 1000); nothing)
+    prob = ODEProblem(f!, [2.0], (0.0, 1.0))
+    for sweeper in (SDCSweeper.LU, SDCSweeper.BE)
+        sol = solve(prob, SDC(num_nodes = 3, num_sweeps = 4, sweeper = sweeper); dt = 0.1)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.stats.nnonlinconvfail > 0
+        @test sol.u[end][1] ≈ 0.08253 rtol = 1.0e-3
+    end
+    # The explicit part is only defined for u < 10, which a failed iterate passes.
+    split = SplitODEProblem(
+        (du, u, p, t) -> (du[1] = -100 * u[1]^3; nothing),
+        (du, u, p, t) -> (du[1] = 1.0e-3 * sqrt(10 - u[1]); nothing), [2.0], (0.0, 1.0)
+    )
+    for sweeper in (SDCSweeper.LU, SDCSweeper.MIN_SR_S)
+        sol = solve(split, SDC(num_nodes = 3, num_sweeps = 4, sweeper = sweeper); dt = 0.1)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.stats.nnonlinconvfail > 0
+        @test sol.u[end][1] ≈ 0.07192 rtol = 1.0e-3
+    end
 end

@@ -265,7 +265,9 @@ function alg_cache(
         dt, reltol, p, calck,
         ::Val{false}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    return IRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    return IRKN4ConstantCache(
+        constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), rate_prototype
+    )
 end
 
 function alg_cache(

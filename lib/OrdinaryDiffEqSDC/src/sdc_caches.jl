@@ -37,9 +37,26 @@ end
     k2::Vector{rateType}
     nf2::Vector{Int}
     split::Bool
+    # `integrator.k` aliases these, so regrowing it after `post_savevalues!` trims it
+    # does not allocate.
+    kdense::Vector{rateType}
 end
 
 get_fsalfirstlast(cache::SDCCache, u) = (nothing, nothing)
+
+# The per-node vectors and solvers are not in `full_cache`, so `resize!` reaches them here.
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::SDCCache, i)
+    (; tmp, ubuf, k, z, znew, zE, zE_new, k2, kdense) = cache
+    for x in Iterators.flatten((tmp, ubuf, k, z, znew, zE, zE_new, k2, kdense))
+        resize!(x, i)
+    end
+    for nls in cache.nlsolvers
+        resize!(nls, integrator, i)
+        nls.alg isa NLNewton && resize!(nls.cache.linsolve, i)
+        isnewton(nls) && (nls.cache.firstcall = true)
+    end
+    return nothing
+end
 
 """
     sdc_solver_index(QΔ)
@@ -103,7 +120,8 @@ function alg_cache(
         fill(false, M), zeros(Int, M),
         nlsolvers, tab, solver_index,
         [zero(u) for _ in 1:nsplit], [zero(u) for _ in 1:nsplit],
-        [zero(rate_prototype) for _ in 1:nsplit], zeros(Int, nsplit), split
+        [zero(rate_prototype) for _ in 1:nsplit], zeros(Int, nsplit), split,
+        [zero(rate_prototype) for _ in 1:(M + 2)]
     )
 end
 

@@ -18,7 +18,7 @@ testTol = 0.2
 
     @show "Very low order"
 
-    sim11 = test_convergence(dts, prob, ImplicitEuler(extrapolant = :linear))
+    sim11 = test_convergence(dts, prob, ImplicitEuler(predictor = Predictor.Linear))
     @test sim11.𝒪est[:final] ≈ 1 atol = testTol
 
     sim112 = test_convergence(
@@ -252,6 +252,16 @@ end
         sim_iip = test_convergence(dts, prob_iip, alg)
         @test sim_iip.𝒪est[:l∞] ≈ expected atol = testTol
     end
+
+    # ARS232 and ARS343 have one more explicit stage than implicit, so they do not end on the last stage.
+    ε = 1.0e-10
+    relax! = (du, u, p, t) -> (du[1] = 0; du[2] = (u[1] - u[2]) / ε; nothing)
+    rotate! = (du, u, p, t) -> (du[1] = -u[2]; du[2] = u[1]; nothing)
+    stiff_prob = SplitODEProblem(relax!, rotate!, [1.0, 1.0], (0.0, 0.1))
+    for alg in (ARS222(), ARS443())
+        u = solve(stiff_prob, alg; dt = 0.1, adaptive = false).u[end]
+        @test abs(u[2] - u[1]) < 100ε
+    end
 end
 
 # Regression test: Kvaerno3/4/5 with SplitODEProblem must integrate the full RHS (f1+f2),
@@ -276,6 +286,34 @@ end
 
     sim_iip = test_convergence(dts, prob_iip, Kvaerno4())
     @test sim_iip.𝒪est[:l∞] ≈ 4 atol = testTol
+end
+
+# Regression test: Kvaerno3/4/5 must evaluate stage 2 at c₂ = 2γ (= Ai[2,1] + Ai[2,2]),
+# otherwise they lose order on non-autonomous problems (they are unaffected on autonomous ones).
+# u' = -u + cos(t) + sin(t)  =>  u(t) = sin(t) + exp(-t) * u0
+@testset "Kvaerno non-autonomous convergence" begin
+    f_oop = ODEFunction(
+        (u, p, t) -> -u .+ (cos(t) + sin(t));
+        analytic = (u0, p, t) -> sin(t) .+ exp(-t) .* u0
+    )
+    f_iip = ODEFunction(
+        (du, u, p, t) -> (du .= -u .+ (cos(t) + sin(t)));
+        analytic = (u0, p, t) -> sin(t) .+ exp(-t) .* u0
+    )
+    prob_oop = ODEProblem(f_oop, [1.0, 0.5], (0.0, 1.0))
+    prob_iip = ODEProblem(f_iip, [1.0, 0.5], (0.0, 1.0))
+    for (alg, order, dts) in (
+            (Kvaerno3(), 3, 1 .// 2 .^ (8:-1:4)),
+            (Kvaerno4(), 4, 1 .// 2 .^ (7:-1:3)),
+            (Kvaerno5(), 5, 1 .// 2 .^ (6:-1:3)),
+        )
+        @testset "$(nameof(typeof(alg)))" begin
+            sim = test_convergence(dts, prob_oop, alg)
+            @test sim.𝒪est[:l∞] ≈ order atol = testTol
+            sim = test_convergence(dts, prob_iip, alg)
+            @test sim.𝒪est[:l∞] ≈ order atol = testTol
+        end
+    end
 end
 
 @testset "IMEX methods without an embedded pair are not adaptive" begin

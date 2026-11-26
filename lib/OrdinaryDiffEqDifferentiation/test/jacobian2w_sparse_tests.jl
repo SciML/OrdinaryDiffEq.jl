@@ -28,6 +28,25 @@ for mm in (I, 2.0 * I)
         invdtgamma * Matrix(I, 2, 2)
 end
 
+W = copy(J)
+@test OrdinaryDiffEqDifferentiation._update_sparse_diagonal!(
+    W, -1.0, invdtgamma, J
+)
+@test Matrix(W) ≈ Matrix(J) - invdtgamma * Matrix(I, 2, 2)
+
+Jmissing = sparse([1, 2], [2, 1], [2.0, 3.0], 2, 2)
+Wmissing = copy(Jmissing)
+OrdinaryDiffEqDifferentiation.jacobian2W!(Wmissing, I, dtgamma, Jmissing)
+@test Matrix(Wmissing) ≈ Matrix(Jmissing) - invdtgamma * Matrix(I, 2, 2)
+@test nnz(Wmissing) == nnz(Jmissing) + 2
+
+# Partial diagonal: some columns take the fast write, others the insertion fallback.
+Jpartial = sparse([1, 1, 2], [1, 2, 1], [3.0, 1.0, 0.5], 2, 2)
+Wpartial = copy(Jpartial)
+OrdinaryDiffEqDifferentiation.jacobian2W!(Wpartial, I, dtgamma, Jpartial)
+@test Matrix(Wpartial) ≈ Matrix(Jpartial) - invdtgamma * Matrix(I, 2, 2)
+@test nnz(Wpartial) == nnz(Jpartial) + 1
+
 # CPU sparse storage is scalar-indexable, so it keeps the in-place diagonal write; a
 # dense matrix is not sparse at all. Only GPU storage takes the allocating branch.
 W = similar(J)

@@ -12,12 +12,6 @@ struct EvalFunc{F} <: Function
 end
 (f::EvalFunc)(args...) = f.f(args...)
 
-NO_TSPAN_PROBS = Union{
-    AbstractLinearProblem, AbstractNonlinearProblem,
-    AbstractIntegralProblem, AbstractSteadyStateProblem,
-    AbstractJumpProblem,
-}
-
 """
     has_callbacks(kwargs)
 
@@ -59,7 +53,7 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
             }(values(kwargs))
             callbacks = NamedTuple{(:callback,)}(
                 (
-                    DiffEqBase.CallbackSet(
+                    CallbackSet(
                         prob.kwargs[:callback],
                         values(kwargs).callback
                     ),
@@ -919,6 +913,22 @@ function (wrapper::ParameterDespecializationWrapper)(args...)
     return _invoke_parameter_despecialization(wrapper.f, args)
 end
 
+# Whether `promote_f` already wrapped `f` on an earlier concretization. The auxiliary
+# despecialization widens the bounded type parameters, which only the `@set`s of the
+# wrapping step narrow back, and that step is skipped for a wrapped `f`. So an `f` that
+# is already wrapped must not be despecialized again, or concretizing a concretized
+# problem would change its type.
+# Functions without an `f` field (e.g. `DynamicalODEFunction`, which stores `f1`/`f2`)
+# are never wrapped here.
+_is_concretized(f) = hasfield(typeof(f), :f) &&
+    getfield(f, :f) isa FunctionWrappersWrappers.FunctionWrappersWrapper
+# An `SDEFunction` is only wrapped by the non-ForwardDiff path, and it counts as wrapped
+# when both the drift and the diffusion are, matching the skip condition of the wrapping
+# step below.
+_is_concretized(f::SDEFunction) =
+    f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper &&
+    f.g isa FunctionWrappersWrappers.FunctionWrappersWrapper
+
 function _despecialize_auxiliary_functions(f)
     if isdefined(f, :g) && f.g !== nothing &&
             !(f.g isa ParameterDespecializationWrapper)
@@ -1002,7 +1012,7 @@ function promote_f(
     if isdefined(f, :jac_prototype) && f.jac_prototype isa AbstractArray
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
     end
-    despecialize && (f = _despecialize_auxiliary_functions(f))
+    despecialize && !_is_concretized(f) && (f = _despecialize_auxiliary_functions(f))
     # Stochastic implicit methods use function-derived ForwardDiff tags that cannot be
     # represented by the fixed dual signatures installed below.
     f isa SDEFunction && return (f, p_out)
@@ -1166,7 +1176,7 @@ function promote_f(
     if isdefined(f, :jac_prototype) && f.jac_prototype isa AbstractArray
         f = @set f.jac_prototype = similar(f.jac_prototype, uElType)
     end
-    despecialize && (f = _despecialize_auxiliary_functions(f))
+    despecialize && !_is_concretized(f) && (f = _despecialize_auxiliary_functions(f))
 
     dae_wrap_path = despecialize && f isa DAEFunction && isinplace(f) &&
         !(f.f isa AbstractSciMLOperator) &&

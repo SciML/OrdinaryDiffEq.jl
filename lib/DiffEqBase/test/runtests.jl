@@ -1,8 +1,13 @@
 using Pkg
 using SafeTestsets
+using SciMLTesting
 using Test
 
 const TEST_GROUP = get(ENV, "GROUP", "Core")
+
+function activate_qa_env()
+    return activate_group_env(joinpath(@__DIR__, "qa"); parent = [dirname(@__DIR__), joinpath(@__DIR__, "..", "..", "..")])
+end
 
 function activate_downstream_env()
     Pkg.activate(joinpath(@__DIR__, "downstream"))
@@ -32,6 +37,7 @@ end
             "ModelingToolkit", "Sundials",
         )
         @time @safetestset "Callbacks" include("callbacks.jl")
+        @time @safetestset "Callback root solve verbosity" include("callback_root_verbosity.jl")
         @time @safetestset "Plot Vars" include("plot_vars.jl")
         @time @safetestset "Problem Creation Tests" include("problem_creation_tests.jl")
         @time @safetestset "Export tests" include("export_tests.jl")
@@ -40,11 +46,14 @@ end
         @time @safetestset "DiffEqFunction tests" include("diffeqfunction_tests.jl")
         @time @safetestset "Internal Euler" include("internal_euler_test.jl")
         @time @safetestset "Norm" include("norm.jl")
+        @time @safetestset "Calculate Residuals" include("calculate_residuals.jl")
         @time @safetestset "Utils" include("utils.jl")
         @time @safetestset "Developer Codegen API" include("developer_codegen_api_tests.jl")
         @time @safetestset "ForwardDiff Dual Detection" include("forwarddiff_dual_detection.jl")
         @time @safetestset "ODE default norm" include("ode_default_norm.jl")
         @time @safetestset "DynamicQuantities extension" include("dynamicquantities_ext.jl")
+        @time @safetestset "Unitful extension" include("unitful_ext.jl")
+        @time @safetestset "Extension ODE_DEFAULT_NORM" include("extension_norm_ext.jl")
         @time @safetestset "ODE default unstable check" include("ode_default_unstable_check.jl")
         @time @safetestset "Problem Kwargs Merging" include("problem_kwargs_merging.jl")
         @time @safetestset "Opaque-p Hook" include("opaque_p_test.jl")
@@ -53,12 +62,19 @@ end
         @time @safetestset "Verbose Inference" include("verbose_inference.jl")
     end
 
-    # QA tests — Aqua quality checks
+    # QA tests — Aqua/ExplicitImports quality checks. Runs last among the
+    # in-process groups: `activate_qa_env()` leaves the QA environment active,
+    # so the groups above must resolve before it runs.
     if TEST_GROUP ∉ (
             "Core", "Static", "Downstream", "Downstream2",
             "ModelingToolkit", "Sundials",
         ) && isempty(VERSION.prerelease)
-        @time @safetestset "Aqua" include("aqua.jl")
+        activate_qa_env()
+        # Plain @testset, not @safetestset: the env switch above makes
+        # SafeTestsets unreachable inside the @eval'd testset module.
+        @time @testset "QA" begin
+            include("qa/qa.jl")
+        end
     end
 
     # Static analysis tests — allocation checks with ComponentArrays
@@ -82,6 +98,7 @@ end
         @time @safetestset "Default linsolve with structure" include("downstream/default_linsolve_structure.jl")
         @time @safetestset "Callback Merging Tests" include("downstream/callback_merging.jl")
         @time @safetestset "Callback Detection Tests" include("downstream/callback_detection.jl")
+        @time @safetestset "Callback root solve verbosity (integrator)" include("downstream/callback_root_verbosity.jl")
         @time @safetestset "LabelledArrays Tests" include("downstream/labelledarrays.jl")
         @time @safetestset "GTPSA Tests" include("downstream/gtpsa.jl")
         @time @safetestset "SubArray Support" include("downstream/subarray_support.jl")
