@@ -42,8 +42,7 @@ end
         z[6] = zero(cache.z[6])
         fill!(dts, dt)
         perform_predict!(cache)
-        cache.Δ = integrator.u - integrator.uprev
-        update_nordsieck_vector!(cache)
+        z[1] = integrator.u
         if integrator.opts.adaptive && get_EEst(integrator) >= one(get_EEst(integrator))
             cache.order = 1
         end
@@ -63,7 +62,7 @@ end
         if !isucceed
             # rewind Nordsieck vector
             integrator.force_stepfail = true
-            nordsieck_rewind!(cache)
+            nordsieck_restore_failed_step!(cache, tmp)
             return nothing
         end
 
@@ -76,11 +75,10 @@ end
                 t
             )
             set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-            if get_EEst(integrator) > one(get_EEst(integrator))
-                for i in 1:5
-                    dts[i] = dts[i + 1]
-                end
-                dts[6] = tmp
+            if get_EEst(integrator) > one(get_EEst(integrator)) &&
+                    !(integrator.opts.force_dtmin && abs(dt) <= timedepentdtmin(integrator))
+                nordsieck_restore_failed_step!(cache, tmp)
+                return nothing
             end
         end
 
@@ -149,8 +147,7 @@ end
         fill!(z[6], 0)
         fill!(dts, dt)
         perform_predict!(cache)
-        @.. broadcast = false cache.Δ = integrator.u - integrator.uprev
-        update_nordsieck_vector!(cache)
+        copyto!(z[1], integrator.u)
         if integrator.opts.adaptive && get_EEst(integrator) >= one(get_EEst(integrator))
             cache.order = 1
         end
@@ -171,7 +168,7 @@ end
         if !isucceed
             integrator.force_stepfail = true
             # rewind Nordsieck vector
-            nordsieck_rewind!(cache)
+            nordsieck_restore_failed_step!(cache, tmp)
             return nothing
         end
 
@@ -183,11 +180,10 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm, t
             )
             set_EEst!(integrator, integrator.opts.internalnorm(atmp, t) * cache.c_LTE)
-            if get_EEst(integrator) > one(get_EEst(integrator))
-                for i in 1:5
-                    dts[i] = dts[i + 1]
-                end
-                dts[6] = tmp
+            if get_EEst(integrator) > one(get_EEst(integrator)) &&
+                    !(integrator.opts.force_dtmin && abs(dt) <= timedepentdtmin(integrator))
+                nordsieck_restore_failed_step!(cache, tmp)
+                return nothing
             end
         end
 
