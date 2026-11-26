@@ -54,7 +54,7 @@ const linkage_p = (
     sin(intended[1]) + 0.7sin(intended[2]),
 )
 
-@testset "OverrideInit converges to the nearby assembly (#5005)" begin
+@testset "explicit NewtonRaphson in OverrideInit selects the nearby assembly" begin
     data = OverrideInitData(
         NonlinearProblem(closure!, copy(guess), linkage_p), nothing, sol -> copy(sol.u), nothing
     )
@@ -67,7 +67,7 @@ const linkage_p = (
     @test integ.u ≈ intended atol = 1.0e-8
 end
 
-@testset "BrownFullBasicInit converges to the nearby assembly (#5005)" begin
+@testset "explicit NewtonRaphson in BrownFullBasicInit selects the nearby assembly" begin
     f = ODEFunction((du, u, p, t) -> closure!(du, u, p); mass_matrix = zeros(2, 2))
     prob = ODEProblem(f, copy(guess), (0.0, 0.01), linkage_p)
     integ = init(
@@ -104,5 +104,32 @@ end
         prob = ODEProblem(ODEFunction(f!; mass_matrix = zeros(1, 1), initialization_data = data), [0.0], (0.0, 0.01))
         integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
         @test integ.u ≈ [2.0] atol = 1.0e-8
+    end
+end
+
+@testset "default solver follows the problem returned by the initializer updater" begin
+    g(x) = 0.5 - exp(-1.0e4 * (x - 1)^2)
+    root = 1 + sqrt(log(2)) / 100
+    residual!(r, u, p) = (r[1] = g(u[1]); nothing)
+    f!(du, u, p, t) = residual!(du, u, p)
+    supplied = NonlinearProblem(NonlinearFunction{true, SciMLBase.AutoSpecialize}(residual!), [1.01])
+    placeholder = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(residual!), [1.01])
+    for updated in (false, true)
+        calls = Ref(0)
+        data = if updated
+            OverrideInitData(
+                placeholder, (_, _) -> (calls[] += 1; supplied), sol -> copy(sol.u), nothing;
+                is_update_oop = Val(true)
+            )
+        else
+            OverrideInitData(supplied, nothing, sol -> copy(sol.u), nothing)
+        end
+        fn = ODEFunction{true, SciMLBase.FullSpecialize}(f!; mass_matrix = zeros(1, 1), initialization_data = data)
+        prob = ODEProblem(fn, [1.01], (0.0, 0.01))
+        integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+        @test calls[] == updated
+        @test integ.sol.retcode != SciMLBase.ReturnCode.InitialFailure
+        @test only(integ.u) ≈ root atol = 1.0e-8
+        @test abs(g(only(integ.u))) < 1.0e-10
     end
 end

@@ -127,25 +127,49 @@ end
 
 ## OverrideInit
 
+# An out-of-place `update_initializeprob!` can return a problem with a different state or
+# specialization than the stored one, so the default solver is chosen from the problem
+# that `get_initial_values` actually solves.
+struct DeferredDefaultNLSolve{IIP, AD}
+    isinplace::IIP
+    autodiff::AD
+end
+
+# The `IntervalNonlinearProblem` method resolves an ambiguity with BracketingNonlinearSolve.
+for P in (AbstractNonlinearProblem, SciMLBase.IntervalNonlinearProblem)
+    @eval function CommonSolve.solve(prob::$P, alg::DeferredDefaultNLSolve; kwargs...)
+        nlsolve_alg = default_nlsolve(
+            nothing, alg.isinplace, state_values(prob), prob, alg.autodiff
+        )
+        return solve(prob, nlsolve_alg; kwargs...)
+    end
+end
+
 function _initialize_dae!(
         integrator, prob::AbstractDEProblem,
         alg::OverrideInit, isinplace::Union{Val{true}, Val{false}}
     )
-    initializeprob = prob.f.initialization_data.initializeprob
+    initdata = prob.f.initialization_data
+    initializeprob = initdata.initializeprob
 
     # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
     # Since then it's the case of not a DAE but has initializeprob
     # In which case, it should be differentiable
-    iu0 = state_values(initializeprob)
-    isAD = if iu0 === nothing
-        AutoForwardDiff
-    elseif has_autodiff(integrator.alg)
+    hasAD = if has_autodiff(integrator.alg)
         alg_autodiff(integrator.alg) isa AutoForwardDiff
     else
         true
     end
 
-    nlsolve_alg = default_nlsolve(alg.nlsolve, isinplace, iu0, initializeprob, isAD)
+    nlsolve_alg = if alg.nlsolve === nothing &&
+            initdata.update_initializeprob! !== nothing &&
+            initdata.is_update_oop === Val(true)
+        DeferredDefaultNLSolve(isinplace, hasAD)
+    else
+        iu0 = state_values(initializeprob)
+        isAD = iu0 === nothing ? AutoForwardDiff : hasAD
+        default_nlsolve(alg.nlsolve, isinplace, iu0, initializeprob, isAD)
+    end
 
     u0, p,
         success = SciMLBase.get_initial_values(

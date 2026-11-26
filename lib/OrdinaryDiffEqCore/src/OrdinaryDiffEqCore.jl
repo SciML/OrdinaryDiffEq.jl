@@ -89,7 +89,7 @@ using SciMLBase: SciMLBase, CallbackSet, ContinuousCallback, DAEProblem,
     get_tmp_cache, isinplace, reinit!
 const LinearAliasSpecifier = SciMLBase.LinearAliasSpecifier
 using SciMLOperators: SciMLOperators
-using CommonSolve: solve
+using CommonSolve: CommonSolve, solve
 
 import SciMLBase: AbstractNonlinearProblem, alg_order
 # `calculate_residuals`/`calculate_residuals!` are unused here but re-exported for
