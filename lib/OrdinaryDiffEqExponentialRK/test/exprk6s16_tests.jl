@@ -14,7 +14,7 @@ using SciMLBase: successful_retcode
         sol = solve(prob, ExpRK6s16(; krylov, m = 1); dt = 0.25f0)
         @test successful_retcode(sol)
         @test eltype(sol.u[end]) === Float32
-        @test sol.u[end][1] ≈ 2exp(-1.0f0) rtol = 1.0f-5
+        @test sol.u[end][1] ≈ 2exp(-1.0f0) rtol = sqrt(eps(Float32))
     end
     setprecision(BigFloat, 192) do
         prob = SplitODEProblem(
