@@ -3,6 +3,12 @@ using OrdinaryDiffEqCore
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 using SciMLBase: FullSpecialize, SplitFunction, ODEFunction, DAEFunction
 using AllocCheck
+using ADTypes: AutoForwardDiff, AutoSparse
+using OrdinaryDiffEqDifferentiation: OrdinaryDiffEqDifferentiation
+using SciMLBase: NoInit
+using SparseArrays
+using SparseConnectivityTracer: TracerSparsityDetector
+using SparseMatrixColorings: GreedyColoringAlgorithm
 using Test
 
 @testset "BDF Allocation Tests" begin
@@ -225,4 +231,37 @@ using Test
             end
         end
     end
+end
+
+# A residual the global tracer cannot trace once t >= 0.5 sends a refresh with automatic
+# storage through the uncompressed fallback. It must stream columns through reused buffers,
+# so its allocation grows linearly with the state count rather than quadratically.
+@testset "Uncompressed DAE Jacobian fallback allocates linearly" begin
+    function late_branch!(r, du, u, p, t)
+        r .= du .+ u
+        r[1] += t >= 0.5 && u[1] < 0 ? u[1]^2 : 0.0
+        return nothing
+    end
+    backend = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = TracerSparsityDetector(),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    function refresh_allocation(n)
+        prob = DAEProblem(
+            late_branch!, -ones(n), ones(n), (0.0, 1.0); differential_vars = trues(n)
+        )
+        integrator = init(prob, DFBDF(autodiff = backend); initializealg = NoInit())
+        integrator.t = 0.75
+        nlsolver = integrator.cache.nlsolver
+        refresh() = OrdinaryDiffEqDifferentiation.calc_W!(
+            nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+        )
+        refresh()
+        refresh()
+        GC.gc()
+        return @allocated refresh()
+    end
+    small, large = refresh_allocation(512), refresh_allocation(2048)
+    @test large < 6 * small
+    @test large < 4_000_000 # a dense 2048 x 2048 matrix alone is 33.5 MB
 end

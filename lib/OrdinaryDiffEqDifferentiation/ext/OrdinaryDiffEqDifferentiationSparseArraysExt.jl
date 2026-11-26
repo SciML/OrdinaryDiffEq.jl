@@ -31,48 +31,68 @@ function _is_stored(J::SparseMatrixCSC, i, j)
     return k <= last(stored) && rows[k] == i
 end
 
-# The detector cannot trace `f` here, so find the entries that matter at this point by
-# differentiating without compression. Entries that are zero at this point add nothing to
-# a compressed Jacobian, so only nonzeros outside `J` are errors.
-function _check_dense_stored(ad, f, fx, x, J)
-    dense = try
-        DI.jacobian(f, fx, ADTypes.dense_ad(ad), x)
+# The detector cannot trace `f` here, so differentiate it one independent column at a time
+# with reused buffers. Only nonzeros outside `J` are errors, since entries that are zero at
+# this point add nothing; the values for `J`'s stored entries are staged and copied in once
+# every column has passed, so a failure leaves `J` untouched.
+function _fill_from_columns!(ad, f, fx, x, J)
+    dense = ADTypes.dense_ad(ad)
+    tangent = zero(x)
+    column = similar(fx)
+    prep = try
+        DI.prepare_pushforward(f, fx, dense, x, (tangent,); strict = Val(false))
     catch err
         err isa InterruptException && rethrow()
-        throw(
-            DimensionMismatch(
-                "The automatically detected sparsity pattern of the DAE Jacobian cannot be \
-                validated here because the detector cannot trace the residual at this \
-                point. Supply a `KnownJacobianSparsityDetector` holding the union of the \
-                patterns, or a `jac_prototype`."
-            )
-        )
+        throw(_unvalidatable_error())
     end
-    for j in axes(dense, 2), i in axes(dense, 1)
-        iszero(dense[i, j]) || _is_stored(J, i, j) ||
-            throw(
-            _missing_entry_error(
-                i, j,
-                "The detector cannot trace the residual at this point, and uncompressed \
-                differentiation finds a nonzero derivative at"
+    rows = rowvals(J)
+    staged = similar(nonzeros(J))
+    for j in axes(J, 2)
+        tangent[j] = one(eltype(tangent))
+        try
+            DI.pushforward!(f, fx, (column,), prep, dense, x, (tangent,))
+        catch err
+            err isa InterruptException && rethrow()
+            throw(_unvalidatable_error())
+        finally
+            tangent[j] = zero(eltype(tangent))
+        end
+        for i in eachindex(column)
+            iszero(column[i]) || _is_stored(J, i, j) ||
+                throw(
+                _missing_entry_error(
+                    i, j,
+                    "The detector cannot trace the residual at this point, and uncompressed \
+                    differentiation finds a nonzero derivative at"
+                )
             )
-        )
+        end
+        for idx in nzrange(J, j)
+            staged[idx] = column[rows[idx]]
+        end
     end
-    return nothing
+    copyto!(nonzeros(J), staged)
+    return true
 end
+
+_unvalidatable_error() = DimensionMismatch(
+    "The automatically detected sparsity pattern of the DAE Jacobian cannot be validated \
+    here because the detector cannot trace the residual at this point. Supply a \
+    `KnownJacobianSparsityDetector` holding the union of the patterns, or a `jac_prototype`."
+)
 
 function OrdinaryDiffEqDifferentiation.check_pattern_stored(
         alg, f, fx, x, J::SparseMatrixCSC, explicit::Bool
     )
     ad = alg_autodiff(alg)
-    ad isa ADTypes.AutoSparse || return nothing
+    ad isa ADTypes.AutoSparse || return false
     detector = ADTypes.sparsity_detector(ad)
     # A known pattern is fixed by the caller and was checked against `J` when it was built;
     # `NoSparsityDetector` detects nothing, its all-true pattern is only a fallback.
     detector isa Union{ADTypes.KnownJacobianSparsityDetector, ADTypes.NoSparsityDetector} &&
-        return nothing
+        return false
     # Storage holding every entry cannot miss one.
-    length(nonzeros(J)) == length(J) && return nothing
+    length(nonzeros(J)) == length(J) && return false
     detected = try
         ADTypes.jacobian_sparsity(f, fx, x, detector)
     catch err
@@ -80,8 +100,8 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
         # Storage the user supplied is theirs to vouch for. Automatically derived storage
         # must not be used unvalidated: a coloring could fold a missing entry into the
         # wrong one.
-        explicit && return nothing
-        return _check_dense_stored(ad, f, fx, x, J)
+        explicit && return false
+        return _fill_from_columns!(ad, f, fx, x, J)
     end
     # Detectors may return a dense Boolean matrix.
     detected isa SparseMatrixCSC || (detected = SparseMatrixCSC(detected))
@@ -94,7 +114,7 @@ function OrdinaryDiffEqDifferentiation.check_pattern_stored(
         _is_stored(J, i, j) ||
             throw(_missing_entry_error(i, j, "The detected sparsity pattern of the DAE Jacobian includes"))
     end
-    return nothing
+    return false
 end
 
 # Override the sparse array manipulation functions

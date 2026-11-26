@@ -315,6 +315,48 @@ end
     @test_throws "cannot trace the residual" OrdinaryDiffEqDifferentiation.calc_W!(
         nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
     )
+    # The missing coordinate is named.
+    @test_throws "(1, 2)" OrdinaryDiffEqDifferentiation.calc_W!(
+        nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+    )
+end
+
+# The diagonal pattern at preparation, then the global tracer once armed.
+struct ArmedDetector <: ADTypes.AbstractSparsityDetector
+    armed::Base.RefValue{Bool}
+end
+function ADTypes.jacobian_sparsity(f!, y, x, d::ArmedDetector)
+    d.armed[] && return ADTypes.jacobian_sparsity(f!, y, x, TracerSparsityDetector())
+    return sparse(1:length(x), 1:length(x), trues(length(x)))
+end
+function ADTypes.jacobian_sparsity(f, x, d::ArmedDetector)
+    d.armed[] && return ADTypes.jacobian_sparsity(f, x, TracerSparsityDetector())
+    return sparse(1:length(x), 1:length(x), trues(length(x)))
+end
+
+@testset "The uncompressed fallback stores its validated values" begin
+    # Perturbing both columns of the diagonal color together would activate the
+    # `1e16 * u[1]^2 * u[2]` term; independent perturbations leave it zero.
+    function coupled_late!(r, du, u, p, t)
+        r .= du .+ u
+        r[1] += t >= 0.5 && u[1] > 0 ? 1.0e16 * u[1]^2 * u[2] : 0.0
+        return nothing
+    end
+    armed = Ref(false)
+    backend = AutoSparse(
+        AutoFiniteDiff(); sparsity_detector = ArmedDetector(armed),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    prob = DAEProblem(coupled_late!, zeros(2), zeros(2), (0.0, 1.0); differential_vars = [true, true])
+    integrator = init(prob, DFBDF(autodiff = backend); initializealg = NoInit())
+    armed[] = true
+    integrator.t = 0.75
+    nlsolver = integrator.cache.nlsolver
+    OrdinaryDiffEqDifferentiation.calc_W!(
+        nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+    )
+    @test Matrix(nlsolver.cache.J) ≈ [1.0 0.0; 0.0 1.0] atol = 1.0e-6
+    @test Matrix(nlsolver.cache.dae_jacobians.J_du) ≈ [1.0 0.0; 0.0 1.0] atol = 1.0e-6
 end
 
 @testset "Untraceable late branch with a fixed diagonal pattern still solves" begin

@@ -71,9 +71,10 @@ integrator construction and reuse their colorings.
     `(t, u, du)` and throws a `DimensionMismatch` if it finds an entry the storage does not
     hold, rather than returning a wrong Jacobian. If the detector cannot trace the residual at the
     refresh point (for example a comparison on a global tracer), user-supplied storage skips
-    validation for that refresh. Automatically derived storage is instead validated by
-    differentiating the partial Jacobian without compression at that point: the solve continues
-    if every nonzero lies inside the stored pattern and throws a `DimensionMismatch` otherwise.
+    validation for that refresh. Automatically derived storage is instead differentiated column by
+    column without compression at that point, with each column perturbed independently. If every
+    nonzero lies inside the stored pattern, those validated values are the partial Jacobian that is
+    used; otherwise a `DimensionMismatch` names the first missing entry.
     Storage that already holds
     every entry is never validated. Storage is never grown during the solve. For a
     state-dependent pattern, supply a `KnownJacobianSparsityDetector` holding the union of all
@@ -85,12 +86,11 @@ integrator construction and reuse their colorings.
     at each fresh Jacobian evaluation it can trace. A known pattern is checked against it when the
     integrator is built; either throws a `DimensionMismatch` if the detector finds an entry the
     storage does not hold. Stored zeros of a known pattern count as stored entries.
-  - **Known limitations.** A global tracer (`TracerSparsityDetector`) cannot trace a residual
-    that branches on `u` or `du`, even when a complete `jac_prototype` is supplied, because the
-    combined stage Jacobian is traced once when the integrator is built (this predates sparse
-    DAE support for separated Jacobians); use `TracerLocalSparsityDetector` or a
-    `KnownJacobianSparsityDetector`. The two validation residual evaluations per fresh sparse
-    Jacobian are not counted in `stats.nf` and add cost.
+  - A global tracer (`TracerSparsityDetector`) requires a traceable residual when the integrator
+    builds the combined stage Jacobian, including when a `jac_prototype` supplies the storage. Use
+    `TracerLocalSparsityDetector` or `KnownJacobianSparsityDetector` if the residual branches on `u`
+    or `du`. Tracer validation and any uncompressed fallback evaluations are excluded from
+    `stats.nf`. Their cost depends on the detector, backend, and problem size.
   - The number of colors, and so of residual evaluations per Jacobian, depends on the union
     pattern, not on each partial Jacobian alone.
 

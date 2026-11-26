@@ -495,17 +495,18 @@ function _calc_J_dae!(alg_member, integrator, J_u, J_du, cache)
 
         # The colorings are fixed to `J`'s stored pattern, so an automatically detected
         # pattern that grew since `J` was built would be decompressed into the wrong
-        # entries. Fail instead of returning a wrong Jacobian.
+        # entries. Fail instead of returning a wrong Jacobian. A partial the check had to
+        # compute uncompressed is already filled and is not differentiated again.
         # Mirrors `build_J_W`: storage comes from the user's `jac_prototype` or `sparsity`.
         explicit = integrator.f.jac_prototype !== nothing || integrator.f.sparsity !== nothing
-        check_pattern_stored(alg_member, uf_u, du1, uprev, J_u, explicit)
-        check_pattern_stored(alg_member, uf_du, du1, uf_u.du_fixed, J_u, explicit)
 
         # Compute J_u = dF/du at (du_fixed, uprev)
-        _jacobian!(alg_member, integrator, J_u, uf_u, uprev, du1, jac_config_u)
+        check_pattern_stored(alg_member, uf_u, du1, uprev, J_u, explicit) ||
+            _jacobian!(alg_member, integrator, J_u, uf_u, uprev, du1, jac_config_u)
 
         # Compute J_du = dF/d(du) at (du_eval, u_fixed)
-        _jacobian!(alg_member, integrator, J_du, uf_du, uf_u.du_fixed, du1, jac_config_du)
+        check_pattern_stored(alg_member, uf_du, du1, uf_u.du_fixed, J_du, explicit) ||
+            _jacobian!(alg_member, integrator, J_du, uf_du, uf_u.du_fixed, du1, jac_config_du)
     end
 
     integrator.stats.njacs += 1
