@@ -25,7 +25,7 @@ function has_callbacks(kwargs)
 end
 
 """
-    merge_problem_kwargs(prob; merge_callbacks=true, kwargs…)
+    merge_problem_kwargs(prob; merge_callbacks=true, erase_callbacks=nothing, kwargs…)
 
 Merges kwargs stored in `prob.kwargs` with the provided `kwargs`, following
 DiffEq's standard merging rules:
@@ -39,8 +39,19 @@ Returns the merged kwargs as a Base.pairs.
 This function is intended for use by problem types that override `__solve` or `__init`
 and need to manually handle kwargs merging that would normally be done by `solve_call`
 or `init_call`.
+
+# Callback specialization
+
+Wrapper packages with fixed callback types can pass `erase_callbacks = false` to
+`solve` or `init` to keep the merged callbacks specialized independently of the
+problem function's specialization. This specializes the solver on all merged callback
+types, including user callbacks. The default preserves the problem's usual callback
+erasure behavior.
 """
-function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
+function merge_problem_kwargs(prob; merge_callbacks = true, erase_callbacks = nothing, kwargs...)
+
+    erase_callbacks = erase_callbacks === nothing ?
+        _callback_erasure_enabled(prob, kwargs) : erase_callbacks
 
     # Special handling for callback merging
     if has_kwargs(prob)
@@ -65,7 +76,10 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
     end
 
 
-    if _erases_callback_types(prob)
+    if haskey(kwargs, :erase_callbacks)
+        kwargs = Base.structdiff((; kwargs...), (; erase_callbacks = nothing))
+    end
+    if erase_callbacks && _erases_callback_types(prob)
         callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
         kwargs = merge(
             (; kwargs...),
@@ -76,6 +90,12 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
     return kwargs
 end
 
+function _callback_erasure_enabled(prob, kwargs)
+    return get(
+        kwargs, :erase_callbacks, has_kwargs(prob) ?
+            get(prob.kwargs, :erase_callbacks, true) : true
+    )
+end
 
 # Erasure rewrites `prob.kwargs`, which rebuilds the problem through
 # `ConstructionBase.setproperties`. That works for these families but not for
@@ -759,13 +779,12 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
             typeof(u0_promote) === typeof(prob.u0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return _erase_problem_callback_types(prob)
+        return _callback_erasure_enabled(prob, kwargs) ? _erase_problem_callback_types(prob) : prob
     else
-        return _erase_problem_callback_types(
-            _remake_with_promoted_function(
-                prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
-            )
+        promoted_prob = _remake_with_promoted_function(
+            prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
         )
+        return _callback_erasure_enabled(prob, kwargs) ? _erase_problem_callback_types(promoted_prob) : promoted_prob
     end
 end
 
@@ -814,14 +833,13 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
             isconcretedu0(prob, tspan[1], kwargs) && typeof(du0_promote) === typeof(prob.du0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return _erase_problem_callback_types(prob)
+        return _callback_erasure_enabled(prob, kwargs) ? _erase_problem_callback_types(prob) : prob
     else
-        return _erase_problem_callback_types(
-            remake(
-                prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
-                tspan = tspan_promote
-            )
+        promoted_prob = remake(
+            prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
+            tspan = tspan_promote
         )
+        return _callback_erasure_enabled(prob, kwargs) ? _erase_problem_callback_types(promoted_prob) : promoted_prob
     end
 end
 
