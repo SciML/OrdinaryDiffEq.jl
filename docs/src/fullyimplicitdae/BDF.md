@@ -90,7 +90,7 @@ integrator construction and reuse their colorings.
     builds the combined stage Jacobian, including when a `jac_prototype` supplies the storage. Use
     `TracerLocalSparsityDetector` or `KnownJacobianSparsityDetector` if the residual branches on `u`
     or `du`. Tracer validation and any uncompressed fallback evaluations are excluded from
-    `stats.nf`. Their cost depends on the detector, backend, and problem size.
+    `stats.nf`. Their cost depends on the detector, backend, and problem size. The accuracy of the uncompressed fallback with a finite-difference backend depends on the scaling of the state vector; prefer an AD backend such as `AutoForwardDiff` with automatic patterns.
   - The number of colors, and so of residual evaluations per Jacobian, depends on the union
     pattern, not on each partial Jacobian alone.
 
