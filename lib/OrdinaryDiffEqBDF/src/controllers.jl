@@ -50,6 +50,38 @@ end
     integrator, cache::BDFControllerCache, alg,
 ) = get_EEst(cache) <= 1
 
+# These methods choose `dt` (and order) in their own alg-level `stepsize_controller!`,
+# so a user-supplied controller cache is never updated. Acceptance must then follow the
+# `EEst <= 1` test that `perform_step!` uses to commit the step history; without this,
+# a `PIDController` accepts on its stale `dt_factor` and keeps discarded steps.
+@inline OrdinaryDiffEqCore.accept_step_controller(
+    integrator, alg::Union{QNDF, FBDF, DFBDF, NordsieckBDFAlgs},
+) = get_EEst(integrator) <= 1
+
+# Fixed-order multistep methods whose `perform_step!` commits the step history only
+# when `EEst <= 1`. `PIDController` normally accepts on `dt_factor >= accept_safety`
+# alone, which can keep a step whose history was never committed or reject one whose
+# history already was, so for these methods acceptance is tied to `EEst <= 1`.
+const EEstCommittedHistoryAlgs = Union{ABDF2, QNDF1, QNDF2}
+
+@inline function OrdinaryDiffEqCore.accept_step_controller(
+        integrator, ::OrdinaryDiffEqCore.PIDControllerCache, ::EEstCommittedHistoryAlgs
+    )
+    return get_EEst(integrator) <= 1
+end
+
+# A step rejected on `EEst > 1` may carry a PID `dt_factor` at or above
+# `accept_safety`; cap it so the retry shrinks `dt` like any other PID rejection.
+function OrdinaryDiffEqCore.step_reject_controller!(
+        integrator, cache::OrdinaryDiffEqCore.PIDControllerCache,
+        alg::EEstCommittedHistoryAlgs
+    )
+    cache.dt_factor = min(cache.dt_factor, cache.controller.accept_safety)
+    return @invoke OrdinaryDiffEqCore.step_reject_controller!(
+        integrator, cache::OrdinaryDiffEqCore.PIDControllerCache, alg::Any
+    )
+end
+
 # Per-algorithm defaults for `CommonControllerOptions` knobs that don't match the
 # generic IController defaults. These match the historical alg-struct kwargs
 # `QNDF(qmax=5//1, qsteady_min=9//10, qsteady_max=12//10)` etc. and the formerly
