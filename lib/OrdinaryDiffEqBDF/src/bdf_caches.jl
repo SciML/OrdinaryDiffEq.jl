@@ -618,7 +618,7 @@ end
 # estimate so stiff components do not force smaller steps than BDF1.
 function _fbdf_start_tableau(T, T2)
     return AlexanderSDIRK2ESDIRKIMEXTableau(
-        T, T2; predictor = Val(:constant_state), smooth_est = true
+        T, T2; predictor = Val(:constant_state), smooth_est = Val(:scaled)
     )
 end
 

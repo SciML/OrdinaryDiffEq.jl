@@ -1330,10 +1330,18 @@ end
                     @.. broadcast = false tmp = tmp + ebtilde[j] * ks[j]
                 end
             end
-            if can_smooth_est(nlsolver) && something(tab.smooth_est, _esdirk_smooth_est(alg))
-                est = nlsolver.cache.dz
-                linres = dolinsolve(
-                    integrator, nlsolver.cache.linsolve; b = _vec(tmp),
+            scaled_smoothing = tab.smooth_est === Val(:scaled)
+            if can_smooth_est(nlsolver) && (scaled_smoothing || something(tab.smooth_est, _esdirk_smooth_est(alg)))
+                nlcache = nlsolver.cache
+                rhs = tmp
+                if scaled_smoothing
+                    # W = J - M/(γh). Use the scale at which W was factored.
+                    rhs = nlcache.k
+                    @.. broadcast = false rhs = -tmp / nlcache.W_γdt
+                end
+                est = nlcache.dz
+                dolinsolve(
+                    integrator, nlcache.linsolve; b = _vec(rhs),
                     linu = _vec(est)
                 )
                 integrator.stats.nsolve += 1
@@ -2391,9 +2399,13 @@ end
                     tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8 + ebtilde[9] * k9 + ebtilde[10] * k10 + ebtilde[11] * k11 + ebtilde[12] * k12
                 end
             end
-            if can_smooth_est(nlsolver) && something(tab.smooth_est, _esdirk_smooth_est(alg))
+            scaled_smoothing = tab.smooth_est === Val(:scaled)
+            if can_smooth_est(nlsolver) && (scaled_smoothing || something(tab.smooth_est, _esdirk_smooth_est(alg)))
                 integrator.stats.nsolve += 1
-                est = _reshape(get_W(nlsolver) \ _vec(tmp_est), axes(tmp_est))
+                # Use the factorization's γh here as in the in-place path.
+                rhs = _vec(tmp_est)
+                scaled_smoothing && (rhs = rhs / (-nlsolver.cache.W_γdt))
+                est = _reshape(get_W(nlsolver) \ rhs, axes(tmp_est))
             else
                 est = tmp_est
             end

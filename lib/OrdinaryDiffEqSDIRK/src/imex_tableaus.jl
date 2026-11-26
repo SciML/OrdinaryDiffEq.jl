@@ -30,7 +30,7 @@ struct ESDIRKIMEXTableau{T, T2, E}
     # Overrides for callers that run the step body under an algorithm other than the
     # tableau's own (e.g. FBDF's restart step); `nothing` defers to the algorithm.
     predictor::Union{Nothing, Predictor.T, Val{:constant_state}}
-    smooth_est::Union{Nothing, Bool}
+    smooth_est::Union{Nothing, Bool, Val{:scaled}}
 end
 
 # Default-flavor ctor: errors-as-`:standard`. Equivalent to the explicit ::Val(:standard).
@@ -2610,6 +2610,8 @@ coefficients and `T2` for stage abscissae. Forward keyword options to
 
 For FBDF restarts, `predictor = Val(:constant_state)` starts both implicit
 stage solves at the current state without accessing a previous-step interpolant.
+Use `smooth_est = Val(:scaled)` to normalize the embedded estimate with the
+scale of the cached Newton matrix.
 """
 function AlexanderSDIRK2ESDIRKIMEXTableau(T, T2; kwargs...)
     s = 2
