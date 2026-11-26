@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, LinearSolve, ADTypes, SciMLBase, SparseArrays, Test
-using LinearAlgebra: I, lu, mul!, norm
+using LinearAlgebra: I, Symmetric, cholesky, issuccess, lu, mul!, norm
 using ADTypes: AutoForwardDiff, AutoFiniteDiff, AutoSparse
-using SciMLBase: DAEProblem, DAEFunction, successful_retcode
+using SciMLBase: DAEProblem, DAEFunction, NoInit, successful_retcode
 using SciMLOperators: update_coefficients!
 using OrdinaryDiffEqDifferentiation: dae_jvp_cache, set_dae_jvp_cj!
 using SparseConnectivityTracer: TracerSparsityDetector
@@ -73,6 +73,14 @@ end
     )
     opts = (; abstol = 1.0e-9, reltol = 1.0e-9)
     reference = solve(prob, DFBDF(); opts...)
+    # Eliminating `u[n] = u[1] / 2` leaves `du = B * u` on the first `n - 1` unknowns.
+    B = zeros(n - 1, n - 1)
+    for i in 1:(n - 1)
+        B[i, i] = -2
+        i < n - 1 && (B[i, i + 1] = 1)
+    end
+    B[n - 1, 1] = 1 / 2
+    exact = exp(B) * ones(n - 1)
     sparse_fd = AutoSparse(
         AutoForwardDiff(); sparsity_detector = TracerSparsityDetector(),
         coloring_algorithm = GreedyColoringAlgorithm()
@@ -98,6 +106,8 @@ end
         sol = solve(prob, DFBDF(; autodiff, concrete_jac = true, linsolve); opts...)
         @test successful_retcode(sol)
         @test sol.u[end] ≈ reference.u[end] rtol = 1.0e-7
+        @test sol.u[end][1:(n - 1)] ≈ exact rtol = 1.0e-6
+        @test sol.u[end][n] ≈ sol.u[end][1] / 2 rtol = 1.0e-12
         @test sol.stats.njacs > 0
         @test calls[] > 1
         @test mismatch[] < 1.0e-12
@@ -147,5 +157,89 @@ end
         @test successful_retcode(sol)
         @test maximum(maximum(abs, u .- [exp(-t), exp(-2t)]) for (u, t) in zip(sol.u, sol.t)) <
             1.0e-6
+    end
+end
+
+# A Krylov stopping floor measured with the preconditioner from before `precs` is refreshed
+# for the new `W` is in the wrong units: at `s = 1e12` the first callback sees the
+# placeholder and the second `s` times it, and the floor accepted `dz = 0` on the
+# unsolved stage, returning `Success` with `u = u0`.
+@testset "Krylov stopping floor uses the refreshed preconditioner" begin
+    precs = (W, p) -> (lu(convert(AbstractMatrix, W)), I)
+    alg = DFBDF(; concrete_jac = true, linsolve = KrylovJL_GMRES(; precs))
+    for s in (1.0, 1.0e12, 1.0e20), adaptive in (true, false)
+        scaled!(r, du, u, p, t) = (r[1] = s * (du[1] + u[1]); r[2] = s * (u[2] - t^2); nothing)
+        prob = DAEProblem(
+            scaled!, [-1.0, 0.0], [1.0, 0.0], (0.0, 0.1); differential_vars = [true, false]
+        )
+        sol = solve(prob, alg; dt = 0.1, adaptive, abstol = 1.0e-5, reltol = 1.0e-5)
+        @test successful_retcode(sol)
+        @test sol.u[end][2] ≈ 0.01 rtol = 1.0e-8
+        @test sol.u[end][1] < 0.95
+    end
+end
+
+# The pattern of this `A` admits a nonsingular matrix (`det(A) = -1`), but distinct
+# irrational values on it gave a rank-6 placeholder, and `lu` in `precs` threw at `init`.
+const pattern7 = let
+    rows = [1, 2, 7, 1, 2, 3, 4, 5, 6, 7, 2, 3, 4, 5, 6]
+    cols = [1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 4, 5, 6, 7]
+    A = sparse(rows, cols, ones(15), 7, 7)
+    A[7, 2] = 2.0
+    A
+end
+function pattern7!(r, du, u, p, t)
+    y = [du[1:6] .+ u[1:6]; u[7] - exp(-t)]
+    mul!(r, pattern7, y)
+    return nothing
+end
+
+@testset "Sparse DAE placeholder admits a factorization" begin
+    sparse_fd = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = TracerSparsityDetector(),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    prob = DAEProblem(
+        pattern7!, [-ones(6); -1.0], ones(7), (0.0, 0.1); differential_vars = [trues(6); false]
+    )
+    first_W = Ref{Any}(nothing)
+    precs = function (W, p)
+        Wc = convert(AbstractMatrix, W)
+        first_W[] === nothing && (first_W[] = copy(Wc))
+        return (lu(Wc), I)
+    end
+    alg = DFBDF(; autodiff = sparse_fd, concrete_jac = true, linsolve = KrylovJL_GMRES(; precs))
+    sol = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, initializealg = NoInit())
+    W0 = first_W[]
+    @test W0 isa SparseMatrixCSC
+    @test issuccess(lu(W0; check = false))
+    @test W0.colptr == pattern7.colptr && rowvals(W0) == rowvals(pattern7)
+    @test successful_retcode(sol)
+    @test maximum(abs, sol.u[end] .- exp(-0.1)) < 1.0e-6
+end
+
+# The Newton matrix `[1000 1+cj; 1+cj 1000]` is SPD, so CG and MINRES apply, with a
+# Cholesky `precs` that needs an SPD placeholder too.
+function spd_swap!(r, du, u, p, t)
+    r[1] = du[2] + u[2] + 1000 * (u[1] - exp(-t))
+    r[2] = du[1] + u[1] + 1000 * (u[2] + exp(-t))
+    return nothing
+end
+
+@testset "CG and MINRES on an SPD DAE Newton matrix, with and without a pattern" begin
+    sparse_fd = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = TracerSparsityDetector(),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    prob = DAEProblem(spd_swap!, [-1.0, 1.0], [1.0, -1.0], (0.0, 0.05))
+    precs = (W, p) -> (cholesky(Symmetric(Matrix(convert(AbstractMatrix, W)))), I)
+    opts = (; dt = 0.05, adaptive = false, initializealg = NoInit())
+    reference = solve(prob, DFBDF(); opts...)
+    for krylov in (KrylovJL_CG, KrylovJL_MINRES), autodiff in (AutoForwardDiff(), sparse_fd),
+            linsolve in (krylov(), krylov(; precs))
+        concrete_jac = linsolve.precs === nothing ? nothing : true
+        sol = solve(prob, DFBDF(; autodiff, concrete_jac, linsolve); opts...)
+        @test successful_retcode(sol)
+        @test sol.u[end] ≈ reference.u[end] rtol = 1.0e-8
     end
 end

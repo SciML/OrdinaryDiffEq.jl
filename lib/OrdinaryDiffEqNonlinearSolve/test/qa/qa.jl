@@ -62,7 +62,7 @@ run_qa(
                 # OrdinaryDiffEqDifferentiation:
                 :build_J_W, :build_jac_config, :build_uf, :dolinsolve,
                 :is_always_new, :jacobian!, :jacobian2W!, :resize_jac_config!,
-                :update_W!, :wrapprecs, :is_sparse_csc,
+                :update_W!, :wrapprecs,
                 # ForwardDiff / StaticArraysCore internals.
                 :Dual, :StaticArray,
             ),

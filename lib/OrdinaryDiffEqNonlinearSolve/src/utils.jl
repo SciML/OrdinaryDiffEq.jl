@@ -317,7 +317,7 @@ end
 # configs must color `J`'s pattern rather than detect their own.
 function with_jac_sparsity(alg, J)
     ad = alg_autodiff(alg)
-    (ad isa ADTypes.AutoSparse && is_sparse_csc(J)) || return alg
+    (ad isa ADTypes.AutoSparse && J isa SparseMatrixCSC) || return alg
     autodiff = ADTypes.AutoSparse(
         ADTypes.dense_ad(ad);
         sparsity_detector = ADTypes.KnownJacobianSparsityDetector(J),

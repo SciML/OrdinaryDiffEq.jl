@@ -40,10 +40,13 @@ end
 
 Solve the linear system with the LinearSolve.jl cache `linsolve`, optionally
 resetting its matrix `A`, unknown `linu`, right-hand side `b`, and tolerances
-`reltol` (see `set_linear_reltol!`) and `abstol` (left unchanged when `nothing`; set only
-for an iterative solver). `alg` is the integrator's concrete member
-algorithm; callers holding a cache that stores it (e.g. `cache.alg`) should
-pass it so the call stays a static dispatch. Charges `stats.nf` for the
+`reltol` (see `set_linear_reltol!`) and `abstol`. `abstol` is set only for an iterative
+solver and left unchanged when `nothing`. Besides a number it may be a function
+`abstol(linsolve)`, which is evaluated after `A` is set and the cache's preconditioners
+are refreshed for it (see `refresh_precs!`), so that a tolerance measured with
+`linsolve.Pl` is in the units of the preconditioner the solve applies. `alg` is the
+integrator's concrete member algorithm; callers holding a cache that stores it (e.g.
+`cache.alg`) should pass it so the call stays a static dispatch. Charges `stats.nf` for the
 Jacobian-vector products the solve applied (see `drain_jvp_count!`) and
 returns the LinearSolve result.
 """
@@ -74,6 +77,10 @@ function _dolinsolve(_alg, integrator, linsolve, A, reltol, abstol)
         default_algorithm = hasproperty(_alg, :linsolve) && isnothing(_alg.linsolve)
     )
     if abstol !== nothing && !LinearSolve.needs_concrete_A(linsolve.alg)
+        if !(abstol isa Number)
+            refresh_precs!(linsolve)
+            abstol = abstol(linsolve)
+        end
         LinearSolve.update_tolerances!(linsolve; abstol)
     end
     linres = solve!(linsolve)
@@ -82,6 +89,24 @@ function _dolinsolve(_alg, integrator, linsolve, A, reltol, abstol)
     drain_jvp_count!(integrator, _alg, linsolve.A)
 
     return linres
+end
+
+"""
+    refresh_precs!(linsolve) -> linsolve
+
+Recompute `linsolve.Pl` and `linsolve.Pr` from the algorithm's `precs` if a new `A` or `p`
+has marked them stale, as an iterative `solve!` would on entry; that `solve!` then reuses
+them.
+"""
+function refresh_precs!(linsolve)
+    precs = hasproperty(linsolve.alg, :precs) ? linsolve.alg.precs : nothing
+    if linsolve.precsisfresh && precs !== nothing
+        Pl, Pr = precs(linsolve.A, linsolve.p)
+        linsolve.Pl = Pl
+        linsolve.Pr = Pr
+        linsolve.precsisfresh = false
+    end
+    return linsolve
 end
 
 """
@@ -148,12 +173,33 @@ end
 
 _isidentity(P) = P isa UniformScaling && isone(P.λ)
 
-function weight_left(Pl, w)
-    weight = LinearSolve.InvPreconditioner(Diagonal(w))
-    return _isidentity(Pl) ? weight : LinearSolve.ComposePreconditioner(Pl, weight)
+"""
+    ComposedLdiv(first, second)
+
+Preconditioner whose `ldiv!` applies `first \\ x` and then `second \\` the result.
+"""
+struct ComposedLdiv{F, S}
+    first::F
+    second::S
 end
 
-weight_right(Pr, w) = _isidentity(Pr) ? Diagonal(w) :
-    LinearSolve.ComposePreconditioner(Diagonal(w), Pr)
+Base.eltype(P::ComposedLdiv) = promote_type(eltype(P.first), eltype(P.second))
+
+function LinearAlgebra.ldiv!(P::ComposedLdiv, x)
+    ldiv!(P.first, x)
+    return ldiv!(P.second, x)
+end
+
+function LinearAlgebra.ldiv!(y, P::ComposedLdiv, x)
+    ldiv!(y, P.first, x)
+    return ldiv!(P.second, y)
+end
+
+function weight_left(Pl, w)
+    weight = LinearSolve.InvPreconditioner(Diagonal(w))
+    return _isidentity(Pl) ? weight : ComposedLdiv(Pl, weight)
+end
+
+weight_right(Pr, w) = _isidentity(Pr) ? Diagonal(w) : ComposedLdiv(Diagonal(w), Pr)
 
 Base.resize!(p::LinearSolve.LinearCache, i) = p

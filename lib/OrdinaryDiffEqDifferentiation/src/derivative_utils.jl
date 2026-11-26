@@ -1423,18 +1423,9 @@ function build_J_W(
             # `StaticWOperator(J - mass_matrix * inv(dtgamma))`.
             StaticWOperator(J - f.mass_matrix * invdtgamma_prototype, false)
         elseif f isa DAEFunction
-            # The concrete form holds placeholders until `calc_W!` forms the first `W`,
-            # and `precs` sees them once, when the linear cache is initialized. A DAE has
-            # no mass matrix to seed them from, so a sparse pattern gets distinct
-            # irrational values: those are nonsingular whenever the pattern is
-            # structurally nonsingular, as an index-1 Newton matrix is, where ones on the
-            # pattern can be singular.
-            concrete_form = if is_sparse(J)
-                nz = length(get_nzval(J))
-                set_all_nzval!(copy(J), sqrt.(eltype(J).(1:nz) .+ one(eltype(J)) / 2))
-            else
-                copyto!(similar(J), I)
-            end
+            # `calc_W!` assembles the first `W` only after `precs` has been called once, at
+            # linear-cache initialization, so the concrete form starts as a placeholder.
+            concrete_form = dae_W_placeholder(J)
             jvp = dae_jvp_cache(f, u, p, t; autodiff = alg_autodiff(alg))
             DAEWOperator(jvp, concrete_form)
         else

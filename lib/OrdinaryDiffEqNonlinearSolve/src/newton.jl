@@ -755,6 +755,20 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     ndz
 end
 
+"""
+    DAEKrylovFloor(reltol, buf, b)
+
+`reltol * ‖Pl \\ b‖` for the left preconditioner `Pl` of the linear cache it is called on,
+with `buf` as the storage for `Pl \\ b`.
+"""
+struct DAEKrylovFloor{T, V}
+    reltol::T
+    buf::V
+    b::V
+end
+
+(f::DAEKrylovFloor)(linsolve) = f.reltol * norm(ldiv!(f.buf, linsolve.Pl, f.b))
+
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true}, integrator, γW)
     (; uprev, t, p, dt, opts) = integrator
     (; z, tmp, ztmp, γ, α, iter, cache, method) = nlsolver
@@ -801,15 +815,17 @@ end
     # residual. Both terms scale with `F`, so a rescaled residual gets the same `dz`, and
     # `dz = 0` is accepted only once `F` has fallen to `reltol` of its value at the
     # predictor. `‖P b₁‖` keeps a late iterate, whose `b` is near the roundoff floor of
-    # `W * dz`, from being held to `reltol` of that floor, which it cannot reach.
-    linabstol = if matrix_free_dae && iter == 1 && reltol isa Number
-        ldiv!(_vec(atmp), linsolve.Pl, _vec(b))
-        (; abstol = reltol * norm(atmp))
+    # `W * dz`, from being held to `reltol` of that floor, which it cannot reach. The floor
+    # is measured with the preconditioner refreshed for the solve's `W`; when a later
+    # iterate refreshes it again, its own `b` stands in for `b₁`, which is not kept.
+    new_A = is_always_new(nlsolver) || (iter == 1 && new_W)
+    linabstol = if matrix_free_dae && (iter == 1 || new_A) && reltol isa Number
+        (; abstol = DAEKrylovFloor(reltol, _vec(atmp), _vec(b)))
     else
         (;)
     end
 
-    if is_always_new(nlsolver) || (iter == 1 && new_W)
+    if new_A
         linres = dolinsolve(
             integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
             reltol, linabstol...

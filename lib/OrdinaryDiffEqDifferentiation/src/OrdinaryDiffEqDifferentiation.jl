@@ -12,7 +12,7 @@ import DiffEqBase
 
 import LinearAlgebra
 import LinearAlgebra: Bidiagonal, Diagonal, I, SymTridiagonal, Tridiagonal,
-    UniformScaling, diagind, opnorm
+    UniformScaling, diagind, ldiv!, opnorm
 import LinearAlgebra: LowerTriangular
 import ArrayInterface
 
@@ -88,6 +88,20 @@ nonzeros(A) = error("SparseArrays extension not loaded. Please load SparseArrays
 spzeros(args...) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 get_nzval(A) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
 set_all_nzval!(A, val) = error("SparseArrays extension not loaded. Please load SparseArrays to use sparse matrix functionality.")
+
+"""
+    dae_W_placeholder(J)
+
+A matrix with `J`'s type and structure to stand in for the DAE Newton matrix until its
+first assembly, so that a `precs` called on it at linear-cache initialization can factor
+it. Dense storage gets the identity. A `SparseMatrixCSC` gets a permutation matrix on a
+structural perfect matching of its pattern, which prefers stored diagonal entries, so it
+is the identity whenever the diagonal is stored (as it is for any SPD Newton matrix); it is
+singular only when every matrix with that pattern is. Other sparse types get ones on their
+pattern.
+"""
+dae_W_placeholder(J) = is_sparse(J) ? set_all_nzval!(copy(J), one(eltype(J))) :
+    copyto!(similar(J), I)
 
 # `fill!` on LinearAlgebra's banded structured matrices throws for nonzero
 # values since the off-band entries are constrained to zero, so write the

@@ -39,7 +39,7 @@ run_qa(
                 :init_cacheval, :needs_concrete_A,
                 # documented in the LinearSolve manual but not yet declared
                 # `public` there (SciML/LinearSolve.jl make-public follow-up)
-                Symbol("update_tolerances!"), :ComposePreconditioner,
+                Symbol("update_tolerances!"),
                 # ForwardDiff internals
                 :JacobianConfig, :Tag, :pickchunksize,
                 # OrdinaryDiffEqCore internal not yet in its public block
@@ -52,6 +52,7 @@ run_qa(
                 # qualified from OrdinaryDiffEqDifferentiationSparseArraysExt
                 :get_nzval, :is_sparse, :is_sparse_csc, :nonzeros,
                 Symbol("set_all_nzval!"), :spzeros, :_update_sparse_diagonal!,
+                :dae_W_placeholder,
             ),
         ),
     ),
