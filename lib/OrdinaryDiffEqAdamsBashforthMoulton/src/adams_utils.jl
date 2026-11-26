@@ -139,3 +139,16 @@ const global γstar = [
     -0.00421495,
     -0.0038269,
 ]
+
+# A rejected startup step must not advance the history, or the retry takes an
+# Adams step built from it.
+function startup_step_rejected!(integrator, cache, k)
+    integrator.opts.adaptive || return false
+    EEst = OrdinaryDiffEqCore.get_EEst(integrator)
+    EEst > one(EEst) || return false
+    cache.step = k
+    for i in 1:(k - 1)
+        cache.dts[i] = cache.dts[i + 1]
+    end
+    return true
+end

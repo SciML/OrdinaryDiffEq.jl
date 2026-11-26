@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, OrdinaryDiffEqCore, ForwardDiff, Test, LinearAlgebra
 using OrdinaryDiffEqCore: DEVerbosity
 import OrdinaryDiffEqCore.SciMLLogging as SciMLLogging
-using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, NLNewton, NonlinearSolveAlg
 using RecursiveArrayTools: ArrayPartition
 
 foop = (u, p, t) -> u * p
@@ -332,5 +332,50 @@ end
         @test sol.t[end] == 1.0e3
         @test all(isapprox(u[4], t; rtol = 1.0e-10) for (t, u) in zip(sol.t, sol.u))
         @test all(isapprox(sum(u[1:3]), 1; atol = 1.0e-8) for u in sol.u)
+    end
+end
+
+# QNDF2 with a mass matrix and no reusable W keeps its history instead of restarting.
+@testset "d_discontinuities restart the history as a callback does" begin
+    sw = [0.5, 1.0, 1.5, 2.0, 2.5]
+    c(t) = isodd(count(<(t), sw))
+    f!(du, u, p, t) = (du[1] = -3 * u[1] + c(t); nothing)
+    prob = ODEProblem(f!, [0.0], (0.0, 3.0))
+    # On each interval u relaxes exponentially towards c / 3.
+    function exact(t)
+        u, s = 0.0, 0.0
+        for b in [filter(<(t), sw); t]
+            ci = c((s + b) / 2)
+            u = ci / 3 + (u - ci / 3) * exp(-3 * (b - s))
+            s = b
+        end
+        return u
+    end
+    err(sol) = maximum(abs(u[1] - exact(t)) for (t, u) in zip(sol.t, sol.u))
+    cb = DiscreteCallback(
+        (u, t, integrator) -> t in sw, integrator -> nothing; save_positions = (false, false)
+    )
+    for alg in (FBDF(), QNDF(), QNDF2())
+        kw = (; reltol = 1.0e-8, abstol = 1.0e-11, d_discontinuities = sw)
+        sol = solve(prob, alg; kw...)
+        restarted = solve(prob, alg; kw..., callback = cb)
+        @test sol.t == restarted.t
+        @test sol.u == restarted.u
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 3.0
+        @test err(sol) < 1.0e-5
+    end
+    # Same solution with M = m * I and f scaled by m.
+    m = 1.0e-9
+    fm!(du, u, p, t) = (du[1] = m * (-3 * u[1] + c(t)); nothing)
+    fm(u, p, t) = m .* (-3 .* u .+ c(t))
+    for fun in (ODEFunction(fm!; mass_matrix = [m;;]), ODEFunction(fm; mass_matrix = [m;;]))
+        mprob = ODEProblem(fun, [0.0], (0.0, 3.0))
+        for alg in (QNDF2(), QNDF2(nlsolve = NonlinearSolveAlg()))
+            sol = solve(mprob, alg; reltol = 1.0e-8, abstol = 1.0e-11, d_discontinuities = sw)
+            @test sol.retcode == ReturnCode.Success
+            @test sol.t[end] == 3.0
+            @test err(sol) < 1.0e-5
+        end
     end
 end
