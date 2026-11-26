@@ -1,6 +1,6 @@
 module OrdinaryDiffEqSymplecticRK
 
-import OrdinaryDiffEqCore: perform_step!,
+import OrdinaryDiffEqCore: perform_step!, step_end_time,
     OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
     OrdinaryDiffEqPartitionedAlgorithm,
     CompiledFloats,

@@ -1032,13 +1032,20 @@ function SciMLBase.log_numerical_instability(integrator::ODEIntegrator; jacobian
     return diagnostic
 end
 
+"""
+    step_end_time(integrator, proposed_time)
+
+Return the exact target when the current step is set to land on a time stop,
+or `proposed_time` otherwise. Endpoint stages can call this without consuming the stop.
+"""
+function step_end_time(integrator, proposed_time)
+    return _get_next_step_tstop(integrator) ? _get_tstop_target(integrator) : proposed_time
+end
+
 function fixed_t_for_tstop_error!(integrator, ttmp)
-    if _get_next_step_tstop(integrator)
-        _set_tstop_flag!(integrator, false)
-        return _get_tstop_target(integrator)
-    else
-        return ttmp
-    end
+    tend = step_end_time(integrator, ttmp)
+    _set_tstop_flag!(integrator, false)
+    return tend
 end
 
 # Type-stable check: did the callback that fired have maybe_discontinuity = true?

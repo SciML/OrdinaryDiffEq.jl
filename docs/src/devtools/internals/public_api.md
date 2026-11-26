@@ -336,6 +336,7 @@ OrdinaryDiffEqCore.alg_cache
 OrdinaryDiffEqCore.get_fsalfirstlast
 OrdinaryDiffEqCore.get_fresh_jacobian
 OrdinaryDiffEqCore.perform_step!
+OrdinaryDiffEqCore.step_end_time
 OrdinaryDiffEqCore.apply_step!
 ```
 

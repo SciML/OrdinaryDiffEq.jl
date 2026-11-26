@@ -1,11 +1,3 @@
-# the time the integrator stores at the end of the step; t + dt can round past a tstop
-function step_end_time(integrator, t, dt)
-    if OrdinaryDiffEqCore._get_next_step_tstop(integrator)
-        return OrdinaryDiffEqCore._get_tstop_target(integrator)
-    end
-    return t + dt
-end
-
 function last_nonzero(c)
     k = 0
     for i in eachindex(c)
@@ -220,7 +212,7 @@ end
     dtsq = dt^2
     half = cache.half
     u = uprev + dt * duprev + dtsq * (half * ku)
-    kdu = f.f1(duprev, u, p, step_end_time(integrator, t, dt))
+    kdu = f.f1(duprev, u, p, step_end_time(integrator, t + dt))
     # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
     du = duprev + dt * (half * ku + half * kdu)
 
@@ -238,7 +230,7 @@ end
     dtsq = dt^2
     half = cache.half
     @.. broadcast = false u = uprev + dt * duprev + dtsq * (half * ku)
-    f.f1(kdu, duprev, u, p, step_end_time(integrator, t, dt))
+    f.f1(kdu, duprev, u, p, step_end_time(integrator, t + dt))
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
     @.. broadcast = false du = duprev + dt * (half * ku + half * kdu)
@@ -263,7 +255,7 @@ end
     u = uprev + dt * ku
 
     # update velocity
-    kdu = f.f1(du, u, p, step_end_time(integrator, t, dt))
+    kdu = f.f1(du, u, p, step_end_time(integrator, t + dt))
     du = du + dt * half * kdu
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -286,7 +278,7 @@ end
     @.. broadcast = false u = uprev + dt * ku
 
     # update velocity
-    f.f1(kdu, du, u, p, step_end_time(integrator, t, dt))
+    f.f1(kdu, du, u, p, step_end_time(integrator, t + dt))
     @.. broadcast = false du = du + dt * half * kdu
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -317,7 +309,7 @@ end
     du = duprev + dt * kdu
 
     # update position (add to half step position)
-    ku = f.f2(du, u, p, step_end_time(integrator, t, dt))
+    ku = f.f2(du, u, p, step_end_time(integrator, t + dt))
     u = u + dt * half * ku
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
@@ -349,7 +341,7 @@ end
     @.. broadcast = false du = duprev + dt * kdu
 
     # update position (add to half step position)
-    f.f2(ku, du, u, p, step_end_time(integrator, t, dt))
+    f.f2(ku, du, u, p, step_end_time(integrator, t + dt))
     @.. broadcast = false u = u + dt * half * ku
 
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
@@ -373,7 +365,7 @@ end
     # Stage 1: drift using kuprev from FSAL. Two clocks: kick i (f1) is evaluated
     # at the time the position has reached, tq = t + (b[1] + ... + b[i]) * dt, and
     # drift i (f2) at the time the velocity has reached, tp = t + (a[1] + ... + a[i-1]) * dt.
-    tend = step_end_time(integrator, t, dt)
+    tend = step_end_time(integrator, t + dt)
     # after the last nonzero coefficient the clock is at tend; the rounded sum can exceed 1
     la = last_nonzero(a)
     lb = last_nonzero(b)
@@ -421,7 +413,7 @@ end
 
     # Stage 1: drift using kuprev from FSAL. Each kick is evaluated at the time
     # the position has reached, t + (b[1] + ... + b[i]) * dt.
-    tend = step_end_time(integrator, t, dt)
+    tend = step_end_time(integrator, t + dt)
     # after the last nonzero coefficient the clock is at tend; the rounded sum can exceed 1
     la = last_nonzero(a)
     lb = last_nonzero(b)

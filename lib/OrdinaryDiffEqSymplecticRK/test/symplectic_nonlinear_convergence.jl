@@ -137,9 +137,41 @@ end
         alg in INSIDE_ALGS
 
     sol = guarded_solve(alg, iip, (-1.0, 0.1), 1.1, Float64)
-    @test sol.t[end] == 0.1
-    sol = guarded_solve(alg, iip, (0.1, -1.0), 1.1, Float64)
-    @test sol.t[end] == -1.0
+    @test sol.t[end] === 0.1
+    sol = guarded_solve(alg, iip, (1.0, -0.1), 1.1, Float64)
+    @test sol.t[end] === -0.1
+end
+
+@testset "endpoint calls at saved stops, iip = $iip, direction = $d" for iip in (false, true),
+        d in (-1, 1)
+
+    mid, stop = d * 0.1, d * 0.3
+    tspan = (-Float64(d), stop)
+    lo, hi = minmax(tspan...)
+    seen = Float64[]
+    trace(t) = (lo <= t <= hi || throw(DomainError(t)); push!(seen, t))
+    f1(v, u, t) = (trace(t); zero(v))
+    f2(v, u, t) = (trace(t); v)
+    for alg in (McAte2(), VelocityVerlet(), VerletLeapfrog(), LeapfrogDriftKickDrift())
+        prob = make_problem(f1, f2, iip, [0.0], [0.0], tspan)
+        integ = init(prob, alg; dt = 1.1, adaptive = false, tstops = [mid])
+        for target in (mid, stop)
+            empty!(seen)
+            step!(integ)
+            @test seen[end] === integ.sol.t[end] === target
+        end
+    end
+end
+
+@testset "VelocityVerlet endpoint force, iip = $iip, direction = $d" for iip in (false, true),
+        d in (-1, 1)
+
+    tspan = (-Float64(d), d * 0.1)
+    f1(v, u, t) = fill(t === tspan[2] ? 2.0 : 0.0, size(v))
+    f2(v, u, t) = v
+    prob = make_problem(f1, f2, iip, [0.0], [0.0], tspan)
+    sol = solve(prob, VelocityVerlet(); dt = 1.1, adaptive = false)
+    @test only(sol.u[end].x[1]) === tspan[2] - tspan[1]
 end
 
 @testset "Float32 endpoint, iip = $iip, $(nameof(typeof(alg)))" for iip in (false, true),
