@@ -73,6 +73,32 @@ end
 
 import DiffEqBase
 
+mutable struct DeferredCallbackWrapper <: SciMLBase.AbstractJumpProblem{Nothing, Nothing}
+    prob::Any
+    kwargs::Base.Pairs
+    DeferredCallbackWrapper() = new()
+end
+
+function DeferredCallbackWrapper(kwargs)
+    wrapper = DeferredCallbackWrapper()
+    wrapper.kwargs = pairs(kwargs)
+    return wrapper
+end
+
+SciMLBase.__init(::DeferredCallbackWrapper, ::Tsit5; save_everystep = true, kwargs...) = save_everystep
+function SciMLBase.__solve(prob::DeferredCallbackWrapper, ::Tsit5; kwargs...)
+    return DiffEqBase.merge_problem_kwargs(prob; kwargs...)[:save_everystep]
+end
+
+@testset "deferred wrapper keyword merging" begin
+    prob = DeferredCallbackWrapper((;))
+    for extra in ((;), (; erase_callbacks = nothing))
+        @test !DiffEqBase.merge_problem_kwargs(prob; save_everystep = false, extra...)[:save_everystep]
+        @test !init(prob, Tsit5(); save_everystep = false, extra...)
+        @test !solve(prob, Tsit5(); save_everystep = false, extra...)
+    end
+end
+
 struct CallbackWrapper{P, C, K} <: SciMLBase.AbstractJumpProblem{P, Nothing}
     prob::P
     callback::C

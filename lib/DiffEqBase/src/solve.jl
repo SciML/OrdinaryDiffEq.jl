@@ -80,7 +80,7 @@ function merge_problem_kwargs(prob; merge_callbacks = true, erase_callbacks = no
     if haskey(kwargs, :erase_callbacks)
         kwargs = Base.structdiff((; kwargs...), (; erase_callbacks = nothing))
     end
-    if !_erases_callback_types(prob) && _wraps_erasable_problem(prob) && explicit_erase !== nothing
+    if explicit_erase !== nothing && !_erases_callback_types(prob) && _wraps_erasable_problem(prob)
         kwargs = merge((; kwargs...), (; erase_callbacks = explicit_erase))
     end
     if erase_callbacks && _erases_callback_types(prob)
