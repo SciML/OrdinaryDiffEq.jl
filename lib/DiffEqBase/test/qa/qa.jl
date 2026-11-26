@@ -143,6 +143,9 @@ end
     @test ext !== nothing
     @test check_no_implicit_imports(ext) === nothing
     @test check_all_explicit_imports_via_owners(ext) === nothing
-    @test check_all_explicit_imports_are_public(ext) === nothing
-    @test check_all_qualified_accesses_are_public(ext) === nothing
+    @test check_all_qualified_accesses_via_owners(ext) === nothing
+    if VERSION >= v"1.11"
+        @test check_all_explicit_imports_are_public(ext) === nothing
+        @test check_all_qualified_accesses_are_public(ext) === nothing
+    end
 end
