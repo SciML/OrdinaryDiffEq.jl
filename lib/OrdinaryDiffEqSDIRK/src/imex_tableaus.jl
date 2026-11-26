@@ -2610,8 +2610,6 @@ coefficients and `T2` for stage abscissae. Forward keyword options to
 
 For FBDF restarts, `predictor = Val(:constant_state)` starts both implicit
 stage solves at the current state without accessing a previous-step interpolant.
-Use `smooth_est = Val(:scaled)` to normalize the embedded estimate with the
-scale of the cached Newton matrix.
 """
 function AlexanderSDIRK2ESDIRKIMEXTableau(T, T2; kwargs...)
     s = 2

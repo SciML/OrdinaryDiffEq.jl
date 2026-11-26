@@ -504,10 +504,6 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
         Startup step control must resolve stiff transients for accurate
         interpolation and history seeding.
         Requires adaptive stepping and `max_order >= 2`. Default: `false`.
-    - `rk_start_smooth_est`: opt in to the scaled, smoothed startup error
-        estimate. Smoothing can underresolve stiff transients and make startup
-        dense output unreliable. Applies only with `rk_start = true`.
-        Default: `false`.
     """,
     extra_keyword_default = """
     κ = nothing,
@@ -525,7 +521,6 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     stald_tiny = 1e-90,
     time_filter = false,
     rk_start = false,
-    rk_start_smooth_est = false,
     """
 )
 struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT, RK} <:
@@ -551,7 +546,6 @@ struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT, RK} <:
     qsteady_max::QT
     time_filter::Bool
     rk_start::Val{RK} # type-level so the cache type (with or without a start cache) infers
-    rk_start_smooth_est::Bool
 end
 
 function FBDF(;
@@ -570,7 +564,6 @@ function FBDF(;
         qsteady_min = 9 // 10, qsteady_max = 2 // 1, qmax = 10 // 1,
         time_filter = false,
         rk_start = false,
-        rk_start_smooth_est = false,
     ) where {MO}
     autodiff = _fixup_ad(autodiff)
 
@@ -581,7 +574,7 @@ function FBDF(;
         Float64(stald_sqtol), Float64(stald_rrtol), Float64(stald_tiny),
         _unwrap_val(concrete_jac),
         qmax, qsteady_min, qsteady_max,
-        time_filter, Val(_unwrap_val(rk_start)), rk_start_smooth_est,
+        time_filter, Val(_unwrap_val(rk_start)),
     )
 end
 

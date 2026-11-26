@@ -615,10 +615,10 @@ function alg_cache(
 end
 
 # Restart attempts cannot use a previous-step interpolant. Leave the embedded
-# estimate unsmoothed by default so startup resolves stiff transients.
-function _fbdf_start_tableau(T, T2, smooth_est)
+# estimate unsmoothed so startup resolves stiff transients.
+function _fbdf_start_tableau(T, T2)
     return AlexanderSDIRK2ESDIRKIMEXTableau(
-        T, T2; predictor = Val(:constant_state), smooth_est = smooth_est ? Val(:scaled) : false
+        T, T2; predictor = Val(:constant_state), smooth_est = false
     )
 end
 
@@ -728,7 +728,7 @@ function alg_cache(
         ESDIRKIMEXConstantCache(
             nlsolver,
             _fbdf_start_tableau(
-                constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.rk_start_smooth_est
+                constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
             )
         ) : nothing
 
@@ -862,7 +862,7 @@ function alg_cache(
 
     rkcache = if alg.rk_start isa Val{true} && MO >= 2
         rk_tab = _fbdf_start_tableau(
-            constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.rk_start_smooth_est
+            constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits)
         )
         ESDIRKIMEXCache(
             u, uprev, fsalfirst, [zero(u), nlsolver.z], Vector{Nothing}(),

@@ -136,39 +136,6 @@ end
     @test haskey(Base.Docs.meta(OrdinaryDiffEqCore), Base.Docs.Binding(OrdinaryDiffEqCore, :initial_timestep_order))
 end
 
-@testset "FBDF SDIRK startup error estimate" begin
-    dt = 0.01
-    λ = -10.0
-    abstol = reltol = 1.0e-5
-    scale = abstol + reltol # The first trial starts at 1 and decays.
-    γ = inv(2 + sqrt(2))
-    # Solve the scalar Alexander stage equations for zᵢ = dt * λ * uᵢ.
-    denominator = 1 - γ * dt * λ
-    z1 = dt * λ / denominator
-    z2 = dt * λ * (1 + (1 - γ) * z1) / denominator
-    expected = abs(γ * (z2 - z1) / denominator) / scale
-
-    for iip in (false, true)
-        @testset "iip=$iip" begin
-            prob = startup_problem((u, t) -> λ * u, 1.0, (0.0, 0.1), iip)
-            trial_estimates = Float64[]
-            isoutofdomain = (u, p, t) -> begin
-                push!(trial_estimates, OrdinaryDiffEqCore.get_EEst(integ))
-                return false
-            end
-            integ = init(
-                prob, FBDF(rk_start = true, rk_start_smooth_est = true);
-                dt, abstol, reltol, isoutofdomain
-            )
-            step!(integ)
-            @test first(trial_estimates) ≈ expected rtol = reltol
-            @test integ.stats.nreject > 0
-            @test 0 < integ.t < dt
-            @test abs(state_value(integ.u) - exp(λ * integ.t)) <= scale
-        end
-    end
-end
-
 @testset "FBDF SDIRK startup resolves stiff decay" begin
     λ = -1.0e12
     dt = 0.01
