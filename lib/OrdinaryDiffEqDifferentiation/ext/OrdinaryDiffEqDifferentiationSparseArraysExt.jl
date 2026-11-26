@@ -65,52 +65,48 @@ function candidate_rows(pattern::SparseMatrixCSC, preferred)
     return colptr, rows, split
 end
 
-# One search of MC21 (CSparse `cs_augment`, iterative): look for an augmenting path from
-# the unmatched column `k` through rows `rows[colptr[j]:(limit[j] - 1)]` of each column `j`,
-# and flip the matching along it if one is found.
-function augment!(matchcol, k, colptr, rows, limit, cheap, visited, search, js, is, ps)
-    found = false
-    head = 1
-    js[1] = k
-    i = 0
-    while head > 0
-        j = js[head]
-        if visited[j] != search
-            visited[j] = search
-            # Cheap assignment: rows before `cheap[j]` are all matched already.
-            p = cheap[j]
-            while p < limit[j] && !found
+# Kuhn's augmenting-path method with Duff's free-row lookahead (I. S. Duff, "On algorithms
+# for obtaining a maximum transversal", ACM TOMS 7(3), 1981), as an explicit-stack
+# depth-first search. Column `j` searches its candidates `rows[colptr[j]:(stop[j] - 1)]`.
+# `colmatch[j]` is the row matched to column `j` and `rowmatch[i]` the column matched to
+# row `i`, 0 when unmatched. A row entered in this search is marked with `stamp`.
+function augment_from!(rowmatch, colmatch, root, colptr, rows, stop, mark, stamp, stack, cursor)
+    depth = 1
+    stack[1] = root
+    cursor[1] = 0
+    while depth > 0
+        j = stack[depth]
+        if cursor[depth] == 0
+            cursor[depth] = colptr[j]
+            for p in colptr[j]:(stop[j] - 1)
+                rowmatch[rows[p]] == 0 || continue
+                # The path's columns move one row along: each takes the row through which
+                # it was left, and the deepest takes the free row.
                 i = rows[p]
-                found = matchcol[i] == 0
-                p += 1
+                for d in depth:-1:1
+                    c = stack[d]
+                    rowmatch[i] = c
+                    i, colmatch[c] = colmatch[c], i
+                end
+                return true
             end
-            cheap[j] = p
-            if found
-                is[head] = i
-                break
-            end
-            ps[head] = colptr[j]
         end
-        p = ps[head]
-        while p < limit[j]
-            i = rows[p]
-            if visited[matchcol[i]] != search
-                ps[head] = p + 1
-                is[head] = i
-                head += 1
-                js[head] = matchcol[i]
-                break
-            end
+        p = cursor[depth]
+        while p < stop[j] && mark[rows[p]] == stamp
             p += 1
         end
-        p == limit[j] && (head -= 1)
-    end
-    if found
-        for h in head:-1:1
-            matchcol[is[h]] = js[h]
+        if p < stop[j]
+            i = rows[p]
+            mark[i] = stamp
+            cursor[depth] = p + 1
+            depth += 1
+            stack[depth] = rowmatch[i]
+            cursor[depth] = 0
+        else
+            depth -= 1
         end
     end
-    return found
+    return false
 end
 
 function OrdinaryDiffEqDifferentiation.row_matching(
@@ -119,29 +115,21 @@ function OrdinaryDiffEqDifferentiation.row_matching(
     n = size(pattern, 2)
     size(pattern, 1) == n || return nothing
     colptr, rows, split = candidate_rows(pattern, preferred)
-    matchcol = zeros(Int, n)  # column matched to each row, 0 if none
-    matched = falses(n)
-    cheap = colptr[1:n]
-    visited = zeros(Int, n)
-    js, is, ps = zeros(Int, n), zeros(Int, n), zeros(Int, n)
-    search = 0
+    rowmatch, colmatch = zeros(Int, n), zeros(Int, n)
+    mark, stack, cursor = zeros(Int, n), zeros(Int, n), zeros(Int, n)
+    stamp = 0
     # Match within the preferred entries first, then complete the matching over all of
-    # `pattern`. The second pass only reroutes a preferred match on an augmenting path.
-    for limit in (split, view(colptr, 2:(n + 1)))
+    # `pattern`. An augmenting path keeps every matched column matched, so the second pass
+    # only reroutes a preferred match when that is needed to match another column.
+    for stop in (split, view(colptr, 2:(n + 1)))
         for k in 1:n
-            matched[k] && continue
-            search += 1
-            matched[k] = augment!(
-                matchcol, k, colptr, rows, limit, cheap, visited, search, js, is, ps
-            )
+            colmatch[k] == 0 || continue
+            stamp += 1
+            augment_from!(rowmatch, colmatch, k, colptr, rows, stop, mark, stamp, stack, cursor)
         end
     end
-    all(matched) || return nothing
-    rowof = zeros(Int, n)
-    for i in 1:n
-        rowof[matchcol[i]] = i
-    end
-    return rowof
+    any(iszero, colmatch) && return nothing
+    return colmatch
 end
 
 end
