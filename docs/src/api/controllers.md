@@ -12,8 +12,7 @@ controller — not on `integrator.opts` — and the per-step state
 This page documents:
 
 1. The built-in controllers users can pick from.
-2. The [`CommonControllerOptions`](@ref) bundle of standard step-size
-   knobs that every controller composes.
+2. The [`CommonControllerOptions`](@ref) bundle of standard step-size knobs.
 3. The accessor functions the integrator uses to read knobs
    (`get_qmin`, `get_qmax`, …).
 4. The minimal contract you implement when adding a new controller.

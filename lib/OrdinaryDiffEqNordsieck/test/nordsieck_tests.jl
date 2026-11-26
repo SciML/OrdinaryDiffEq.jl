@@ -232,6 +232,32 @@ end
     end
 end
 
+struct JVODEViewController <: AbstractController end
+
+function setup_controller_cache(alg, cache, ::JVODEViewController, ::Type{E}, problems) where {E}
+    return setup_controller_cache(alg, cache, DummyController(), E, view(problems, eachindex(problems)))
+end
+
+@testset "JVODE DummyController adapter accepts a view of discontinuity problems" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    @testset "$(alg.algorithm)" for alg in (JVODE_Adams(), JVODE_BDF())
+        events = Float64[]
+        callback = ContinuousCallback(
+            (u, t, integrator) -> t - 0.5, integrator -> push!(events, integrator.t);
+            maybe_discontinuity = true,
+        )
+        sol = solve(
+            prob, alg; controller = JVODEViewController(), callback,
+            reltol = 1.0e-8, abstol = 1.0e-8,
+        )
+        @test length(events) == 1
+        @test only(events) ≈ 0.5
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t[end] == 1.0
+        @test sol.u[end] ≈ exp(-1) atol = 1.0e-6
+    end
+end
+
 @testset "JVODE_BDF uses BDF formulas" begin
     oscillator!(du, u, p, t) = (du[1] = u[2]; du[2] = -u[1]; nothing)
     prob = ODEProblem(oscillator!, [1.0, 0.0], (0.0, 10.0))
