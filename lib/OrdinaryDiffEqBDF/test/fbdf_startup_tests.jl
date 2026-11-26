@@ -156,12 +156,47 @@ end
                 push!(trial_estimates, OrdinaryDiffEqCore.get_EEst(integ))
                 return false
             end
-            integ = init(prob, FBDF(rk_start = true); dt, abstol, reltol, isoutofdomain)
+            integ = init(
+                prob, FBDF(rk_start = true, rk_start_smooth_est = true);
+                dt, abstol, reltol, isoutofdomain
+            )
             step!(integ)
             @test first(trial_estimates) ≈ expected rtol = reltol
             @test integ.stats.nreject > 0
             @test 0 < integ.t < dt
             @test abs(state_value(integ.u) - exp(λ * integ.t)) <= scale
+        end
+    end
+end
+
+@testset "FBDF SDIRK startup resolves stiff decay" begin
+    λ = -1.0e12
+    dt = 0.01
+    abstol, reltol = 1.0e-8, 1.0e-6
+    tspan = (0.0, dt)
+    alg = FBDF(rk_start = true)
+
+    for iip in (false, true)
+        @testset "iip=$iip" begin
+            prob = startup_problem((u, t) -> λ * u, 1.0, tspan, iip)
+            integ = init(prob, alg; dt, abstol, reltol)
+            step!(integ)
+            tmid = integ.t / 2
+            exact = exp(λ * tmid)
+            @test abs(state_value(integ.sol(tmid)) - exact) <= abstol + reltol * abs(exact)
+
+            fired = Ref(false)
+            function terminate_on_crossing!(integ)
+                fired[] = true
+                return terminate!(integ)
+            end
+            callback = ContinuousCallback(
+                (u, t, integ) -> state_value(u) + 0.5, nothing, terminate_on_crossing!
+            )
+            sol = solve(prob, alg; callback, dt, abstol, reltol)
+            @test !fired[]
+            @test sol.retcode == ReturnCode.Success
+            @test sol.t[end] == last(tspan)
         end
     end
 end

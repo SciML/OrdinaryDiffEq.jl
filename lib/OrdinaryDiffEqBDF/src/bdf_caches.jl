@@ -614,11 +614,11 @@ function alg_cache(
     return MEBDF2ConstantCache(nlsolver)
 end
 
-# Restart attempts cannot use a previous-step interpolant. Smooth the embedded
-# estimate so stiff components do not force smaller steps than BDF1.
-function _fbdf_start_tableau(T, T2)
+# Restart attempts cannot use a previous-step interpolant. Leave the embedded
+# estimate unsmoothed by default so startup resolves stiff transients.
+function _fbdf_start_tableau(T, T2, smooth_est)
     return AlexanderSDIRK2ESDIRKIMEXTableau(
-        T, T2; predictor = Val(:constant_state), smooth_est = Val(:scaled)
+        T, T2; predictor = Val(:constant_state), smooth_est = smooth_est ? Val(:scaled) : false
     )
 end
 
@@ -727,7 +727,9 @@ function alg_cache(
     rkcache = alg.rk_start isa Val{true} && MO >= 2 ?
         ESDIRKIMEXConstantCache(
             nlsolver,
-            _fbdf_start_tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+            _fbdf_start_tableau(
+                constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.rk_start_smooth_est
+            )
         ) : nothing
 
     return FBDFConstantCache(
@@ -859,7 +861,9 @@ function alg_cache(
     dd_D = zeros(typeof(t), n_filt, n_filt)
 
     rkcache = if alg.rk_start isa Val{true} && MO >= 2
-        rk_tab = _fbdf_start_tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+        rk_tab = _fbdf_start_tableau(
+            constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), alg.rk_start_smooth_est
+        )
         ESDIRKIMEXCache(
             u, uprev, fsalfirst, [zero(u), nlsolver.z], Vector{Nothing}(),
             atmp, nlsolver, rk_tab, alg.step_limiter!
