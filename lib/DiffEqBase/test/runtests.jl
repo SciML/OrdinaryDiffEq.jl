@@ -97,6 +97,7 @@ end
         @time @safetestset "Table Inference Tests" include("downstream/tables.jl")
         @time @safetestset "Default linsolve with structure" include("downstream/default_linsolve_structure.jl")
         @time @safetestset "Callback Merging Tests" include("downstream/callback_merging.jl")
+        @time @safetestset "Callback Erasure Opt-out" include("downstream/callback_erasure_optout.jl")
         @time @safetestset "Callback Detection Tests" include("downstream/callback_detection.jl")
         @time @safetestset "Callback root solve verbosity (integrator)" include("downstream/callback_root_verbosity.jl")
         @time @safetestset "LabelledArrays Tests" include("downstream/labelledarrays.jl")

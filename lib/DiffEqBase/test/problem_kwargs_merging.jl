@@ -104,3 +104,13 @@ import SciMLBase
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_full; kwargs_in...)
     @test kwargs_out.callback === cb1
 end
+
+@testset "callback erasure keyword" begin
+    f(u, p, t) = u
+    cb = ContinuousCallback((u, t, integrator) -> t - 0.5, integrator -> nothing)
+    prob = ODEProblem(f, 1.0, (0.0, 1.0); callback = cb, erase_callbacks = false)
+    @test DiffEqBase.merge_problem_kwargs(prob; erase_callbacks = nothing).callback === cb
+    @test_throws ArgumentError DiffEqBase.merge_problem_kwargs(prob; erase_callbacks = 0)
+    unset = ODEProblem(f, 1.0, (0.0, 1.0); callback = cb, erase_callbacks = nothing)
+    @test !haskey(DiffEqBase.merge_problem_kwargs(unset), :erase_callbacks)
+end
