@@ -2,6 +2,7 @@ using OrdinaryDiffEq, Test, Random, StaticArrays, DiffEqCallbacks
 using OrdinaryDiffEqCore: add_tstop!
 import ODEProblemLibrary: prob_ode_linear
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqFIRK
 
 Random.seed!(100)
 
@@ -357,5 +358,23 @@ end
         step!(integ)
         @test integ.t == 0.125
         @test get_proposed_dt(integ) == 0.5
+    end
+end
+
+@testset "PredictiveController records a step shortened onto a tstop at its accepted length" begin
+    prob = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 10.0))
+    for alg in (RadauIIA5(), AdaptiveRadau())
+        free = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        j = length(free.t) ÷ 2
+        tstop = free.t[j] + 0.01 * (free.t[j + 1] - free.t[j])
+        integ = init(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, tstops = [tstop])
+        while integ.t + integ.dtpropose < tstop
+            step!(integ)
+        end
+        proposed = integ.dtpropose
+        step!(integ)
+        @test integ.t == tstop
+        @test integ.t - integ.tprev < 0.02proposed
+        @test integ.controller_cache.dtacc ≈ integ.t - integ.tprev
     end
 end
