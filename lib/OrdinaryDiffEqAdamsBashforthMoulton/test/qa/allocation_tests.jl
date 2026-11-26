@@ -12,6 +12,9 @@ using Test
 
     # Use FullSpecialize to avoid FunctionWrappers dynamic dispatch noise
     prob = ODEProblem{true, FullSpecialize}(simple_system!, [1.0, 1.0], (0.0, 10.0))
+    prob_oop = ODEProblem{false, FullSpecialize}(
+        (u, p, t) -> -0.5 * u, 1.0, (0.0, 10.0)
+    )
 
     # Solvers confirmed allocation-free in `perform_step!`. Any regression
     # here fails the test loud.
@@ -128,34 +131,31 @@ using Test
 
     @testset "step! runtime allocations" begin
         # AllocCheck over-reports broadcast alias copies, so the steady
-        # step is also required to be allocation-free at runtime. step!
-        # itself carries a small fixed allocation on Julia LTS that is
-        # absent on 1.12, so each solver is compared against the AB3
-        # baseline instead of zero.
-        ref_integrator = init(
-            prob, AB3(), dt = 0.1, save_everystep = false, adaptive = false
-        )
-        for _ in 1:10
-            step!(ref_integrator)
+        # step is also required to be allocation-free at runtime. Measuring
+        # behind a function barrier avoids testset-scope dynamic dispatch.
+        function measure_step_allocs(integ)
+            # Multistep methods need history: advance past startup steps
+            for _ in 1:10
+                step!(integ)
+            end
+            return @allocated step!(integ)
         end
-        ref_bytes = @allocated step!(ref_integrator)
 
-        for solver in [
-                ABM32(), ABM43(), ABM54(),
-                VCAB3(), VCAB4(), VCAB5(),
-                VCABM3(), VCABM4(), VCABM5(), VCABM(),
-            ]
-            @testset "$(typeof(solver)) step! is allocation-free" begin
-                integrator = init(
-                    prob, solver, dt = 0.1, save_everystep = false,
-                    adaptive = OrdinaryDiffEqCore.isadaptive(solver),
-                    abstol = 1.0e-6, reltol = 1.0e-6
-                )
-                # Multistep methods need history: advance past startup steps
-                for _ in 1:10
-                    step!(integrator)
+        solvers = [
+            ABM32(), ABM43(), ABM54(),
+            VCAB3(), VCAB4(), VCAB5(),
+            VCABM3(), VCABM4(), VCABM5(), VCABM(),
+        ]
+        for (kind, p) in (("in-place", prob), ("out-of-place", prob_oop))
+            for solver in solvers
+                @testset "$kind $(typeof(solver)) step! is allocation-free" begin
+                    integrator = init(
+                        p, solver, dt = 0.1, save_everystep = false,
+                        adaptive = OrdinaryDiffEqCore.isadaptive(solver),
+                        abstol = 1.0e-6, reltol = 1.0e-6
+                    )
+                    @test measure_step_allocs(integrator) == 0
                 end
-                @test @allocated(step!(integrator)) == ref_bytes
             end
         end
     end
