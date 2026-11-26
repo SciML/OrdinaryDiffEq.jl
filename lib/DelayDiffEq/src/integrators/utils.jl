@@ -15,6 +15,14 @@ function advance_or_update_ode_integrator!(integrator, always_calc_begin = false
     end
 end
 
+function copy_history_stages!(ode_integrator, k)
+    @inbounds for i in eachindex(k)
+        copyat_or_push!(ode_integrator.k, i, k[i])
+    end
+    resize!(ode_integrator.k, length(k))
+    return nothing
+end
+
 # Helper function to get the current cache from composite algorithm caches
 # Handles both regular cache.caches arrays and DefaultCache with individual fields
 function get_current_cache(cache, current)
@@ -71,9 +79,7 @@ function advance_ode_integrator!(integrator::DDEIntegrator, always_calc_begin = 
             true, true
         )
     end
-    @inbounds for i in 1:length(k)
-        copyat_or_push!(ode_integrator.k, i, k[i])
-    end
+    copy_history_stages!(ode_integrator, k)
 
     # move ODE integrator to interval [t, t+dt]
     ode_integrator.t = t + dt
@@ -122,9 +128,7 @@ function update_ode_integrator!(integrator::DDEIntegrator, always_calc_begin = f
             always_calc_begin, true, true
         )
     end
-    @inbounds for i in 1:length(k)
-        copyat_or_push!(ode_integrator.k, i, k[i])
-    end
+    copy_history_stages!(ode_integrator, k)
 
     # update state of the dummy ODE solver
     if isinplace(integrator.sol.prob)
@@ -165,7 +169,7 @@ function move_back_ode_integrator!(integrator::DDEIntegrator)
     # constant extrapolation is used (and interpolation data of solution at initial
     # time point is not complete!)
     if length(sol.t) > 1
-        recursivecopy!(ode_integrator.k, sol.k[end])
+        copy_history_stages!(ode_integrator, sol.k[end])
     end
 
     return nothing

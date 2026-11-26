@@ -837,6 +837,315 @@ function initialize!(integrator, cache::QNDFConstantCache{max_order}) where {max
     return nothing
 end
 
+# ============================================================================
+# MOOSE234 — Variable-stepsize, variable-order (2/3/4) embedded method
+# DeCaria et al., arXiv:1810.06670v1
+#
+# Per-step procedure:
+# 1. BDF3 solve (single nonlinear solve) → y³
+# 2. BDF3-Stab filter → y² (order 2, cheap linear combination)
+# 3. FBDF4 filter → y⁴ (order 4, cheap linear combination)
+# 4. Error estimation via embedded differences
+# 5. Output selection based on cache.order
+# ============================================================================
+
+function initialize!(integrator, cache::MOOSE234ConstantCache)
+    integrator.opts.adaptive || throw(ArgumentError("MOOSE234 requires adaptive=true."))
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    integrator.fsallast = zero(integrator.fsalfirst)
+    initialize_bdf_interpolation!(integrator, integrator.fsallast)
+
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
+    reinitMOOSE!(integrator, cache)
+    return integrator.derivative_discontinuity = derivative_discontinuity
+end
+
+function perform_step!(integrator, cache::MOOSE234ConstantCache, repeat_step = false)
+    (; ts, u_history, nlsolver, ts_tmp, bdf_coeffs) = cache
+    (; t, dt, u, f, p, uprev) = integrator
+
+    tdt = t + dt
+    reinitMOOSE!(integrator, cache)
+
+    n_hist = min(cache.iters_from_event + 1, 4)
+    bdf_order = min(n_hist, 3)
+    can_stab_filter = n_hist >= 3
+    can_fbdf4_filter = n_hist == 4
+    k = min(cache.order, max(2, n_hist))
+    n = n_hist + 1
+    c = moose_step_coefficients!(cache, t, dt, n, bdf_order)
+
+    # === Predictor: Lagrange interpolation through history ===
+    n_pred = min(bdf_order + 1, n_hist)
+    pred_thetas = Vector{typeof(t)}(undef, n_pred)
+    if cache.iters_from_event >= 1
+        for j in 1:n_pred
+            pred_thetas[j] = (ts[j] - t) / dt
+        end
+        u₀ = _eval_lagrange_oop(one(t), pred_thetas, u_history, n_pred)
+    else
+        u₀ = uprev
+    end
+
+    markfirststage!(nlsolver)
+    nlsolver.z = u₀
+    mass_matrix = f.mass_matrix
+
+    tmp = -uprev * bdf_coeffs[n - 1]
+    for i in 2:bdf_order
+        tmp = @.. broadcast = false tmp - u_history[i] * bdf_coeffs[n - i]
+    end
+
+    if mass_matrix === I
+        nlsolver.tmp = tmp / dt
+    else
+        nlsolver.tmp = mass_matrix * tmp / dt
+    end
+
+    nlsolver.γ = inv(bdf_coeffs[n])
+    nlsolver.α = 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
+
+    # === BDF Solve → y³ ===
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    y3 = z
+
+    y2 = y3
+    y4 = y3
+    if can_stab_filter
+        δ3 = _filt_divided_diff(c, 4, n, y3, u_history)
+        weight = bdf3stab_coeff(c, n)
+        y2 = @.. broadcast = false y3 + weight * δ3
+    end
+    if can_fbdf4_filter
+        δ4 = _filt_divided_diff(c, 5, n, y3, u_history)
+        weight = moose_fbdf4_weight(ts_tmp)
+        y4 = @.. broadcast = false y3 - weight * δ4
+    end
+
+    # === Error Estimation ===
+    if integrator.opts.adaptive
+        (; abstol, reltol, internalnorm) = integrator.opts
+
+        # FBDF-style error for the BDF solve (predictor-corrector difference)
+        if u isa Number
+            bdf_err = y3 - u₀
+            for j in 1:min(bdf_order + 1, n_hist)
+                bdf_err *= j * dt / (tdt - ts[j])
+            end
+            bdf_lte = bdf_err * (-1 / (1 + bdf_order))
+        else
+            bdf_err = @.. y3 - u₀
+            for j in 1:min(bdf_order + 1, n_hist)
+                bdf_err = @.. bdf_err * (j * dt / (tdt - ts[j]))
+            end
+            bdf_lte = @.. bdf_err * (-1 / (1 + bdf_order))
+        end
+
+        # Error estimate for the current order: est2 at order 2 (and at order 3
+        # when the FBDF4 filter is unavailable), est3 at orders 3-4, else bdf_lte
+        lte = bdf_lte
+
+        if can_stab_filter
+            est2 = u isa Number ? (y2 - y3) : @.. y2 - y3
+            atmp = calculate_residuals(est2, uprev, y3, abstol, reltol, internalnorm, t)
+            cache.terkm1 = internalnorm(atmp, t)
+            if k == 2 || (k == 3 && !can_fbdf4_filter)
+                lte = est2
+            end
+        else
+            cache.terkm1 = zero(cache.terk)
+        end
+
+        if can_fbdf4_filter
+            est3 = u isa Number ? (y4 - y3) : @.. y4 - y3
+            atmp = calculate_residuals(est3, uprev, y3, abstol, reltol, internalnorm, t)
+            cache.terkp1 = internalnorm(atmp, t)
+            if k >= 3
+                lte = est3
+            end
+        else
+            cache.terkp1 = zero(cache.terk)
+        end
+
+        atmp = calculate_residuals(lte, uprev, y3, abstol, reltol, internalnorm, t)
+        cache.terk = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, cache.terk)
+    end
+
+    # === Set output based on current order ===
+    if k == 4 && can_fbdf4_filter
+        u = y4
+    elseif k == 2 && can_stab_filter
+        u = y2
+    else
+        u = y3
+    end
+
+    integrator.fsallast = f(u, p, tdt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    if integrator.opts.calck
+        save_bdf_interpolation!(integrator, cache, u, bdf_order + 1)
+    end
+
+    return integrator.u = u
+end
+
+function initialize!(integrator, cache::MOOSE234Cache)
+    integrator.opts.adaptive || throw(ArgumentError("MOOSE234 requires adaptive=true."))
+
+    initialize_bdf_interpolation!(integrator, cache.dense[1])
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    derivative_discontinuity = integrator.derivative_discontinuity
+    integrator.derivative_discontinuity = true
+    reinitMOOSE!(integrator, cache)
+    return integrator.derivative_discontinuity = derivative_discontinuity
+end
+
+function perform_step!(integrator, cache::MOOSE234Cache, repeat_step = false)
+    (;
+        ts, u_history, nlsolver, ts_tmp, bdf_coeffs,
+        equi_ts, step_limiter!, u₀, tmp, atmp, terk_tmp, terkp1_tmp,
+    ) = cache
+    (; t, dt, u, f, p, uprev) = integrator
+
+    tdt = t + dt
+    reinitMOOSE!(integrator, cache)
+
+    n_hist = min(cache.iters_from_event + 1, 4)
+    bdf_order = min(n_hist, 3)
+    can_stab_filter = n_hist >= 3
+    can_fbdf4_filter = n_hist == 4
+    k = min(cache.order, max(2, n_hist))
+    n = n_hist + 1
+    c = moose_step_coefficients!(cache, t, dt, n, bdf_order)
+
+    # === Predictor: Lagrange interpolation through history ===
+    n_pred = min(bdf_order + 1, n_hist)
+    @.. broadcast = false u₀ = zero(u)
+    if cache.iters_from_event >= 1
+        for j in 1:n_pred
+            equi_ts[j] = (ts[j] - t) / dt
+        end
+        _eval_lagrange_iip!(u₀, one(t), equi_ts, u_history, n_pred)
+    else
+        @.. broadcast = false u₀ = uprev
+    end
+
+    markfirststage!(nlsolver)
+    @.. broadcast = false nlsolver.z = u₀
+    mass_matrix = f.mass_matrix
+
+    @.. broadcast = false tmp = -uprev * bdf_coeffs[n - 1]
+    for i in 2:bdf_order
+        @.. broadcast = false tmp -= u_history[i] * bdf_coeffs[n - i]
+    end
+
+    invdt = inv(dt)
+    if mass_matrix === I
+        @.. broadcast = false nlsolver.tmp = tmp * invdt
+    else
+        @.. broadcast = false terkp1_tmp = tmp * invdt
+        mul!(nlsolver.tmp, mass_matrix, terkp1_tmp)
+    end
+
+    nlsolver.γ = inv(bdf_coeffs[n])
+    nlsolver.α = 1
+    nlsolver.method = COEFFICIENT_MULTISTEP
+
+    # === BDF Solve → y³ (result in u) ===
+    z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+    nlsolvefail(nlsolver) && return
+    @.. broadcast = false u = z
+
+    step_limiter!(u, integrator, p, t + dt)
+
+    @.. broadcast = false terkp1_tmp = u
+    if can_stab_filter
+        _filt_divided_diff!(tmp, c, 4, n, u, u_history)
+        weight = bdf3stab_coeff(c, n)
+        @.. broadcast = false terkp1_tmp = u + weight * tmp
+    end
+
+    @.. broadcast = false terk_tmp = u
+    if can_fbdf4_filter
+        _filt_divided_diff!(tmp, c, 5, n, u, u_history)
+        weight = moose_fbdf4_weight(ts_tmp)
+        @.. broadcast = false terk_tmp = u - weight * tmp
+    end
+
+    # === Error Estimation ===
+    if integrator.opts.adaptive
+        (; abstol, reltol, internalnorm) = integrator.opts
+
+        if can_stab_filter
+            # est2 = y2 - y3 → tmp
+            @.. broadcast = false tmp = terkp1_tmp - u
+            calculate_residuals!(atmp, tmp, uprev, u, abstol, reltol, internalnorm, t)
+            cache.terkm1 = internalnorm(atmp, t)
+        else
+            cache.terkm1 = zero(cache.terk)
+        end
+
+        if can_fbdf4_filter
+            # est3 = y4 - y3 → tmp
+            @.. broadcast = false tmp = terk_tmp - u
+            calculate_residuals!(atmp, tmp, uprev, u, abstol, reltol, internalnorm, t)
+            cache.terkp1 = internalnorm(atmp, t)
+        else
+            cache.terkp1 = zero(cache.terk)
+        end
+
+        # FBDF-style predictor-corrector error for startup → u₀
+        @.. broadcast = false u₀ = u - u₀
+        for j in 1:min(bdf_order + 1, n_hist)
+            factor = j * dt / (tdt - ts[j])
+            @.. broadcast = false u₀ *= factor
+        end
+        @.. broadcast = false u₀ *= (-1 / (1 + bdf_order))
+
+        # Select the error estimate based on active order
+        if k == 2 && can_stab_filter
+            @.. broadcast = false tmp = terkp1_tmp - u
+        elseif k >= 3 && can_fbdf4_filter
+            @.. broadcast = false tmp = terk_tmp - u
+        elseif k == 3 && can_stab_filter
+            @.. broadcast = false tmp = terkp1_tmp - u
+        else
+            @.. broadcast = false tmp = u₀
+        end
+
+        calculate_residuals!(atmp, tmp, uprev, u, abstol, reltol, internalnorm, t)
+        cache.terk = internalnorm(atmp, t)
+        OrdinaryDiffEqCore.set_EEst!(integrator, cache.terk)
+    end
+
+    # === Set output based on current order ===
+    if k == 4 && can_fbdf4_filter
+        @.. broadcast = false u = terk_tmp
+    elseif k == 2 && can_stab_filter
+        @.. broadcast = false u = terkp1_tmp
+    end
+    # else: u already has y3
+
+    # Compute fsallast — call f() directly since u may hold y2 or y4, not y3
+    f(integrator.fsallast, u, p, tdt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+
+    if integrator.opts.calck
+        save_bdf_interpolation!(integrator, cache, u, bdf_order + 1)
+    end
+
+    return nothing
+end
+
 function perform_step!(
         integrator, cache::QNDFConstantCache{max_order},
         repeat_step = false
@@ -1270,17 +1579,12 @@ function _fbdf_time_filter(
     return u_bdf, f(u_bdf, p, tdt)
 end
 
-function initialize!(integrator, cache::FBDFConstantCache{max_order}) where {max_order}
-    integrator.kshortsize = max_order + 1
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+function initialize!(integrator, cache::FBDFConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
-    # k[1..max_order+1] = solution values at fixed Chebyshev reference nodes
     integrator.fsallast = zero(integrator.fsalfirst)
-    for i in 1:(max_order + 1)
-        integrator.k[i] = zero(integrator.fsalfirst)
-    end
+    initialize_bdf_interpolation!(integrator, integrator.fsallast)
 
     derivative_discontinuity = integrator.derivative_discontinuity
     integrator.derivative_discontinuity = true
@@ -1437,23 +1741,8 @@ function perform_step!(
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     end
     if integrator.opts.calck
-        # Store dense output: resample Lagrange interpolant at Chebyshev nodes
         dense_order = cache.time_filter ? max(k, cache.filter_order) : k
-        n = min(dense_order + 1, max_order + 1)
-        calck_thetas = Vector{typeof(t)}(undef, n)
-        calck_thetas[1] = one(t)
-        for j in 1:min(dense_order, max_order)
-            calck_thetas[1 + j] = (ts[j] - t) / dt
-        end
-        calck_values = Vector{typeof(u)}(undef, n)
-        calck_values[1] = u isa Number ? u : copy(u)
-        for j in 1:min(dense_order, max_order)
-            calck_values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
-        end
-        _resample_at_chebyshev!(integrator.k, calck_values, calck_thetas, n)
-        for j in (n + 1):(max_order + 1)
-            integrator.k[j] = zero(u)
-        end
+        save_bdf_interpolation!(integrator, cache, u, min(dense_order, max_order) + 1)
     end
     _fbdf_finish_fixed_step!(integrator, cache)
     return integrator.u = u
@@ -1518,13 +1807,8 @@ function _fbdf_time_filter!(
     return false
 end
 
-function initialize!(integrator, cache::FBDFCache{max_order}) where {max_order}
-    integrator.kshortsize = max_order + 1
-
-    resize!(integrator.k, integrator.kshortsize)
-    for i in 1:(max_order + 1)
-        integrator.k[i] = cache.dense[i]
-    end
+function initialize!(integrator, cache::FBDFCache)
+    initialize_bdf_interpolation!(integrator, cache.dense[1])
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
@@ -1539,7 +1823,7 @@ function perform_step!(
         repeat_step = false
     ) where {max_order}
     reinitFBDF!(integrator, cache)
-    (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts, dense) = cache
+    (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, terk_tmp, terkp1_tmp, atmp, tmp, u₀, ts_tmp, equi_ts) = cache
     (; t, dt, u, f, p, uprev) = integrator
 
     k = order
@@ -1678,19 +1962,8 @@ function perform_step!(
         end
     end
     if integrator.opts.calck
-        # Store dense output: resample Lagrange interpolant at Chebyshev nodes.
-        # Use _resample_at_chebyshev_direct_iip! to read from u and u_history
-        # directly, avoiding scratch buffer type mismatches during AD.
         dense_order = cache.time_filter ? max(k, cache.filter_order) : k
-        n = min(dense_order + 1, max_order + 1)
-        equi_ts[1] = one(eltype(equi_ts))
-        for j in 1:min(dense_order, max_order)
-            equi_ts[1 + j] = (ts[j] - t) / dt
-        end
-        _resample_at_chebyshev_direct_iip!(integrator.k, u, u_history, equi_ts, n)
-        for j in (n + 1):(max_order + 1)
-            fill!(integrator.k[j], zero(eltype(u)))
-        end
+        save_bdf_interpolation!(integrator, cache, u, min(dense_order, max_order) + 1)
     end
     _fbdf_finish_fixed_step!(integrator, cache)
     return nothing

@@ -38,7 +38,7 @@ end
 @testset "BDF state resizing" begin
     prob = ODEProblem(f!, copy(U0), (0.0, TF))
 
-    for alg in (FBDF(), QNDF()), disc in (true, false)
+    for (alg, restart_order) in ((FBDF(), 1), (QNDF(), 1), (MOOSE234(), 2)), disc in (true, false)
         restart_orders = Int[]
         sol = solve(
             prob, alg; callback = resize_callback!(disc, restart_orders),
@@ -46,7 +46,7 @@ end
         )
         @test sol(0.75) ≈ exact(0.75) rtol = 1.0e-7 atol = 1.0e-10
         @test sol.u[end] ≈ exact(TF) rtol = 1.0e-7 atol = 1.0e-10
-        @test restart_orders == [1, 1]
+        @test restart_orders == fill(restart_order, 2)
     end
 end
 

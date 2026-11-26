@@ -388,6 +388,31 @@ function _resample_at_chebyshev_direct_iip!(k, u, u_history, thetas, n)
     return
 end
 
+function moose_step_coefficients!(cache, t, dt, n, order)
+    (; ts, ts_tmp, bdf_coeffs, dd_c, dd_D) = cache
+    for i in 1:(n - 1)
+        ts_tmp[i] = (ts[n - i] - t) / dt
+    end
+    ts_tmp[n] = one(eltype(ts_tmp))
+    backdiff!(dd_c, dd_D, ts_tmp, n)
+    _filt_bdf_coefficients!(bdf_coeffs, dd_c, ts_tmp, n, order)
+    return dd_c
+end
+
+function moose_fbdf4_weight(nodes)
+    # DeCaria et al., Algorithm 7.1 (BDFANDFILTCOEFF).
+    num = one(eltype(nodes))
+    den = zero(eltype(nodes))
+    for i in 1:4
+        Δ = nodes[5] - nodes[5 - i]
+        if i <= 3
+            num *= Δ
+        end
+        den += inv(Δ)
+    end
+    return num / den
+end
+
 function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order}
     #calculate hᵏ⁻¹yᵏ⁻¹
     (; ts_tmp, terk_tmp, u_history, fd_weights) = cache
@@ -398,6 +423,39 @@ function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order
         @.. broadcast = false terk_tmp += fd_weights[i, k] * u_history[i - 1]
     end
     return @.. broadcast = false terk_tmp *= abs(dt^(k - 1))
+end
+
+function reset_moose_history!(cache)
+    cache.order = cache.prev_order = 2
+    cache.consfailcnt = cache.nconsteps = 0
+    cache.qwait = 4
+    cache.iters_from_event = 0
+    return nothing
+end
+
+function reinitMOOSE!(integrator, cache)
+    integrator.derivative_discontinuity && reset_moose_history!(cache)
+    (; ts, u_history, iters_from_event) = cache
+    (; t, uprev) = integrator
+
+    iters_from_event > 0 && t == ts[1] && return nothing
+    n = min(iters_from_event + 1, 4)
+    for i in n:-1:2
+        ts[i] = ts[i - 1]
+    end
+    ts[1] = t
+    if uprev isa AbstractArray && ArrayInterface.ismutable(uprev)
+        for i in n:-1:2
+            copyto!(u_history[i], u_history[i - 1])
+        end
+        copyto!(u_history[1], uprev)
+    else
+        for i in n:-1:2
+            u_history[i] = u_history[i - 1]
+        end
+        u_history[1] = uprev
+    end
+    return nothing
 end
 
 function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_order}

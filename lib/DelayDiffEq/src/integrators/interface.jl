@@ -198,9 +198,7 @@ function DiffEqBase.initialize!(integrator::DDEIntegrator)
     DiffEqBase.initialize!(integrator, integrator.cache)
 
     # copy interpolation data to the ODE integrator
-    @inbounds for i in 1:length(integrator.k)
-        copyat_or_push!(ode_integrator.k, i, integrator.k[i])
-    end
+    copy_history_stages!(ode_integrator, integrator.k)
 
     return nothing
 end
@@ -668,7 +666,7 @@ function DiffEqBase.reeval_internals_due_to_modification!(
         OrdinaryDiffEqCore.ode_addsteps!(integrator, integrator.f, true, true, true)
 
         # copy interpolation data to the ODE integrator
-        recursivecopy!(ode_integrator.k, integrator.k)
+        copy_history_stages!(ode_integrator, integrator.k)
     end
 
     # adjust current interval of the ODE integrator

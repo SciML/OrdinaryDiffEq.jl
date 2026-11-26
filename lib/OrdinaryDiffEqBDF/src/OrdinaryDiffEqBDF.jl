@@ -38,7 +38,7 @@ using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 using RecursiveArrayTools: recursivefill!
-using LinearAlgebra: mul!, I, Diagonal
+using LinearAlgebra: mul!, I, Diagonal, Hermitian, Symmetric, bunchkaufman, issuccess
 import ArrayInterface
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: default_controller
@@ -201,7 +201,7 @@ end
 
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
     SBDF, SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
-    DABDF2, DImplicitEuler, DFBDF,
+    DABDF2, DImplicitEuler, DFBDF, MOOSE234,
     NordsieckBDF, DNordsieckBDF
 
 end

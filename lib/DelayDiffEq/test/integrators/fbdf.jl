@@ -28,3 +28,25 @@ using DelayDiffEq, OrdinaryDiffEqBDF, Test
         end
     end
 end
+
+@testset "FBDF zero-valued dense sample" begin
+    zero_time = (1 + cospi(3 / 4)) / 2
+    h(p, t) = t - zero_time
+    f(u, h, p, t) = 1.0
+    prob = DDEProblem(f, -zero_time, h, (0.0, 1.0))
+    alg = MethodOfSteps(FBDF())
+    opts = (; dt = 1.0, abstol = 1.0, reltol = 1.0e-6)
+    @test solve(prob, alg; opts...)(0.5) ≈ 0.5 - zero_time
+    event_time = Ref(NaN)
+    callback = ContinuousCallback(
+        (u, t, integ) -> u,
+        integ -> begin
+            event_time[] = integ.t
+            terminate!(integ)
+        end
+    )
+    sol = solve(prob, alg; opts..., callback)
+    @test event_time[] ≈ zero_time
+    @test sol.t[end] ≈ zero_time
+    @test sol(zero_time / 2) ≈ -zero_time / 2
+end

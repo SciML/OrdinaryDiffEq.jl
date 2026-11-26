@@ -144,6 +144,160 @@ if VERSION >= v"1.11"
     end
 end
 
+@testset "MOOSE234 requires adaptive stepping" begin
+    problems = (
+        ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0)),
+        ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0)),
+        ODEProblem((du, u, p, t) -> (du .= -u), [1.0], (0.0, 1.0)),
+    )
+    for prob in problems
+        @test_throws ArgumentError("MOOSE234 requires adaptive=true.") init(
+            prob, MOOSE234(); adaptive = false, dt = 0.1
+        )
+        @test_throws ArgumentError("MOOSE234 requires adaptive=true.") solve(
+            prob, MOOSE234(); adaptive = false, dt = 0.1
+        )
+    end
+end
+
+@testset "MOOSE234 reinit" begin
+    foop_m = (u, p, t) -> p * u
+    proboop_m = ODEProblem(foop_m, ones(2), (0.0, 10.0), -1.0)
+
+    fiip_m = (du, u, p, t) -> du .= p .* u
+    probiip_m = ODEProblem(fiip_m, ones(2), (0.0, 10.0), -1.0)
+
+    for prob in [proboop_m, probiip_m]
+        integ = init(prob, MOOSE234())
+        solve!(integ)
+        @test integ.sol.retcode == ReturnCode.Success
+        @test integ.sol.t[end] == 10.0
+
+        reinit!(integ, prob.u0)
+        solve!(integ)
+        @test integ.sol.retcode == ReturnCode.Success
+        @test integ.sol.t[end] == 10.0
+    end
+end
+
+@testset "MOOSE234 startup order progression" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 5.0))
+    integ = init(prob, MOOSE234(), dt = 0.01)
+
+    @test integ.cache.order == 2
+    @test integ.cache.iters_from_event == 0
+
+    step!(integ)
+    @test integ.cache.iters_from_event >= 1
+    @test 2 <= integ.cache.order <= 4
+
+    step!(integ)
+    @test integ.cache.iters_from_event >= 2
+
+    for _ in 1:10
+        step!(integ)
+    end
+    @test integ.cache.iters_from_event >= 4
+end
+
+@testset "MOOSE234 adaptive order switching" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0))
+    integ = init(prob, MOOSE234(), dt = 0.01)
+
+    orders_seen = Set{Int}()
+    for _ in 1:200
+        step!(integ)
+        push!(orders_seen, integ.cache.order)
+        integ.sol.retcode == ReturnCode.Failure && break
+    end
+
+    @test length(orders_seen) >= 2
+    @test all(o -> 2 <= o <= 4, orders_seen)
+end
+
+@testset "MOOSE234 startup error control: oversized dt and restart ($name)" for (
+        name, f, double!,
+    ) in (
+        ("out-of-place", (u, p, t) -> -u, integ -> (integ.u = 2 .* integ.u)),
+        ("in-place", (du, u, p, t) -> (du .= -u), integ -> (integ.u .*= 2)),
+    )
+    prob = ODEProblem(f, [1.0], (0.0, 1.0))
+
+    sol = solve(prob, MOOSE234(); dt = 1.0, abstol = 1.0e-10, reltol = 1.0e-10)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.stats.nreject > 0
+    @test abs(sol.u[end][1] - exp(-1.0)) < 1.0e-6
+
+    double_at_half = DiscreteCallback((u, t, integ) -> t == 0.5, double!)
+    sol = solve(
+        prob, MOOSE234(); callback = double_at_half, tstops = [0.5],
+        abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    @test sol.retcode == ReturnCode.Success
+    @test abs(sol.u[end][1] - 2 * exp(-1.0)) < 1.0e-6
+end
+
+@testset "MOOSE234 Van der Pol (stiff)" begin
+    function vdp!(du, u, p, t)
+        μ = p[1]
+        du[1] = u[2]
+        du[2] = μ * (1 - u[1]^2) * u[2] - u[1]
+    end
+
+    prob_mod = ODEProblem(vdp!, [2.0, 0.0], (0.0, 6.3), [100.0])
+    sol_mod = solve(prob_mod, MOOSE234(), abstol = 1.0e-6, reltol = 1.0e-6)
+    @test sol_mod.retcode == ReturnCode.Success
+    @test sol_mod.t[end] == 6.3
+
+    prob_stiff = ODEProblem(vdp!, [2.0, 0.0], (0.0, 6.3), [1000.0])
+    sol_stiff = solve(prob_stiff, MOOSE234(), abstol = 1.0e-4, reltol = 1.0e-4)
+    @test sol_stiff.retcode == ReturnCode.Success
+    @test sol_stiff.t[end] == 6.3
+
+    # KenCarp4 reference values checked by tightening reltol from 1e-11 to 1e-13.
+    for (sol, times, reference, atol) in (
+            (
+                sol_mod, (0.01, 1.0, 6.3), (
+                    (1.9999544488, -0.006334883), (1.9933371742, -0.0067037872),
+                    (1.9572597128, -0.0069138501),
+                ), 4.0e-6,
+            ),
+            (
+                sol_stiff, (0.001, 1.0, 6.3), (
+                    (1.9999995445, -0.0006334754), (1.9993333705, -0.0006670371),
+                    (1.9957928459, -0.0006690131),
+                ), 5.0e-5,
+            ),
+        )
+        for (t, expected) in zip(times, reference)
+            @test all(isapprox.(sol(t), expected; atol, rtol = 0))
+        end
+    end
+end
+
+@testset "MOOSE234 ROBER stiff system" begin
+    function rober!(du, u, p, t)
+        y1, y2, y3 = u
+        du[1] = -0.04 * y1 + 1.0e4 * y2 * y3
+        du[2] = 0.04 * y1 - 1.0e4 * y2 * y3 - 3.0e7 * y2^2
+        du[3] = 3.0e7 * y2^2
+    end
+    prob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e5))
+    sol = solve(prob, MOOSE234(), abstol = 1.0e-8, reltol = 1.0e-8)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t[end] == 1.0e5
+    @test isapprox(sum(sol.u[end]), 1.0, atol = 1.0e-6)
+
+    # KenCarp4 reference values checked by tightening reltol from 1e-11 to 1e-13.
+    for (t, expected) in (
+            (0.4, (0.985172113861, 3.38639537908e-5, 0.014794022185)),
+            (40.0, (0.715827068719, 9.18553476458e-6, 0.284163745746)),
+            (1.0e5, (0.017865921142, 7.27475146844e-8, 0.98213400611)),
+        )
+        @test all(abs.(sol(t) .- expected) .<= (1.0e-7, 7.0e-9, 1.0e-7))
+    end
+end
+
 if VERSION >= v"1.12"
     @testset "FBDF in-place perform_step! non-allocating" begin
         integrator = init(

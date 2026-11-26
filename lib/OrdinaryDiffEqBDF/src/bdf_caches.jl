@@ -969,3 +969,161 @@ function alg_cache(
         zero(t), false, stald
     )
 end
+
+# MOOSE234 — Variable-stepsize, variable-order (2/3/4) embedded method
+# DeCaria et al., arXiv:1810.06670v1
+
+moose234_issingular(mass_matrix) = ArrayInterface.issingular(mass_matrix)
+
+function moose234_issingular(mass_matrix::Union{Hermitian, Symmetric})
+    # An invertible 2×2 pivot can have zero diagonal entries.
+    return !issuccess(bunchkaufman(mass_matrix; check = false))
+end
+
+@cache mutable struct MOOSE234ConstantCache{
+        N, tsType, uuType, EEstType, coeffType, ddType,
+    } <:
+    OrdinaryDiffEqConstantCache
+    nlsolver::N
+    ts::tsType
+    ts_tmp::coeffType
+    bdf_coeffs::coeffType
+    dd_c::ddType
+    dd_D::ddType
+    u_history::uuType
+    order::Int
+    prev_order::Int
+    nconsteps::Int
+    consfailcnt::Int
+    qwait::Int
+    terkm1::EEstType
+    terk::EEstType
+    terkp1::EEstType
+    iters_from_event::Int
+end
+
+function alg_cache(
+        alg::MOOSE234, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    moose234_issingular(f.mass_matrix) &&
+        throw(ArgumentError("MOOSE234 requires a nonsingular mass matrix."))
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false), verbose
+    )
+
+    hist_size = 6 # max_order(4) + 2
+    ts = zero(Vector{typeof(t)}(undef, hist_size))
+    ts_tmp = Vector{tTypeNoUnits}(undef, hist_size)
+    bdf_coeffs = similar(ts_tmp)
+    dd_c = Matrix{tTypeNoUnits}(undef, 5, 5)
+    dd_D = similar(dd_c)
+
+    if u isa Number
+        u_history = zeros(eltype(u), hist_size)
+    else
+        u_history = [zero(u) for _ in 1:hist_size]
+    end
+
+    order = 2
+    prev_order = 2
+    terkm1 = tTypeNoUnits(1)
+    terk = tTypeNoUnits(1)
+    terkp1 = tTypeNoUnits(1)
+    nconsteps = 0
+    consfailcnt = 0
+    qwait = 4 # order + 2
+    iters_from_event = 0
+
+    return MOOSE234ConstantCache(
+        nlsolver, ts, ts_tmp, bdf_coeffs, dd_c, dd_D, u_history, order, prev_order,
+        nconsteps, consfailcnt, qwait, terkm1, terk, terkp1, iters_from_event
+    )
+end
+
+@cache mutable struct MOOSE234Cache{
+        N, rateType, uNoUnitsType, tsType, uType, uuType,
+        EEstType, coeffType, ddType, StepLimiter,
+    } <:
+    BDFMutableCache
+    fsalfirst::rateType
+    nlsolver::N
+    ts::tsType
+    ts_tmp::coeffType
+    bdf_coeffs::coeffType
+    dd_c::ddType
+    dd_D::ddType
+    u_history::uuType
+    order::Int
+    prev_order::Int
+    u₀::uType
+    nconsteps::Int
+    consfailcnt::Int
+    qwait::Int
+    tmp::uType
+    atmp::uNoUnitsType
+    terkm1::EEstType
+    terk::EEstType
+    terkp1::EEstType
+    terk_tmp::uType
+    terkp1_tmp::uType
+    equi_ts::tsType
+    iters_from_event::Int
+    dense::Vector{uType}
+    step_limiter!::StepLimiter
+end
+
+@truncate_stacktrace MOOSE234Cache 1
+
+function alg_cache(
+        alg::MOOSE234, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    moose234_issingular(f.mass_matrix) &&
+        throw(ArgumentError("MOOSE234 requires a nonsingular mass matrix."))
+    γ, c = one(tTypeNoUnits), one(tTypeNoUnits)
+    fsalfirst = zero(rate_prototype)
+    nlsolver = build_nlsolver(
+        alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true), verbose
+    )
+
+    hist_size = 6
+    ts = Vector{typeof(t)}(undef, hist_size)
+    u_history = [zero(u) for _ in 1:hist_size]
+    order = 2
+    prev_order = 2
+    recursivefill!(ts, zero(t))
+    terkm1 = tTypeNoUnits(1)
+    terk = tTypeNoUnits(1)
+    terkp1 = tTypeNoUnits(1)
+    terk_tmp = similar(u)
+    terkp1_tmp = similar(u)
+    nconsteps = 0
+    consfailcnt = 0
+    qwait = 4 # order + 2
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, zero(uEltypeNoUnits))
+    u₀ = similar(u)
+    equi_ts = similar(ts)
+    tmp = similar(u)
+    ts_tmp = Vector{tTypeNoUnits}(undef, hist_size)
+    bdf_coeffs = similar(ts_tmp)
+    dd_c = Matrix{tTypeNoUnits}(undef, 5, 5)
+    dd_D = similar(dd_c)
+    iters_from_event = 0
+
+    dense = [zero(u) for _ in 1:10] # 2*(max_order+1) = 2*5 = 10
+
+    return MOOSE234Cache(
+        fsalfirst, nlsolver, ts, ts_tmp, bdf_coeffs, dd_c, dd_D, u_history, order, prev_order,
+        u₀, nconsteps, consfailcnt, qwait, tmp, atmp, terkm1, terk, terkp1,
+        terk_tmp, terkp1_tmp, equi_ts, iters_from_event, dense, alg.step_limiter!
+    )
+end

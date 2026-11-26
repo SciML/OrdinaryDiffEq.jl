@@ -68,11 +68,7 @@ function _ode_addsteps!(
 end
 
 ####################################################################
-# FBDF / DFBDF: Rebuild Chebyshev-resampled interpolation data
-#
-# Layout: k has max_order+1 entries.
-#   k[1..n] = solution values at fixed Chebyshev reference nodes
-#   k[n+1..end] = zero
+# FBDF / DFBDF / MOOSE234: Rebuild Chebyshev-resampled interpolation data
 #
 # After a callback truncates the step to dt (= t_event - t_prev)
 # and modifies u, we rebuild k by:
@@ -82,60 +78,63 @@ end
 #   2. Resampling at fixed Chebyshev nodes via _resample_at_chebyshev!
 ####################################################################
 
-# FBDF/DFBDF ConstantCache: out-of-place k entries
-function _ode_addsteps!(
-        k, t, uprev, u, dt, f, p,
-        cache::Union{FBDFConstantCache, DFBDFConstantCache},
-        always_calc_begin = false, allow_calc_end = true,
-        force_calc_end = false
-    )
-    always_calc_begin || return nothing
-    (; u_history, ts, order) = cache
-    n = order + 1
-
-    thetas = Vector{typeof(t)}(undef, n)
-    thetas[1] = one(t)
-    for j in 1:order
-        thetas[1 + j] = (ts[j] - t) / dt
-    end
-
-    values = Vector{typeof(u)}(undef, n)
-    values[1] = u isa Number ? u : copy(u)
-    for j in 1:order
-        values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
-    end
-
-    _resample_at_chebyshev!(k, values, thetas, n)
-    for j in (n + 1):length(k)
-        k[j] = zero(u)
-    end
+function initialize_bdf_interpolation!(integrator, sample)
+    integrator.kshortsize = 1
+    resize!(integrator.k, 1)
+    integrator.k[1] = sample
     return nothing
 end
 
-# FBDF/DFBDF Cache: in-place k entries (pre-allocated arrays)
+function save_bdf_interpolation!(integrator, cache, u, n)
+    integrator.kshortsize = n
+    resize!(integrator.k, n)
+    if cache isa OrdinaryDiffEqMutableCache
+        for j in 1:n
+            integrator.k[j] = cache.dense[j]
+        end
+    end
+    (; k, t, uprev, dt, f, p) = integrator
+    return _ode_addsteps!(k, t, uprev, u, dt, f, p, cache, true)
+end
+
 function _ode_addsteps!(
         k, t, uprev, u, dt, f, p,
-        cache::Union{FBDFCache, DFBDFCache},
+        cache::Union{FBDFConstantCache, DFBDFConstantCache, MOOSE234ConstantCache},
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
     always_calc_begin || return nothing
-    (; u_history, ts, order, equi_ts) = cache
-    max_order = length(k) - 1
-    n = order + 1
+    (; u_history, ts) = cache
+    n = length(k)
 
-    # Compute thetas
+    thetas = Vector{typeof(t)}(undef, n)
+    thetas[1] = one(t)
+    values = Vector{typeof(u)}(undef, n)
+    values[1] = u isa Number ? u : copy(u)
+    for j in 1:(n - 1)
+        thetas[1 + j] = (ts[j] - t) / dt
+        values[1 + j] = u isa Number ? u_history[j] : copy(u_history[j])
+    end
+
+    return _resample_at_chebyshev!(k, values, thetas, n)
+end
+
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p,
+        cache::Union{FBDFCache, DFBDFCache, MOOSE234Cache},
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false
+    )
+    always_calc_begin || return nothing
+    (; u_history, ts, equi_ts) = cache
+    n = length(k)
+
     equi_ts[1] = one(eltype(equi_ts))
-    for j in 1:order
+    for j in 1:(n - 1)
         equi_ts[1 + j] = (ts[j] - t) / dt
     end
 
-    # Resample at Chebyshev nodes directly from u and u_history
-    _resample_at_chebyshev_direct_iip!(k, u, u_history, equi_ts, n)
-    for j in (n + 1):(max_order + 1)
-        fill!(k[j], zero(eltype(u)))
-    end
-    return nothing
+    return _resample_at_chebyshev_direct_iip!(k, u, u_history, equi_ts, n)
 end
 
 ####################################################################
