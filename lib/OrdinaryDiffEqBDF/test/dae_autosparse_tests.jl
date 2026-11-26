@@ -394,6 +394,42 @@ end
     end
     # With the branch active the row-2 term has derivative 4 at (2, 1), outside the storage.
     @test_throws "(2, 1)" refresh_at(branch_row(2), [3.0, 1.0e8])
+
+    # A window around u[1] = 3: a step scaled by the 1e8 state would leave it and see
+    # nothing, while the coordinate's own step stays inside and finds the derivative 4.
+    function window!(r, du, u, p, t)
+        r .= du .+ (u .- scales)
+        r[2] += t >= 0.5 && 2.25 < u[1] < 3.5 ? 4 * (u[1] - 3) : 0.0
+        return nothing
+    end
+    err = try
+        refresh_at(window!, [3.0, 1.0e8])
+        nothing
+    catch e
+        e
+    end
+    @test err isa DimensionMismatch
+    @test occursin("(2, 1)", sprint(showerror, err))
+end
+
+@testset "The finite-difference fallback holds complex-step perturbations" begin
+    complex_step_residual!(r, du, u, p, t) = (r .= du .+ 2 .* u; nothing)
+    armed = Ref(false)
+    backend = AutoSparse(
+        AutoFiniteDiff(fdjtype = Val(:complex)); sparsity_detector = ArmedDetector(armed),
+        coloring_algorithm = GreedyColoringAlgorithm()
+    )
+    prob = DAEProblem(complex_step_residual!, zeros(2), ones(2), (0.0, 1.0); differential_vars = [true, true])
+    integrator = init(prob, DFBDF(autodiff = backend); initializealg = NoInit())
+    armed[] = true
+    integrator.t = 0.75
+    nlsolver = integrator.cache.nlsolver
+    OrdinaryDiffEqDifferentiation.calc_W!(
+        nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+    )
+    @test Matrix(nlsolver.cache.J) ≈ [2.0 0.0; 0.0 2.0] atol = 1.0e-10
+    # J_du is traced, so it takes the compressed path, which is only accurate to ~2e-8 here.
+    @test Matrix(nlsolver.cache.dae_jacobians.J_du) ≈ [1.0 0.0; 0.0 1.0] atol = 1.0e-6
 end
 
 @testset "Untraceable late branch with a fixed diagonal pattern still solves" begin

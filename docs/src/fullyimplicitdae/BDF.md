@@ -76,7 +76,9 @@ integrator construction and reuse their colorings.
     finite-difference backend the step of a column is scaled by that coordinate alone and uses the
     backend's own stencil and step settings). If every
     nonzero lies inside the stored pattern, those validated values are the partial Jacobian that is
-    used; otherwise a `DimensionMismatch` names the first missing entry.
+    used; otherwise a `DimensionMismatch` names the first missing entry. For a reverse-mode
+    backend (for example `AutoEnzyme(mode = Enzyme.Reverse)`) the same fallback streams one output row
+    per reverse sweep through reused buffers instead, so its cost grows with the number of rows.
     Storage that already holds
     every entry is never validated. Storage is never grown during the solve. For a
     state-dependent pattern, supply a `KnownJacobianSparsityDetector` holding the union of all

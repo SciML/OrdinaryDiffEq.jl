@@ -23,13 +23,14 @@ function _missing_entry_error(i, j, reason)
     )
 end
 
-# Whether column `j` of `J` stores row `i`.
-function _is_stored(J::SparseMatrixCSC, i, j)
+# Position of row `i` in the stored entries of column `j` of `J`, or 0 if it is not stored.
+function _stored_index(J::SparseMatrixCSC, i, j)
     rows = rowvals(J)
     stored = nzrange(J, j)
     k = searchsortedfirst(rows, i, first(stored), last(stored), Base.Order.Forward)
-    return k <= last(stored) && rows[k] == i
+    return k <= last(stored) && rows[k] == i ? k : 0
 end
+_is_stored(J::SparseMatrixCSC, i, j) = _stored_index(J, i, j) != 0
 
 # The detector cannot trace `f` here, so differentiate it one independent column at a time
 # with reused buffers. Only nonzeros outside `J` are errors, since entries that are zero at
@@ -57,7 +58,10 @@ end
 # one-coordinate function with the backend's own stencil and step; AD backends push the
 # basis vector `e_j` forward.
 function _column_evaluator(dense::ADTypes.AutoFiniteDiff, f, fx, x)
-    coordinate = _CoordinateFunction(f, copy(x), 1)
+    # A complex-step stencil perturbs the coordinate by an imaginary amount, so the working
+    # state must be able to hold it.
+    state = dense.fdjtype isa Val{:complex} ? complex.(x) : copy(x)
+    coordinate = _CoordinateFunction(f, state, 1)
     s = [first(x)]
     jac = similar(fx, length(fx), 1)
     prep = DI.prepare_jacobian(coordinate, fx, dense, s; strict = Val(false))
@@ -83,8 +87,49 @@ function _column_evaluator(dense, f, fx, x)
     end
 end
 
+# Reverse-mode backends differentiate one output row per sweep, so a column at a time would
+# sweep every output once per input. Stream output basis vectors instead, through reused
+# buffers, staging the stored values of each row.
+function _fill_from_rows!(dense, f, fx, x, J)
+    cotangent = zero(fx)
+    row = similar(x)
+    prep = try
+        DI.prepare_pullback(f, fx, dense, x, (cotangent,); strict = Val(false))
+    catch err
+        err isa InterruptException && rethrow()
+        throw(_unvalidatable_error())
+    end
+    staged = zero(nonzeros(J))
+    for i in eachindex(fx)
+        cotangent[i] = one(eltype(cotangent))
+        try
+            DI.pullback!(f, fx, (row,), prep, dense, x, (cotangent,))
+        catch err
+            err isa InterruptException && rethrow()
+            throw(_unvalidatable_error())
+        finally
+            cotangent[i] = zero(eltype(cotangent))
+        end
+        for j in eachindex(row)
+            iszero(row[j]) && continue
+            idx = _stored_index(J, i, j)
+            idx == 0 && throw(_missing_fallback_entry(i, j))
+            staged[idx] = row[j]
+        end
+    end
+    copyto!(nonzeros(J), staged)
+    return true
+end
+
+_missing_fallback_entry(i, j) = _missing_entry_error(
+    i, j,
+    "The detector cannot trace the residual at this point, and uncompressed \
+    differentiation finds a nonzero derivative at"
+)
+
 function _fill_from_columns!(ad, f, fx, x, J)
     dense = ADTypes.dense_ad(ad)
+    ADTypes.mode(dense) isa ADTypes.ReverseMode && return _fill_from_rows!(dense, f, fx, x, J)
     column = similar(fx)
     column! = try
         _column_evaluator(dense, f, fx, x)
@@ -103,13 +148,7 @@ function _fill_from_columns!(ad, f, fx, x, J)
         end
         for i in eachindex(column)
             iszero(column[i]) || _is_stored(J, i, j) ||
-                throw(
-                _missing_entry_error(
-                    i, j,
-                    "The detector cannot trace the residual at this point, and uncompressed \
-                    differentiation finds a nonzero derivative at"
-                )
-            )
+                throw(_missing_fallback_entry(i, j))
         end
         for idx in nzrange(J, j)
             staged[idx] = column[rows[idx]]

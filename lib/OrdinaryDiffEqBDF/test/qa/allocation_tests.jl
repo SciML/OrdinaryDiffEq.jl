@@ -3,7 +3,8 @@ using OrdinaryDiffEqCore
 using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit
 using SciMLBase: FullSpecialize, SplitFunction, ODEFunction, DAEFunction
 using AllocCheck
-using ADTypes: AutoForwardDiff, AutoSparse
+using ADTypes: ADTypes, AutoEnzyme, AutoForwardDiff, AutoSparse
+using Enzyme: Enzyme
 using OrdinaryDiffEqDifferentiation: OrdinaryDiffEqDifferentiation
 using SciMLBase: NoInit
 using SparseArrays
@@ -264,4 +265,65 @@ end
     small, large = refresh_allocation(512), refresh_allocation(2048)
     @test large < 6 * small
     @test large < 4_000_000 # a dense 2048 x 2048 matrix alone is 33.5 MB
+end
+
+# The diagonal pattern at preparation, then the global tracer once armed.
+struct ArmedDetector <: ADTypes.AbstractSparsityDetector
+    armed::Base.RefValue{Bool}
+end
+function ADTypes.jacobian_sparsity(f!, y, x, d::ArmedDetector)
+    d.armed[] && return ADTypes.jacobian_sparsity(f!, y, x, TracerSparsityDetector())
+    return sparse(1:length(x), 1:length(x), trues(length(x)))
+end
+function ADTypes.jacobian_sparsity(f, x, d::ArmedDetector)
+    d.armed[] && return ADTypes.jacobian_sparsity(f, x, TracerSparsityDetector())
+    return sparse(1:length(x), 1:length(x), trues(length(x)))
+end
+
+# A reverse-mode backend differentiates one output row per sweep. The fallback must stream
+# the rows, so the number of sweeps (residual evaluations) grows with the row count rather
+# than with rows times columns.
+const REVERSE_SWEEPS = Ref(0)
+function reverse_late!(r, du, u, p, t)
+    REVERSE_SWEEPS[] += 1
+    for i in eachindex(r)
+        r[i] = du[i] + 3 * u[i]
+    end
+    if t >= 0.5 && u[1] < 0
+        r[1] += u[1]^2
+    end
+    return nothing
+end
+
+@testset "Uncompressed fallback streams rows for reverse-mode backends" begin
+    function reverse_refresh(n)
+        armed = Ref(false)
+        backend = AutoSparse(
+            AutoEnzyme(mode = Enzyme.Reverse); sparsity_detector = ArmedDetector(armed),
+            coloring_algorithm = GreedyColoringAlgorithm()
+        )
+        prob = DAEProblem(
+            reverse_late!, -ones(n), ones(n), (0.0, 1.0); differential_vars = trues(n)
+        )
+        integrator = init(prob, DFBDF(autodiff = backend); initializealg = NoInit())
+        armed[] = true
+        integrator.t = 0.75
+        nlsolver = integrator.cache.nlsolver
+        refresh() = OrdinaryDiffEqDifferentiation.calc_W!(
+            nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+        )
+        refresh()
+        refresh()
+        REVERSE_SWEEPS[] = 0
+        GC.gc()
+        allocated = @allocated refresh()
+        sweeps = REVERSE_SWEEPS[]
+        return (; sweeps, allocated, J = nlsolver.cache.J, J_du = nlsolver.cache.dae_jacobians.J_du)
+    end
+    small, large = reverse_refresh(64), reverse_refresh(128)
+    diagonal(value) = [i == j ? value : 0.0 for i in 1:128, j in 1:128]
+    @test Matrix(large.J) == diagonal(3.0)
+    @test Matrix(large.J_du) == diagonal(1.0)
+    @test large.sweeps <= 2 * small.sweeps
+    @test large.allocated < 3 * small.allocated
 end
