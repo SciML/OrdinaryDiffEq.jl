@@ -121,6 +121,12 @@ import SciMLStructures
 using Reexport: @reexport
 @reexport using SciMLBase
 
+# Preserve qualified problem types used by downstream method definitions.
+const AbstractLinearProblem = SciMLBase.AbstractLinearProblem
+const AbstractNonlinearProblem = SciMLBase.AbstractNonlinearProblem
+const AbstractSteadyStateProblem = SciMLBase.AbstractSteadyStateProblem
+const AbstractIntegralProblem = SciMLBase.AbstractIntegralProblem
+
 SciMLBase.isfunctionwrapper(x::FunctionWrapper) = true
 
 # Rootfinder for callbacks
