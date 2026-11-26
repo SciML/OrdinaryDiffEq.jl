@@ -81,6 +81,8 @@ run_qa(
                 :has_Wfact, :has_Wfact_t, :has_jac_u, :has_jac_du, :postamble!,
                 # ForwardDiff internals.
                 :Tag, :pickchunksize,
+                # Documented in ForwardDiff's API reference without a public declaration.
+                :derivative,
             ),
         ),
     ),

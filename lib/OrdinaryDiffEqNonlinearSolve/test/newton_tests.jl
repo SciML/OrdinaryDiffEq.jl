@@ -4,6 +4,7 @@ using OrdinaryDiffEqSDIRK
 using DiffEqDevTools
 using DiffEqBase
 using LineSearches
+using LinearAlgebra: Diagonal
 using Test
 
 using ODEProblemLibrary: prob_ode_lorenz, prob_ode_orego
@@ -25,7 +26,7 @@ end
         a = -u[2] / δ
         a <= 1.125 || throw(DomainError(a))
         du[1] = 1
-        du[2] = u[2] + (1 + a - 1.5a^2)
+        du[2] = u[2] + (1 + a - p * a^2)
         return nothing
     end
     function jac!(J, u, p, t)
@@ -33,15 +34,15 @@ end
         J[2, 2] = 1 + inv(δ)
         return nothing
     end
-    prob = ODEProblem(ODEFunction(rhs!; jac = jac!), zeros(2), (0.0, 1.0))
+    prob = ODEProblem(ODEFunction(rhs!; jac = jac!), zeros(2), (0.0, 1.0), 1.5)
     function predictor!(upred, uprev, p, t, dt)
         upred[1] = 1
         upred[2] = 0
         return nothing
     end
-    function solve_with(linesearch)
+    function solve_with(linesearch, problem = prob)
         return solve(
-            prob, ImplicitEuler(nlsolve = NLNewton(predictor = predictor!, relax = linesearch));
+            problem, ImplicitEuler(nlsolve = NLNewton(predictor = predictor!, relax = linesearch));
             dt = 1.0, adaptive = false, abstol = 0.1, reltol = 0.0,
             internalnorm = (x, t) -> maximum(abs, x)
         )
@@ -62,6 +63,51 @@ end
     end
     if Base.pkgversion(LineSearches) >= v"7.8.2"
         @test_throws LineSearches.LineSearchException solve_with(BackTracking())
+        function check_monotone_ascent(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+            @test dϕ0 ≈ 10 atol = 32sqrt(eps())
+            return BackTracking()(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+        end
+        @test_throws LineSearches.LineSearchException solve_with(
+            check_monotone_ascent, SciMLBase.remake(prob; p = 0.0)
+        )
+    end
+end
+
+@testset "in-place line search preserves a resolved mass-matrix ascent" begin
+    δ, θ, mass = 2.0^-28, 2.0^-20, 2.0^27
+    function rhs!(du, u, p, t)
+        a = (1 - u[1]) / δ
+        du[1] = 1 - min(2a^2 / hypot(a, θ), 1)
+        return nothing
+    end
+    float_rhs!(du::Vector{Float64}, u::Vector{Float64}, p, t) = rhs!(du, u, p, t)
+    jac!(J, u, p, t) = (J[1, 1] = mass + inv(δ); nothing)
+    predictor!(upred, uprev, p, t, dt) = (upred[1] = 1; nothing)
+    function check_ascent(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+        h = sqrt(eps())
+        @test (ϕ(h) - ϕ0) / h ≈ 5
+        @test dϕ0 ≈ 5
+        return BackTracking()(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+    end
+    function solve_and_check_residual(f!)
+        prob = ODEProblem(
+            ODEFunction(f!; jac = jac!, mass_matrix = Diagonal([mass])), [1.0], (0.0, 1.0)
+        )
+        sol = solve(
+            prob, ImplicitEuler(nlsolve = NLNewton(predictor = predictor!, relax = check_ascent));
+            dt = 1.0, adaptive = false, abstol = 0.1, reltol = 0.0
+        )
+        if SciMLBase.successful_retcode(sol)
+            rhs = similar(sol.u[end])
+            rhs!(rhs, sol.u[end], prob.p, sol.t[end])
+            @test abs(mass * (sol.u[end][1] - prob.u0[1]) - rhs[1]) <= 0.1
+        end
+        return sol
+    end
+    if Base.pkgversion(LineSearches) >= v"7.8.2"
+        for f! in (rhs!, float_rhs!)
+            @test_throws LineSearches.LineSearchException solve_and_check_residual(f!)
+        end
     end
 end
 

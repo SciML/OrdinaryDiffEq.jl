@@ -156,6 +156,8 @@ possible) to solve `g(z) = 0`.
   - `always_new`: force recomputation of `W` on every solve.
   - `check_div`: enable early divergence detection.
   - `relax`: optional relaxation parameter in `[0, 1)` damping the Newton update.
+    For in-place stages, `relax` also accepts a callable line search that receives
+    the scaled stage residual norm and its slope estimate.
   - `predictor`: optional callable seeding each stage solve, `predictor(uprev, p, t, dt)`
     out of place and `predictor(upred, uprev, p, t, dt)` in place, returning a guess
     for the stage value at stage time `t`. Applied to every implicit stage of any

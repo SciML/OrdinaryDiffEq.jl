@@ -1013,6 +1013,35 @@ function linesearch_roundoff_step(x, dx)
     return roundoff_level(typeof(scale)) * (scale / abs(dx))
 end
 
+# The solver's default norm includes dual partials in error control. Differentiating
+# the stage merit requires the RMS formula with the residual's tangent intact.
+linesearch_rms_norm(x::Real, t) = x < 0 ? -x : x
+linesearch_rms_norm(x, t) = sqrt(sum(abs2, x) / max(length(x), 1))
+
+function linesearch_directional_slope(merit, f, internalnorm, z, dz, ztmp, ustep, k, atmp)
+    T = eltype(z)
+    T <: AbstractFloat || return nothing
+    norm = internalnorm === DiffEqBase.ODE_DEFAULT_NORM ? linesearch_rms_norm : internalnorm
+    try
+        return ForwardDiff.derivative(zero(T)) do step
+            scratch(buffer) = similar(buffer, promote_type(eltype(buffer), typeof(step)))
+            trial = scratch(atmp)
+            @.. trial = z - dz * step
+            value = merit(
+                SciMLBase.unwrapped_f(f), norm, trial, scratch(ztmp), scratch(ustep), scratch(k),
+                scratch(atmp)
+            )
+            return isfinite(value) ? value : zero(step)
+        end
+    catch err
+        # Missing dual-number methods leave the derivative unavailable.
+        if err isa MethodError && any(arg -> arg isa Union{Dual, Type{<:Dual}, AbstractArray{<:Dual}}, err.args)
+            return nothing
+        end
+        rethrow()
+    end
+end
+
 function relax!(
         dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch
@@ -1024,14 +1053,13 @@ function relax!(
             linesearch = linesearch
 
         (; uprev, t, p, dt, opts, isdae) = integrator
-        (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
+        (; z, tmp, ztmp, γ, α, cache, method) = nlsolver
         (; ustep, atmp, tstep, k, invγdt) = cache
-        function resid(z)
-            # recompute residual (rhs)
+        function merit(f, internalnorm, z, ztmp, ustep, k, atmp)
             if isdae
                 _uprev = get_dae_uprev(integrator, uprev)
                 b, ustep2 = _compute_rhs!(
-                    tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f::TF, z
+                    tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f, z
                 )
             else
                 b, ustep2 = _compute_rhs!(
@@ -1040,15 +1068,13 @@ function relax!(
             end
             calculate_residuals!(
                 atmp, b, uprev, ustep2, opts.abstol, opts.reltol,
-                opts.internalnorm, t
+                internalnorm, t
             )
-            ndz = opts.internalnorm(atmp, t)
-            return ndz
+            return internalnorm(atmp, t)
         end
         function ϕ(α)
             local z = @.. atmp = nlsolver.z - dz * α
-            res = resid(z)
-            return res
+            return merit(f, opts.internalnorm, z, ztmp, ustep, k, atmp)
         end
         α0 = one(eltype(ustep))
         ϕ0 = ϕ(zero(α0))
@@ -1084,8 +1110,15 @@ function relax!(
                     slope_half = (ϕ(h / 2) - ϕ0) / (h / 2)
                     if isfinite(slope_half) && slope_half < 0
                         slope_full = (ϕ(h) - ϕ0) / h
-                        if isfinite(slope_full) && slope_full < 0
-                            slope = slope_half
+                        # A stateful mass operator may cache coefficients from the probe.
+                        if isfinite(slope_full) && slope_full < 0 &&
+                                (isdae || !(f.mass_matrix isa AbstractSciMLOperator))
+                            directional_slope = linesearch_directional_slope(
+                                merit, f, opts.internalnorm, z, dz, ztmp, ustep, k, atmp
+                            )
+                            if directional_slope !== nothing && isfinite(directional_slope) && directional_slope < 0
+                                slope = directional_slope
+                            end
                         end
                     end
                 end
