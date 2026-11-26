@@ -77,12 +77,9 @@ DynamicalODEFunction, ODEFunction, SplitFunction
 ```julia
 solve, solve!, init, step!,
 remake, ReturnCode, successful_retcode, DEStats,
-NLStats, NullParameters, AutoSpecialize, AutoDespecialize, AutoRespecialize,
-AutoDePSpecialize, FullSpecialize, NoSpecialize,
+NLStats, NullParameters, AutoSpecialize, FullSpecialize, NoSpecialize,
 FunctionWrapperSpecialize, CheckInit, NoInit, OverrideInit
 ```
-
-`AutoDePSpecialize` is a deprecated alias for `AutoRespecialize`.
 
 ### Callbacks
 
