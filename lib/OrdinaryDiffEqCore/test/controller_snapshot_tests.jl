@@ -31,10 +31,13 @@ prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0))
     before = scratch(perturb!(cache))
     snap = snapshot_controller(cache)
     @test snap isa NamedTuple
+    @test !hasproperty(snap, :EEst)
+    cache.EEst = 0.75
     perturb!(cache)
     @test scratch(cache) != before
     @test restore_controller!(cache, snap) === nothing
     @test scratch(cache) == before
+    @test cache.EEst == 0.75
 
     # The snapshot must cover everything `sync_controllers!` transfers.
     other = perturb!(deepcopy(cache))
@@ -65,4 +68,23 @@ end
     cache.history .= 0
     @test restore_controller!(cache, snap) === nothing
     @test cache.history == [1.0, 2.0, 3.0, 4.0]
+end
+
+mutable struct EstimateControllerCache <: AbstractControllerCache
+    EEst::Float64
+end
+
+function OrdinaryDiffEqCore.sync_controllers!(
+        dst::EstimateControllerCache, src::EstimateControllerCache
+    )
+    dst.EEst = src.EEst
+    return nothing
+end
+
+@testset "custom cache restores estimate through sync" begin
+    cache = EstimateControllerCache(0.25)
+    snap = snapshot_controller(cache)
+    cache.EEst = 0.75
+    @test restore_controller!(cache, snap) === nothing
+    @test cache.EEst == 0.25
 end
