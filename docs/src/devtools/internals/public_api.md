@@ -40,6 +40,7 @@ DiffEqBase.max_vector_callback_length_int
 DiffEqBase.merge_problem_kwargs
 DiffEqBase.prepare_alg
 DiffEqBase.prob2dtmin
+DiffEqBase.solver_specific_kwargs
 DiffEqBase.stripunits
 DiffEqBase.timedepentdtmin
 ```

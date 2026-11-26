@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test, Random, StaticArrays, DiffEqCallbacks
 using OrdinaryDiffEqCore: add_tstop!, PIController
+using SciMLBase: SciMLBase, KeywordArgError
 import ODEProblemLibrary: prob_ode_linear
 using OrdinaryDiffEqLowOrderRK
 using OrdinaryDiffEqFIRK
@@ -356,6 +357,18 @@ end
         step!(integ)
         @test integ.t - integ.tprev == next_dt
     end
+end
+
+@testset "resume_dt_after_tstop is accepted with default algorithm selection" begin
+    prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 1.0))
+    tstops = [0.125 + 2.0^-16]
+    sol = solve(prob; tstops, resume_dt_after_tstop = true, kwargshandle = KeywordArgError)
+    @test SciMLBase.successful_retcode(sol)
+    @test tstops[1] in sol.t
+    integ = init(prob; tstops, resume_dt_after_tstop = true, kwargshandle = KeywordArgError)
+    @test integ.resume_dt_after_tstop
+    prob_kwarg = ODEProblem(prob.f, 0.0, (0.0, 1.0); resume_dt_after_tstop = true)
+    @test SciMLBase.successful_retcode(solve(prob_kwarg; tstops, kwargshandle = KeywordArgError))
 end
 
 @testset "Callbacks after a step shortened to a tstop see the accepted step (#4655)" begin

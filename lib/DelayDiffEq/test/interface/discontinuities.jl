@@ -3,7 +3,7 @@ using OrdinaryDiffEqLowOrderRK
 using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqCore: PIController
-using SciMLBase: ReturnCode, get_proposed_dt
+using SciMLBase: ReturnCode, get_proposed_dt, CommonKwargError, KeywordArgError
 using Test
 
 const prob = prob_dde_constant_2delays_ip
@@ -234,4 +234,11 @@ end
     @test get_proposed_dt(integrator) > integrator.t - integrator.tprev
     solve!(integrator)
     @test integrator.sol.t[end] == 2.0
+end
+
+@testset "MethodOfSteps rejects resume_dt_after_tstop" begin
+    dde = DDEProblem((u, h, p, t) -> 1.0, 0.0, (p, t) -> 0.0, (0.0, 2.0))
+    kwargs = (; tstops = [0.125 + 2.0^-16], resume_dt_after_tstop = true, kwargshandle = KeywordArgError)
+    @test_throws CommonKwargError init(dde, MethodOfSteps(Tsit5()); kwargs...)
+    @test_throws CommonKwargError solve(dde, MethodOfSteps(Tsit5()); kwargs...)
 end

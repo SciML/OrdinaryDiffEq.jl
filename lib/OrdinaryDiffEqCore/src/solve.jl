@@ -235,6 +235,9 @@ function _build_callback_cache(u, max_len, ::Val{false}, ::Type{uBottomEltype}) 
     return DiffEqBase.CallbackCache(max_len, T, T)
 end
 
+DiffEqBase.solver_specific_kwargs(::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) =
+    (:resume_dt_after_tstop,)
+
 Base.@constprop :aggressive function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,

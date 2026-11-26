@@ -117,18 +117,25 @@ and `qsteady_max_default(::QNDF) = 12 // 10` to match the historical
 When a tstop falls inside a step, the step is shortened to land on it.
 The controller always sees the step that was actually taken: its
 accept hooks record the shortened length (Nordsieck `tau`,
-`PredictiveController`'s `dtacc`), and the next step is the controller's
-proposal from that step, so the growth bound `qmax` holds relative to
-the shortened step.
+`PredictiveController`'s `dtacc`). By default, the next step uses the
+controller's proposal from the accepted step length and applies the
+usual time-step bounds. Controllers that use growth limits continue to
+apply their usual limits, including `qmax_first_step` where applicable.
 
+For adaptive OrdinaryDiffEq solves,
 `solve(prob, alg; resume_dt_after_tstop = true)` instead resumes the
 step size the controller had proposed before the shortening, clamped to
 `dtmax`. The controller's factor from the shortened step may reduce it
 but not increase it, and the result is never smaller than the
 controller's own proposal. The resumed step is not limited by `qmax`
 relative to the shortened step, so after a stop placed 1% into a step
-the next step can be about 100 times the landing step. Algorithms opt
-out through
+the next step can be about 100 times the landing step. A resumed step
+can miss a short transient after the stop. Use `dtmax` or additional
+`tstops` when that interval requires finer resolution.
+
+The keyword is accepted only by OrdinaryDiffEq algorithms; other solvers,
+such as DelayDiffEq's `MethodOfSteps`, reject it under the usual keyword
+checks. Algorithms opt out through
 [`resumes_dt_after_tstop`](@ref OrdinaryDiffEqCore.resumes_dt_after_tstop);
 the Nordsieck BDF methods do, and for a `CompositeAlgorithm` the
 currently active member decides.
