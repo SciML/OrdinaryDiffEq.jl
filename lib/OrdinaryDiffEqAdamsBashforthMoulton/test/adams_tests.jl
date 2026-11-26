@@ -41,6 +41,40 @@ end
     end
 end
 
+@testset "Fixed-step AB/ABM in-place vs out-of-place nf counts" begin
+    function lorenz_iip!(du, u, p, t)
+        p[] += 1
+        du[1] = 10.0 * (u[2] - u[1])
+        du[2] = u[1] * (28.0 - u[3]) - u[2]
+        du[3] = u[1] * u[2] - (8 / 3) * u[3]
+        return nothing
+    end
+    function lorenz_oop(u, p, t)
+        p[] += 1
+        return [
+            10.0 * (u[2] - u[1]),
+            u[1] * (28.0 - u[3]) - u[2],
+            u[1] * u[2] - (8 / 3) * u[3],
+        ]
+    end
+    u0 = [1.0, 0.0, 0.0]
+    tspan = (0.0, 1.0)
+    dt = 1 / 256
+    for alg in (AB3(), AB4(), AB5(), ABM32(), ABM43(), ABM54())
+        calls_iip = Ref(0)
+        calls_oop = Ref(0)
+        sol_iip = solve(
+            ODEProblem(lorenz_iip!, copy(u0), tspan, calls_iip), alg; dt, adaptive = false
+        )
+        sol_oop = solve(
+            ODEProblem(lorenz_oop, copy(u0), tspan, calls_oop), alg; dt, adaptive = false
+        )
+        @test sol_iip.stats.nf == sol_oop.stats.nf
+        @test sol_iip.stats.nf == calls_iip[]
+        @test sol_oop.stats.nf == calls_oop[]
+    end
+end
+
 for i in 1:2
     prob = probArr[i]
     dt = 1 // 256
