@@ -39,16 +39,35 @@ For an in-place `DAEProblem`, `DFBDF` with its default Newton solver can apply t
 matrix without forming it by passing a supported Krylov `linsolve` and leaving `concrete_jac`
 unset or false, for example `DFBDF(; linsolve = KrylovJL_GMRES())`. The Newton matrix
 `∂F/∂u + (α/(γ h)) ∂F/∂du` is then applied as a Jacobian-vector product, and
-`stats.njacs` stays zero. The solvers supported for this are `KrylovJL_GMRES`,
-`KrylovJL_FGMRES` and `KrylovJL_BICGSTAB`. The Newton iteration sets the linear tolerances
-and measures the residual in the left preconditioner of the solve, so these are rejected with
-an `ArgumentError`: other Krylov.jl methods, `KrylovJL` with `ldiv = false` or the Krylov.jl
-keywords `M`, `N`, `W`, `atol` and `rtol`, and the `IterativeSolversJL*` wrappers. Pass
-preconditioners through `precs` and tolerances to `solve`. A Krylov solve that reports
-convergence is accepted only if its true residual meets the tolerance in the same norm.
-A Krylov solve takes one scalar relative tolerance, so a vector `reltol` is reduced to its
-smallest component for the linear solves and for that check; the integration tolerances stay
-componentwise.
+`stats.njacs` stays zero.
+
+The supported combinations of Jacobian-vector product and Krylov solver are:
+
+| `autodiff`                                  | `KrylovJL_GMRES` | `KrylovJL_FGMRES` | `KrylovJL_BICGSTAB` |
+|:------------------------------------------- |:----------------:|:-----------------:|:-------------------:|
+| `AutoForwardDiff()` (the default)           | yes              | yes               | yes                 |
+| `AutoFiniteDiff(; fdtype = Val(:central))`  | yes              | yes               | no                  |
+| any other finite-difference backend         | no               | no                | no                  |
+
+Forward finite differences destabilize stiff DAEs such as Robertson's through the matrix-free
+operator, and BiCGStab fails with the centered stencil on it, so those combinations throw an
+`ArgumentError` when the integrator is initialized; use forward AD or a concrete `linsolve`.
+The Newton iteration sets the linear tolerances and measures the residual in the left
+preconditioner of the solve, so these are also rejected with an `ArgumentError`: other
+Krylov.jl methods, `KrylovJL` with `ldiv = false` or the Krylov.jl keywords `M`, `N`, `W`,
+`atol` and `rtol`, and the `IterativeSolversJL*` wrappers. Pass preconditioners through `precs`
+and tolerances to `solve`.
+
+A Krylov solve takes one scalar relative tolerance. It is the requested `reltol` (also for a
+fixed step); a vector `reltol` is reduced to its smallest component, and the result is floored
+at working precision (`eps`), so a zero component cannot make the stopping tolerances zero.
+The integration tolerances stay componentwise. A correction is accepted only if its true
+residual meets that tolerance relative to the residual of the same Newton iteration, plus
+roundoff; otherwise one cold retry decides and the step is rejected unless the retry clearly
+reduced the residual. Because the stopping test is on a residual norm, rows of the residual
+scaled orders of magnitude below the others are invisible to it: give such a problem a
+preconditioner that equilibrates the rows. DFBDF cannot shrink the state dimension after
+initialization on the matrix-free path.
 
 ## Optional FBDF time filtering
 

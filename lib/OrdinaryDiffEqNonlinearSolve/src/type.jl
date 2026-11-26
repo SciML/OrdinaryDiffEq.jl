@@ -567,7 +567,7 @@ mutable struct NLNewtonCache{
     new_W_γdt_cutoff::tType
     J_t::tType
     dae_jacobians::DC
-    # Step's first Newton residual and a scratch for validating a Krylov solve; aliased to
+    # Step's first Newton residual, and the true linear residual; aliased to
     # `atmp` and unused unless the DAE `W` is matrix-free (see `compute_step!`).
     b₁::uType
     rlin::uType

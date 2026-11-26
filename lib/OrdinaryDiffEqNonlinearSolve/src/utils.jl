@@ -319,11 +319,13 @@ end
 # `Pl`, and CG and MINRES measure `sqrt(r' * (Pl \ r))`; tested against that tolerance,
 # any of them can accept a zero correction.
 const DAE_KRYLOV_METHODS = (:gmres!, :fgmres!, :bicgstab!)
+# The methods validated with the centered finite-difference operator.
+const DAE_KRYLOV_FINITE_DIFF_METHODS = (:gmres!, :fgmres!)
 # Krylov.jl keywords that override what that test relies on: the preconditioners, the
 # inner product and the tolerances.
 const DAE_KRYLOV_OWN_KWARGS = (:M, :N, :W, :atol, :rtol)
 
-function check_dae_krylov(linsolver)
+function check_dae_krylov(linsolver, autodiff = nothing)
     linsolver isa LinearSolve.IterativeSolversJL && throw(
         ArgumentError(
             "`IterativeSolversJL` is not supported for a matrix-free Krylov solve of a DAE " *
@@ -347,6 +349,15 @@ function check_dae_krylov(linsolver)
         )
     )
     method = nameof(linsolver.KrylovAlg)
+    autodiff = autodiff isa ADTypes.AutoSparse ? ADTypes.dense_ad(autodiff) : autodiff
+    autodiff isa AutoFiniteDiff && !(method in DAE_KRYLOV_FINITE_DIFF_METHODS) && throw(
+        ArgumentError(
+            "`Krylov.$method` is not supported with finite differences for a matrix-free " *
+                "Krylov solve of a DAE Newton system: with a centered stencil only " *
+                "KrylovJL_GMRES and KrylovJL_FGMRES were validated (BiCGStab fails on " *
+                "Robertson's DAE). Use one of those or `AutoForwardDiff()`."
+        )
+    )
     method in DAE_KRYLOV_METHODS || throw(
         ArgumentError(
             "`Krylov.$method` is not supported for a matrix-free Krylov solve of a DAE " *
@@ -992,7 +1003,7 @@ function build_nlsolver(
             # `compute_step!` sets its Krylov `abstol` relative to each step's residual;
             # a fixed one would be in the units of `F`, which the user can scale freely.
             matrix_free_dae = isdae && J isa AbstractSciMLOperator
-            matrix_free_dae && check_dae_krylov(linsolver)
+            matrix_free_dae && check_dae_krylov(linsolver, alg_autodiff(alg))
             linabstol = matrix_free_dae ? (; abstol = zero(uTolType)) : (;)
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);

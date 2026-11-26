@@ -794,8 +794,17 @@ end
     else
         reltol = eps(real(one(eltype(dz))))
     end
-    # A Krylov solve has one scalar tolerance: the smallest component is the conservative one.
-    linreltol = matrix_free_dae && !(reltol isa Number) ? minimum(reltol) : reltol
+    # A Krylov solve has one scalar tolerance: the smallest component is the conservative one,
+    # floored at working precision because a zero component would make both of its stopping
+    # tolerances zero.
+    # The matrix-free fixed-step solve uses the requested tolerance as well: a machine-epsilon
+    # forcing tolerance is beyond what Krylov can reach.
+    linreltol = if matrix_free_dae
+        requested = integrator.opts.reltol
+        max(requested isa Number ? requested : minimum(requested), eps(real(one(eltype(dz)))))
+    else
+        reltol
+    end
 
     # Inexact Newton for the matrix-free DAE `W`: every Krylov solve of the step stops at
     # `‖P(b - W dz)‖ ≤ reltol * (‖P b‖ + ‖P b₁‖)`, where `b₁` is the step's first Newton
@@ -808,7 +817,7 @@ end
     # is then checked against the true residual in `P`'s norm.
     linabstol = if matrix_free_dae
         iter == 1 && copyto!(cache.b₁, b)
-        (; abstol = ScaledResidualTolerance(_vec(cache.b₁), _vec(atmp), linreltol, iter == 1))
+        (; abstol = ScaledResidualTolerance(_vec(cache.b₁), _vec(atmp), linreltol, true))
     else
         (;)
     end
@@ -825,13 +834,30 @@ end
         )
     end
 
-    if !SciMLBase.successful_retcode(linres.retcode) &&
-            linres.retcode != SciMLBase.ReturnCode.Default
-        return convert(eltype(atmp), Inf)
-    end
-
-    if matrix_free_dae &&
-            !linear_residual_converged!(integrator, linsolve, _vec(cache.rlin), _vec(atmp))
+    if matrix_free_dae
+        # The Krylov tolerance includes an allowance taken from the first residual, which keeps
+        # late iterations from chasing roundoff but can swallow a small residual in another
+        # component. The correction is accepted only if its true residual meets the tolerance
+        # relative to this iterate's own residual (plus roundoff); otherwise one cold retry
+        # without the allowance decides, and the step is rejected unless the retry clearly
+        # reduced the residual. The solver's return code is not consulted: Krylov.jl reports
+        # breakdowns as failures with a correct iterate, and the true residual is the test.
+        ok = linear_residual_converged!(
+            integrator, linsolve, _vec(cache.rlin), _vec(atmp), _vec(cache.b₁)
+        )
+        if !ok
+            fill!(dz, zero(eltype(dz)))
+            dolinsolve(
+                integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
+                reltol = linreltol, abstol = zero(linreltol)
+            )
+            ok = linear_residual_converged!(
+                integrator, linsolve, _vec(cache.rlin), _vec(atmp), _vec(cache.b₁);
+                evidence = true
+            )
+        end
+        ok || return convert(eltype(atmp), Inf)
+    elseif !linsolve_succeeded(linres)
         return convert(eltype(atmp), Inf)
     end
 
@@ -865,6 +891,9 @@ end
 
     ndz
 end
+
+linsolve_succeeded(linres) = SciMLBase.successful_retcode(linres.retcode) ||
+    linres.retcode == SciMLBase.ReturnCode.Default
 
 function get_dae_uprev(integrator, uprev)
     # not all predictors are uprev, for other forms of predictors, defined in u₀

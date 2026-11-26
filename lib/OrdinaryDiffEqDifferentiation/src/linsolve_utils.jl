@@ -76,23 +76,23 @@ function set_linear_abstol!(linsolve, tol::ScaledResidualTolerance, refreshed)
 end
 
 """
-    linear_residual_converged!(integrator, linsolve, rlin, work) -> Bool
+    linear_residual!(integrator, linsolve, rlin, work, b₁) -> (; residual, bnorm, roundoff, rtol)
 
-Whether `linsolve.u` solves `linsolve.A * u = linsolve.b` to the tolerances the cache holds,
-`‖Pl \\ (b - A u)‖ ≤ abstol + rtol * ‖Pl \\ b‖`, checked on the true residual. A Krylov
-solver can report convergence on its recurrence residual while the iterate is far from the
-solution: a badly scaled preconditioner can end it at `u = 0` after one iteration. `rlin` and
-`work` are scratch of `b`'s size. Charges `stats.nf` for the product with `A`.
+Leave the true residual `b - A u` of `linsolve` in `rlin` and return its norm `residual`
+in the left preconditioner `Pl`, with `bnorm = ‖Pl \\ b‖`, the `roundoff`
+`100 eps (‖Pl \\ b‖ + ‖Pl \\ A u‖ + ‖Pl \\ b₁‖)` of forming it and of evaluating `b`
+itself, which is at the scale of the first residual `b₁`, and the cache's relative
+tolerance `rtol`. `work` is scratch of `b`'s size. Charges `stats.nf` for the product with `A`.
 
 `A` is applied to `u / ‖u‖` and the product scaled by `‖u‖`, so a finite-difference `A`
-perturbs by the same size as in the solve. `rtol` is the cache's `reltol` floored at
-`cbrt(eps)`: such an `A` is linear only to about `sqrt(eps)`, so the true residual of a
-converged solve can exceed a tighter bound by a factor of tens. The floor leaves a gross
-failure, such as the zero correction, to be caught.
+perturbs by the same size as in the solve. A finite-difference `A` is linear only to about
+`sqrt(eps)`, so `rtol` is floored at `cbrt(eps)` for it; an exact `A` keeps `reltol`.
 """
-function linear_residual_converged!(integrator, linsolve, rlin, work)
-    (; A, b, u, Pl, abstol, reltol) = linsolve
+function linear_residual!(integrator, linsolve, rlin, work, b₁)
+    (; A, b, u, Pl, reltol) = linsolve
+    T = real(eltype(b))
     unorm = LinearAlgebra.norm(u)
+    Auscaled = zero(T)
     if iszero(unorm)
         copyto!(rlin, b)
     else
@@ -101,14 +101,45 @@ function linear_residual_converged!(integrator, linsolve, rlin, work)
         @. work = u / unorm
         LinearAlgebra.mul!(rlin, A, work)
         drain_jvp_count!(integrator, unwrap_alg(integrator, true), A)
-        @. rlin = b - unorm * rlin
+        @. rlin = unorm * rlin
+        LinearAlgebra.ldiv!(work, Pl, rlin)
+        Auscaled = LinearAlgebra.norm(work)
+        @. rlin = b - rlin
     end
     LinearAlgebra.ldiv!(work, Pl, rlin)
     residual = LinearAlgebra.norm(work)
     LinearAlgebra.ldiv!(work, Pl, b)
-    rtol = max(reltol, cbrt(eps(real(eltype(b)))))
-    return residual <= abstol + rtol * LinearAlgebra.norm(work)
+    bnorm = LinearAlgebra.norm(work)
+    LinearAlgebra.ldiv!(work, Pl, b₁)
+    roundoff = 100 * eps(T) * (bnorm + Auscaled + LinearAlgebra.norm(work))
+    rtol = uses_finite_differences(A) ? max(reltol, cbrt(eps(T))) : reltol
+    return (; residual, bnorm, roundoff, rtol)
 end
+
+"""
+    linear_residual_converged!(integrator, linsolve, rlin, work, b₁; evidence = false) -> Bool
+
+Whether `linsolve.u` solves `linsolve.A * u = linsolve.b` to the cache's relative tolerance on
+its true residual (see `linear_residual!`): `residual ≤ rtol * ‖Pl \\ b‖ + roundoff`.
+`abstol` is deliberately not part of the bound: a Krylov solve may stop on it, but an
+allowance taken from another residual can swallow the whole of this one, so it must not
+decide accuracy. A solver can also report convergence on its recurrence residual while the
+iterate is far from the solution: a badly scaled preconditioner can end it at `u = 0` after
+one iteration. With `evidence = true` the tolerance is `sqrt(rtol)`, a guard against gross
+failure that accepts an iterate that clearly reduced the residual.
+"""
+function linear_residual_converged!(integrator, linsolve, rlin, work, b₁; evidence = false)
+    (; residual, bnorm, roundoff, rtol) = linear_residual!(integrator, linsolve, rlin, work, b₁)
+    return residual <= (evidence ? sqrt(rtol) : rtol) * bnorm + roundoff
+end
+
+"""
+    uses_finite_differences(W) -> Bool
+
+Whether the Jacobian-vector products of `W` are finite differences, which are linear only to
+about `sqrt(eps)`.
+"""
+uses_finite_differences(W) = jvp_counter(W) isa JVPCache && jvp_counter(W).jvp_op isa DAESplitPushforward
 
 """
     dolinsolve(integrator, linsolve; alg = unwrap_alg(integrator, true), A = nothing, linu = nothing, b = nothing, reltol = …, abstol = nothing) -> linres

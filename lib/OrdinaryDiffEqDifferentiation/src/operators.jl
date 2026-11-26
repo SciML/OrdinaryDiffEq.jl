@@ -371,17 +371,32 @@ one otherwise.
 pushforwards_per_product(::Any) = 1
 pushforwards_per_product(::DAESplitPushforward) = 2
 
+# Forward finite differences destabilize stiff DAEs such as Robertson's, so the finite-difference
+# backend of a matrix-free DAE Newton matrix is restricted to the centered stencil.
+is_central_finite_diff(ad) = ad isa AutoFiniteDiff && ad.fdtype isa Val{:central}
+
 """
     dae_jvp_cache(f::DAEFunction, u, p, t; autodiff) -> JVPCache
 
 Matrix-free DAE Newton matrix `∂F/∂u + cj * ∂F/∂(du)`. A `DAEFunction` has no mass
 matrix, so the ODE form `WOperator(mass_matrix, γ, J)` does not apply; this operator is
 the whole `W`. An AD backend applies it as one pushforward of a `DAENewtonResidual`, which
-is exact for any `cj`; a finite-difference backend uses a `DAESplitPushforward`.
+is exact for any `cj`; a finite-difference backend, which must be centered
+(`AutoFiniteDiff(fdtype = Val(:central))`), uses a `DAESplitPushforward`. Other
+finite-difference backends throw an `ArgumentError`.
 """
 function dae_jvp_cache(f::DAEFunction, u, p, t; autodiff)
     autodiff = autodiff isa AutoSparse ? ADTypes.dense_ad(autodiff) : autodiff
     @assert DI.check_inplace(autodiff) "AD backend $(autodiff) doesn't support in-place problems."
+    is_central_finite_diff(autodiff) || !(autodiff isa Union{AutoFiniteDiff, ADTypes.AutoFiniteDifferences}) ||
+        throw(
+        ArgumentError(
+            "A matrix-free Newton matrix for a DAE supports finite differences only with " *
+                "`AutoFiniteDiff(fdtype = Val(:central))`; forward differences destabilize " *
+                "stiff DAEs such as Robertson's. Use `AutoForwardDiff()` or a concrete " *
+                "`linsolve`, or pass `autodiff = $(autodiff)` with a centered stencil."
+        )
+    )
     res = similar(u)
     cj = Ref(one(eltype(u)))
     op = if autodiff isa Union{AutoFiniteDiff, ADTypes.AutoFiniteDifferences}

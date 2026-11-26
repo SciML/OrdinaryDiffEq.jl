@@ -1,6 +1,10 @@
 using OrdinaryDiffEqBDF, LinearSolve, ADTypes, SciMLBase, Test
 using LinearAlgebra: I, Diagonal
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
+
+# Forward differences destabilize stiff DAEs through the matrix-free operator, so the
+# finite-difference tests use the centered stencil.
+const centered_fd = AutoFiniteDiff(; fdtype = Val(:central))
 using SciMLBase: DAEProblem, successful_retcode
 
 # https://github.com/SciML/OrdinaryDiffEq.jl/issues/1673
@@ -33,7 +37,7 @@ end
     )
     opts = (; abstol = 1.0e-9, reltol = 1.0e-9)
     reference = solve(prob, DFBDF(); opts...)
-    for autodiff in (AutoForwardDiff(), AutoFiniteDiff())
+    for autodiff in (AutoForwardDiff(), centered_fd)
         sol = solve(prob, DFBDF(; autodiff, linsolve = KrylovJL_GMRES()); opts...)
         @test successful_retcode(sol)
         @test sol.stats.njacs == 0
@@ -53,7 +57,7 @@ end
 f!(r, d, u, p, t) = (@. r = 1.0e-12 * (d + u); nothing)
 p = DAEProblem(f!, -ones(4), ones(4), (0.0, 1.0))
 @testset "Residual scale must not change solution" begin
-    for ad in (AutoForwardDiff(), AutoFiniteDiff())
+    for ad in (AutoForwardDiff(), centered_fd)
         sol = solve(p, DFBDF(; linsolve = KrylovJL_GMRES(), autodiff = ad); abstol = 1.0e-8, reltol = 1.0e-8)
         @test SciMLBase.successful_retcode(sol)
         @test sol.u[end] ≈ fill(exp(-1), 4) rtol = 1.0e-5
@@ -72,7 +76,7 @@ end
     prob = DAEProblem(
         manufactured!, [-1.0, -2.0], [1.0, 1.0], (0.0, 1.0); differential_vars = [true, false]
     )
-    for autodiff in (AutoForwardDiff(), AutoFiniteDiff())
+    for autodiff in (AutoForwardDiff(), centered_fd)
         sol = solve(
             prob, DFBDF(; autodiff, linsolve = KrylovJL_GMRES()); abstol = 1.0e-7, reltol = 1.0e-7
         )
@@ -152,7 +156,7 @@ end
     algebraic!(res, du, u, p, t) = (res[1] = (u[1] - 1) - t; nothing)
     prob = DAEProblem(algebraic!, [0.0], [1.0], (0.0, 1.0e-10); differential_vars = [false])
     integrator = init(
-        prob, DFBDF(; autodiff = AutoFiniteDiff(), linsolve = KrylovJL_GMRES());
+        prob, DFBDF(; autodiff = centered_fd, linsolve = KrylovJL_GMRES());
         dt = 1.0e-10, adaptive = false, initializealg = SciMLBase.NoInit()
     )
     step!(integrator)
@@ -180,4 +184,105 @@ end
     )
     @test successful_retcode(sol)
     @test sol.u[end] ≈ fill(exp(-1), 2) atol = 1.0e-5
+end
+
+# A zero component of a vector `reltol` once made both Krylov stopping tolerances zero. The
+# linear tolerance is floored at working precision; the integration tolerances stay
+# componentwise.
+function scaled_decay!(r, du, u, p, t)
+    @. r = du + (1:3) * u
+    return nothing
+end
+
+@testset "Vector reltol with a zero component" begin
+    prob = DAEProblem(scaled_decay!, -[1.0, 2.0, 3.0], ones(3), (0.0, 1.0))
+    exact = exp.(-[1.0, 2.0, 3.0])
+    for linsolve in (KrylovJL_GMRES(), KrylovJL_FGMRES(), KrylovJL_BICGSTAB()),
+            autodiff in (AutoForwardDiff(), centered_fd)
+        autodiff isa AutoFiniteDiff && linsolve isa LinearSolve.KrylovJL &&
+            nameof(linsolve.KrylovAlg) == :bicgstab! && continue
+        sol = solve(
+            prob, DFBDF(; linsolve, autodiff); abstol = 1.0e-8, reltol = [0.0, 1.0e-7, 1.0e-7]
+        )
+        @test successful_retcode(sol)
+        @test sol.u[end] ≈ exact atol = 1.0e-6
+        @test sol.stats.njacs == 0
+    end
+end
+
+# Forward differences destabilize the matrix-free operator on stiff DAEs, and BiCGStab fails
+# with the centered stencil, so finite differences are limited to the centered stencil with
+# GMRES and FGMRES (issue #1673's Robertson DAE).
+function robertson!(r, du, u, p, t)
+    r[1] = du[1] + 0.04u[1] - 1.0e4 * u[2] * u[3]
+    r[2] = du[2] - 0.04u[1] + 1.0e4 * u[2] * u[3] + 3.0e7 * u[2]^2
+    r[3] = u[1] + u[2] + u[3] - 1
+    return nothing
+end
+
+@testset "Robertson DAE with a matrix-free Krylov solve" begin
+    prob = DAEProblem(
+        robertson!, [-0.04, 0.04, 0.0], [1.0, 0.0, 0.0], (0.0, 1.0e5);
+        differential_vars = [true, true, false]
+    )
+    reference = solve(prob, DFBDF(); abstol = 1.0e-12, reltol = 1.0e-10)
+    supported = (
+        (KrylovJL_GMRES(), AutoForwardDiff()), (KrylovJL_FGMRES(), AutoForwardDiff()),
+        (KrylovJL_BICGSTAB(), AutoForwardDiff()),
+        (KrylovJL_GMRES(), centered_fd), (KrylovJL_FGMRES(), centered_fd),
+    )
+    for (linsolve, autodiff) in supported
+        sol = solve(prob, DFBDF(; linsolve, autodiff); abstol = 1.0e-9, reltol = 1.0e-6)
+        @test successful_retcode(sol)
+        @test sol.t[end] == 1.0e5
+        @test sol.stats.njacs == 0
+        @test maximum(abs(sum(u) - 1) for u in sol.u) < 1.0e-5
+        @test maximum(abs, sol.u[end] - reference.u[end]) < 1.0e-5
+    end
+    unsupported = (
+        (KrylovJL_GMRES(), AutoFiniteDiff()), (KrylovJL_FGMRES(), AutoFiniteDiff()),
+        (KrylovJL_BICGSTAB(), AutoFiniteDiff()), (KrylovJL_BICGSTAB(), centered_fd),
+        (KrylovJL_GMRES(), AutoFiniteDiff(; fdtype = Val(:complex))),
+    )
+    for (linsolve, autodiff) in unsupported
+        @test_throws ArgumentError init(prob, DFBDF(; linsolve, autodiff))
+    end
+end
+
+# Rows scaled far below the others are invisible to a residual norm; a preconditioner that
+# equilibrates them (here the exact row scaling) restores the solve, whatever the scaling.
+@testset "Algebraic constraint scaling on the matrix-free DAE path" begin
+    for scale in (1.0, 1.0e-12)
+        prob = DAEProblem(
+            (r, du, u, p, t) -> (r[1] = du[1] + u[1] - t; r[2] = scale * (u[2] - t); nothing),
+            [0.0, 0.0], [0.0, 0.0], (0.0, 0.1); differential_vars = [true, false]
+        )
+        linsolve = KrylovJL_GMRES(;
+            precs = Returns((Diagonal([1.0, scale]), I)), warm_start = LinearSolve.WarmStart.None
+        )
+        sol = solve(
+            prob, DFBDF(; linsolve); initializealg = SciMLBase.NoInit(), dt = 0.1,
+            abstol = 1.0e-8, reltol = 1.0e-8
+        )
+        @test successful_retcode(sol)
+        @test maximum(abs(u[2] - t) for (u, t) in zip(sol.u, sol.t)) <= 1.0e-8
+    end
+end
+
+# A fixed step has no error control, so its Krylov forcing tolerance is the requested
+# `reltol`, not machine epsilon, which GMRES cannot reach on a two-iteration solve.
+@testset "Fixed-step implicit Euler with two Krylov iterations" begin
+    prob = DAEProblem(
+        (r, du, u, p, t) -> (r[1] = du[1] + u[1] - t; r[2] = u[2] - t; nothing),
+        [0.0, 0.0], [0.0, 0.0], (0.0, 0.1); differential_vars = [true, false]
+    )
+    cold = KrylovJL_GMRES(; precs = Returns((I, I)), warm_start = LinearSolve.WarmStart.None)
+    for linsolve in (KrylovJL_GMRES(), cold)
+        sol = solve(
+            prob, DFBDF(; linsolve); initializealg = SciMLBase.NoInit(), dt = 0.1, adaptive = false
+        )
+        @test successful_retcode(sol)
+        @test sol.t[end] == 0.1
+        @test sol.u[end] ≈ [0.1 / 11, 0.1] rtol = 1.0e-10
+    end
 end
