@@ -28,23 +28,28 @@ using Test
 end
 
 @testset "AutoSwitch keeps constrained and fpsolve" begin
-    prob = prob_dde_constant_1delay_ip
-
     # u(t) = exp(t) solves this problem, and its unconstrained steps are longer than the lag
     τ = 0.1
     prob_exp = DDEProblem(
         (u, h, p, t) -> exp(τ) * h(p, t - τ), 1.0, (p, t) -> exp(t), (0.0, 2.0);
         constant_lags = [τ]
     )
+    prob_overlap = remake(
+        prob_exp; constant_lags = [0.25], dependent_lags = ((u, p, t) -> τ,)
+    )
 
     for alg in (AutoTsit5(Rosenbrock23()), DefaultODEAlgorithm())
-        integrator = init(prob, MethodOfSteps(alg; constrained = true))
-        @test integrator.opts.dtmax == 1
-
         fpsolve = NLAnderson()
-        integrator = init(prob, MethodOfSteps(alg; fpsolve))
-        @test integrator.opts.dtmax == 10
+        integrator = init(
+            prob_overlap, MethodOfSteps(alg; constrained = true, fpsolve);
+            adaptive = false, dt = 0.25, abstol = 1.0e-9, reltol = 1.0e-9
+        )
+        @test integrator.opts.dtmax == 0.25
         @test integrator.fpsolver.alg === fpsolve
+        sol = solve!(integrator)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.stats.nsolve > 0
+        @test maximum(abs(sol(t) - exp(t)) for t in 0.0:0.125:2.0) < 1.0e-6
 
         sol = solve(prob_exp, MethodOfSteps(alg; constrained = true))
         @test maximum(diff(sol.t)) ≈ τ
