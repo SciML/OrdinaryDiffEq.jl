@@ -1,5 +1,6 @@
 using DelayDiffEq, DDEProblemLibrary
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqRosenbrock
 using OrdinaryDiffEqTsit5
 using OrdinaryDiffEqCore: PIController
 using SciMLBase: ReturnCode
@@ -152,6 +153,24 @@ end
     end
 end
 
+# Float32 tspan with Float64 constant_lags keeps discontinuity times in Float32.
+@testset "Float32 tspan with Float64 constant_lags" begin
+    function f!(du, u, h, p, t)
+        du[1] = -h(p, t - 1)[1]
+        return nothing
+    end
+    history(p, t) = ones(Float32, 1)
+    prob = DDEProblem(
+        f!, ones(Float32, 1), history, (0.0f0, 5.0f0); constant_lags = [1.0]
+    )
+    for alg in (Tsit5(), Rosenbrock23())
+        sol = solve(prob, MethodOfSteps(alg))
+        @test sol.retcode == ReturnCode.Success
+        @test eltype(sol.t) === Float32
+        @test sol.t[end] == 5.0f0
+    end
+end
+
 # OrdinaryDiffEqCore's `shift_past_discontinuity!` (PR #3392) nudges
 # `integrator.t` one ULP past each discontinuity. DDE propagates a discontinuity
 # at every constant-lag step; without the DDE-side override and the relaxed
@@ -176,5 +195,30 @@ end
         sol = solve(prob_3426, MethodOfSteps(alg); reltol = 1.0e-7, abstol = 1.0e-10)
         @test sol.retcode == ReturnCode.Success
         @test sol.t[end] == 10.0
+    end
+end
+
+@testset "zero and wrong-sign constant lags (#4831)" begin
+    f(u, h, p, t) = -h(p, t) / 2 - h(p, t - 1) / 2
+    h(p, t) = 1.0
+
+    prob = DDEProblem(f, 1.0, h, (0.0, 5.0); constant_lags = [0.0, 1.0])
+    sol = solve(prob, MethodOfSteps(Tsit5()))
+    ref = solve(remake(prob; constant_lags = [1.0]), MethodOfSteps(Tsit5()))
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t == ref.t
+    @test sol.u == ref.u
+
+    g(u, h, p, t) = -h(p, t - 1)
+    prob = DDEProblem(g, 1.0, h, (0.0, 5.0); constant_lags = [0.0, 1.0])
+    sol = solve(prob, MethodOfSteps(BS3(); constrained = true))
+    ref = solve(remake(prob; constant_lags = [1.0]), MethodOfSteps(BS3(); constrained = true))
+    @test sol.retcode == ReturnCode.Success
+    @test sol.t == ref.t
+    @test sol.u == ref.u
+
+    for lags in ([-1.0], [1.0, -0.5])
+        prob = DDEProblem(f, 1.0, h, (0.0, 5.0); constant_lags = lags)
+        @test_throws ArgumentError init(prob, MethodOfSteps(Tsit5()))
     end
 end

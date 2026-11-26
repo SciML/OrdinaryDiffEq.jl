@@ -36,14 +36,15 @@ function alg_cache(
     return AN5ConstantCache(z, l, m, c_LTE, c_conv, dts, Δ, tsit5tab, 1)
 end
 
-mutable struct AN5Cache{uType, dType, rateType, zType, lType, dtsType, tsit5Type} <:
-    OrdinaryDiffEqMutableCache
+@cache mutable struct AN5Cache{
+        uType, uNoUnitsType, rateType, zType, lType, dtsType, tsit5Type,
+    } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
-    Δ::dType
+    Δ::uNoUnitsType
     # Error estimation
-    atmp::dType
+    atmp::uNoUnitsType
     fsalfirst::rateType
     ratetmp::rateType
     # `z` is the Nordsieck vector
@@ -60,6 +61,7 @@ mutable struct AN5Cache{uType, dType, rateType, zType, lType, dtsType, tsit5Type
     # `Tsit5` for the first step
     tsit5cache::tsit5Type
     order::Int
+    resize_restart::Bool
 end
 
 function alg_cache(
@@ -104,7 +106,7 @@ function alg_cache(
     return AN5Cache(
         u, uprev, tmp, Δ, atmp, fsalfirst, ratetmp,
         z, l, m, c_LTE, c_conv, dts,
-        tsit5cache, 1
+        tsit5cache, 1, false
     )
 end
 
@@ -170,13 +172,13 @@ function alg_cache(
     )
 end
 
-mutable struct JVODECache{
+@cache mutable struct JVODECache{
         uType,
         rateType,
         zType,
         lType,
         dtsType,
-        dType,
+        uNoUnitsType,
         etaType,
         tsit5Type,
     } <: OrdinaryDiffEqMutableCache
@@ -205,9 +207,9 @@ mutable struct JVODECache{
     # `dts` stores `dt`s
     dts::dtsType
     # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
-    Δ::dType
+    Δ::uNoUnitsType
     # Error estimation
-    atmp::dType
+    atmp::uNoUnitsType
     # `Tsit5` for the first step
     tsit5cache::tsit5Type
     L::Int
@@ -223,6 +225,7 @@ mutable struct JVODECache{
     η₊₁::etaType
     η₋₁::etaType
     maxη::etaType
+    resize_restart::Bool
 end
 
 function alg_cache(
@@ -281,10 +284,43 @@ function alg_cache(
         u, uprev, tmp, fsalfirst, ratetmp,
         z, l, m,
         c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟, prev_𝒟,
-        dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η, η
+        dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η, η, false
     )
 end
 
 function get_fsalfirstlast(cache::Union{JVODECache, AN5Cache}, u)
     return get_fsalfirstlast(cache.tsit5cache, u)
+end
+
+function _resize_nordsieck_arrays!(integrator, cache, i)
+    for zi in cache.z
+        resize!(zi, i)
+        recursivefill!(zi, false)
+    end
+    tsit5 = cache.tsit5cache
+    for buf in (
+            tsit5.k1, tsit5.k2, tsit5.k3, tsit5.k4, tsit5.k5, tsit5.k6, tsit5.k7,
+            tsit5.utilde, tsit5.tmp, tsit5.atmp, cache.Δ, cache.ratetmp, cache.fsalfirst,
+        )
+        resize!(buf, i)
+    end
+    fill!(cache.l, 0)
+    fill!(cache.m, 0)
+    cache.order = 1
+    cache.resize_restart = true
+    integrator.derivative_discontinuity = true
+    reinit_controller!(integrator, integrator.controller_cache)
+    return nothing
+end
+
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::AN5Cache, i)
+    return _resize_nordsieck_arrays!(integrator, cache, i)
+end
+
+function resize_non_user_cache!(integrator::ODEIntegrator, cache::JVODECache, i)
+    _resize_nordsieck_arrays!(integrator, cache, i)
+    cache.nextorder = 1
+    cache.L = 2
+    cache.n_wait = 2
+    return nothing
 end

@@ -56,6 +56,50 @@ end
     @test sol.t[end] == 4
 end
 
+@testset "callback jump enters the history" begin
+    function bolus_f(du, u, h, p, t)
+        du[1] = -1.5 * u[1]
+        du[2] = 1.5 * h(p, t - 10)[1] - u[2] / 30
+        return nothing
+    end
+    bolus_h(p, t) = zeros(2)
+    bolus_prob = DDEProblem(
+        bolus_f, [10.0, 0.0], bolus_h, (0.0, 24.0); constant_lags = (10.0,)
+    )
+    bolus(save_positions) = DiscreteCallback(
+        (u, t, integrator) -> t == 12.0,
+        integrator -> (integrator.u[1] += 20.0);
+        save_positions,
+    )
+    common = (; tstops = [12.0], abstol = 1.0e-12, reltol = 1.0e-12)
+
+    reference = solve(bolus_prob, alg; common..., callback = bolus((true, true)))
+    for save_positions in ((true, false), (false, true), (false, false))
+        sol = solve(bolus_prob, alg; common..., callback = bolus(save_positions))
+        @test maximum(
+            abs(sol(t)[2] - reference(t)[2]) for t in range(22.0, 24.0; length = 201)
+        ) < 1.0e-8
+    end
+
+    # the history keeps both sides of the jump whatever the output was asked for
+    integrator = init(bolus_prob, alg; common..., callback = bolus((false, false)))
+    solve!(integrator)
+    history = integrator.integrator.sol
+    @test count(isequal(12.0), history.t) == 2
+    @test issorted(history.t)
+
+    # the returned solution carries only what `save_positions` asked for
+    @test solve(
+        bolus_prob, alg; common..., callback = bolus((false, true))
+    )(12.0 + 1.0e-8)[1] > 19.9
+    unsaved = solve(bolus_prob, alg; common..., callback = bolus((false, false)))
+    @test count(isequal(12.0), unsaved.t) == 1
+    @test unsaved(12.0 + 1.0e-8)[1] < 0.1
+    @test solve(
+        bolus_prob, alg; common..., callback = bolus((true, false))
+    )(12.0 + 1.0e-8)[1] < 0.1
+end
+
 @testset "save discontinuity" begin
     f(du, u, h, p, t) = (du .= 0)
     prob = DDEProblem(f, [0.0], nothing, (0.0, 1.0))

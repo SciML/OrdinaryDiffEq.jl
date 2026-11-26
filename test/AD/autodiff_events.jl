@@ -78,12 +78,25 @@ expected = [
     end
 end
 
-# Enzyme fails on ContinuousCallback with "mixed activity for jl_new_struct"
-@testset "Enzyme callback limitation (jacobian)" begin
-    @test_broken (
-        ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
-        ad ≈ expected
-    )
+# On Julia < 1.12 callbacks stay concretely typed and the discontinuity zero-function
+# state is written through a typed setter (not a dynamic `setproperty!` on the
+# FunctionWrapper payload), which lets Enzyme forward mode differentiate through the
+# ContinuousCallback. On 1.12+ callbacks are type-erased and Enzyme forward cannot yet
+# handle the resulting dynamic dispatch, as it could not before this change.
+@static if VERSION < v"1.12"
+    @testset "Enzyme callback jacobian" begin
+        @test (
+            ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
+            ad ≈ expected
+        )
+    end
+else
+    @testset "Enzyme callback jacobian" begin
+        @test_broken (
+            ad = DI.jacobian(test_f, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Forward)), p);
+            ad ≈ expected
+        )
+    end
 end
 
 function test_f2(

@@ -160,9 +160,13 @@ end
     nordsieck_predict!(cache, iip)
 
 CVODE `cvPredict`: advance the Nordsieck array to the new time by repeated
-addition (a Pascal-triangle shift). `zn[0]` becomes the predictor.
+addition (a Pascal-triangle shift). `zn[0]` becomes the predictor. Idempotent:
+DelayDiffEq's fixed-point iteration re-invokes `perform_step!` on the same
+uncommitted step, and `zn` must not be shifted again while it is already in
+the predicted state.
 """
 function nordsieck_predict!(cache, iip)
+    cache.predicted && return nothing
     _nord_shift!(cache.zn, cache.order, iip)
     cache.predicted = true
     return nothing
@@ -501,6 +505,13 @@ function _nordsieck_start_common!(cache, dt)
     cache.predicted = false
     stald_reset!(cache.stald)
     fill!(cache.tau, zero(eltype(cache.tau)))
+    return nothing
+end
+
+# `order` is read by the initial `dt` estimate, which runs before the first step.
+function reset_nordsieck_history!(cache)
+    cache.nst = 0
+    cache.order = 1
     return nothing
 end
 

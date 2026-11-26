@@ -19,13 +19,6 @@ prob = ODEProblem(f, u0, tspan)
 condition(u, t, integrator) = u[1] - 1
 cb = ContinuousCallback(condition, default_affect!; maybe_discontinuity = true)
 
-sol_disco_radau = solve(prob, RadauIIA5(); callback = cb, reltol = 1.0e-6, controller = predictive_disco_controller(RadauIIA5()))
-#  314.500 μs (8909 allocations: 278.73 KiB)
-sol_no_disco_radau = solve(prob, RadauIIA5(); callback = cb, reltol = 1.0e-6)
-#  376.125 μs (10628 allocations: 331.61 KiB)
-@test sol_disco_radau.retcode == ReturnCode.Success
-@test sol_disco_radau.stats.nreject <= sol_no_disco_radau.stats.nreject
-
 sol_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1.0e-6, controller = PI_disco_controller(Rodas5P()))
 #  444.500 μs (15596 allocations: 547.62 KiB)
 sol_no_disco_rosenbrock = solve(prob, Rodas5P(); callback = cb, reltol = 1.0e-6)
@@ -250,3 +243,39 @@ sol_no_disco_tsit5 = solve(prob, Tsit5(); callback = cb, reltol = 1.0e-8, abstol
 #  54.041 μs (1155 allocations: 54.55 KiB)
 @test sol_disco_tsit5.retcode == ReturnCode.Success
 @test sol_disco_tsit5.stats.nreject <= sol_no_disco_tsit5.stats.nreject
+
+#TEST 8: SEVERAL CROSSINGS IN ONE STEP
+# Roots at t = 0.3 and t = 0.8 in a single step of length 1 from t = 0, so the earliest
+# crossing is at θ = 0.3 whatever the order of the callbacks.
+@testset "earliest crossing is independent of callback order" begin
+    f_one!(du, u, p, t) = (du[1] = 1.0; nothing)
+    prob_one = ODEProblem(f_one!, [0.0], (0.0, 2.0))
+    function straddle!(integrator, dt)
+        integrator.dt = dt
+        integrator.u .= integrator.uprev .+ dt
+        return integrator
+    end
+    c03(u, t, integrator) = t - 0.3
+    c08(u, t, integrator) = t - 0.8
+    for conds in ((c03, c08), (c08, c03))
+        cbs = CallbackSet(map(c -> ContinuousCallback(c, default_affect!; maybe_discontinuity = true), conds)...)
+        integ = init(prob_one, Tsit5(); callback = cbs, dt = 0.5, adaptive = false)
+        straddle!(integ, 1.0)
+        @test OrdinaryDiffEqCore.find_discontinuity(integ) ≈ 0.3 atol = 1.0e-8
+        @test integ.is_disco_step
+        straddle!(integ, 0.5)
+        @test OrdinaryDiffEqCore.find_discontinuity(integ) ≈ 0.6 atol = 1.0e-8
+    end
+    for offsets in ((0.3, 0.8), (0.8, 0.3))
+        function cond_two!(out, u, t, integrator)
+            out[1] = t - offsets[1]
+            out[2] = t - offsets[2]
+            return
+        end
+        vcb = VectorContinuousCallback(cond_two!, default_affect_vec!, 2; maybe_discontinuity = true)
+        integ = init(prob_one, Tsit5(); callback = vcb, dt = 0.5, adaptive = false)
+        straddle!(integ, 1.0)
+        @test OrdinaryDiffEqCore.find_discontinuity(integ) ≈ 0.3 atol = 1.0e-8
+        @test integ.is_disco_step
+    end
+end

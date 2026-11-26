@@ -1,10 +1,11 @@
 module StochasticDiffEqLowOrder
 
-using Reexport
+using Reexport: Reexport, @reexport
 @reexport using StochasticDiffEqCore
+using StochasticDiffEqCore: StochasticDiffEqCore
 
 import OrdinaryDiffEqCore
-import OrdinaryDiffEqCore: perform_step!, initialize!, issplit
+import OrdinaryDiffEqCore: perform_step!, issplit
 
 import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     alg_needs_extra_process, is_split_step, supports_regular_jumps,
@@ -15,17 +16,20 @@ import StochasticDiffEqCore: alg_cache, alg_order, alg_compatible,
     calc_twopoint_random!, calc_twopoint_random,
     @cache
 
-import DiffEqBase: is_diagonal_noise, @..
+import DiffEqBase
 import DiffEqBase: calculate_residuals, calculate_residuals!
 import DiffEqBase: full_cache, rand_cache, ratenoise_cache
+import SciMLBase: is_diagonal_noise
+import FastBroadcast: @..
 
 import MuladdMacro: @muladd
 
 import SciMLBase
 
-using LinearAlgebra
-using StaticArrays
-using RecursiveArrayTools
+using ArrayInterface: ArrayInterface
+using LinearAlgebra: LinearAlgebra, UniformScaling, diagind, mul!, norm, rmul!
+using StaticArrays: StaticArrays, SArray
+using RecursiveArrayTools: RecursiveArrayTools
 
 include("algorithms.jl")
 include("alg_utils.jl")

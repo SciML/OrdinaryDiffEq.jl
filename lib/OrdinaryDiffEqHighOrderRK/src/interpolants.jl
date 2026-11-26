@@ -23,7 +23,7 @@ end
     )
     Θ1 = 1 - Θ
     # return @.. broadcast=false y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*(k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))))))
-    return @inbounds y₀ +
+    return y₀ +
         dt * Θ *
         (
         k[1] +
@@ -61,6 +61,9 @@ end
         T::Type{Val{0}}, differential_vars::Nothing
     )
     Θ1 = 1 - Θ
+    checkbounds(k, 1:7)
+    # SAFETY: DP8 dense output always supplies k[1:7] with axes matching out/y₀
+    # (integrator cache invariant); checkbounds validates the stage indexing.
     @inbounds @.. broadcast = false out = y₀ +
         dt * Θ *
         (
@@ -113,13 +116,13 @@ end
         cache::Union{DP8ConstantCache, DP8Cache}, idxs::Nothing,
         T::Type{Val{1}}, differential_vars::Nothing
     )
-    @inbounds b1diff = @.. broadcast = false k[1] + k[2]
-    @inbounds b2diff = @.. broadcast = false -2 * k[2] + 2 * k[3] + 2 * k[4]
-    @inbounds b3diff = @.. broadcast = false -3 * k[3] - 6 * k[4] + 3 * k[5] + 3 * k[6]
-    @inbounds b4diff = @.. broadcast = false 4 * k[4] - 8 * k[5] - 12 * k[6] + 4 * k[7]
-    @inbounds b5diff = @.. broadcast = false 5 * k[5] + 15 * k[6] - 15 * k[7]
-    @inbounds b6diff = @.. broadcast = false -6 * k[6] + 18 * k[7]
-    @inbounds b7diff = @.. broadcast = false -7 * k[7]
+    b1diff = @.. broadcast = false k[1] + k[2]
+    b2diff = @.. broadcast = false -2 * k[2] + 2 * k[3] + 2 * k[4]
+    b3diff = @.. broadcast = false -3 * k[3] - 6 * k[4] + 3 * k[5] + 3 * k[6]
+    b4diff = @.. broadcast = false 4 * k[4] - 8 * k[5] - 12 * k[6] + 4 * k[7]
+    b5diff = @.. broadcast = false 5 * k[5] + 15 * k[6] - 15 * k[7]
+    b6diff = @.. broadcast = false -6 * k[6] + 18 * k[7]
+    b7diff = @.. broadcast = false -7 * k[7]
     # return @.. broadcast=false b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff + Θ*(b5diff + Θ*(b6diff + Θ*b7diff)))))
     return b1diff +
         Θ *

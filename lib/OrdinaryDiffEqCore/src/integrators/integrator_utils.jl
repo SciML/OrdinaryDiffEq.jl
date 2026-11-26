@@ -547,6 +547,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
                 integrator.sol.t[integrator.saveiter] != integrator.t &&
                 (
                 (integrator.opts.save_end_user isa Bool && integrator.opts.save_end_user) ||
+                    integrator.opts.saveat_cache isa Number ||
                     integrator.t ∈ integrator.opts.saveat_cache ||
                     integrator.t == integrator.sol.prob.tspan[2] ||
                     isempty(integrator.opts.saveat_cache)
@@ -591,7 +592,9 @@ end
 
 # Called at the end of solution_endpoint_match_cur_integrator!: save final discretes.
 function finalize_endpoint!(integrator)
-    return SciMLBase.save_final_discretes!(integrator, integrator.opts.callback)
+    return if !isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes
+        SciMLBase.save_final_discretes!(integrator, integrator.opts.callback)
+    end
 end
 
 # Want to extend loopfooter! for DDEIntegrator
@@ -629,6 +632,7 @@ function _loopfooter!(integrator)
             integrator.last_stepfail = false
             integrator.tprev = integrator.t
 
+            accepted_dt = integrator.dt
             if _get_next_step_tstop(integrator)
                 # Step controller dt is overly pessimistic, since dt = time to tstop.
                 # Restore the original dt so the controller proposes a reasonable next step.
@@ -645,6 +649,7 @@ function _loopfooter!(integrator)
             ) *
                 oneunit(integrator.dt)
             calc_dt_propose!(integrator, dtnew)
+            integrator.dt = accepted_dt
             handle_callbacks!(integrator)
         else # Reject
             increment_reject!(integrator.stats)
@@ -1048,6 +1053,10 @@ end
     return ex
 end
 
+function _fired_cb_maybe_discontinuity(cb_idx, callbacks::AbstractVector)
+    return callbacks[cb_idx].maybe_discontinuity::Bool
+end
+
 # Use a generated function to call apply_callback! in a type-stable way
 @generated function apply_ith_callback!(
         integrator,
@@ -1081,6 +1090,15 @@ end
     return ex
 end
 
+function apply_ith_callback!(
+        integrator, time, upcrossing, event_idx, cb_idx,
+        callbacks::AbstractVector
+    )
+    return Base.invokelatest(
+        DiffEqBase.apply_callback!, integrator, callbacks[cb_idx], time, upcrossing, event_idx
+    )::Tuple{Bool, Bool}
+end
+
 function handle_callbacks!(integrator)
     discrete_callbacks = integrator.opts.callback.discrete_callbacks
     continuous_callbacks = integrator.opts.callback.continuous_callbacks
@@ -1089,15 +1107,13 @@ function handle_callbacks!(integrator)
     continuous_modified = false
     discrete_modified = false
     saved_in_cb = false
-    if !(continuous_callbacks isa Tuple{})
-        time, upcrossing,
-            event_occurred,
-            event_idx,
-            idx,
-            counter = DiffEqBase.find_first_continuous_callback(
-            integrator,
-            continuous_callbacks...
-        )
+    if !isempty(continuous_callbacks)
+        time, upcrossing, event_occurred, event_idx, idx, counter =
+        if continuous_callbacks isa AbstractVector
+            DiffEqBase.find_first_continuous_callback(integrator, continuous_callbacks)
+        else
+            DiffEqBase.find_first_continuous_callback(integrator, continuous_callbacks...)
+        end
         if event_occurred
             integrator.event_last_time = idx
             integrator.vector_event_last_time = event_idx
@@ -1118,12 +1134,12 @@ function handle_callbacks!(integrator)
             integrator.vector_event_last_time = 1
         end
     end
-    if !integrator.force_stepfail && !(discrete_callbacks isa Tuple{})
-        discrete_modified,
-            saved_in_cb = DiffEqBase.apply_discrete_callback!(
-            integrator,
-            discrete_callbacks...
-        )
+    if !integrator.force_stepfail && !isempty(discrete_callbacks)
+        discrete_modified, saved_in_cb = if discrete_callbacks isa AbstractVector
+            DiffEqBase.apply_discrete_callback!(integrator, discrete_callbacks)
+        else
+            DiffEqBase.apply_discrete_callback!(integrator, discrete_callbacks...)
+        end
     end
     if !saved_in_cb
         savevalues!(integrator)
@@ -1205,6 +1221,12 @@ function calc_dt_propose!(integrator, dtnew)
         dtnew_modification(integrator, integrator.alg, dtnew)
     else
         dtnew
+    end
+    if integrator.opts.adaptive && integrator.t isa AbstractFloat && dtnew isa AbstractFloat
+        # Use the same interval for the state update and the floating-point clock.
+        # Otherwise, rounding t + dt can accumulate a drift in the integrated time.
+        dtnew = integrator.tdir * abs(dtnew)
+        dtnew = (integrator.t + dtnew) - integrator.t
     end
     dtpropose = integrator.tdir * min(abs(integrator.opts.dtmax), abs(dtnew))
     dtpropose = integrator.tdir * max(abs(dtpropose), timedepentdtmin(integrator))

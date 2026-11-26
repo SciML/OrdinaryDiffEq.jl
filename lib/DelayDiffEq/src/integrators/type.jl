@@ -109,7 +109,7 @@ mutable struct DDEIntegrator{
     c::CType  # Jump rate function (Nothing for non-jump problems)
 end
 
-function (integrator::DDEIntegrator)(t, deriv::Type = Val{0}; idxs = nothing)
+function (integrator::DDEIntegrator)(t, deriv::Type{D} = Val{0}; idxs = nothing) where {D}
     if SciMLBase.has_symbolic_idxs(idxs)
         return SciMLBase.symbolic_interpolation(integrator, t, idxs, deriv)
     end
@@ -118,8 +118,8 @@ end
 
 function (integrator::DDEIntegrator)(
         val::AbstractArray, t::Union{Number, AbstractArray},
-        deriv::Type = Val{0}; idxs = nothing
-    )
+        deriv::Type{D} = Val{0}; idxs = nothing
+    ) where {D}
     return OrdinaryDiffEqCore.current_interpolant!(val, t, integrator, idxs, deriv)
 end
 

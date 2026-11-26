@@ -46,3 +46,17 @@ end
         @test SciMLBase.successful_retcode(sol)
     end
 end
+
+@testset "NoSpecialize is differentiated with chunk size 1" begin
+    heat!(du, u, p, t) = (du .= -u; du[2:(end - 1)] .+= u[1:(end - 2)] .+ u[3:end]; nothing)
+    nospec(n) = ODEProblem{true, SciMLBase.NoSpecialize}(heat!, ones(n), (0.0, 1.0))
+    prob = nospec(12)
+    @test prepare_ADType(AutoForwardDiff(), prob, prob.u0, prob.p, true) isa AutoForwardDiff{1}
+    @test prepare_ADType(AutoForwardDiff(chunksize = 4), prob, prob.u0, prob.p, true) isa
+        AutoForwardDiff{4}
+    integs = map(n -> init(nospec(n), FBDF()), (8, 12))
+    @test typeof(integs[1].cache) === typeof(integs[2].cache)
+    for integ in integs
+        @test SciMLBase.successful_retcode(solve!(integ))
+    end
+end

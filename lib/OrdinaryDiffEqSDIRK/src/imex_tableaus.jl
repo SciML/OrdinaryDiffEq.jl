@@ -954,10 +954,10 @@ function ARS443Tableau(T, T2)
     Ae[5, 4] = convert(T, -7 // 4)
 
     be = zeros(T, s)
-    be[2] = convert(T, 3 // 2)
-    be[3] = convert(T, -3 // 2)
-    be[4] = convert(T, 1 // 2)
-    be[5] = γ
+    be[1] = convert(T, 1 // 4)
+    be[2] = convert(T, 7 // 4)
+    be[3] = convert(T, 3 // 4)
+    be[4] = convert(T, -7 // 4)
 
     c = T2[zero(T2), convert(T2, 1 // 2), convert(T2, 2 // 3), convert(T2, 1 // 2), one(T2)]
 
@@ -1251,7 +1251,7 @@ function Kvaerno3ESDIRKIMEXTableau(T, T2)
 
     c_vec = zeros(T2, s)
     c_vec[1] = zero(T2)
-    c_vec[2] = convert(T2, 0.4358665215)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[2] = convert(T2, 2) * convert(T2, 0.4358665215)  # = 2γ = Ai[2,1] + Ai[2,2]
     c_vec[3] = c3
     c_vec[4] = one(T2)
 
@@ -1336,7 +1336,7 @@ function Kvaerno4ESDIRKIMEXTableau(T, T2)
 
     c_vec = zeros(T2, s)
     c_vec[1] = zero(T2)
-    c_vec[2] = convert(T2, 0.4358665215)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[2] = convert(T2, 2) * convert(T2, 0.4358665215)  # = 2γ = Ai[2,1] + Ai[2,2]
     c_vec[3] = c3
     c_vec[4] = c4
     c_vec[5] = one(T2)
@@ -1456,7 +1456,7 @@ function Kvaerno5ESDIRKIMEXTableau(T, T2)
 
     c_vec = zeros(T2, s)
     c_vec[1] = zero(T2)
-    c_vec[2] = convert(T2, 0.26)  # = γ, matching master's nlsolver.c = γ for stage 2
+    c_vec[2] = convert(T2, 2) * convert(T2, 0.26)  # = 2γ = Ai[2,1] + Ai[2,2]
     c_vec[3] = c3
     c_vec[4] = c4
     c_vec[5] = c5

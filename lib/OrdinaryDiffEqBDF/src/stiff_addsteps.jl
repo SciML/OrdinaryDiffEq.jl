@@ -146,6 +146,13 @@ end
 # A callback shortening the step to dt evaluates the interpolant with
 # s' = (t - (tprev + dt)) / dt, and s = a + b s' with b = dt/h, a = b - 1.
 # Rebuild from zn (not k) so repeated calls stay idempotent.
+#
+# While `cache.predicted` holds (post-perform_step!, pre-acceptance) zn is the
+# uncommitted trial state, and a forced rebuild yields the corrected trial
+# polynomial zn[j] + l[j]*acor — what nordsieck_complete! commits on
+# acceptance. DelayDiffEq's advance/update of the history integrator relies on
+# this; evaluation-only callers (always_calc_begin = force_calc_end = false)
+# keep whatever k already holds.
 ####################################################################
 
 function _ode_addsteps!(
@@ -154,15 +161,22 @@ function _ode_addsteps!(
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
-    always_calc_begin || return nothing
     (; zn, order, hscale) = cache
     iszero(hscale) && return nothing
+    trial = cache.predicted
+    (always_calc_begin || (trial && force_calc_end)) || return nothing
     b = dt / hscale
     a = b - one(b)
     n = length(k)
     # constant caches alias k[j] to zn[j]; never mutate those in place
     for j in 1:n
-        k[j] = j - 1 <= order ? zn[j] : zero(u)
+        k[j] = if j - 1 > order
+            zero(u)
+        elseif trial
+            @.. zn[j] + cache.l[j] * cache.acor
+        else
+            zn[j]
+        end
     end
     for i in 1:(n - 1)
         for j in (n - 1):-1:i
@@ -183,15 +197,21 @@ function _ode_addsteps!(
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false
     )
-    always_calc_begin || return nothing
     (; zn, order, hscale) = cache
     iszero(hscale) && return nothing
+    trial = cache.predicted
+    (always_calc_begin || (trial && force_calc_end)) || return nothing
     b = dt / hscale
     a = b - one(b)
     n = length(k)
     for j in 1:n
         if j - 1 <= order
-            copyto!(k[j], zn[j])
+            if trial
+                kj = k[j]
+                @.. broadcast = false kj = zn[j] + cache.l[j] * cache.acor
+            else
+                copyto!(k[j], zn[j])
+            end
         else
             fill!(k[j], zero(eltype(u)))
         end

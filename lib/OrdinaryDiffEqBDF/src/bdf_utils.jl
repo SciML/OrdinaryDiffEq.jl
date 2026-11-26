@@ -130,6 +130,24 @@ end
 
 const γₖ = ntuple(k -> sum(Int64(1) // j for j in 1:k), 6)
 
+# SBDF uses fixed-coefficient formulas that assume uniformly spaced history, so a
+# genuine dt change restarts at first order (#4329). The final step is clipped to
+# land on tspan[2], so a 1-ulp perturbation of the end time changes dt by ~eps(t);
+# an exact `dt != dtprev` check mistakes that roundoff for a step-size change and
+# pays a full O(dt^2) first-order step (#4573). Tolerate differences within the
+# same 100*eps(t) window `modify_dt_for_tstops!` uses when clipping to a tstop.
+@inline function _sbdf_dt_changed(dt, dtprev, t)
+    dt == dtprev && return false
+    if t isa AbstractFloat && isfinite(t)
+        tdt = t + dt
+        isfinite(tdt) || return true
+        tol = 100 * eps(float(max(abs(t), abs(tdt)) / oneunit(t))) * oneunit(t)
+        return abs(dt - dtprev) > tol
+    else
+        return true
+    end
+end
+
 function error_constant(integrator, alg::QNDF, k)
     (; γₖ) = integrator.cache
     κ = alg.kappa[k]
@@ -232,7 +250,7 @@ function reinitFBDF!(integrator, cache)
             ts[1] = t
             copyto!(u_history[2], u_history[1])
             copyto!(u_history[1], uprev)
-        elseif consfailcnt == 0
+        elseif consfailcnt == 0 && t != ts[1]
             for i in (order + 2):-1:2
                 ts[i] = ts[i - 1]
                 copyto!(u_history[i], u_history[i - 1])
@@ -253,7 +271,7 @@ function reinitFBDF!(integrator, cache)
             ts[1] = t
             u_history[2] = u_history[1]
             u_history[1] = uprev
-        elseif consfailcnt == 0
+        elseif consfailcnt == 0 && t != ts[1]
             for i in (order + 2):-1:2
                 ts[i] = ts[i - 1]
                 u_history[i] = u_history[i - 1]
@@ -602,6 +620,66 @@ function _fbdf_finish_fixed_step!(integrator, cache)
         cache.iters_from_event += 1
         cache.nconsteps += 1
         cache.consfailcnt = 0
+    end
+    return nothing
+end
+
+function reset_qndf1_history!(integrator, cache)
+    cache.dtₙ₋₁ = zero(cache.dtₙ₋₁)
+    if cache isa QNDF1Cache
+        copyto!(cache.uprev2, integrator.uprev)
+        recursivefill!(cache.D, false)
+        recursivefill!(cache.D2, false)
+    else
+        cache.uprev2 = copy(integrator.uprev)
+        for D in (cache.D, cache.D2), i in eachindex(D)
+            D[i] = zero(integrator.uprev)
+        end
+    end
+    return nothing
+end
+
+function reset_qndf_history!(cache)
+    cache.order = 1
+    cache.prevorder = 1
+    cache.dtprev = one(cache.dtprev)
+    cache.nconsteps = 0
+    cache.consfailcnt = 0
+    cache.EEst1 = one(cache.EEst1)
+    cache.EEst2 = one(cache.EEst2)
+    for D in (cache.D, cache.prevD), i in eachindex(D)
+        if cache isa QNDFCache
+            recursivefill!(D[i], false)
+        else
+            D[i] = zero(D[i])
+        end
+    end
+    return nothing
+end
+
+function reset_qndf2_history!(integrator, cache)
+    # Anchor attempt counting so the next `perform_step!` sees `cnt == 1` (BDF1
+    # startup). Mid-solve, `iter` already counts the current attempt, so subtract
+    # one; before the first step `iter` is 0.
+    cache.iter_at_event = max(integrator.iter - 1, 0)
+    cache.success_iter_at_event = integrator.success_iter
+    return clear_qndf2_history!(integrator, cache)
+end
+
+function clear_qndf2_history!(integrator, cache)
+    cache.dtₙ₋₁ = zero(integrator.dt)
+    cache.dtₙ₋₂ = zero(integrator.dt)
+    if cache isa QNDF2Cache
+        copyto!(cache.uprev2, integrator.uprev)
+        copyto!(cache.uprev3, integrator.uprev)
+        recursivefill!(cache.D, false)
+        recursivefill!(cache.D2, false)
+    else
+        cache.uprev2 = copy(integrator.uprev)
+        cache.uprev3 = copy(integrator.uprev)
+        for D in (cache.D, cache.D2), i in eachindex(D)
+            D[i] = zero(integrator.uprev)
+        end
     end
     return nothing
 end

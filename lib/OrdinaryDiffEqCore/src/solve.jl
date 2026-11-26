@@ -37,17 +37,202 @@ end
 
 parameter_values(z::zero_func_struct) = z.p
 
-function (z::zero_func_struct)(θ, p)
+# The zero function may be reached through a `FunctionWrapper`, whose payload is untyped;
+# loading the step state through one typed call keeps the field writes off the
+# dynamic `setproperty!` path.
+function _load_disco_state!(z::zero_func_struct, dt, uprev, u, k, tprev, p)
+    z.dt = dt
+    z.uprev = uprev
+    z.u = u
+    z.k = k
+    z.tprev = tprev
+    z.p = p
+    return nothing
+end
+_set_disco_index!(z::zero_func_struct, ind) = (z.ind = ind; nothing)
+
+_disco_zero(prob::IntervalNonlinearProblem) = _disco_zero(prob.f.f)
+_disco_zero(z::zero_func_struct) = z
+_disco_zero(w::FunctionWrapper) = w.obj.x
+
+function _disco_problem(::Type{F}, ::Type{T}, i, u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p) where {F, T}
+    u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
+    out, out_low, out_high = if i isa VectorContinuousCallback
+        arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
+        arr, similar(arr), similar(arr)
+    else
+        nothing, zeros(Float64, 1), zeros(Float64, 1)
+    end
+    zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
+    return IntervalNonlinearProblem{false}(F(zero_func), [zero(T), one(T)], SciMLBase.NullParameters())
+end
+
+# One problem type per callback type in the set: `maybe_discontinuity` is a run-time field, so this
+# also covers ineligible callbacks; a few callback types give a small `Union` that calls split on.
+# A callback vector gives its element type's problem type when that is concrete; other sets give
+# the abstract type, and their problems keep the `FunctionWrapper`.
+_disco_problem_type(::Type{F}, ::Type{T}, cbs::Tuple, args) where {F, T} =
+    Union{map(cb -> Base.promote_op(_disco_problem, Type{F}, Type{T}, typeof(cb), map(typeof, args)...), cbs)...}
+_disco_problem_type(::Type{F}, ::Type{T}, ::AbstractVector{C}, args) where {F, T, C} =
+    isconcretetype(C) ? Base.promote_op(_disco_problem, Type{F}, Type{T}, C, map(typeof, args)...) :
+    IntervalNonlinearProblem
+_disco_problem_type(F, T, cbs, args) = IntervalNonlinearProblem
+
+# Float64 in and out, as through the `FunctionWrapper`, also when a problem holds the zero function directly.
+(z::zero_func_struct)(θ, p) = convert(Float64, _disco_zero_value(z, convert(Float64, θ)))
+
+function _disco_zero_value(z::zero_func_struct, θ)
     iszero(θ) && return z.out_low[z.ind]
     isone(θ) && return z.out_high[z.ind]
+    u = _disco_interpolant(z, θ)
+    return zero_condition(z.callback, z.out, u, z.tprev + θ * z.dt, z, z.ind)
+end
+
+function _disco_interpolant(z::zero_func_struct, θ)
+    ArrayInterface.ismutable(z.u₁) || return ode_interpolant(
+        θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars
+    )
     ode_interpolant!(z.u₁, θ, z.dt, z.uprev, z.u, z.k, z.cache, z.idxs, Val{0}, z.differential_vars)
-    return zero_condition(z.callback, z.out, z.u₁, z.tprev + θ * z.dt, z, z.ind)
+    return z.u₁
 end
 
 @inline zero_condition(cb::ContinuousCallback, out::Nothing, u, t, z, ind) = cb.condition(u, t, z)
 @inline function zero_condition(cb::VectorContinuousCallback, out, u, t, z, ind)
     cb.condition(out, u, t, z)
     return out[ind]
+end
+
+"""
+    _despecialize_callbacks!(integrator)
+
+Wrap the condition and affect functions of the callbacks that `AutoSpecialize` and
+`AutoDespecialize` store type-erased, so that `find_callback_time`,
+`apply_discrete_callback!` and the rest of the callback machinery compile once per
+integrator type instead of once per callback closure type. This is the callback
+counterpart of what `DiffEqBase.promote_f` does to the right-hand side; `NoSpecialize`
+leaves callbacks as plain `Any` entries, as it leaves `f`.
+
+Each wrapper is a `FunctionWrappersWrapper` whose listed signatures are the argument
+types the integrator passes on its usual paths, with a cached typed fallback for any
+other combination, so every call site stays correct while the common ones stay static.
+Callbacks with a non-default `initialize` or `finalize` are left as they are: those
+hooks treat `affect!` as an object, reading its fields or dispatching on its type,
+which no wrapper can preserve.
+"""
+function _despecialize_callbacks!(integrator)
+    specialize = SciMLBase.specialization(integrator.f)
+    specialize === SciMLBase.AutoSpecialize || specialize === SciMLBase.AutoDespecialize ||
+        return nothing
+    callbacks = integrator.opts.callback
+    callbacks isa CallbackSet{<:AbstractVector, <:AbstractVector} || return nothing
+    integrator.opts.callback = CallbackSet(
+        Any[_despecialize_callback(cb, integrator) for cb in callbacks.continuous_callbacks],
+        Any[_despecialize_callback(cb, integrator) for cb in callbacks.discrete_callbacks]
+    )
+    return nothing
+end
+
+function _despecialize_callback(callback::ContinuousCallback, integrator)
+    _has_default_callback_hooks(callback) || return callback
+    I = typeof(integrator)
+    signatures = _condition_signatures(callback.idxs, integrator)
+    callback = @reset callback.condition = _wrap_calls(
+        callback.condition, signatures,
+        map(sig -> _condition_return_type(callback.condition, sig), signatures)
+    )
+    callback = @reset callback.affect! = _wrap_affect(callback.affect!, (Tuple{I},))
+    return @reset callback.affect_neg! = _wrap_affect(callback.affect_neg!, (Tuple{I},))
+end
+
+function _despecialize_callback(callback::VectorContinuousCallback, integrator)
+    _has_default_callback_hooks(callback) || return callback
+    I = typeof(integrator)
+    cache = integrator.callback_cache
+    # `get_condition` hands the condition a view into the cache; `find_discontinuity`
+    # hands it a freshly allocated vector.
+    outs = unique(
+        (
+            typeof(@view cache.tmp_condition[1:(callback.len)]),
+            typeof(similar(cache.tmp_condition, callback.len)),
+        )
+    )
+    signatures = Tuple(
+        Tuple{O, sig.parameters...} for O in outs
+            for sig in _condition_signatures(callback.idxs, integrator)
+    )
+    callback = @reset callback.condition = _wrap_calls(
+        SciMLBase.Void(callback.condition), signatures, map(_ -> Nothing, signatures)
+    )
+    events = typeof(@view cache.simultaneous_events[1:(callback.len)])
+    return @reset callback.affect! = _wrap_affect(callback.affect!, (Tuple{I, events},))
+end
+
+function _despecialize_callback(callback::SciMLBase.DiscreteCallback, integrator)
+    _has_default_callback_hooks(callback) || return callback
+    I = typeof(integrator)
+    signatures = (Tuple{typeof(integrator.u), typeof(integrator.t), I},)
+    callback = @reset callback.condition = _wrap_calls(
+        callback.condition, signatures, map(_ -> Bool, signatures)
+    )
+    return @reset callback.affect! = _wrap_affect(callback.affect!, (Tuple{I},))
+end
+
+_despecialize_callback(callback, integrator) = callback
+
+# The default hooks are read off a callback built with none given, since SciMLBase does
+# not expose them by name.
+const _DEFAULT_CALLBACK_HOOKS = let cb = SciMLBase.DiscreteCallback(Returns(false), identity)
+    (initialize = cb.initialize, finalize = cb.finalize)
+end
+
+function _has_default_callback_hooks(callback)
+    return callback.initialize === _DEFAULT_CALLBACK_HOOKS.initialize &&
+        callback.finalize === _DEFAULT_CALLBACK_HOOKS.finalize
+end
+
+function _wrap_calls(f, signatures, return_types)
+    return FunctionWrappersWrappers.FunctionWrappersWrapper(
+        f, signatures, return_types;
+        cache = FunctionWrappersWrappers.DictCache(),
+        policy = FunctionWrappersWrappers.AllowAll()
+    )
+end
+
+_wrap_affect(::Nothing, signatures) = nothing
+function _wrap_affect(affect!, signatures)
+    return _wrap_calls(SciMLBase.Void(affect!), signatures, map(_ -> Nothing, signatures))
+end
+
+# The states a continuous condition receives: `u` or `uprev`, the interpolation scratch
+# from `get_tmp_cache`, and either restricted to `idxs`.
+function _condition_signatures(idxs, integrator)
+    states = Any[integrator.u]
+    tmp = get_tmp_cache(integrator)
+    tmp === nothing || push!(states, first(tmp))
+    if idxs isa Number
+        states = Any[state[idxs] for state in states]
+    elseif idxs !== nothing
+        states = Any[view(state, idxs) for state in states]
+    end
+    return Tuple(
+        Tuple{S, typeof(integrator.t), typeof(integrator)} for S in unique(map(typeof, states))
+    )
+end
+
+# A concrete return type keeps the residual type-stable inside root finding; anything
+# inference cannot pin down is boxed rather than guessed.
+function _condition_return_type(condition, signature)
+    T = Base.promote_op(condition, signature.parameters...)
+    return isconcretetype(T) ? T : Any
+end
+
+function _build_callback_cache(u, max_len, ::Val{true}, ::Type{uBottomEltype}) where {uBottomEltype}
+    T = real(uBottomEltype)
+    return DiffEqBase.CallbackCache(u, max_len, T, T)
+end
+function _build_callback_cache(u, max_len, ::Val{false}, ::Type{uBottomEltype}) where {uBottomEltype}
+    T = real(uBottomEltype)
+    return DiffEqBase.CallbackCache(max_len, T, T)
 end
 
 Base.@constprop :aggressive function SciMLBase.__init(
@@ -66,9 +251,18 @@ Base.@constprop :aggressive function SciMLBase.__init(
         timeseries_init = (),
         ts_init = (),
         ks_init = ();
+        abstol = nothing,
+        reltol = nothing,
         kwargs...
     )
-    return _ode_init(prob, alg, timeseries_init, ts_init, ks_init; kwargs...)
+    # Resolve before the heavy `_ode_init` keyword body so `solve`/`init` always
+    # specialize that body on concrete types (TTFX). StochasticDiffEqCore applies
+    # SDE defaults + `real.(...)` then calls public `_ode_init` the same way.
+    # A nothing state dispatches on `Nothing` (scalar Float64 defaults).
+    abstol, reltol = resolve_ode_tolerances(prob, prob.u0, abstol, reltol)
+    return _ode_init(
+        prob, alg, timeseries_init, ts_init, ks_init; abstol, reltol, kwargs...
+    )
 end
 
 """
@@ -119,11 +313,96 @@ function resolve_stage_step_limiters(alg, stage_limiter, step_limiter, verbose_s
 end
 
 """
+    resolve_ode_tolerances(prob, u, abstol, reltol) -> (abstol, reltol)
+
+Internal: replace `nothing` absolute/relative tolerances with the concrete
+defaults used by OrdinaryDiffEq (`1 // 10^6` / `1 // 10^3` in
+the state eltype, or `false` for discrete problems). A `nothing` state uses
+the scalar `Float64` defaults. User-supplied values are
+passed through `real.(...)` so complex tolerances (including from SDE callers)
+become real for residual calculations.
+"""
+function resolve_ode_tolerances(prob, ::Nothing, abstol, reltol)
+    if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
+        abstol_out = false
+    elseif abstol === nothing
+        abstol_out = unitfulvalue(
+            real(convert(Float64, oneunit(Float64) * 1 // 10^6))
+        )
+    else
+        abstol_out = real.(abstol)
+    end
+
+    if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
+        reltol_out = false
+    elseif reltol === nothing
+        reltol_out = unitfulvalue(
+            real(convert(Float64, oneunit(Float64) * 1 // 10^3))
+        )
+    else
+        reltol_out = real.(reltol)
+    end
+
+    return abstol_out, reltol_out
+end
+
+function resolve_ode_tolerances(prob, u, abstol, reltol)
+    uBottomEltype = recursive_bottom_eltype(u)
+    uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
+    scalar_type_tol =
+        uBottomEltypeNoUnits == uBottomEltype &&
+        uBottomEltype <: Union{Real, Complex}
+
+    if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
+        abstol_out = false
+    elseif abstol === nothing
+        if scalar_type_tol
+            abstol_out = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype, oneunit(uBottomEltype) * 1 // 10^6
+                    )
+                )
+            )
+        else
+            abstol_out = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
+        end
+    else
+        abstol_out = real.(abstol)
+    end
+
+    if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
+        reltol_out = false
+    elseif reltol === nothing
+        if scalar_type_tol
+            reltol_out = unitfulvalue(
+                real(
+                    convert(
+                        uBottomEltype, oneunit(uBottomEltype) * 1 // 10^3
+                    )
+                )
+            )
+        else
+            reltol_out = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
+        end
+    else
+        reltol_out = real.(reltol)
+    end
+
+    return abstol_out, reltol_out
+end
+
+"""
     _ode_init(prob, alg, timeseries_init = (), ts_init = (), ks_init = (); kwargs...)
 
-Internal implementation of `__init` for ODE/DAE/SDE/RODE problems. This is
-separated from `__init` so that SDE packages can call it directly, bypassing
-method dispatch (which would otherwise re-enter SDE's more specific `__init`).
+Public entry for ODE/DAE/SDE/RODE integrator construction. Accepts optional
+`abstol`/`reltol` (default `nothing`): missing/`nothing` become the problem's
+concrete defaults, and supplied values are normalized with `real.(...)`.
+Prefer `init`/`solve` for normal use. `SciMLBase.__init` and
+StochasticDiffEqCore pre-resolve tolerances to concrete types before calling so
+the heavy keyword body does not specialize on `Nothing` (TTFX); direct callers
+that omit tolerances still get the defaults via the resolve near the top of
+this function.
 """
 Base.@constprop :aggressive function _ode_init(
         prob,
@@ -144,7 +423,7 @@ Base.@constprop :aggressive function _ode_init(
         callback = nothing,
         dense = save_everystep && isempty(saveat) &&
             !default_linear_interpolation(prob, alg),
-        calck = (callback !== nothing && callback !== CallbackSet()) ||
+        calck = (callback !== nothing && !isempty(callback)) ||
             (dense) || !isempty(saveat), # and no dense output
         dt = nothing,
         # For runtime-unit quantities (DynamicQuantities), eltype(prob.tspan)(0) would
@@ -370,33 +649,13 @@ Base.@constprop :aggressive function _ode_init(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(DiffEqBase.stripunits(oneunit(first(tspan))))
 
-    scalar_type_tol =
-        uBottomEltypeNoUnits == uBottomEltype &&
-        uBottomEltype <: Union{Real, Complex}
-
-    if prob isa SciMLBase.AbstractDiscreteProblem && abstol === nothing
-        abstol_internal = false
-    elseif abstol === nothing
-        if scalar_type_tol
-            abstol_internal = unitfulvalue(real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^6)))
-        else
-            abstol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^6))
-        end
-    else
-        abstol_internal = real.(abstol)
-    end
-
-    if prob isa SciMLBase.AbstractDiscreteProblem && reltol === nothing
-        reltol_internal = false
-    elseif reltol === nothing
-        if scalar_type_tol
-            reltol_internal = unitfulvalue(real(convert(uBottomEltype, oneunit(uBottomEltype) * 1 // 10^3)))
-        else
-            reltol_internal = unitfulvalue.(real.(oneunit.(u) .* 1 // 10^3))
-        end
-    else
-        reltol_internal = real.(reltol)
-    end
+    # Resolve missing/`nothing` tolerances and normalize supplied values with
+    # `real.(...)`. Callers that already passed concrete tolerances
+    # (`SciMLBase.__init`, StochasticDiffEqCore) are unchanged; public direct
+    # callers that omit tolerances get the concrete defaults here.
+    u_for_tol = _u !== nothing ? _u : prob.u0
+    abstol, reltol = resolve_ode_tolerances(prob, u_for_tol, abstol, reltol)
+    abstol_internal, reltol_internal = abstol, reltol
 
     dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
     # dtmin is all abs => does not care about sign already.
@@ -450,24 +709,23 @@ Base.@constprop :aggressive function _ode_init(
         tspan
     )
 
-    callbacks_internal = CallbackSet(callback)
+    callbacks_internal = callback isa CallbackSet ? callback : CallbackSet(callback)
 
     max_len_cb = DiffEqBase.max_vector_callback_length_int(callbacks_internal)
-    if max_len_cb !== nothing
-        uBottomEltypeReal = real(uBottomEltype)
-        if isinplace(prob)
-            callback_cache = DiffEqBase.CallbackCache(
-                u, max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal
-            )
-        else
-            callback_cache = DiffEqBase.CallbackCache(
-                max_len_cb, uBottomEltypeReal,
-                uBottomEltypeReal
-            )
-        end
+    callback_cache = max_len_cb === nothing ? nothing :
+        _build_callback_cache(u, max_len_cb, Val(isinplace(prob)), uBottomEltype)
+    # Whether an erased callback set holds a vector callback is not visible in its type,
+    # so there the field admits both states and the integrator type stays fixed. The
+    # cache type is inferred, not built: a callback-free solve constructs nothing.
+    callback_cache_type = if callbacks_internal isa CallbackSet{<:AbstractVector, <:AbstractVector}
+        Union{
+            Nothing,
+            Base.promote_op(
+                _build_callback_cache, typeof(u), Int, Val{isinplace(prob)}, Type{uBottomEltype}
+            ),
+        }
     else
-        callback_cache = nothing
+        typeof(callback_cache)
     end
 
     ### Algorithm-specific defaults ###
@@ -730,31 +988,43 @@ Base.@constprop :aggressive function _ode_init(
 
     num_probs = 0
     for i in callbacks_internal.continuous_callbacks
-        if i.maybe_discontinuity
+        if i.maybe_discontinuity::Bool
             num_probs += 1
         end
     end
-    disco_probs = Vector{IntervalNonlinearProblem}(undef, num_probs)
+    # Concrete even when empty: the erased callback vector means the discontinuity loop
+    # is compiled whether or not a callback uses it, and an abstract problem type there
+    # would leave abstract call edges into the bracketing solver. The type is inferred
+    # rather than built, so no problem is constructed for a solve that has no use for it.
+    # The zero function reads everything, `p` included, from its own state, so the
+    # problem carries no parameters and its type does not depend on `p`.
+    disco_zero_wrapper = FunctionWrapper{Float64, Tuple{Float64, SciMLBase.NullParameters}}
+    disco_prob_type = Base.promote_op(
+        IntervalNonlinearProblem{false}, disco_zero_wrapper, Vector{tType},
+        SciMLBase.NullParameters
+    )
+    # Under `FullSpecialize` the problems hold the zero function itself, typed by its callback,
+    # when the callback types give a concrete problem type or a small `Union`; otherwise they keep
+    # the wrapper, so the storage stays concrete.
+    cbs = callbacks_internal.continuous_callbacks
+    direct_f = SciMLBase.IntervalNonlinearFunction{false, SciMLBase.FullSpecialize}
+    args = (u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p)
+    direct = !(cbs isa Tuple{}) && f isa SciMLBase.AbstractSciMLFunction &&
+        SciMLBase.specialization(f) === SciMLBase.FullSpecialize
+    if direct
+        direct_prob_type = _disco_problem_type(direct_f, tType, cbs, args)
+        direct = isconcretetype(direct_prob_type) || direct_prob_type isa Union
+        direct && (disco_prob_type = direct_prob_type)
+    end
+    make_f = direct ? direct_f : disco_zero_wrapper
+    isconcretetype(disco_prob_type) || disco_prob_type isa Union || (disco_prob_type = IntervalNonlinearProblem)
+    disco_probs = Vector{disco_prob_type}(undef, num_probs)
     idx = 1
     for i in callbacks_internal.continuous_callbacks
-        if i.maybe_discontinuity
-            u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
-            out, out_low, out_high = if i isa VectorContinuousCallback
-                arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
-                arr, similar(arr), similar(arr)
-            else
-                nothing, zeros(Float64, 1), zeros(Float64, 1)
-            end
-            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
-            zero_func_wrapped = FunctionWrapper{Float64, Tuple{Float64, typeof(p)}}(zero_func)
-            disco_prob = IntervalNonlinearProblem{false}(zero_func_wrapped, [zero(tType), one(tType)], p)
-            disco_probs[idx] = disco_prob
+        if i.maybe_discontinuity::Bool
+            disco_probs[idx] = _disco_problem(make_f, tType, i, args...)
             idx += 1
         end
-    end
-
-    if num_probs > 0
-        disco_probs = convert(Vector{typeof(disco_probs[1])}, disco_probs)
     end
 
     controller_cache = setup_controller_cache(_alg, cache, controller, EEstT, disco_probs)
@@ -771,7 +1041,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(tdir), typeof(k), SolType,
         FType, cacheType,
         typeof(opts), typeof(fsalfirst),
-        typeof(last_event_error), typeof(callback_cache),
+        typeof(last_event_error), callback_cache_type,
         typeof(initializealg), typeof(differential_vars),
         typeof(controller_cache), typeof(_rng),
         typeof(W), typeof(P), typeof(sqdt),
@@ -798,6 +1068,8 @@ Base.@constprop :aggressive function _ode_init(
         W, P, sqdt,
         noise, c, rate_constants
     )
+
+    _despecialize_callbacks!(integrator)
 
     if initialize_integrator
         if isdae || SciMLBase.has_initializeprob(prob.f) ||
@@ -902,7 +1174,7 @@ function handle_starting_time_discontinuity!(integrator)
 end
 
 function SciMLBase.solve!(integrator::ODEIntegrator)
-    @inbounds while !isempty(integrator.opts.tstops)
+    while !isempty(integrator.opts.tstops)
         first_tstop = first(integrator.opts.tstops)
         while integrator.tdir * integrator.t < first_tstop
             loopheader!(integrator)
@@ -1223,8 +1495,8 @@ function initialize_callbacks!(integrator, initialize_save = true)
 
         if initialize_save &&
                 (
-                any((c) -> c.save_positions[2], callbacks.discrete_callbacks) ||
-                    any((c) -> c.save_positions[2], callbacks.continuous_callbacks)
+                any((c) -> c.save_positions[2]::Bool, callbacks.discrete_callbacks) ||
+                    any((c) -> c.save_positions[2]::Bool, callbacks.continuous_callbacks)
             )
             savevalues!(integrator, true)
         end
@@ -1233,7 +1505,8 @@ function initialize_callbacks!(integrator, initialize_save = true)
     # reset this as it is now handled so the integrators should proceed as normal
     integrator.derivative_discontinuity = false
 
-    return if initialize_save
+    return if initialize_save &&
+            (!isdefined(integrator.opts, :save_discretes) || integrator.opts.save_discretes)
         SciMLBase.save_discretes_if_enabled!(integrator, integrator.opts.callback; skip_duplicates = true)
     end
 end
