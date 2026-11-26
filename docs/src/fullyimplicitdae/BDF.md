@@ -72,7 +72,9 @@ integrator construction and reuse their colorings.
     hold, rather than returning a wrong Jacobian. If the detector cannot trace the residual at the
     refresh point (for example a comparison on a global tracer), user-supplied storage skips
     validation for that refresh. Automatically derived storage is instead differentiated column by
-    column without compression at that point, with each column perturbed independently. If every
+    column without compression at that point, with each column perturbed independently (for a
+    finite-difference backend the step of a column is scaled by that coordinate alone and uses the
+    backend's own stencil and step settings). If every
     nonzero lies inside the stored pattern, those validated values are the partial Jacobian that is
     used; otherwise a `DimensionMismatch` names the first missing entry.
     Storage that already holds
@@ -90,7 +92,7 @@ integrator construction and reuse their colorings.
     builds the combined stage Jacobian, including when a `jac_prototype` supplies the storage. Use
     `TracerLocalSparsityDetector` or `KnownJacobianSparsityDetector` if the residual branches on `u`
     or `du`. Tracer validation and any uncompressed fallback evaluations are excluded from
-    `stats.nf`. Their cost depends on the detector, backend, and problem size. The accuracy of the uncompressed fallback with a finite-difference backend depends on the scaling of the state vector; prefer an AD backend such as `AutoForwardDiff` with automatic patterns.
+    `stats.nf`. Their cost depends on the detector, backend, and problem size.
   - The number of colors, and so of residual evaluations per Jacobian, depends on the union
     pattern, not on each partial Jacobian alone.
 

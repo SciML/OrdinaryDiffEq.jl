@@ -35,12 +35,59 @@ end
 # with reused buffers. Only nonzeros outside `J` are errors, since entries that are zero at
 # this point add nothing; the values for `J`'s stored entries are staged and copied in once
 # every column has passed, so a failure leaves `J` untouched.
+# `f(out, x)` as a function of the single coordinate `x[j]`, so a finite-difference step is
+# scaled by that coordinate alone rather than by the norm of the whole state.
+mutable struct _CoordinateFunction{F, X}
+    f::F
+    x::X
+    j::Int
+end
+function (c::_CoordinateFunction)(out, s)
+    original = c.x[c.j]
+    c.x[c.j] = s[1]
+    try
+        c.f(out, c.x)
+    finally
+        c.x[c.j] = original
+    end
+    return nothing
+end
+
+# Returns `column!(column, j)` writing `∂f/∂x[j]`. Finite differences differentiate the
+# one-coordinate function with the backend's own stencil and step; AD backends push the
+# basis vector `e_j` forward.
+function _column_evaluator(dense::ADTypes.AutoFiniteDiff, f, fx, x)
+    coordinate = _CoordinateFunction(f, copy(x), 1)
+    s = [first(x)]
+    jac = similar(fx, length(fx), 1)
+    prep = DI.prepare_jacobian(coordinate, fx, dense, s; strict = Val(false))
+    return function (column, j)
+        coordinate.j = j
+        s[1] = x[j]
+        DI.jacobian!(coordinate, fx, jac, prep, dense, s)
+        copyto!(column, jac)
+        return column
+    end
+end
+function _column_evaluator(dense, f, fx, x)
+    tangent = zero(x)
+    prep = DI.prepare_pushforward(f, fx, dense, x, (tangent,); strict = Val(false))
+    return function (column, j)
+        tangent[j] = one(eltype(tangent))
+        try
+            DI.pushforward!(f, fx, (column,), prep, dense, x, (tangent,))
+        finally
+            tangent[j] = zero(eltype(tangent))
+        end
+        return column
+    end
+end
+
 function _fill_from_columns!(ad, f, fx, x, J)
     dense = ADTypes.dense_ad(ad)
-    tangent = zero(x)
     column = similar(fx)
-    prep = try
-        DI.prepare_pushforward(f, fx, dense, x, (tangent,); strict = Val(false))
+    column! = try
+        _column_evaluator(dense, f, fx, x)
     catch err
         err isa InterruptException && rethrow()
         throw(_unvalidatable_error())
@@ -48,14 +95,11 @@ function _fill_from_columns!(ad, f, fx, x, J)
     rows = rowvals(J)
     staged = similar(nonzeros(J))
     for j in axes(J, 2)
-        tangent[j] = one(eltype(tangent))
         try
-            DI.pushforward!(f, fx, (column,), prep, dense, x, (tangent,))
+            column!(column, j)
         catch err
             err isa InterruptException && rethrow()
             throw(_unvalidatable_error())
-        finally
-            tangent[j] = zero(eltype(tangent))
         end
         for i in eachindex(column)
             iszero(column[i]) || _is_stored(J, i, j) ||

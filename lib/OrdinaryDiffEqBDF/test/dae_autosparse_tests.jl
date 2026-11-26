@@ -359,6 +359,43 @@ end
     @test Matrix(nlsolver.cache.dae_jacobians.J_du) ≈ [1.0 0.0; 0.0 1.0] atol = 1.0e-6
 end
 
+@testset "The finite-difference fallback steps each coordinate by its own scale" begin
+    # An unrelated 1e8 state must not enlarge the step in coordinate 1 across the branch at
+    # u[1] = 2.25, and the branch term must not leak into the stored partials.
+    scales = [1.0, 1.0e8]
+    function branch_row(row)
+        return function (r, du, u, p, t)
+            r .= du .+ (u .- scales)
+            r[row] += t >= 0.5 && u[1] > 2.25 ? (u[1] - 1)^2 : 0.0
+            return nothing
+        end
+    end
+    function refresh_at(residual!, u)
+        armed = Ref(false)
+        backend = AutoSparse(
+            AutoFiniteDiff(); sparsity_detector = ArmedDetector(armed),
+            coloring_algorithm = GreedyColoringAlgorithm()
+        )
+        prob = DAEProblem(residual!, zeros(2), copy(scales), (0.0, 1.0); differential_vars = [true, true])
+        integrator = init(prob, DFBDF(autodiff = backend); initializealg = NoInit())
+        armed[] = true
+        integrator.t = 0.75
+        integrator.uprev .= u
+        nlsolver = integrator.cache.nlsolver
+        OrdinaryDiffEqDifferentiation.calc_W!(
+            nlsolver.cache.W, integrator, nlsolver, integrator.cache, 0.01, false, (true, true)
+        )
+        return nlsolver.cache
+    end
+    for row in (1, 2)
+        nlcache = refresh_at(branch_row(row), scales)
+        @test Matrix(nlcache.J) ≈ [1.0 0.0; 0.0 1.0] atol = 1.0e-6
+        @test Matrix(nlcache.dae_jacobians.J_du) ≈ [1.0 0.0; 0.0 1.0] atol = 1.0e-6
+    end
+    # With the branch active the row-2 term has derivative 4 at (2, 1), outside the storage.
+    @test_throws "(2, 1)" refresh_at(branch_row(2), [3.0, 1.0e8])
+end
+
 @testset "Untraceable late branch with a fixed diagonal pattern still solves" begin
     # Automatic storage is diagonal and stays so; only the global tracer cannot evaluate
     # `u[1] < 0` once t >= 0.5. Uncompressed differentiation finds nothing outside storage.
