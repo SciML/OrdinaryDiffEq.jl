@@ -1,4 +1,8 @@
 using OrdinaryDiffEqNordsieck
+using OrdinaryDiffEqNordsieck: JVODEController
+using OrdinaryDiffEqCore: AbstractController, AbstractControllerCache, loopfooter!,
+    loopheader!, perform_step!
+import OrdinaryDiffEqCore: post_newton_controller!, setup_controller_cache
 using OrdinaryDiffEqTsit5: Tsit5
 using DiffEqDevTools, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_bigfloatlinear,
@@ -18,7 +22,7 @@ dts = 1 .// (2 .^ (10:-1:5))
     end
 end
 
-@testset "JVODE corrector failure recovery" begin
+@testset "JVODE local error rejection recovery" begin
     function lorenz!(du, u, p, t)
         du[1] = 10 * (u[2] - u[1])
         du[2] = u[1] * (28 - u[3]) - u[2]
@@ -35,6 +39,70 @@ end
             @test sol.t[end] == 2.0
             @test sol.stats.nreject > 0
             @test norm(sol.u[end] - ref.u[end], Inf) < 1.0e-3
+        end
+    end
+end
+
+struct JVODEHookController <: AbstractController
+    failed_dts::Vector{Float64}
+end
+
+mutable struct JVODEHookControllerCache{C, E} <: AbstractControllerCache
+    controller::C
+    EEst::E
+    failed_dts::Vector{Float64}
+end
+
+function setup_controller_cache(alg, cache, controller::JVODEHookController, ::Type{E}, disco_probs) where {E}
+    stock = setup_controller_cache(alg, cache, JVODEController(; failfactor = 2), E, disco_probs)
+    return JVODEHookControllerCache(stock.controller, stock.EEst, controller.failed_dts)
+end
+
+function post_newton_controller!(integrator, cache::JVODEHookControllerCache, alg)
+    push!(cache.failed_dts, integrator.dt)
+    integrator.dt /= 4
+    return nothing
+end
+
+@testset "JVODE corrector failure recovery" begin
+    rhs(u, t) = -20 * (u - cos(t)) - sin(t)
+    f(u, p, t) = [rhs(u[1], t)]
+    function f!(du, u, p, t)
+        du[1] = rhs(u[1], t)
+        return nothing
+    end
+    opts = (; dt = 1.0, reltol = 1.0e-7, abstol = 1.0e-7)
+
+    @testset "$(alg.algorithm), in-place = $(SciMLBase.isinplace(prob))" for
+        alg in (JVODE_Adams(), JVODE_BDF()),
+            prob in (ODEProblem(f!, [1.0], (0.0, 1.0)), ODEProblem(f, [1.0], (0.0, 1.0)))
+        @testset "Custom post-Newton hook" begin
+            failed_dts = Float64[]
+            sol = solve(prob, alg; opts..., controller = JVODEHookController(failed_dts))
+            @test first(failed_dts, 2) == [1.0, 0.25]
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.t[end] == 1.0
+            @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
+        end
+
+        @testset "Step history and configured failure factor" begin
+            integrator = init(prob, alg; opts..., controller = JVODEController(; failfactor = 3))
+            history = copy(integrator.cache.dts)
+            # The first trial initializes the leading history entry before shifting it.
+            history[1] = opts.dt
+            for trial_dt in (1.0, 1 / 3)
+                loopheader!(integrator)
+                @test integrator.dt == trial_dt
+                perform_step!(integrator, integrator.cache)
+                @test integrator.force_stepfail
+                @test integrator.cache.dts == history
+                loopfooter!(integrator)
+                @test integrator.dt == trial_dt / 3
+            end
+            sol = solve!(integrator)
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.t[end] == 1.0
+            @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
         end
     end
 end

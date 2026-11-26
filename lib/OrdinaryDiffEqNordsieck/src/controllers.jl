@@ -46,8 +46,6 @@ end
     step_accept_controller!(integrator, alg, q)
 @inline step_reject_controller!(integrator, ::JVODEControllerCache, alg) =
     step_reject_controller!(integrator, alg)
-@inline post_newton_controller!(integrator, ::JVODEControllerCache, alg) =
-    post_newton_controller!(integrator, alg)
 @inline accept_step_controller(
     integrator, cache::JVODEControllerCache, alg,
 ) = get_EEst(cache) <= 1
@@ -72,9 +70,4 @@ end
 
 function step_reject_controller!(integrator, alg::JVODE)
     return integrator.dt *= integrator.cache.η
-end
-
-function post_newton_controller!(integrator, ::JVODE)
-    integrator.dt /= get_failfactor(integrator)
-    return nothing
 end
