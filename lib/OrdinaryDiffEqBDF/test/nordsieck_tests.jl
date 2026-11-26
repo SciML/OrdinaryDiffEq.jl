@@ -343,3 +343,15 @@ end
         end
     end
 end
+
+@testset "NordsieckBDF: a step shortened onto a tstop is recorded at its accepted length" begin
+    prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 1.0))
+    for tstop in (2.0^-14, 0.125 + 2.0^-14)
+        integ = init(prob, NordsieckBDF(); dt = 0.125, dtmax = 0.125, tstops = [tstop])
+        while integ.t < tstop
+            step!(integ)
+        end
+        @test integ.t == tstop
+        @test integ.cache.tau[1] == integ.t - integ.tprev
+    end
+end

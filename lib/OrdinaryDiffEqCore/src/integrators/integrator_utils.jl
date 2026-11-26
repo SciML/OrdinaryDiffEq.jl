@@ -122,8 +122,7 @@ function loopheader!(integrator)
     integrator.iter += 1
     choose_algorithm!(integrator, integrator.cache)
     fix_dt_at_bounds!(integrator)
-    # The step the controller asks for, before `modify_dt_for_tstops!` shortens it to land on
-    # a tstop. An accepted step recorded it in `apply_step!`, which already shortened `dt`.
+    # `apply_step!` already recorded it for an accepted step, before shortening `dt`.
     accepted || _set_dt_before_tstop!(integrator, integrator.dt)
     modify_dt_for_tstops!(integrator)
     shrink_noise_to_integrator_dt!(integrator)
@@ -274,17 +273,32 @@ _set_tstop_flag!(integrator, is_tstop::Bool, target = nothing) = nothing
 
 _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
 
-# The step size of the current attempt before `modify_dt_for_tstops!` shortened it to land on
-# a tstop. `modify_dt_for_tstops!` runs both in `apply_step!` and in `loopheader!`, so the
-# `dtpropose` it records is the shortened step by the time the step is taken; this is recorded
-# before either call. Integrators without the field restore `dtpropose` as before.
-_get_dt_before_tstop(integrator::ODEIntegrator) = integrator.dt_before_tstop
-_get_dt_before_tstop(integrator) = integrator.dtpropose
+# `modify_dt_for_tstops!` runs in both `apply_step!` and `loopheader!`, so by the time a step is
+# taken `dtpropose` already holds the shortened step; `dt_before_tstop` is recorded before either.
 function _set_dt_before_tstop!(integrator::ODEIntegrator, dt)
     integrator.dt_before_tstop = dt
     return nothing
 end
 _set_dt_before_tstop!(integrator, dt) = nothing
+
+function _dt_shortened_for_tstop(integrator::ODEIntegrator)
+    (
+        _get_next_step_tstop(integrator) && !integrator.is_disco_step &&
+            resumes_dt_after_tstop(integrator.alg)
+    ) || return nothing
+    dt = integrator.tdir * min(abs(integrator.dt_before_tstop), abs(integrator.opts.dtmax))
+    return abs(dt) > abs(integrator.dt) ? dt : nothing
+end
+_dt_shortened_for_tstop(integrator) = nothing
+
+# The controller's factor `dtnew / accepted_dt` from the shortened landing step is applied to
+# the step it had asked for, but only to shrink it: a short step's small error does not justify
+# growing past that request. The result is never smaller than the controller's own `dtnew`.
+function _resume_dt_after_tstop(accepted_dt, dt_before_tstop, dtnew)
+    factor = min(one(dtnew / accepted_dt), dtnew / accepted_dt)
+    resumed = dt_before_tstop * factor
+    return abs(resumed) > abs(dtnew) ? oftype(dtnew, resumed) : dtnew
+end
 
 function modify_dt_for_tstops!(integrator)
     if has_tstop(integrator)
@@ -650,13 +664,8 @@ function _loopfooter!(integrator)
             integrator.last_stepfail = false
             integrator.tprev = integrator.t
 
-            landed = _get_next_step_tstop(integrator)
             accepted_dt = integrator.dt
-            if landed
-                # Step controller dt is overly pessimistic, since dt = time to tstop.
-                # Restore the original dt so the controller proposes a reasonable next step.
-                integrator.dt = _get_dt_before_tstop(integrator)
-            end
+            dt_before_tstop = _dt_shortened_for_tstop(integrator)
             integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
 
             dtnew = SciMLBase.value(
@@ -667,13 +676,10 @@ function _loopfooter!(integrator)
                 )
             ) *
                 oneunit(integrator.dt)
-            if landed && abs(dtnew) > abs(integrator.dt)
-                # The landing step's small error says nothing about a full step: resume with
-                # the step the controller had asked for, growing no further from it.
-                dtnew = integrator.dt
+            if dt_before_tstop !== nothing
+                dtnew = _resume_dt_after_tstop(accepted_dt, dt_before_tstop, dtnew)
             end
             calc_dt_propose!(integrator, dtnew)
-            integrator.dt = accepted_dt
             handle_callbacks!(integrator)
         else # Reject
             increment_reject!(integrator.stats)

@@ -316,8 +316,6 @@ end
 end
 
 @testset "The step after a tstop resumes the proposal from before the shortening" begin
-    # A tstop 1% into a natural step: the step that lands on it is shortened to 1% of the
-    # proposal; the next step resumes the proposal instead of growing from the landing step.
     prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0))
     for alg in (Tsit5(), Rodas5P(), FBDF())
         free = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
@@ -333,7 +331,6 @@ end
         @test integ.t - integ.tprev < 0.02proposed
         step!(integ)
         @test integ.t - integ.tprev > 0.5proposed
-        # never more than the proposal: the landing step's error says nothing about a full step
         @test integ.t - integ.tprev <= proposed * (1 + 1.0e-12)
     end
 end
@@ -350,5 +347,15 @@ end
         solve(prob, alg; dt = 5.0, tstops = [1.0], callback = cb, abstol = 1.0e-8, reltol = 1.0e-8)
         @test seen[].dt == seen[].step
         @test seen[].u_mid ≈ 1.5
+    end
+end
+
+@testset "A tstop at the end of the proposed step does not limit the next proposal" begin
+    prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 2.0))
+    for tstops in (Float64[], [0.125])
+        integ = init(prob, Tsit5(); dt = 0.125, dtmax = 0.5, tstops)
+        step!(integ)
+        @test integ.t == 0.125
+        @test get_proposed_dt(integ) == 0.5
     end
 end

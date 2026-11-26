@@ -363,6 +363,18 @@ post-process the controller's proposed step size `dtnew` before it is applied
 """
 dtnew_modification(integrator, alg, dtnew) = dtnew
 
+"""
+    resumes_dt_after_tstop(alg) -> Bool
+
+Return whether, after an accepted step that was shortened to land on a tstop, the next
+step resumes from the step size the controller had proposed before the shortening
+(`true` by default). The controller's step factor from the shortened step may then reduce
+that step size but not increase it, and the result is never smaller than the controller's
+own proposal. With `false`, the next step is the controller's proposal from the shortened
+step alone, as CVODE does for the Nordsieck BDF methods.
+"""
+resumes_dt_after_tstop(alg) = true
+
 # Whether the algorithm's alg_cache / perform_step! handle `u === nothing` directly.
 # Default: false, and __init coerces a null u0 to Float64[] so generic cache code
 # (zero(u), similar(u), broadcasts) still works. Solvers that want to preserve the
