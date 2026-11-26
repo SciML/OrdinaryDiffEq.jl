@@ -1,6 +1,13 @@
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqNonlinearSolve,
     OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test, ADTypes, ForwardDiff, SciMLBase
-using OrdinaryDiffEqNonlinearSolve: default_nlsolve
+using OrdinaryDiffEqCore: default_nlsolve
+using SymbolicIndexingInterface: parameter_values
+import OrdinaryDiffEqCore, SymbolicIndexingInterface
+
+if VERSION >= v"1.11"
+    @test Base.ispublic(OrdinaryDiffEqCore, :default_nlsolve)
+    @test Base.ispublic(SymbolicIndexingInterface, :parameter_values)
+end
 
 ## Mass Matrix
 
@@ -167,7 +174,7 @@ integrator = init(
         du[2] = u[1]^2 - u[2]^2
     end
     prob = ODEProblem(fn, [2.0, 0.0], (0.0, 1.0))
-    integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+    integ = init(prob, Rodas5P())
     @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8
     reinit!(integ)
     @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8
@@ -218,7 +225,7 @@ function make_override_dual_problem(p, inplace, vector_init_params)
         NonlinearProblem(override_dual_init_residual, [one(c) * 0.5], init_params)
     end
     update_initializeprob! = function (ip, valp)
-        c2, _ = SciMLBase.parameter_values(valp)
+        c2, _ = parameter_values(valp)
         x2 = 0.5 * c2
         new_params = vector_init_params ? [c2, x2] : (c2, x2)
         return SciMLBase.remake(ip; u0 = [one(c2) * 0.5], p = new_params)
@@ -317,6 +324,93 @@ end
     solution = solve(initprob, nlsolve)
     @test SciMLBase.successful_retcode(solution)
     @test solution.u[1] ≈ 1.0 atol = 1.0e-8
+end
+
+log_init_residual(u, p) = [log(u[1])]
+log_init_jacobian(u, p) = reshape([inv(u[1])], 1, 1)
+log_dae_rhs(u, p, t) = [-u[1], log(u[2])]
+
+@testset "OverrideInit default solver on a logarithmic constraint" begin
+    for analytic_jacobian in (false, true),
+            alg in (Rodas5P(), Rodas5P(autodiff = AutoFiniteDiff()))
+
+        nlf = analytic_jacobian ?
+            NonlinearFunction(log_init_residual; jac = log_init_jacobian) :
+            log_init_residual
+        initprob = NonlinearProblem(nlf, [3.0])
+        initialization_data = SciMLBase.OverrideInitData(
+            initprob, nothing, nlsol -> [1.0, nlsol.u[1]], nothing
+        )
+        f = ODEFunction(
+            log_dae_rhs; mass_matrix = Diagonal([1.0, 0.0]), initialization_data
+        )
+        prob = ODEProblem(f, [1.0, 3.0], (0.0, 0.1))
+        sol = solve(prob, alg; abstol = 1.0e-10, reltol = 1.0e-10)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[1] ≈ [1.0, 1.0] atol = 1.0e-8
+        @test abs(log(sol.u[1][2])) < 1.0e-8
+    end
+end
+
+function padded_init_residual!(resid, z, p)
+    c, x = p
+    resid[1] = z[1]^3 + z[1] - c * x
+    for i in 2:length(z)
+        resid[i] = z[i]
+    end
+    return nothing
+end
+
+function padded_dae_rhs!(du, u, p, t)
+    c, k = p
+    du[1] = -k * u[1] + u[2]
+    du[2] = u[2]^3 + u[2] - c * u[1]
+    for i in 3:length(u)
+        du[i] = u[i]
+    end
+    return nothing
+end
+
+padded_init_guess(c, guess, n) = vcat(one(c) * guess, fill(zero(c), n - 1))
+padded_init_params(c, named) = named ? (; c, x = c / 2) : (c, c / 2)
+
+function padded_init_problem(c, n, guess, named)
+    initprob = NonlinearProblem(
+        padded_init_residual!, padded_init_guess(c, guess, n), padded_init_params(c, named)
+    )
+    update_initializeprob! = function (ip, valp)
+        c2 = parameter_values(valp)[1]
+        return SciMLBase.remake(
+            ip; u0 = padded_init_guess(c2, guess, n), p = padded_init_params(c2, named)
+        )
+    end
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, update_initializeprob!, nlsol -> [nlsol.prob.p[2]; nlsol.u], nothing;
+        is_update_oop = Val(true)
+    )
+    f = ODEFunction(
+        padded_dae_rhs!; mass_matrix = Diagonal([1.0; zeros(n)]), initialization_data
+    )
+    return ODEProblem(f, [one(c); padded_init_guess(c, guess, n)], (0.0, 0.1), [c, 0.5])
+end
+
+# z^3 + z = c^2 / 2 at c = 2 has root z = 1 with dz/dc = c / (3z^2 + 1) = 0.5.
+@testset "OverrideInit $(named ? "NamedTuple" : "Tuple") parameters, n = $n, guess = $guess" for (n, guess) in ((26, 0.5), (1, 1.0)),
+        named in (false, true)
+
+    tolerances = (; abstol = 1.0e-12, reltol = 1.0e-12)
+    init_state(c) = init(padded_init_problem(c, n, guess, named), Rodas5P(); tolerances...).u
+    saved_state(c) = solve(
+        padded_init_problem(c, n, guess, named), Rodas5P(); saveat = [0.0], tolerances...
+    ).u[1]
+    @test init_state(2.0)[1:2] ≈ [1.0, 1.0] atol = 1.0e-8
+    @test ForwardDiff.derivative(c -> init_state(c)[2], 2.0) ≈ 0.5 atol = 1.0e-8
+    @test ForwardDiff.derivative(c -> saved_state(c)[2], 2.0) ≈ 0.5 atol = 1.0e-8
+    residual_derivative = ForwardDiff.derivative(2.0) do c
+        x, z = saved_state(c)
+        z^3 + z - c * x
+    end
+    @test residual_derivative ≈ 0.0 atol = 1.0e-8
 end
 
 # records the keywords Brown passes to the nonlinear solve

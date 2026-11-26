@@ -26,22 +26,121 @@ function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
     return AutoForwardDiff{CS}(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
 end
 
-function _default_nonlinear_polyalg(prob, autodiff, ::Val{CS}) where {CS}
-    u0 = state_values(prob)
-    chunksize = CS === nothing || CS === 0 ? 1 : CS
-    return FastShortcutNonlinearPolyalg(
-        eltype(u0);
-        must_use_jacobian = Val(SciMLBase.has_jac(prob.f)),
-        autodiff = autodiff ? AutoForwardDiff(chunksize = chunksize) : AutoFiniteDiff(),
-        u0_len = length(u0)
+"""
+    OverrideInitNLSolve(alg)
+
+Default nonlinear solver of `OverrideInit` initialization problems. Problems whose
+parameters are a `Tuple` or `NamedTuple` holding ForwardDiff duals of a single type are
+solved by `alg` on the primal values, and the partials of the root `u` are obtained by
+implicit differentiation, `∂u = -(∂F/∂u) \\ ∂F/∂p`, with the residual, its analytic
+Jacobian and the initialization maps all seeing the original parameter container. Every
+other problem is passed to `alg` unchanged.
+"""
+struct OverrideInitNLSolve{A} <: SciMLBase.AbstractNonlinearAlgorithm
+    alg::A
+end
+
+_collocation_nlsolve(alg) = alg
+_collocation_nlsolve(alg::OverrideInitNLSolve) = alg.alg
+
+_dual_leaf_type(::Type{D}) where {D <: Dual} = D
+_dual_leaf_type(::Type{<:AbstractArray{D}}) where {D <: Dual} = D
+_dual_leaf_type(::Type) = Nothing
+
+function _parameter_dual_type(p::Union{Tuple, NamedTuple})
+    D = Nothing
+    for T in fieldtypes(typeof(p))
+        Dᵢ = _dual_leaf_type(T)
+        Dᵢ === Nothing && continue
+        D === Nothing || D === Dᵢ || return Nothing
+        D = Dᵢ
+    end
+    return D
+end
+_parameter_dual_type(p) = Nothing
+
+function _implicit_dual_type(prob::NonlinearProblem)
+    D = _parameter_dual_type(prob.p)
+    U = eltype(prob.u0)
+    return U <: Dual && U !== D ? Nothing : D
+end
+
+_strip_dual(::Type{D}, x::D) where {D <: Dual} = ForwardDiff.value(x)
+_strip_dual(::Type{D}, x::AbstractArray{D}) where {D <: Dual} = ForwardDiff.value.(x)
+_strip_dual(::Type{<:Dual}, x) = x
+
+function _nonlinear_residual(prob::NonlinearProblem, u, p)
+    SciMLBase.isinplace(prob) || return prob.f(u, p)
+    resid = similar(u)
+    prob.f(resid, u, p)
+    return resid
+end
+
+function _nonlinear_jacobian(prob::NonlinearProblem, u, p)
+    f = prob.f
+    if SciMLBase.isinplace(prob)
+        if SciMLBase.has_jac(f)
+            J = f.jac_prototype === nothing ? similar(u, length(u), length(u)) :
+                similar(f.jac_prototype, eltype(u))
+            f.jac(J, u, p)
+            return J
+        end
+        return ForwardDiff.jacobian((resid, x) -> f(resid, x, p), similar(u), u)
+    end
+    SciMLBase.has_jac(f) && return f.jac(u, p)
+    u isa Number && return ForwardDiff.derivative(x -> f(x, p), u)
+    return ForwardDiff.jacobian(x -> f(x, p), u)
+end
+
+function CommonSolve.solve(
+        prob::NonlinearProblem, alg::OverrideInitNLSolve, args...; kwargs...
     )
+    D = _implicit_dual_type(prob)
+    D === Nothing && return solve(prob, alg.alg, args...; kwargs...)
+    return _implicit_dual_solve(D, prob, alg, args...; kwargs...)
+end
+
+function _implicit_dual_solve(
+        ::Type{Dual{T, V, N}}, prob, alg, args...; kwargs...
+    ) where {T, V, N}
+    D = Dual{T, V, N}
+    p = map(Base.Fix1(_strip_dual, D), prob.p)
+    primal = remake(prob; u0 = _strip_dual(D, prob.u0), p)
+    sol = solve(primal, alg, args...; kwargs...)
+    u = sol.u
+    if SciMLBase.successful_retcode(sol)
+        ∂F = _nonlinear_residual(prob, u isa Number ? D(u) : D.(u), prob.p)
+        Jᵤ = _nonlinear_jacobian(primal, u, p)
+        if u isa Number
+            u_dual = D(u, -ForwardDiff.partials(∂F) / Jᵤ)
+        else
+            ∂u = -(Jᵤ \ [ForwardDiff.partials(Fᵢ, k) for Fᵢ in vec(∂F), k in 1:N])
+            u_dual = similar(u, D)
+            for (i, I) in enumerate(eachindex(u))
+                u_dual[I] = D(u[I], ForwardDiff.Partials{N, V}(ntuple(k -> ∂u[i, k], Val(N))))
+            end
+        end
+    else
+        u_dual = u isa Number ? D(u) : D.(u)
+    end
+    resid = _nonlinear_residual(prob, u_dual, prob.p)
+    return SciMLBase.build_solution(
+        prob, alg, u_dual, resid; sol.retcode, sol.stats, sol.original
+    )
+end
+
+function _default_nonlinear_polyalg(u, prob, autodiff, chunksize)
+    alg = FastShortcutNonlinearPolyalg(;
+        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+    )
+    return prob isa NonlinearProblem ? OverrideInitNLSolve(alg) : alg
 end
 
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, prob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
-    return _default_nonlinear_polyalg(prob, autodiff, chunksize)
+    return _default_nonlinear_polyalg(u, prob, autodiff, chunksize)
 end
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem,
@@ -55,7 +154,7 @@ function default_nlsolve(
         ::Nothing, isinplace::Val{false}, u, prob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
-    return _default_nonlinear_polyalg(prob, autodiff, chunksize)
+    return _default_nonlinear_polyalg(u, prob, autodiff, chunksize)
 end
 function default_nlsolve(
         ::Nothing, isinplace::Val{false}, u, ::NonlinearLeastSquaresProblem,
@@ -316,9 +415,11 @@ function _initialize_dae!(
             jac
         )
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
-        nlsolve = default_nlsolve(
-            alg.nlsolve, isinplace, u0, nlprob, isAD,
-            SciMLBase.forwarddiff_chunksize(integrator.alg)
+        nlsolve = _collocation_nlsolve(
+            default_nlsolve(
+                alg.nlsolve, isinplace, u0, nlprob, isAD,
+                SciMLBase.forwarddiff_chunksize(integrator.alg)
+            )
         )
         nlsol = solve(
             nlprob, nlsolve; integrator.opts.abstol,
@@ -405,9 +506,11 @@ function _initialize_dae!(
         )
         nlprob = NonlinearProblem(nlfunc, u0)
         isAD = _isforwarddiff_alg(integrator.alg)
-        nlsolve = default_nlsolve(
-            alg.nlsolve, isinplace, u0, nlprob, isAD,
-            SciMLBase.forwarddiff_chunksize(integrator.alg)
+        nlsolve = _collocation_nlsolve(
+            default_nlsolve(
+                alg.nlsolve, isinplace, u0, nlprob, isAD,
+                SciMLBase.forwarddiff_chunksize(integrator.alg)
+            )
         )
 
         nlsol = solve(
@@ -496,9 +599,11 @@ function _initialize_dae!(
         jac
     )
     nlprob = NonlinearProblem(nlfunc, u0, p)
-    nlsolve = default_nlsolve(
-        alg.nlsolve, isinplace, u0, nlprob, isAD,
-        SciMLBase.forwarddiff_chunksize(integrator.alg)
+    nlsolve = _collocation_nlsolve(
+        default_nlsolve(
+            alg.nlsolve, isinplace, u0, nlprob, isAD,
+            SciMLBase.forwarddiff_chunksize(integrator.alg)
+        )
     )
     nlsol = solve(
         nlprob, nlsolve; integrator.opts.abstol, integrator.opts.reltol,
@@ -551,9 +656,11 @@ function _initialize_dae!(
     )
     nlprob = NonlinearProblem(nlfunc, u0)
     isAD = _isforwarddiff_alg(integrator.alg)
-    nlsolve = default_nlsolve(
-        alg.nlsolve, isinplace, u0, nlprob, isAD,
-        SciMLBase.forwarddiff_chunksize(integrator.alg)
+    nlsolve = _collocation_nlsolve(
+        default_nlsolve(
+            alg.nlsolve, isinplace, u0, nlprob, isAD,
+            SciMLBase.forwarddiff_chunksize(integrator.alg)
+        )
     )
 
     nlfunc = NonlinearFunction{false, SciMLBase.FullSpecialize}(
@@ -685,7 +792,7 @@ function _initialize_dae!(
     # A dense copy of the algebraic variables, so the nonlinear cache has one concrete
     # iterate type whether or not the solver aliases `u0`; the solution is written back below.
     nlprob = NonlinearProblem(nlfunc, u[algebraic_vars], p)
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk)
+    nlsolve = _collocation_nlsolve(default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD, nlchunk))
 
     nlsol = solve(
         nlprob, nlsolve; abstol, reltol,
@@ -750,7 +857,7 @@ function _initialize_dae!(
         nlequation; jac_prototype = J
     )
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk)
+    nlsolve = _collocation_nlsolve(default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD, nlchunk))
 
     nlsol = solve(
         nlprob, nlsolve; abstol, reltol,
@@ -903,9 +1010,11 @@ function _initialize_dae!(
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
     isAD = _isforwarddiff_alg(integrator.alg)
-    nlsolve = default_nlsolve(
-        alg.nlsolve, isinplace, integrator.u, nlprob, isAD,
-        SciMLBase.forwarddiff_chunksize(integrator.alg)
+    nlsolve = _collocation_nlsolve(
+        default_nlsolve(
+            alg.nlsolve, isinplace, integrator.u, nlprob, isAD,
+            SciMLBase.forwarddiff_chunksize(integrator.alg)
+        )
     )
 
     nlsol = solve(

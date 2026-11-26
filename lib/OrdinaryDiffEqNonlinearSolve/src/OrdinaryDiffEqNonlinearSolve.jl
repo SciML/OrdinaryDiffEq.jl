@@ -1,8 +1,8 @@
 module OrdinaryDiffEqNonlinearSolve
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
+import CommonSolve
 using CommonSolve: init, solve, solve!, step!
-using SymbolicIndexingInterface: state_values
 
 import SciMLBase
 import SciMLBase: remake

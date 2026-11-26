@@ -290,3 +290,26 @@ end
         @test bytes < 1000
     end
 end
+
+@testset "Default solver initializes a logarithmic algebraic constraint" begin
+    log_init_residual(u, p) = [log(u[1])]
+    log_init_jacobian(u, p) = reshape([inv(u[1])], 1, 1)
+    log_dae_rhs(u, p, t) = [-u[1], log(u[2])]
+    for analytic_jacobian in (false, true)
+        nlf = analytic_jacobian ?
+            SciMLBase.NonlinearFunction(log_init_residual; jac = log_init_jacobian) :
+            log_init_residual
+        initprob = SciMLBase.NonlinearProblem(nlf, [3.0])
+        initialization_data = SciMLBase.OverrideInitData(
+            initprob, nothing, nlsol -> [1.0, nlsol.u[1]], nothing
+        )
+        f = ODEFunction(
+            log_dae_rhs; mass_matrix = Diagonal([1.0, 0.0]), initialization_data
+        )
+        prob = ODEProblem(f, [1.0, 3.0], (0.0, 0.1))
+        sol = solve(prob; abstol = 1.0e-10, reltol = 1.0e-10)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[1] ≈ [1.0, 1.0] atol = 1.0e-8
+        @test abs(log(sol.u[1][2])) < 1.0e-8
+    end
+end
