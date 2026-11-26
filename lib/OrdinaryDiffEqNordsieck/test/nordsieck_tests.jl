@@ -1,7 +1,7 @@
 using OrdinaryDiffEqNordsieck
 using OrdinaryDiffEqNordsieck: JVODEController
 using OrdinaryDiffEqCore: AbstractController, AbstractControllerCache, DummyController,
-    get_qmin, get_qmax, get_qsteady_min, get_qsteady_max
+    accept_step_controller, get_qmin, get_qmax, get_qsteady_min, get_qsteady_max
 import OrdinaryDiffEqCore: get_EEst, post_newton_controller!, set_EEst!, setup_controller_cache
 using OrdinaryDiffEqTsit5: Tsit5
 using DiffEqDevTools, Test, LinearAlgebra
@@ -111,13 +111,25 @@ end
                 integrator = init(prob, compact_alg; opts..., controller = DummyController())
                 getters = (get_qmin, get_qmax, get_qsteady_min, get_qsteady_max)
                 resolved = map(getter -> getter(integrator), getters)
-                @test resolved == values(bounds)
-                @test all(q -> q isa Rational, resolved)
+                @test resolved === values(bounds)
                 @test integrator.dt == opts.dt
                 post_newton_controller!(integrator, compact_alg)
                 @test integrator.dt == opts.dt / 2
 
                 sol = solve(prob, compact_alg; opts..., controller = DummyController())
+                @test SciMLBase.successful_retcode(sol)
+                @test sol.t[end] == 1.0
+                @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
+
+                adapted = integrator.controller_cache.controller
+                event = ContinuousCallback(
+                    (u, t, integrator) -> t - 0.5, integrator -> nothing; maybe_discontinuity = true,
+                )
+                reused = init(prob, compact_alg; opts..., controller = adapted, callback = event)
+                @test map(getter -> getter(reused), getters) === values(bounds)
+                @test isempty(adapted.basic.disco_probs)
+                @test length(reused.controller_cache.controller.basic.disco_probs) == 1
+                sol = solve!(reused)
                 @test SciMLBase.successful_retcode(sol)
                 @test sol.t[end] == 1.0
                 @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
@@ -171,6 +183,22 @@ end
     @test SciMLBase.successful_retcode(sol)
     @test sol.t[end] == h
     @test sol.u[end] ≈ exp(-1) atol = tol rtol = 0
+end
+
+@testset "JVODE controller caches keep the requested error-estimate type" begin
+    alg = JVODE_BDF()
+    integrator = init(ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0)), alg)
+    @testset "$(nameof(typeof(controller)))" for controller in (JVODEController(), DummyController())
+        cache = setup_controller_cache(alg, integrator.cache, controller, AbstractFloat)
+        set_EEst!(cache, nextfloat(BigFloat(1)))
+        @test get_EEst(cache) isa BigFloat
+        @test get_EEst(cache) > 1
+        @test !accept_step_controller(integrator, cache, alg)
+
+        cache = setup_controller_cache(alg, integrator.cache, controller, Real)
+        set_EEst!(cache, 0.375)
+        @test get_EEst(cache) === 0.375
+    end
 end
 
 @testset "JVODE_BDF uses BDF formulas" begin

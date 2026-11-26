@@ -12,6 +12,14 @@ adaptive logic is integrated into the algorithm itself, so the controller
 cache falls through to alg-level dispatch but the knobs are exposed as a
 real, settable controller (instead of being hard-wired on the algorithm
 struct as before).
+
+Selecting `DummyController()` for `JVODE` resolves to a `JVODEController` whose
+`basic` field is a `NamedTuple` of `qmin`, `qmax`, `qsteady_min`, `qsteady_max`,
+`qmax_first_step`, `gamma`, `failfactor`, `discontinuity_detection` and
+`disco_probs`. The four algorithm bounds keep their own types, the next three
+entries take the Core defaults, and `discontinuity_detection` is `false`. Passing
+this controller to another solve keeps those values and uses that solve's
+`disco_probs`.
 """
 struct JVODEController{B <: Union{NamedTuple, CommonControllerOptions}} <: AbstractController
     basic::B
@@ -29,12 +37,23 @@ mutable struct JVODEControllerCache{J <: JVODEController, C, E} <: AbstractContr
     EEst::E
 end
 
+const JVODEResolvedOptions = NamedTuple{
+    (
+        :qmin, :qmax, :qsteady_min, :qsteady_max, :qmax_first_step, :gamma, :failfactor,
+        :discontinuity_detection, :disco_probs,
+    ),
+}
+
+_resolve_jvode_options(basic, alg, disco_probs) =
+    resolve_basic(basic, alg, _resolved_QT(basic); disco_probs)
+_resolve_jvode_options(basic::JVODEResolvedOptions, alg, disco_probs) =
+    merge(basic, (; disco_probs))
+
 function setup_controller_cache(
         alg::JVODE, cache, controller::JVODEController, ::Type{E}, disco_probs,
     ) where {E}
-    QT = _resolved_QT(controller.basic)
-    resolved = JVODEController(resolve_basic(controller.basic, alg, QT; disco_probs))
-    return JVODEControllerCache(resolved, cache, oneunit(E))
+    resolved = JVODEController(_resolve_jvode_options(controller.basic, alg, disco_probs))
+    return JVODEControllerCache{typeof(resolved), typeof(cache), E}(resolved, cache, oneunit(E))
 end
 
 function setup_controller_cache(
@@ -46,7 +65,7 @@ function setup_controller_cache(
         qmax_first_step = qmax_first_step_default(alg), gamma = gamma_default(alg),
         failfactor = failfactor_default(alg), discontinuity_detection = false, disco_probs,
     )
-    return JVODEControllerCache(JVODEController(basic), cache, oneunit(E))
+    return setup_controller_cache(alg, cache, JVODEController(basic), E, disco_probs)
 end
 
 # Algorithm owns the stepsize logic; controller cache delegates back to
