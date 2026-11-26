@@ -1002,9 +1002,15 @@ function build_nlsolver(
 
             # Build separated DAE Jacobian cache if applicable
             if isdae
+                # cuSPARSE matrices have no `fill!`, so sparse J_du is zeroed through its stored values
+                J_du = similar(J)
+                if J_du isa AbstractSparseMatrix
+                    nonzeros(J_du) .= false
+                else
+                    fill!(J_du, false)
+                end
                 if separated === nothing
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage
-                    J_du = fill!(similar(J), false)
                     dae_jacobians = DAEJacobiansCache(
                         J_du, nothing, nothing, nothing, nothing
                     )
@@ -1016,7 +1022,6 @@ function build_nlsolver(
                     jac_config_du = build_jac_config(
                         dae_jac_alg, nf, uf_du, du1, uprev, u, ztmp, dz
                     )
-                    J_du = fill!(similar(J), false)
                     dae_jacobians = DAEJacobiansCache(
                         J_du, uf_u, uf_du, jac_config_u, jac_config_du
                     )
