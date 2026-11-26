@@ -1376,11 +1376,9 @@ function build_J_W(
         # Jacobian is a bad idea and create a fully matrix-free solver. This can
         # be overridden with concrete_jac.
         if f isa DAEFunction
-            # The default preconditioner is built on the row matching; a user `precs`
-            # has no use for it.
-            rowof = hasproperty(alg.linsolve, :precs) && isnothing(alg.linsolve.precs) ?
+            matching = supports_row_matching(alg.linsolve) ?
                 dae_row_matching(f, alg, u, p, t) : nothing
-            J = W = dae_jvp_cache(f, u, p, t; autodiff = alg_autodiff(alg), rowof)
+            J = W = dae_jvp_cache(f, u, p, t; autodiff = alg_autodiff(alg), matching)
         else
             jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 

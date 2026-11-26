@@ -67,6 +67,27 @@ Time filtering currently requires the identity mass matrix. Use
 and adds right-hand-side evaluations; compare work at matched achieved accuracy
 before choosing it for performance. The default remains `time_filter = false`.
 
+## Row matching for matrix-free DAE Krylov solves
+
+A DAE's residual rows need not be ordered like its unknowns, and its Newton matrix
+`∂F/∂u + cj ∂F/∂du` can then have a zero diagonal that leaves GMRES needing about one
+iteration per unknown. When `DFBDF` applies that matrix without forming it, with
+`KrylovJL_GMRES`, `KrylovJL_FGMRES` or `KrylovJL_BICGSTAB` and no `precs`, and the sparsity
+pattern of the Newton matrix is known, the default left preconditioner matches each
+unknown to a residual row and moves that row into its place. Automatic row matching
+requires a `SparseMatrixCSC` sparsity pattern from the DAE function or the sparsity
+detector: the `sparsity` or `jac_prototype` of the `DAEFunction`, or the detector of an
+`AutoSparse` backend, for example
+`DFBDF(; autodiff = AutoSparse(AutoForwardDiff(); sparsity_detector = TracerSparsityDetector()), linsolve = KrylovJL_GMRES())`.
+
+The Krylov stopping test is a norm of the preconditioned residual. The matched
+preconditioner divides each residual row by its largest entry of `∂F/∂u` and `∂F/∂du` at
+the initial state, so a row written orders of magnitude below the others is still
+resolved. Without a matching, the residual rows are taken as written, and badly scaled
+rows need a `precs` that equilibrates them. CG and MINRES, and any solver given `precs`,
+keep the diagonal preconditioner or the one supplied: a row permutation is not symmetric
+positive definite.
+
 ## Performance Characteristics
 
   - **Most efficient for systems with >1000 equations**

@@ -121,15 +121,16 @@ Attach a diagonal (`weight`-based) left/right preconditioner to `linsolver` when
 supports `precs` and none was supplied, returning the reconfigured solver;
 otherwise return `linsolver` unchanged.
 
-For a matrix-free DAE `W` carrying a row matching (see `dae_row_matching`), the left
-preconditioner also permutes the residual rows onto the unknowns they are matched to.
+For a matrix-free DAE `W` carrying a row matching (see `dae_row_matching`) and a Krylov
+method that `supports_row_matching`, the left preconditioner also permutes and equilibrates
+the residual rows onto the unknowns they are matched to.
 """
 function wrapprecs(linsolver, W, weight)
     if hasproperty(linsolver, :precs) && isnothing(linsolver.precs)
         w = _vec(weight)
-        rowof = dae_rowof(W)
-        Pl = rowof === nothing ? LinearSolve.InvPreconditioner(Diagonal(w)) :
-            RowMatchedWeights(w, rowof, similar(w))
+        matching = supports_row_matching(linsolver) ? dae_matching(W) : nothing
+        Pl = matching === nothing ? LinearSolve.InvPreconditioner(Diagonal(w)) :
+            RowMatchedWeights(w, matching.rowof, matching.rowscale, similar(w))
         Pr = Diagonal(w)
         precs = Returns((Pl, Pr))
         return remake(linsolver; precs)
@@ -141,56 +142,83 @@ end
 Base.resize!(p::LinearSolve.LinearCache, i) = p
 
 """
-    RowMatchedWeights(weight, rowof, buffer)
+    supports_row_matching(linsolver) -> Bool
 
-Left preconditioner applying `x -> weight .* x[rowof]`: the residual row `rowof[j]` is moved
-to position `j` and weighted as unknown `j`. With `rowof` a row matching of the DAE Newton
+Whether the default preconditioner of the matrix-free DAE Krylov solve `linsolver` is built
+on a row matching (see `RowMatchedWeights`): a `KrylovJL` GMRES, FGMRES or BiCGStab without
+`precs` that applies its left preconditioner with `ldiv!`. A row permutation is not
+symmetric positive definite, which CG and MINRES require of their preconditioner.
+"""
+supports_row_matching(linsolver) = linsolver isa LinearSolve.KrylovJL &&
+    isnothing(linsolver.precs) && get(linsolver.kwargs, :ldiv, true) &&
+    nameof(linsolver.KrylovAlg) in (:gmres!, :fgmres!, :bicgstab!)
+
+"""
+    RowMatchedWeights(weight, rowof, rowscale, buffer)
+
+Left preconditioner applying `x -> weight .* rowscale .* x[rowof]`: the residual row
+`rowof[j]` is moved to position `j`, divided by that row's magnitude (`rowscale[j]` is its
+reciprocal) and weighted as unknown `j`. With `rowof` a row matching of the DAE Newton
 matrix `W`, the permuted `W[rowof, :]` has a structurally nonzero diagonal, which for a DAE
 whose residual rows are ordered independently of its unknowns turns a GMRES solve needing
-about one iteration per unknown into one needing a handful.
+about one iteration per unknown into one needing a handful. Equilibrating the rows keeps a
+row scaled orders of magnitude below the others visible to the Krylov stopping test, which
+is measured in this preconditioner.
 """
-struct RowMatchedWeights{W, P}
+struct RowMatchedWeights{W, P, S}
     weight::W
     rowof::P
+    rowscale::S
     buffer::W
 end
 
 function LinearAlgebra.ldiv!(y::AbstractVector, P::RowMatchedWeights, x::AbstractVector)
     P.buffer .= view(x, P.rowof)
-    y .= P.weight .* P.buffer
+    y .= P.weight .* P.rowscale .* P.buffer
     return y
 end
 LinearAlgebra.ldiv!(P::RowMatchedWeights, x::AbstractVector) = LinearAlgebra.ldiv!(x, P, x)
 
 """
-    dae_row_matching(f::DAEFunction, alg, u, p, t) -> Vector{Int} or nothing
+    dae_row_matching(f::DAEFunction, alg, u, p, t) -> (; rowof, rowscale) or nothing
 
 A row matching `rowof` of the DAE Newton matrix `W = ∂F/∂u + cj * ∂F/∂(du)`: `rowof[j]` is
 the residual row matched to unknown `j`, and `W[rowof[j], j]` is structurally nonzero.
 Entries of `∂F/∂(du)` are matched first, since `cj * ∂F/∂(du)` dominates `W` at the step
 sizes a stiff solve takes, and a diagonal entry is preferred to any other, so a DAE whose
-rows are already ordered like its unknowns matches to the identity.
+rows are already ordered like its unknowns matches to the identity. `rowscale[j]` is the
+reciprocal of the largest magnitude in row `rowof[j]` of `∂F/∂u` and `∂F/∂(du)` at `u`,
+`du = 0` (1 for a row that is zero or not finite there), so that `RowMatchedWeights` judges
+every residual row in the same units whatever scale the residual is written in.
 
 The pattern of `W` is `f.sparsity` (which defaults to `f.jac_prototype`) or, failing that,
-the one traced by the sparsity detector of an `AutoSparse` `alg_autodiff(alg)`. Returns
-`nothing`, and the caller keeps the rows in place, when neither is available, when
-detecting the pattern or evaluating `∂F/∂(du)` on it throws, when `W` is structurally
-singular, or when the matching is the identity.
+the one traced by the sparsity detector of an `AutoSparse` `alg_autodiff(alg)`. Automatic
+row matching requires a `SparseMatrixCSC` sparsity pattern from the DAE function or the
+sparsity detector. Returns `nothing`, and the caller keeps the rows in place, when no such
+pattern is available, when detecting the pattern or evaluating the Jacobians on it throws,
+when `W` is structurally singular, or when the matching is the identity.
 """
 function dae_row_matching(f::DAEFunction, alg, u, p, t)
     ad = alg_autodiff(alg)
     (f.sparsity isa AbstractMatrix || ad isa AutoSparse) || return nothing
-    pattern, J_du = try
-        dae_newton_pattern(f, ad, u, p, t)
+    return try
+        pattern, backend = dae_newton_pattern(f, ad, u, p, t)
+        J_du = DI.jacobian((res, du) -> f(res, du, u, p, t), similar(u), backend, zero(u))
+        rowof = row_matching(pattern, J_du)
+        if rowof === nothing || rowof == eachindex(rowof)
+            nothing
+        else
+            J_u = DI.jacobian((res, x) -> f(res, zero(u), x, p, t), similar(u), backend, copy(u))
+            magnitude = max.(maximum(abs, J_u; dims = 2), maximum(abs, J_du; dims = 2))
+            rowscale = map(m -> isfinite(m) && m > 0 ? inv(m) : one(m), collect(vec(magnitude)))
+            (; rowof, rowscale = similar(u, eltype(rowscale)) .= view(rowscale, rowof))
+        end
     catch
-        return nothing
+        nothing
     end
-    rowof = row_matching(pattern, J_du)
-    (rowof === nothing || rowof == eachindex(rowof)) && return nothing
-    return rowof
 end
 
-# The sparsity pattern of `W`, and `∂F/∂(du)` evaluated on it at `du = 0`.
+# The sparsity pattern of `W`, and a sparse backend evaluating Jacobians on it.
 function dae_newton_pattern(f, ad, u, p, t)
     pattern = if f.sparsity isa AbstractMatrix
         f.sparsity
@@ -206,14 +234,13 @@ function dae_newton_pattern(f, ad, u, p, t)
         sparsity_detector = ADTypes.KnownJacobianSparsityDetector(pattern),
         coloring_algorithm = GreedyColoringAlgorithm()
     )
-    J_du = DI.jacobian((res, du) -> f(res, du, u, p, t), similar(u), backend, zero(u))
-    return pattern, J_du
+    return pattern, backend
 end
 
 """
     row_matching(pattern, preferred = nothing) -> Vector{Int} or nothing
 
-Maximum transversal of the square sparse `pattern` (MC21: depth-first augmenting paths),
+Maximum transversal of the square sparse `pattern` (depth-first augmenting paths),
 returning `rowof` with `rowof[j]` the row matched to column `j`, or `nothing` when `pattern`
 is structurally singular. The nonzero entries of `preferred`, a sub-pattern of `pattern`,
 are matched first, and each column tries its diagonal before its other rows. Defined for

@@ -1,7 +1,7 @@
 using OrdinaryDiffEqBDF, LinearSolve, ADTypes, SciMLBase, SparseArrays, Test
-using LinearAlgebra: I, mul!, norm
+using LinearAlgebra: Diagonal, I, mul!, norm
 using ADTypes: AutoForwardDiff, AutoFiniteDiff, AutoSparse, KnownJacobianSparsityDetector
-using SciMLBase: DAEProblem, DAEFunction, successful_retcode
+using SciMLBase: DAEProblem, DAEFunction, NoInit, successful_retcode
 using SciMLOperators: update_coefficients!
 using OrdinaryDiffEqDifferentiation: dae_jvp_cache, set_dae_jvp_cj!
 
@@ -151,4 +151,54 @@ end
         solve(prob, DFBDF(; autodiff, linsolve = KrylovJL_GMRES()); opts...)
     end
     @test sols[1].u == sols[2].u
+end
+
+# Rows rotated against the unknowns, with the algebraic row `s * (u[2] - u[1])` matched to
+# `u[2]` and written at scale `s`. Exact solution `u = [exp(-t), exp(-t)]`.
+@testset "Row-matched preconditioner equilibrates residual rows" begin
+    known = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = KnownJacobianSparsityDetector(sparse(Bool[1 1; 1 0]))
+    )
+    for s in (1.0, 1.0e-14)
+        scaled_rows!(r, d, u, p, t) = (r[1] = s * (u[2] - u[1]); r[2] = d[1] + u[1]; nothing)
+        prob = DAEProblem(
+            scaled_rows!, [-1.0, -1.0], [1.0, 1.0], (0.0, 1.0); differential_vars = [true, false]
+        )
+        user_precs = KrylovJL_GMRES(; precs = Returns((Diagonal([s, 1.0]), I)))
+        for linsolve in (KrylovJL_GMRES(), user_precs)
+            sol = solve(
+                prob, DFBDF(; autodiff = known, linsolve);
+                abstol = 1.0e-8, reltol = 1.0e-8, initializealg = NoInit()
+            )
+            @test successful_retcode(sol)
+            @test all(abs.(sol.u[end] .- exp(-1)) .< 1.0e-6)
+            @test maximum(u -> abs(u[2] - u[1]), sol.u) < 1.0e-6
+        end
+    end
+end
+
+# The Newton matrix `[1000 1 + cj; 1 + cj 1000]` is symmetric positive definite at this
+# step, while matching each unknown to its `∂F/∂(du)` row would make it indefinite.
+# Exact solution `u = exp(-t) * [1, -1]`.
+function swapped_spd!(r, d, u, p, t)
+    r[1] = d[2] + u[2] + 1000 * (u[1] - exp(-t))
+    r[2] = d[1] + u[1] + 1000 * (u[2] + exp(-t))
+    return nothing
+end
+
+@testset "CG and MINRES keep the diagonal preconditioner with a sparsity pattern" begin
+    prob = DAEProblem(swapped_spd!, [-1.0, 1.0], [1.0, -1.0], (0.0, 0.05))
+    full = AutoSparse(
+        AutoForwardDiff(); sparsity_detector = KnownJacobianSparsityDetector(sparse(trues(2, 2)))
+    )
+    for linsolve in (KrylovJL_CG(), KrylovJL_MINRES(), KrylovJL_GMRES())
+        sols = map((AutoForwardDiff(), full)) do autodiff
+            solve(
+                prob, DFBDF(; autodiff, linsolve);
+                dt = 0.05, adaptive = false, initializealg = NoInit()
+            )
+        end
+        @test all(sol -> successful_retcode(sol) && sol.t[end] == 0.05, sols)
+        @test sols[1].u[end] ≈ sols[2].u[end] rtol = 1.0e-8
+    end
 end

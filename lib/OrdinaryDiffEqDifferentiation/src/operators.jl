@@ -233,13 +233,13 @@ function (r::DAENewtonResidual)(res, x, du_buf, du, u0, cj, p, t)
 end
 
 """
-    DAEPushforward(residual, res, du, u0, cj, du_buf, backend, prep, rowof)
+    DAEPushforward(residual, res, du, u0, cj, du_buf, backend, prep, matching)
 
 Callable `(Jv, v, u, p, t)` applying the DAE Newton matrix `∂F/∂u + cj * ∂F/∂(du)` to `v`
 as one pushforward of a `DAENewtonResidual`. The linearization point `(du, u0)` and `cj`
 are held in place and set by `update_coefficients!(J, u, p, t; du)` and `set_dae_jvp_cj!`;
 `u0` is a copy of the point so that a backend perturbing `u` in place cannot move it.
-`rowof` is the matrix's row matching from `dae_row_matching`, or `nothing`, for
+`matching` is the matrix's row matching from `dae_row_matching`, or `nothing`, for
 `wrapprecs` to build the default preconditioner from.
 """
 struct DAEPushforward{F, R, U, C, B, P, M}
@@ -251,7 +251,7 @@ struct DAEPushforward{F, R, U, C, B, P, M}
     du_buf::U
     backend::B
     prep::P
-    rowof::M
+    matching::M
 end
 
 function dae_contexts(op::DAEPushforward, p, t)
@@ -277,7 +277,7 @@ function set_jvp_point!(op::DAEPushforward, u, p, t)
     )
     new_op = prep === op.prep ? op :
         DAEPushforward(
-            op.residual, op.res, op.du, op.u0, op.cj, op.du_buf, op.backend, prep, op.rowof
+            op.residual, op.res, op.du, op.u0, op.cj, op.du_buf, op.backend, prep, op.matching
         )
     return new_op, base_evals_per_jvp_point(op.backend)
 end
@@ -308,13 +308,13 @@ function (r::DAEResidualInDu)(res, y, u, p, t)
 end
 
 """
-    DAESplitPushforward(residual_u, residual_du, res, du, u0, cj, Jduv, backend, prep_u, prep_du, rowof)
+    DAESplitPushforward(residual_u, residual_du, res, du, u0, cj, Jduv, backend, prep_u, prep_du, matching)
 
 Finite-difference counterpart of `DAEPushforward`, applying `∂F/∂u * v + cj * (∂F/∂(du) * v)`
 as two pushforwards, each of which steps only its own argument. One difference of a
 `DAENewtonResidual` steps `du` by `cj` times a step sized for `u`, so at a large `cj` it
 leaves the region where `F` is linear in `du` and the product is wrong by orders of
-magnitude. Differencing in `du` separately sizes that step for `du`. `rowof` is as in
+magnitude. Differencing in `du` separately sizes that step for `du`. `matching` is as in
 `DAEPushforward`.
 """
 struct DAESplitPushforward{FU, FD, R, U, C, B, PU, PD, M}
@@ -328,7 +328,7 @@ struct DAESplitPushforward{FU, FD, R, U, C, B, PU, PD, M}
     backend::B
     prep_u::PU
     prep_du::PD
-    rowof::M
+    matching::M
 end
 
 dae_u_contexts(op::DAESplitPushforward, p, t) =
@@ -362,7 +362,7 @@ function set_jvp_point!(op::DAESplitPushforward, u, p, t)
     new_op = prep_u === op.prep_u && prep_du === op.prep_du ? op :
         DAESplitPushforward(
             op.residual_u, op.residual_du, op.res, op.du, op.u0, op.cj, op.Jduv,
-            op.backend, prep_u, prep_du, op.rowof
+            op.backend, prep_u, prep_du, op.matching
         )
     return new_op, 2 * base_evals_per_jvp_point(op.backend)
 end
@@ -377,15 +377,15 @@ pushforwards_per_product(::Any) = 1
 pushforwards_per_product(::DAESplitPushforward) = 2
 
 """
-    dae_jvp_cache(f::DAEFunction, u, p, t; autodiff, rowof = nothing) -> JVPCache
+    dae_jvp_cache(f::DAEFunction, u, p, t; autodiff, matching = nothing) -> JVPCache
 
 Matrix-free DAE Newton matrix `∂F/∂u + cj * ∂F/∂(du)`. A `DAEFunction` has no mass
 matrix, so the ODE form `WOperator(mass_matrix, γ, J)` does not apply; this operator is
 the whole `W`. An AD backend applies it as one pushforward of a `DAENewtonResidual`, which
-is exact for any `cj`; a finite-difference backend uses a `DAESplitPushforward`. `rowof` is
-its row matching (see `DAEPushforward`).
+is exact for any `cj`; a finite-difference backend uses a `DAESplitPushforward`. `matching`
+is its row matching (see `DAEPushforward`).
 """
-function dae_jvp_cache(f::DAEFunction, u, p, t; autodiff, rowof = nothing)
+function dae_jvp_cache(f::DAEFunction, u, p, t; autodiff, matching = nothing)
     autodiff = autodiff isa AutoSparse ? ADTypes.dense_ad(autodiff) : autodiff
     @assert DI.check_inplace(autodiff) "AD backend $(autodiff) doesn't support in-place problems."
     res = similar(u)
@@ -393,7 +393,7 @@ function dae_jvp_cache(f::DAEFunction, u, p, t; autodiff, rowof = nothing)
     op = if autodiff isa Union{AutoFiniteDiff, ADTypes.AutoFiniteDifferences}
         op = DAESplitPushforward(
             DAEResidualInU(f), DAEResidualInDu(f), res, zero(u), copy(u), cj, similar(u),
-            autodiff, nothing, nothing, rowof
+            autodiff, nothing, nothing, matching
         )
         prep_u = DI.prepare_pushforward(
             op.residual_u, res, autodiff, u, (u,), dae_u_contexts(op, p, t)...
@@ -403,24 +403,24 @@ function dae_jvp_cache(f::DAEFunction, u, p, t; autodiff, rowof = nothing)
         )
         DAESplitPushforward(
             op.residual_u, op.residual_du, res, op.du, op.u0, cj, op.Jduv, autodiff,
-            prep_u, prep_du, rowof
+            prep_u, prep_du, matching
         )
     else
         residual = DAENewtonResidual(f)
         op = DAEPushforward(
-            residual, res, zero(u), copy(u), cj, similar(u), autodiff, nothing, rowof
+            residual, res, zero(u), copy(u), cj, similar(u), autodiff, nothing, matching
         )
         prep = DI.prepare_pushforward(
             residual, res, autodiff, u, (u,), dae_contexts(op, p, t)...
         )
-        DAEPushforward(residual, res, op.du, op.u0, cj, op.du_buf, autodiff, prep, rowof)
+        DAEPushforward(residual, res, op.du, op.u0, cj, op.du_buf, autodiff, prep, matching)
     end
     return JVPCache{eltype(u)}(op, f, res, u, p, t, 0, 0, true)
 end
 
-dae_rowof(J::JVPCache) =
-    J.jvp_op isa Union{DAEPushforward, DAESplitPushforward} ? J.jvp_op.rowof : nothing
-dae_rowof(::Any) = nothing
+dae_matching(J::JVPCache) =
+    J.jvp_op isa Union{DAEPushforward, DAESplitPushforward} ? J.jvp_op.matching : nothing
+dae_matching(::Any) = nothing
 
 function set_dae_point!(op::Union{DAEPushforward, DAESplitPushforward}, du, u)
     copyto!(op.du, du)
