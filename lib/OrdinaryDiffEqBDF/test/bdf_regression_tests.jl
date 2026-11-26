@@ -273,3 +273,64 @@ end
         @test abs(sol.u[end] - exp(-10.0)) < 1.0e-6
     end
 end
+
+@testset "QNDF1/QNDF2 startup completes after rejected attempts" begin
+    function rober!(du, u, p, t)
+        y₁, y₂, y₃ = u
+        du[1] = -0.04y₁ + 1.0e4 * y₂ * y₃
+        du[2] = 0.04y₁ - 3.0e7 * y₂^2 - 1.0e4 * y₂ * y₃
+        du[3] = 3.0e7 * y₂^2
+    end
+    prob = ODEProblem(rober!, [1.0, 0.0, 0.0], (0.0, 1.0e3))
+    for alg in (QNDF2(), QBDF2(), QNDF1(), QBDF1())
+        sol = solve(
+            prob, alg; dt = 1.0e-2, abstol = 1.0e-4, reltol = 1.0e-4,
+            verbose = DEVerbosity(SciMLLogging.None())
+        )
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 1.0e3
+        @test sol.stats.naccept > 0
+    end
+end
+
+# With a user `dt`, the first attempts can all be rejected. Until a step is
+# accepted there is no history, so every attempt must be a consistent BDF1 step
+# however many attempts came before it. The first step is accepted without an
+# error estimate, so `u₁` is checked against the exact solution `1 / (c - t)`
+# through the first accepted point, where `u₁(t₁)` is the BDF1 root.
+@testset "QNDF1/QNDF2 startup after rejected attempts is consistent" begin
+    clock_oop(u, p, t) = [u[1]^2, one(t)]
+    clock_iip(du, u, p, t) = (du[1] = u[1]^2; du[2] = one(t); nothing)
+    for f in (clock_oop, clock_iip), alg in (QNDF2(), QBDF2(), QNDF1(), QBDF1())
+        prob = ODEProblem(f, [1.0, 0.0], (0.0, 0.9))
+        sol = solve(prob, alg; dt = 0.8, abstol = 1.0e-8, reltol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 0.9
+        @test sol.stats.nreject > 0
+        @test all(isapprox(u[2], t; atol = 1.0e-10) for (t, u) in zip(sol.t, sol.u))
+        h = sol.t[2]
+        @test sol.u[2][1] ≈ (1 - sqrt(1 - 4h)) / (2h) rtol = 1.0e-8
+        c = h + 1 / sol.u[2][1]
+        @test all(isapprox(u[1], 1 / (c - t); rtol = 1.0e-2) for (t, u) in zip(sol.t[2:end], sol.u[2:end]))
+    end
+
+    function rober_clock!(du, u, p, t)
+        y₁, y₂, y₃ = u
+        du[1] = -0.04y₁ + 1.0e4 * y₂ * y₃
+        du[2] = 0.04y₁ - 3.0e7 * y₂^2 - 1.0e4 * y₂ * y₃
+        du[3] = 3.0e7 * y₂^2
+        du[4] = 1
+        return nothing
+    end
+    prob = ODEProblem(rober_clock!, [1.0, 0.0, 0.0, 0.0], (0.0, 1.0e3))
+    for alg in (QNDF2(), QBDF2(), QNDF1(), QBDF1())
+        sol = solve(
+            prob, alg; dt = 1.0e-2, abstol = 1.0e-4, reltol = 1.0e-4,
+            verbose = DEVerbosity(SciMLLogging.None())
+        )
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 1.0e3
+        @test all(isapprox(u[4], t; rtol = 1.0e-10) for (t, u) in zip(sol.t, sol.u))
+        @test all(isapprox(sum(u[1:3]), 1; atol = 1.0e-8) for u in sol.u)
+    end
+end

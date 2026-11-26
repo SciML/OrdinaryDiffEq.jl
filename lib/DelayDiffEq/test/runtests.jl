@@ -2,7 +2,7 @@ using SafeTestsets
 
 const TEST_GROUP = get(ENV, "GROUP", "ALL")
 
-if TEST_GROUP == "ALL" || TEST_GROUP == "Interface"
+if TEST_GROUP == "ALL" || TEST_GROUP == "Core" || TEST_GROUP == "Interface"
     @time @safetestset "AD Tests" begin
         include("interface/ad.jl")
     end
@@ -123,6 +123,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
 end
 
 if TEST_GROUP == "ALL" || TEST_GROUP == "Regression"
+    @time @safetestset "DDE clock alignment" begin
+        include("regression/clock_alignment.jl")
+    end
     @time @safetestset "Allocation Tests" begin
         include("regression/allocations.jl")
     end
