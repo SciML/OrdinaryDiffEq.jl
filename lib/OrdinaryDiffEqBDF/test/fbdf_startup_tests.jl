@@ -103,6 +103,7 @@ end
             @test integ.t > 0
             @test state_value(integ.u) ≈ exp(-integ.t) rtol = 1.0e-7
             step!(integ)
+            @test integ.cache.prev_order == 2
             @test integ.cache.order == 2
 
             # For u' = -u and u(0) = 1, the scaled norms of f₀ and
