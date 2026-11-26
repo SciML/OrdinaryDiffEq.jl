@@ -91,3 +91,64 @@ const MAXITERS = 100_000
         end
     end
 end
+
+struct VetoController <: OrdinaryDiffEqCore.AbstractController
+    calls::Base.RefValue{Int}
+    vetoes::Base.RefValue{Int}
+    rejects_at_veto::Base.RefValue{Int}
+end
+
+mutable struct VetoCache{C, E} <: OrdinaryDiffEqCore.AbstractControllerCache
+    controller::C
+    EEst::E
+    calls::Base.RefValue{Int}
+    vetoes::Base.RefValue{Int}
+    rejects_at_veto::Base.RefValue{Int}
+end
+
+function OrdinaryDiffEqCore.setup_controller_cache(alg, _, c::VetoController, ::Type{E}, disco_probs) where {E}
+    basic = OrdinaryDiffEqCore.resolve_basic((;), alg, Float64; disco_probs)
+    return VetoCache((; basic), oneunit(E), c.calls, c.vetoes, c.rejects_at_veto)
+end
+
+function OrdinaryDiffEqCore.accept_step_controller(integrator, cache::VetoCache, alg)
+    cache.calls[] += 1
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= 1 && cache.vetoes[] == 0
+        cache.vetoes[] += 1
+        cache.rejects_at_veto[] = integrator.stats.nreject
+        return false
+    end
+    return OrdinaryDiffEqCore.get_EEst(integrator) <= 1
+end
+
+@testset "BDF controller acceptance regressions" begin
+    calls, vetoes, rejects_at_veto = Ref(0), Ref(0), Ref(0)
+    sol = solve(blowup_probs[2], FBDF(); controller = VetoController(calls, vetoes, rejects_at_veto), abstol = 1.0e-6, reltol = 1.0e-6)
+    @test calls[] > 0
+    @test vetoes[] == 1
+    @test sol.stats.nreject > rejects_at_veto[]
+    @test sol.retcode == ReturnCode.Success
+
+    controller = OrdinaryDiffEqCore.PIDController(1 // 6, 1 // 6; accept_safety = 1.0)
+    integ = init(blowup_probs[2], QNDF1(); controller, abstol = 1.0e-6, reltol = 1.0e-6)
+    integ.controller_cache.dt_factor = 1.0
+    old_dt = integ.dt
+    OrdinaryDiffEqCore.step_reject_controller!(integ, integ.controller_cache, integ.alg)
+    @test 0 < integ.dt < old_dt
+    sol = solve(blowup_probs[2], QNDF1(); controller, abstol = 1.0e-6, reltol = 1.0e-6, maxiters = 20_000)
+    @test sol.stats.nreject > 0
+    @test sol.retcode == ReturnCode.Success
+    @test sol.u[end][2] ≈ 0.9 atol = 1.0e-6
+
+    f(u, p, t) = t^2
+    f!(du, u, p, t) = (du[1] = t^2; nothing)
+    for prob in (ODEProblem(f, 0.0, (0.0, 0.5)), ODEProblem(f!, [0.0], (0.0, 0.5)))
+        integ = init(prob, ABDF2(); controller = OrdinaryDiffEqCore.PIDController(0.7, -0.4), dt = 0.125, dtmax = 0.125, abstol = 3 / 8192, reltol = 0.0, tstops = [0.1875])
+        step!(integ)
+        step!(integ)
+        @test integ.t == 0.1875
+        @test OrdinaryDiffEqCore.get_EEst(integ) == 1.0
+        @test integ.cache.dtₙ₋₁ == 0.0625
+        @test integ.cache.fsalfirstprev == (integ.u isa Number ? 0.125^2 : [0.125^2])
+    end
+end

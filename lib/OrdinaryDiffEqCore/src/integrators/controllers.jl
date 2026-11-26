@@ -927,6 +927,11 @@ as proposed by Söderlind and Wang (2006). A step will be accepted whenever the
 predicted step size change is bigger than `accept_safety`. Otherwise, the step
 is rejected and re-tried with the predicted step size.
 
+BDF methods that commit history at the error-estimate threshold accept a step
+when the scaled error estimate is at most one. Fixed-order BDF methods cap the
+PID retry factor at 0.81 independently of `accept_safety`; variable-order BDF
+methods select their own step size and order.
+
 Some standard controller parameters suggested in the literature are
 
 | Controller | `beta1` | `beta2` | `beta3` |
@@ -1097,8 +1102,18 @@ end
     return cache.dt_factor
 end
 
+"""
+    pid_uses_error_estimate(alg) -> Bool
+
+Return whether `PIDController` accepts steps using the scaled error estimate
+(`<= 1`) instead of its predicted step-size factor. Algorithms whose step
+history is committed at that threshold can specialize this hook.
+"""
+pid_uses_error_estimate(alg) = false
+
 @inline function accept_step_controller(integrator, cache::PIDControllerCache, alg)
-    return cache.dt_factor >= cache.controller.accept_safety
+    return pid_uses_error_estimate(alg) ? get_EEst(integrator) <= 1 :
+        cache.dt_factor >= cache.controller.accept_safety
 end
 
 function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_factor)
@@ -1119,7 +1134,11 @@ end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
     handle_disco_reject!(integrator, cache.controller.basic) && return integrator.dt
-    return integrator.dt *= cache.dt_factor
+    factor = cache.dt_factor
+    if pid_uses_error_estimate(alg)
+        factor = isfinite(factor) && factor > 0 ? min(factor, oftype(factor, 0.81)) : oftype(factor, 0.81)
+    end
+    return integrator.dt *= factor
 end
 
 function sync_controllers!(cache1::PIDControllerCache, cache2::PIDControllerCache)

@@ -8,7 +8,7 @@ run_qa(
         all_qualified_accesses_are_public = (;
             ignore = (
                 # OrdinaryDiffEqCore — owner-internal, no public alternative
-                :CompositeControllerCache, :PIDControllerCache, :lorenz_pref, :lorenz_pref_params,
+                :CompositeControllerCache, :lorenz_pref, :lorenz_pref_params,
                 # OrdinaryDiffEqNonlinearSolve — owner-internal, no public alternative
                 :build_nlsolver, :du_alias_or_new, :markfirststage!, :nlsolve!, :nlsolvefail,
                 # Precompile-workload test problems in OrdinaryDiffEqCore, kept

@@ -79,7 +79,7 @@ end
 
     ################################### Finalize
 
-    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= one(OrdinaryDiffEqCore.get_EEst(integrator))
         cache.fsalfirstprev = integrator.fsalfirst
         cache.dtₙ₋₁ = dtₙ
     end
@@ -176,7 +176,7 @@ end
 
     ################################### Finalize
 
-    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
+    if OrdinaryDiffEqCore.get_EEst(integrator) <= one(OrdinaryDiffEqCore.get_EEst(integrator))
         @.. broadcast = false cache.fsalfirstprev = integrator.fsalfirst
         cache.dtₙ₋₁ = dtₙ
     end

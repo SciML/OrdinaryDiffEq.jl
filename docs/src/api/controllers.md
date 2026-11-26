@@ -163,6 +163,7 @@ JVODE, …) where the algorithm itself owns the step-size logic.
 
 ```@docs
 OrdinaryDiffEqCore.accept_step_controller
+OrdinaryDiffEqCore.pid_uses_error_estimate
 OrdinaryDiffEqCore.post_newton_controller!
 OrdinaryDiffEqCore.reinit_controller!
 OrdinaryDiffEqCore.sync_controllers!
