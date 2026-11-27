@@ -92,6 +92,17 @@ for alg in (EM(), LambaEM())
     @test i.sol.u[end][1] ≈ only(i.W.curW) atol = 1.0e-12
 end
 
+@testset "Brownian increment between close tstops" begin
+    t1 = 0.7
+    t2 = nextfloat(t1, 50)
+    prob = SDEProblem(fexact, gexact, 0.0, (0.0, t2))
+    sol = solve(prob, EM(); dt = 0.01, tstops = [t1], seed = UInt64(1234), save_noise = true)
+    @test t1 ∈ sol.t
+    @test sol.t[end] == t2
+    @test sol.W.t[end] == t2
+    @test sol.u[end] ≈ sol.W.W[end] atol = 1.0e-12 rtol = 0
+end
+
 # RSwM1 hands a stack chunk back through W.dt, so the tstop shortening has to
 # bridge that chunk rather than relabel it.
 for adaptivealg in (:RSwM1, :RSwM2, :RSwM3)

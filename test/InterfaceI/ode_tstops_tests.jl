@@ -314,3 +314,65 @@ end
     step!(integrator)
     @test integrator.tprev == nextfloat(5.0)
 end
+
+@testset "Callbacks at adjacent tstops" begin
+    t1, t2 = 0.7, 70 * 0.01
+    @test nextfloat(t1) == t2
+    f(u, p, t) = -u
+    for alg in (Tsit5(), Rodas5P(), FBDF())
+        hits = Float64[]
+        affect!(integrator) = (push!(hits, integrator.t); u_modified!(integrator, false))
+        cb = DiscreteCallback((u, t, integrator) -> t == t1 || t == t2, affect!)
+        sol = solve(
+            ODEProblem(f, 1.0, (0.0, t2)), alg;
+            tstops = [t1], callback = cb, abstol = 1.0e-8, reltol = 1.0e-8
+        )
+        @test hits == [t1, t2]
+        @test sol.t[end] == t2
+    end
+end
+
+@testset "State updates on short tstop steps" begin
+    for alg in (Tsit5(), Euler()), (t0, rate) in ((1.0, inv(50eps(1.0))), (1.0e12, 1.0))
+        gap = 50eps(t0)
+        prob = ODEProblem((u, p, t) -> rate, 0.0, (t0, t0 + gap))
+        sol = solve(prob, alg; dt = gap, adaptive = false)
+        @test sol.t[end] == last(prob.tspan)
+        @test sol.u[end] ≈ gap * rate rtol = 1.0e-12
+    end
+end
+
+@testset "Dense output between close tstops" begin
+    t1 = 0.7
+    t2 = nextfloat(t1, 50)
+    # A solution near zero at the stops avoids cancellation in the dense derivatives.
+    offset = exp(-t1)
+    prob = ODEProblem((u, p, t) -> -(u + offset), 1.0 - offset, (0.0, t2))
+    for alg in (Tsit5(), Rodas5P(), FBDF())
+        sol = solve(prob, alg; tstops = [t1], abstol = 1.0e-10, reltol = 1.0e-10)
+        @test t1 ∈ sol.t
+        @test sol.t[end] == t2
+        for t in (t1, nextfloat(t1, 20), t2)
+            @test sol(t) ≈ offset * expm1(t1 - t) atol = 1.0e-8
+            @test sol(t, Val{1}) ≈ -exp(-t) atol = 1.0e-8 rtol = 0
+        end
+    end
+end
+
+@testset "Continuous callback near close tstops" begin
+    t1 = 0.7
+    threshold = exp(-t1) - 1.866e-5
+    hits = Float64[]
+    function affect!(integrator)
+        push!(hits, integrator.t)
+        return u_modified!(integrator, false)
+    end
+    cb = ContinuousCallback((u, t, integrator) -> u - threshold, affect!)
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    solve(
+        prob, Rodas5P(); tstops = [t1, nextfloat(t1, 50)],
+        callback = cb, abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    @test length(hits) == 1
+    @test all(t -> isapprox(t, -log(threshold); atol = 1.0e-9, rtol = 0), hits)
+end
