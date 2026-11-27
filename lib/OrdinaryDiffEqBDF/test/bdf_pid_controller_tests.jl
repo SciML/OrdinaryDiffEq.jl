@@ -301,3 +301,24 @@ end
         @test sol.t[2] == 1 / 16
     end
 end
+
+# With Float32 time, `0.125f0 * prevfloat(1.0)` rounds back to `0.125f0`.
+@testset "PIDController retry_cap with lower-precision time" begin
+    PID = OrdinaryDiffEqCore.PIDController
+    cap = prevfloat(1.0)
+    dt = 0.125f0
+    for alg in (QNDF1(), ABDF2()), iip in (false, true), tdir in (1, -1)
+        tspan = (0.0f0, tdir * 0.5f0)
+        prob = iip ? ODEProblem((du, u, p, t) -> (du[1] = 0.0; nothing), [0.0], tspan) :
+            ODEProblem((u, p, t) -> 0.0, 0.0, tspan)
+
+        integ = Ref{Any}()
+        limiter = x -> abs(integ[].dt) < dt ? 1.0 : cap
+        controller = PID(0.7, -0.4; limiter, accept_safety = 1.0, retry_cap = cap)
+        integ[] = init(prob, alg; dt, controller, maxiters = 10)
+        sol = solve!(integ[])
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject == 1
+        @test sol.t[2] === tdir * prevfloat(dt)
+    end
+end

@@ -945,6 +945,13 @@ controller options (such as `qmin`) when the solve initializes. A cap that round
 to `0` or `1` there throws an `ArgumentError`, for example `prevfloat(1.0)` with
 `Float32` options.
 
+The capped retry step is computed in the time type of the integrator. If it rounds
+back to the rejected step's magnitude there (for example `retry_cap = prevfloat(1.0)`
+with `Float32` time), the retry uses the next smaller representable magnitude,
+`prevfloat(abs(dt))`. `dtmin` still takes precedence over that step: a retry at or
+below `dtmin` ends the solve with `DtLessThanMin`, or is accepted at `dtmin` with
+`force_dtmin = true`.
+
 Some standard controller parameters suggested in the literature are
 
 | Controller | `beta1` | `beta2` | `beta3` |
@@ -1144,6 +1151,14 @@ _pid_retry_factor(factor, ::Nothing) = factor
 _pid_retry_factor(factor, cap) =
     isfinite(factor) && factor > 0 ? min(factor, oftype(factor, cap)) : oftype(factor, cap)
 
+_pid_retry_dt(dt, factor, ::Nothing) = dt * factor
+function _pid_retry_dt(dt, factor, cap)
+    trial = oftype(dt, dt * _pid_retry_factor(factor, cap))
+    dt isa AbstractFloat && !iszero(dt) && abs(trial) >= abs(dt) || return trial
+    # The capped product rounded back to `abs(dt)` in the time type.
+    return copysign(prevfloat(abs(dt)), dt)
+end
+
 @inline function accept_step_controller(integrator, cache::PIDControllerCache, alg)
     return pid_uses_error_estimate(alg) ? get_EEst(integrator) <= 1 :
         cache.dt_factor >= cache.controller.accept_safety
@@ -1167,7 +1182,7 @@ end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
     handle_disco_reject!(integrator, cache.controller.basic) && return integrator.dt
-    return integrator.dt *= _pid_retry_factor(cache.dt_factor, cache.controller.retry_cap)
+    return integrator.dt = _pid_retry_dt(integrator.dt, cache.dt_factor, cache.controller.retry_cap)
 end
 
 function sync_controllers!(cache1::PIDControllerCache, cache2::PIDControllerCache)

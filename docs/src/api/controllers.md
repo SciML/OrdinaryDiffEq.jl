@@ -48,6 +48,13 @@ resolved precision (the beta type at construction, the common type of the
 controller options such as `qmin` at solve initialization); a cap that rounds to
 `0` or `1` throws an `ArgumentError`.
 
+The capped retry step is computed in the time type of the integrator. If it
+rounds back to the rejected step's magnitude there (for example
+`retry_cap = prevfloat(1.0)` with `Float32` time), the retry uses the next
+smaller representable magnitude, `prevfloat(abs(dt))`. `dtmin` still takes
+precedence over that step: a retry at or below `dtmin` ends the solve with
+`DtLessThanMin`, or is accepted at `dtmin` with `force_dtmin = true`.
+
 ### Algorithm-integrated controllers
 
 For algorithms whose step-size logic is tied to internal state (the
