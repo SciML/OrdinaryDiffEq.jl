@@ -53,7 +53,6 @@ end
 @inline OrdinaryDiffEqCore.pid_uses_error_estimate(
     ::Union{QNDF, FBDF, DFBDF, NordsieckBDFAlgs}
 ) = true
-@inline OrdinaryDiffEqCore.pid_retry_cap(::Union{ABDF2, QNDF1, QNDF2}) = 0.81
 
 # Per-algorithm defaults for `CommonControllerOptions` knobs that don't match the
 # generic IController defaults. These match the historical alg-struct kwargs

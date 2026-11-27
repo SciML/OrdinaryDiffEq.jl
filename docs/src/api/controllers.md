@@ -36,6 +36,11 @@ OrdinaryDiffEqCore.PIDController
 OrdinaryDiffEqCore.PredictiveController
 ```
 
+`PIDController(beta1, beta2; accept_safety, retry_cap)` with `retry_cap` in
+`(0, 1)` makes every retry after a rejection at most `retry_cap` times the
+rejected step. The default `retry_cap = nothing` retries with the predicted
+step size.
+
 ### Algorithm-integrated controllers
 
 For algorithms whose step-size logic is tied to internal state (the
@@ -164,7 +169,6 @@ JVODE, …) where the algorithm itself owns the step-size logic.
 ```@docs
 OrdinaryDiffEqCore.accept_step_controller
 OrdinaryDiffEqCore.pid_uses_error_estimate
-OrdinaryDiffEqCore.pid_retry_cap
 OrdinaryDiffEqCore.commit_step!
 OrdinaryDiffEqCore.post_newton_controller!
 OrdinaryDiffEqCore.reinit_controller!
@@ -178,7 +182,6 @@ OrdinaryDiffEqCore.reset_alg_dependent_opts!
 |---|---|---|
 | `accept_step_controller(integrator, cache, alg)::Bool` | `get_EEst(integrator) <= 1` | Controllers that accept on a different criterion (e.g. `PIDController` uses `dt_factor >= accept_safety`). |
 | `pid_uses_error_estimate(alg)::Bool` | `false` | Algorithms that choose their own step size, so `PIDController` never computes its factor for them (`QNDF`, `FBDF`, `DFBDF`, `NordsieckBDF`). |
-| `pid_retry_cap(alg)` | `nothing` | Algorithms whose `PIDController` retries must always shorten the step (`ABDF2`, `QNDF1`, `QNDF2` use 0.81). |
 | `commit_step!(integrator, alg_cache)` | no-op | Multistep methods that record an accepted step in their history (`ABDF2`, `QNDF1`, `QNDF2`), so a rejected attempt leaves it untouched. |
 | `post_newton_controller!(integrator, cache, alg)` | Shrinks `integrator.dt` by `get_failfactor(integrator)` | Implicit-solver controllers that also reduce the BDF order on Newton failure (`BDFController`, `JVODEController`). |
 | `reinit_controller!(integrator, cache)` | no-op | Stateful controllers that need to reset `q11`, `qold`, `dtacc`, etc. on `reinit!`. |
@@ -297,7 +300,7 @@ If your controller relies on a knob that doesn't exist on
 controller struct (alongside `basic`). The built-in controllers follow
 this pattern: `PIController` keeps `beta1` / `beta2` / `qoldinit`
 separate from the standard knobs, and `PIDController` keeps `beta` /
-`accept_safety` / `limiter`. Separating them keeps
+`accept_safety` / `limiter` / `retry_cap`. Separating them keeps
 [`CommonControllerOptions`](@ref) small enough to be useful as the
 "every adaptive controller has these" surface, while still letting
 specialized controllers carry their own tuning state. The new field

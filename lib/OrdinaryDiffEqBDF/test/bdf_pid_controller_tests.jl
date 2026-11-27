@@ -146,7 +146,7 @@ end
     @test sol.retcode == ReturnCode.Success
     @test sol.u[end][2] ≈ 0.9 atol = 1.0e-6
 
-    controller = OrdinaryDiffEqCore.PIDController(1 // 6, 1 // 6; accept_safety = 1.0)
+    controller = OrdinaryDiffEqCore.PIDController(1 // 6, 1 // 6; accept_safety = 1.0, retry_cap = 0.81)
     integ = init(blowup_probs[2], QNDF1(); controller, abstol = 1.0e-6, reltol = 1.0e-6)
     integ.controller_cache.dt_factor = 1.0
     old_dt = integ.dt
@@ -210,5 +210,48 @@ end
         @test sol.stats.nreject == 1
         @test sol.t[2] == 0.0025
         @test first(sol.u[end]) ≈ 0.5 atol = 1.0e-12
+    end
+end
+
+@testset "Six-member composite commits the active BDF history" begin
+    for iip in (false, true)
+        prob = iip ? ODEProblem((du, u, p, t) -> (du[1] = t^2; nothing), [0.0], (0.0, 1.0)) :
+            ODEProblem((u, p, t) -> t^2, 0.0, (0.0, 1.0))
+        ref = solve(prob, QNDF2(); dt = 1 / 8, adaptive = false)
+        alg = OrdinaryDiffEqCore.CompositeAlgorithm(ntuple(_ -> QNDF2(), 6), _ -> 6)
+        integ = init(prob, alg; dt = 1 / 8, adaptive = false)
+        @test integ.cache isa OrdinaryDiffEqCore.DefaultCache
+        recorded = Float64[]
+        while integ.t < prob.tspan[2]
+            step!(integ)
+            @test integ.cache.current == 6
+            push!(recorded, integ.cache.cache6.dtₙ₋₁)
+        end
+        @test recorded == fill(1 / 8, 8)
+        @test integ.sol.t == ref.t
+        @test first(integ.sol.u[end]) == first(ref.u[end])
+    end
+end
+
+# A limiter that returns 7/8 once rejects the first step (accept_safety = 15/16). By
+# default the retry uses that predicted factor; `retry_cap` bounds it from above.
+@testset "PIDController retry length with a rejecting limiter" begin
+    dt = 1 / 64
+    for alg in (QNDF1(), QNDF2(), ABDF2()), iip in (false, true),
+            (retry_cap, factor) in ((nothing, 7 / 8), (0.81, 0.81))
+        calls = Ref(0)
+        limiter(x) = (calls[] += 1; calls[] == 1 ? 7 / 8 : 1.0)
+        prob = iip ? ODEProblem((du, u, p, t) -> (du[1] = 0.0; nothing), [0.0], (0.0, 0.5)) :
+            ODEProblem((u, p, t) -> 0.0, 0.0, (0.0, 0.5))
+        kwargs = retry_cap === nothing ? (;) : (; retry_cap)
+        controller = OrdinaryDiffEqCore.PIDController(0.7, -0.4; limiter, accept_safety = 15 / 16, kwargs...)
+        sol = solve(prob, alg; dt, abstol = 1.0e-4, reltol = 1.0e-4, controller)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject == 1
+        @test sol.t[2] == dt * factor
+        @test all(u -> iszero(first(u)), sol.u)
+    end
+    for retry_cap in (0, 1, -0.5, 1.5)
+        @test_throws ArgumentError OrdinaryDiffEqCore.PIDController(0.7, -0.4; retry_cap)
     end
 end

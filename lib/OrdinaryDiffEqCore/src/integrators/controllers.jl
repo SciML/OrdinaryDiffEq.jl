@@ -903,7 +903,8 @@ end
     PIDController(
         beta1, beta2, beta3 = zero(beta1);
         limiter = default_dt_factor_limiter,
-        accept_safety = 0.81
+        accept_safety = 0.81,
+        retry_cap = nothing
     )
 
 The proportional-integral-derivative (PID) controller is a generalization of the
@@ -930,10 +931,14 @@ is rejected and re-tried with the predicted step size.
 For standalone `QNDF`, `FBDF`, `DFBDF`, `NordsieckBDF`, and `DNordsieckBDF`
 solves, the algorithm selects step size and order, so the PID gains and
 `limiter` have no effect and a step is accepted when the scaled error estimate
-is at most one (see [`pid_uses_error_estimate`](@ref)). `ABDF2`, `QNDF1`, and
-`QNDF2` retry a rejected step with at most 0.81 times its length (see
-[`pid_retry_cap`](@ref)), which only differs from the predicted step size when
-`accept_safety > 0.81`.
+is at most one (see [`pid_uses_error_estimate`](@ref)).
+
+Setting `retry_cap` to a number in `(0, 1)` retries a rejected step with at most
+`retry_cap` times its length, and with `retry_cap` itself when the predicted
+factor is not finite and positive. Every retry is then strictly shorter than the
+rejected step, which prevents repeated rejections of nearly equal steps when
+`accept_safety` is close to one. The default `nothing` retries with the
+predicted step size.
 
 Some standard controller parameters suggested in the literature are
 
@@ -980,21 +985,29 @@ struct PIDController{B <: Union{NamedTuple, CommonControllerOptions}, QT, Limite
     accept_safety::QT   # accept a step if the predicted change of the step size
     # is bigger than this parameter
     limiter::Limiter    # limiter of the dt factor (before clipping)
+    retry_cap::Union{Nothing, QT}
 end
 
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
+
+_pid_retry_cap(::Type, ::Nothing) = nothing
+function _pid_retry_cap(::Type{QT}, retry_cap::Real) where {QT}
+    0 < retry_cap < 1 || throw(ArgumentError("`retry_cap` must lie in (0, 1), got $retry_cap"))
+    return QT(retry_cap)
+end
 
 # Two/three-positional form: betas explicit, common-controller-knobs ride
 # along as a `NamedTuple` of overrides until `setup_controller_cache`.
 function PIDController(
         beta1::Real, beta2::Real, beta3::Real = zero(beta1);
-        accept_safety = 0.81, limiter = default_dt_factor_limiter, kwargs...
+        accept_safety = 0.81, limiter = default_dt_factor_limiter, retry_cap = nothing,
+        kwargs...
     )
     beta = map(float, promote(beta1, beta2, beta3))
     QT = typeof(beta[1])
     basic = NamedTuple(kwargs)
     return PIDController{typeof(basic), QT, typeof(limiter)}(
-        basic, beta, QT(accept_safety), limiter,
+        basic, beta, QT(accept_safety), limiter, _pid_retry_cap(QT, retry_cap),
     )
 end
 
@@ -1005,7 +1018,7 @@ end
 function PIDController(
         ::Type{QT}, alg;
         beta = nothing, accept_safety = 0.81,
-        limiter = default_dt_factor_limiter,
+        limiter = default_dt_factor_limiter, retry_cap = nothing,
         kwargs...
     ) where {QT}
     if beta === nothing
@@ -1018,7 +1031,7 @@ function PIDController(
     beta = map(float, promote(beta1, beta2, beta3))
     basic = resolve_basic(NamedTuple(kwargs), alg, QT)
     return PIDController{typeof(basic), QT, typeof(limiter)}(
-        basic, beta, QT(accept_safety), limiter,
+        basic, beta, QT(accept_safety), limiter, _pid_retry_cap(QT, retry_cap),
     )
 end
 
@@ -1027,6 +1040,7 @@ function Base.show(io::IO, controller::PIDController)
         io, "PIDController(beta=", controller.beta,
         ", accept_safety=", controller.accept_safety,
         ", limiter=", controller.limiter,
+        ", retry_cap=", controller.retry_cap,
         ")"
     )
 end
@@ -1055,6 +1069,7 @@ function setup_controller_cache(alg, cache, controller::PIDController, ::Type{E}
     basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = PIDController{typeof(basic), QT, typeof(controller.limiter)}(
         basic, map(QT, controller.beta), QT(controller.accept_safety), controller.limiter,
+        _pid_retry_cap(QT, controller.retry_cap),
     )
     err = ones(QT, 3)
     return PIDControllerCache{QT, typeof(controller.limiter), E, eltype(disco_probs)}(
@@ -1115,16 +1130,6 @@ them, specialize this hook to return `true`.
 """
 pid_uses_error_estimate(alg) = false
 
-"""
-    pid_retry_cap(alg) -> Union{Nothing, Real}
-
-Return the largest factor by which `PIDController` scales `dt` when it retries a
-rejected step of `alg`, or `nothing` (the default) to retry with the predicted
-factor. With a cap, a non-finite or non-positive predicted factor is replaced by
-the cap, so every retry is strictly shorter than the rejected step.
-"""
-pid_retry_cap(alg) = nothing
-
 _pid_retry_factor(factor, ::Nothing) = factor
 _pid_retry_factor(factor, cap) =
     isfinite(factor) && factor > 0 ? min(factor, oftype(factor, cap)) : oftype(factor, cap)
@@ -1152,7 +1157,7 @@ end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
     handle_disco_reject!(integrator, cache.controller.basic) && return integrator.dt
-    return integrator.dt *= _pid_retry_factor(cache.dt_factor, pid_retry_cap(alg))
+    return integrator.dt *= _pid_retry_factor(cache.dt_factor, cache.controller.retry_cap)
 end
 
 function sync_controllers!(cache1::PIDControllerCache, cache2::PIDControllerCache)
