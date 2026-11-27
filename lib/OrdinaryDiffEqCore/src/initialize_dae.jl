@@ -135,14 +135,20 @@ struct DeferredDefaultNLSolve{IIP, AD}
     autodiff::AD
 end
 
-# The `IntervalNonlinearProblem` method resolves an ambiguity with BracketingNonlinearSolve.
-for P in (AbstractNonlinearProblem, SciMLBase.IntervalNonlinearProblem)
-    @eval function CommonSolve.solve(prob::$P, alg::DeferredDefaultNLSolve; kwargs...)
-        nlsolve_alg = default_nlsolve(
-            nothing, alg.isinplace, state_values(prob), prob, alg.autodiff
-        )
-        return solve(prob, nlsolve_alg; kwargs...)
-    end
+function CommonSolve.solve(
+        prob::AbstractNonlinearProblem, alg::DeferredDefaultNLSolve; kwargs...
+    )
+    nlsolve_alg = default_nlsolve(
+        nothing, alg.isinplace, state_values(prob), prob, alg.autodiff
+    )
+    return solve(prob, nlsolve_alg; kwargs...)
+end
+
+# An interval problem has no state, so the bracketing package picks its own default.
+function CommonSolve.solve(
+        prob::SciMLBase.IntervalNonlinearProblem, ::DeferredDefaultNLSolve; kwargs...
+    )
+    return solve(prob; kwargs...)
 end
 
 function _initialize_dae!(

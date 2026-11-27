@@ -168,3 +168,21 @@ end
         @test abs(g(only(integ.u))) < 1.0e-10
     end
 end
+
+@testset "default solver accepts an interval problem returned by the initializer updater" begin
+    calls = Ref(0)
+    placeholder = NonlinearLeastSquaresProblem((u, p) -> [1.0], nothing)
+    bracket = IntervalNonlinearProblem((x, p) -> x^2 - 2, (1.0, 2.0))
+    data = OverrideInitData(
+        placeholder, (_, _) -> (calls[] += 1; bracket), sol -> [sol.u], nothing;
+        is_update_oop = Val(true)
+    )
+    f!(du, u, p, t) = (du[1] = u[1]^2 - 2; nothing)
+    fn = ODEFunction{true, SciMLBase.FullSpecialize}(f!; mass_matrix = zeros(1, 1), initialization_data = data)
+    prob = ODEProblem(fn, [1.3], (0.0, 0.01))
+    integ = init(prob, Rodas5P(); abstol = 1.0e-12, reltol = 1.0e-12)
+    @test calls[] == 1
+    @test integ.sol.retcode != SciMLBase.ReturnCode.InitialFailure
+    @test only(integ.u) ≈ sqrt(2) atol = 1.0e-10
+    @test abs(only(integ.u)^2 - 2) < 1.0e-10
+end
