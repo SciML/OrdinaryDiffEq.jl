@@ -212,6 +212,32 @@ end
     @test sol.u[end] ≈ exp(-1) atol = tol rtol = 0
 end
 
+@testset "JVODEController rational retry ($(alg.algorithm), factor = $factor)" for
+    alg in (JVODE_Adams(), JVODE_BDF()),
+        (h, factor, retry, bounds) in (
+            (1 // 10001, Float64(32768 // 10001), 1 // 32768, (; qsteady_min = 0.0, qsteady_max = Inf)),
+            (9 // 5, 1.8, 1 // 1, NamedTuple()),
+        )
+    prob = ODEProblem((u, p, t) -> -u / h, 1.0, (0 // 1, h))
+    tol = 0.1
+    controller = JVODEController(; failfactor = factor, bounds...)
+    opts = (; dt = h, controller, abstol = tol, reltol = tol)
+
+    @testset "Direct failure hook" begin
+        integrator = init(prob, alg; opts...)
+        post_newton_controller!(integrator, alg)
+        @test integrator.dt == retry
+    end
+
+    @testset "Solve" begin
+        sol = solve(prob, alg; opts...)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.t[2] == retry
+        @test sol.t[end] == h
+        @test sol.u[end] ≈ exp(-1) atol = tol rtol = 0
+    end
+end
+
 @testset "JVODEController compact rational override ($(alg.algorithm), flag = $flag)" for
     alg in (JVODE_Adams(), JVODE_BDF()), flag in (0, false)
     prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))

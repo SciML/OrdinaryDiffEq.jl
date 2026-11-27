@@ -63,8 +63,20 @@ function post_newton_controller!(integrator, cache::JVODEControllerCache, ::JVOD
 end
 
 _jvode_failed_dt(dt, factor) = dt / factor
-# Divide rational time by the exact value of a floating-point factor.
-_jvode_failed_dt(dt::Rational, factor::AbstractFloat) = dt / oftype(dt, factor)
+
+function _jvode_failed_dt(dt::Rational, factor::AbstractFloat)
+    if isinteger(factor)
+        divisor = typemin(Int) <= factor <= typemax(Int) ? Int(factor) : BigInt(factor)
+        try
+            return oftype(dt, dt / divisor)
+        catch err
+            err isa InexactError || err isa OverflowError || rethrow()
+        end
+    end
+    # Converting a nonintegral factor first can inflate rational step denominators.
+    T = promote_type(Float64, float(typeof(dt)), typeof(factor))
+    return oftype(dt, T(dt) / T(factor))
+end
 
 # The controller cache delegates step-size selection to the algorithm.
 @inline stepsize_controller!(integrator, ::JVODEControllerCache, alg) =
