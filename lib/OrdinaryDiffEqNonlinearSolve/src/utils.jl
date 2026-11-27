@@ -325,7 +325,16 @@ const DAE_KRYLOV_FINITE_DIFF_METHODS = (:gmres!, :fgmres!)
 # inner product and the tolerances.
 const DAE_KRYLOV_OWN_KWARGS = (:M, :N, :W, :atol, :rtol)
 
-function check_dae_krylov(linsolver, autodiff = nothing)
+function check_dae_krylov(linsolver, autodiff = nothing, f = nothing)
+    # `Wfact`/`Wfact_t` write a concrete Newton matrix, which this path never forms; the
+    # other `DAEFunction` Jacobian fields are not used for it (see docs/src/implicit/BDF.md).
+    f !== nothing && (SciMLBase.has_Wfact(f) || SciMLBase.has_Wfact_t(f)) && throw(
+        ArgumentError(
+            "A `DAEFunction` with `Wfact` or `Wfact_t` is not supported with a matrix-free " *
+                "Krylov solve of the DAE Newton system: those callbacks write a concrete " *
+                "Newton matrix, which this path never forms."
+        )
+    )
     linsolver isa LinearSolve.IterativeSolversJL && throw(
         ArgumentError(
             "`IterativeSolversJL` is not supported for a matrix-free Krylov solve of a DAE " *
@@ -1009,7 +1018,7 @@ function build_nlsolver(
             # `compute_step!` sets its Krylov `abstol` relative to each step's residual;
             # a fixed one would be in the units of `F`, which the user can scale freely.
             matrix_free_dae = isdae && J isa AbstractSciMLOperator
-            matrix_free_dae && check_dae_krylov(linsolver, alg_autodiff(alg))
+            matrix_free_dae && check_dae_krylov(linsolver, alg_autodiff(alg), f)
             linabstol = matrix_free_dae ? (; abstol = zero(uTolType)) : (;)
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);

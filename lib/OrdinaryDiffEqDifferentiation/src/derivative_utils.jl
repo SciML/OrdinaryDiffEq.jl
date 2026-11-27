@@ -1351,6 +1351,13 @@ function build_J_W(
         W = f.W_prototype
         J = f.jac_prototype
     elseif f.jac_prototype isa AbstractSciMLOperator
+        # The `WOperator` below is the ODE form `M/(γΔt) - J`; a `DAEFunction` has no mass matrix.
+        f isa DAEFunction && throw(
+            ArgumentError(
+                "A `DAEFunction` `jac_prototype` cannot be a SciMLOperator. For a matrix-free " *
+                    "Newton matrix pass a Krylov `linsolve` instead."
+            )
+        )
         J = deepcopy(f.jac_prototype)
         if J isa AbstractMatrix
             @assert SciMLBase.has_jac(f) "f needs to have an associated jacobian"
