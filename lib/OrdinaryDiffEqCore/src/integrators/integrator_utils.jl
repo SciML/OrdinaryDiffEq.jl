@@ -94,6 +94,7 @@ function loopheader!(integrator)
     end
 
     # Accept or reject the step
+    accepted = false
     if integrator.iter > 0
         if (!integrator.force_stepfail) &&
                 (
@@ -107,6 +108,7 @@ function loopheader!(integrator)
             )
             integrator.success_iter += 1
             apply_step!(integrator)
+            accepted = true
         elseif (
                 integrator.opts.adaptive && !integrator.accept_step &&
                     !isaposteriori(integrator.alg)
@@ -120,6 +122,8 @@ function loopheader!(integrator)
     integrator.iter += 1
     choose_algorithm!(integrator, integrator.cache)
     fix_dt_at_bounds!(integrator)
+    # `apply_step!` already recorded it for an accepted step, before shortening `dt`.
+    accepted || _set_dt_before_tstop!(integrator, integrator.dt)
     modify_dt_for_tstops!(integrator)
     shrink_noise_to_integrator_dt!(integrator)
     integrator.force_stepfail = false
@@ -181,6 +185,7 @@ function apply_step!(integrator)
     elseif integrator.dt != integrator.dtpropose && !integrator.dtchangeable
         error("The current setup does not allow for changing dt.")
     end
+    _set_dt_before_tstop!(integrator, integrator.dt)
 
     update_fsal!(integrator)
 
@@ -267,6 +272,34 @@ end
 _set_tstop_flag!(integrator, is_tstop::Bool, target = nothing) = nothing
 
 _get_tstop_target(integrator::ODEIntegrator) = integrator.tstop_target
+
+# `modify_dt_for_tstops!` runs in both `apply_step!` and `loopheader!`, so by the time a step is
+# taken `dtpropose` already holds the shortened step; `dt_before_tstop` is recorded before either.
+function _set_dt_before_tstop!(integrator::ODEIntegrator, dt)
+    integrator.dt_before_tstop = dt
+    return nothing
+end
+_set_dt_before_tstop!(integrator, dt) = nothing
+
+function _dt_shortened_for_tstop(integrator::ODEIntegrator)
+    (
+        integrator.resume_dt_after_tstop && _get_next_step_tstop(integrator) &&
+            !integrator.is_disco_step &&
+            get_current_resumes_dt_after_tstop(integrator.alg, integrator.cache)
+    ) || return nothing
+    dt = integrator.tdir * min(abs(integrator.dt_before_tstop), abs(integrator.opts.dtmax))
+    return abs(dt) > abs(integrator.dt) ? dt : nothing
+end
+_dt_shortened_for_tstop(integrator) = nothing
+
+# The controller's factor `dtnew / accepted_dt` from the shortened landing step is applied to
+# the step it had asked for, but only to shrink it: a short step's small error does not justify
+# growing past that request. The result is never smaller than the controller's own `dtnew`.
+function _resume_dt_after_tstop(accepted_dt, dt_before_tstop, dtnew)
+    factor = min(one(dtnew / accepted_dt), dtnew / accepted_dt)
+    resumed = dt_before_tstop * factor
+    return abs(resumed) > abs(dtnew) ? oftype(dtnew, resumed) : dtnew
+end
 
 function modify_dt_for_tstops!(integrator)
     if has_tstop(integrator)
@@ -633,11 +666,7 @@ function _loopfooter!(integrator)
             integrator.tprev = integrator.t
 
             accepted_dt = integrator.dt
-            if _get_next_step_tstop(integrator)
-                # Step controller dt is overly pessimistic, since dt = time to tstop.
-                # Restore the original dt so the controller proposes a reasonable next step.
-                integrator.dt = integrator.dtpropose
-            end
+            dt_before_tstop = _dt_shortened_for_tstop(integrator)
             integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)
 
             dtnew = SciMLBase.value(
@@ -648,6 +677,9 @@ function _loopfooter!(integrator)
                 )
             ) *
                 oneunit(integrator.dt)
+            if dt_before_tstop !== nothing
+                dtnew = _resume_dt_after_tstop(accepted_dt, dt_before_tstop, dtnew)
+            end
             calc_dt_propose!(integrator, dtnew)
             integrator.dt = accepted_dt
             handle_callbacks!(integrator)
