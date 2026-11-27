@@ -874,7 +874,9 @@ end
     # page 54.
     γdt = isdae ? α * invγdt : γ * dt
 
-    !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
+    # The matrix-free DAE `W` takes the current `cj` every stage (see `_calc_W!`), so it is
+    # never stale; `W_γdt` there records only when the preconditioners were last refreshed.
+    !matrix_free_dae && !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
     relax!(dz, nlsolver, integrator, f)
 
     calculate_residuals!(

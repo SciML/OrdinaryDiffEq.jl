@@ -916,8 +916,9 @@ function _calc_W!(alg, integrator, W, nlsolver, cache, dtgamma, repeat_step, new
 
     # calculate W
     if isdae && W isa JVPCache
-        # Matrix-free: compute_step! sets the point at each Newton iterate.
-        new_W && set_dae_jvp_cj!(W, dae_cj(nlsolver, integrator))
+        # Matrix-free: compute_step! sets the point at each Newton iterate. `cj` costs nothing
+        # to refresh, so the operator is never stale; `new_W` only schedules the `precs` refresh.
+        set_dae_jvp_cj!(W, dae_cj(nlsolver, integrator))
     elseif W isa WOperator
         if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
