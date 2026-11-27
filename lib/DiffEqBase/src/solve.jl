@@ -25,7 +25,7 @@ function has_callbacks(kwargs)
 end
 
 """
-    merge_problem_kwargs(prob; merge_callbacks=true, kwargs…)
+    merge_problem_kwargs(prob; merge_callbacks=true, erase_callbacks=nothing, kwargs…)
 
 Merges kwargs stored in `prob.kwargs` with the provided `kwargs`, following
 DiffEq's standard merging rules:
@@ -39,8 +39,27 @@ Returns the merged kwargs as a Base.pairs.
 This function is intended for use by problem types that override `__solve` or `__init`
 and need to manually handle kwargs merging that would normally be done by `solve_call`
 or `init_call`.
+
+# Callback specialization
+
+Wrapper packages with fixed callback types can pass `erase_callbacks = false` to
+`solve` or `init` to keep the merged callbacks specialized independently of the
+problem function's specialization. This specializes the solver on all merged callback
+types, including user callbacks. The default preserves the problem's usual callback
+erasure behavior. `erase_callbacks = nothing` inherits from `prob.kwargs`,
+or defaults to `true` when unset.
+
+For an `AbstractJumpProblem{P}` wrapper, an explicit Boolean (passed or stored in
+`prob.kwargs`) is kept in the returned kwargs as `erase_callbacks`, so the wrapper's
+solver hook forwards it to the inner problem's `init` or `solve`, which then decides
+whether its own specialization erases callbacks. The inner problem is never read while
+merging. When `P <: SciMLBase.AbstractDiscreteProblem` the keyword is consumed instead,
+so solvers that reject unknown keywords (e.g. `SSAStepper`) never receive it.
 """
-function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
+function merge_problem_kwargs(prob; merge_callbacks = true, erase_callbacks = nothing, kwargs...)
+
+    explicit_erase = _explicit_callback_erasure(prob, kwargs, erase_callbacks)
+    erase_callbacks = explicit_erase === nothing ? true : explicit_erase
 
     # Special handling for callback merging
     if has_kwargs(prob)
@@ -65,7 +84,13 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
     end
 
 
-    if _erases_callback_types(prob)
+    if haskey(kwargs, :erase_callbacks)
+        kwargs = Base.structdiff((; kwargs...), (; erase_callbacks = nothing))
+    end
+    if explicit_erase !== nothing && !_erases_callback_types(prob) && _forwards_callback_erasure(prob)
+        kwargs = merge((; kwargs...), (; erase_callbacks = explicit_erase))
+    end
+    if erase_callbacks && _erases_callback_types(prob)
         callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
         kwargs = merge(
             (; kwargs...),
@@ -76,6 +101,35 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
     return kwargs
 end
 
+function _resolve_erase_callbacks_value(val)
+    val === nothing && return nothing
+    val isa Bool && return val
+    throw(ArgumentError("`erase_callbacks` must be a `Bool` or `nothing`, got $(repr(val))"))
+end
+
+function _explicit_callback_erasure(prob, kwargs, erase_callbacks = nothing)
+    resolved = _resolve_erase_callbacks_value(erase_callbacks)
+    resolved !== nothing && return resolved
+    if haskey(kwargs, :erase_callbacks)
+        kw_val = _resolve_erase_callbacks_value(kwargs[:erase_callbacks])
+        kw_val !== nothing && return kw_val
+    end
+    if has_kwargs(prob) && haskey(prob.kwargs, :erase_callbacks)
+        prob_val = _resolve_erase_callbacks_value(prob.kwargs[:erase_callbacks])
+        prob_val !== nothing && return prob_val
+    end
+    return nothing
+end
+
+function _callback_erasure_enabled(prob, kwargs, erase_callbacks = nothing)
+    resolved = _explicit_callback_erasure(prob, kwargs, erase_callbacks)
+    return resolved === nothing ? true : resolved
+end
+
+_forwards_callback_erasure(prob) = false
+function _forwards_callback_erasure(::SciMLBase.AbstractJumpProblem{P}) where {P}
+    return !(P <: SciMLBase.AbstractDiscreteProblem)
+end
 
 # Erasure rewrites `prob.kwargs`, which rebuilds the problem through
 # `ConstructionBase.setproperties`. That works for these families but not for
@@ -112,7 +166,7 @@ function _erase_problem_callback_types(prob)
 end
 
 const ORDINARYDIFFEQ_LIMITER_KWARGS = NamedTuple{
-    (:stage_limiter, :step_limiter),
+    (:stage_limiter, :step_limiter, :erase_callbacks),
 }
 checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...) =
     checkkwargs(kwargshandle; Base.structdiff(values(kwargs), ORDINARYDIFFEQ_LIMITER_KWARGS)...)
@@ -580,6 +634,9 @@ explanations of the timestepping algorithms, see the
   Defaults to true.
 * `merge_callbacks`: Toggles whether to merge `prob.callback` with the `solve` keyword
   argument `callback`. Defaults to `true`.
+* `erase_callbacks`: Controls callback type erasure for despecializing function
+  specializations on Julia 1.12 and later. `false` keeps merged callbacks specialized.
+  Defaults to the problem setting, or `true` when unset.
 * `wrap`: Toggles whether to wrap the solution if `prob.problem_type` has a preferred
   alternate wrapper type for the solution. Useful when speed, but not shape of solution
   is important. Defaults to `Val(true)`. `Val(false)` will cancel wrapping the solution.
@@ -759,13 +816,12 @@ function get_concrete_problem(prob, isadapt; alg = nothing, kwargs...)
             typeof(u0_promote) === typeof(prob.u0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return _erase_problem_callback_types(prob)
+        return _callback_erasure_enabled(prob, kwargs) ? _erase_problem_callback_types(prob) : prob
     else
-        return _erase_problem_callback_types(
-            _remake_with_promoted_function(
-                prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
-            )
+        promoted_prob = _remake_with_promoted_function(
+            prob, f_promote; u0 = u0_promote, p = p_promote, tspan = tspan_promote
         )
+        return _callback_erasure_enabled(prob, kwargs) ? _erase_problem_callback_types(promoted_prob) : promoted_prob
     end
 end
 
@@ -814,14 +870,13 @@ function get_concrete_problem(prob::DAEProblem, isadapt; alg = nothing, kwargs..
             isconcretedu0(prob, tspan[1], kwargs) && typeof(du0_promote) === typeof(prob.du0) &&
             prob.tspan == tspan && typeof(prob.tspan) === typeof(tspan_promote) &&
             p === prob.p && p_promote === prob.p && f_promote === prob.f
-        return _erase_problem_callback_types(prob)
+        return _callback_erasure_enabled(prob, kwargs) ? _erase_problem_callback_types(prob) : prob
     else
-        return _erase_problem_callback_types(
-            remake(
-                prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
-                tspan = tspan_promote
-            )
+        promoted_prob = remake(
+            prob; f = f_promote, du0 = du0_promote, u0 = u0_promote, p = p_promote,
+            tspan = tspan_promote
         )
+        return _callback_erasure_enabled(prob, kwargs) ? _erase_problem_callback_types(promoted_prob) : promoted_prob
     end
 end
 
@@ -1464,8 +1519,11 @@ function _solve_adjoint(
         _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
     end
 
-    # Merge problem kwargs with passed kwargs
+    explicit_erase = _explicit_callback_erasure(prob, kwargs)
     kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
+    if explicit_erase !== nothing
+        kwargs = merge((; kwargs...), (; erase_callbacks = explicit_erase))
+    end
 
     return if length(args) > 1
         _concrete_solve_adjoint(
@@ -1491,8 +1549,11 @@ function _solve_forward(
         _prob = get_concrete_problem(prob, isadaptive(alg); alg, u0, p, kwargs...)
     end
 
-    # Merge problem kwargs with passed kwargs
+    explicit_erase = _explicit_callback_erasure(prob, kwargs)
     kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
+    if explicit_erase !== nothing
+        kwargs = merge((; kwargs...), (; erase_callbacks = explicit_erase))
+    end
 
     return if length(args) > 1
         _concrete_solve_forward(

@@ -117,3 +117,15 @@ for prob in (rode_problem, bv_problem)
     @test DiffEqBase.get_concrete_problem(prob, true) === prob
     @test !haskey(prob.kwargs, :callback)
 end
+
+@testset "callback erasure concrete problem" begin
+    cb = ContinuousCallback((u, t, integrator) -> t - 0.5, integrator -> nothing)
+    prob = ODEProblem((u, p, t) -> u, 1.0, (0.0, 1.0); callback = cb, erase_callbacks = false)
+    @test DiffEqBase.get_concrete_problem(prob, true; erase_callbacks = nothing).kwargs[:callback] === cb
+    @test DiffEqBase.get_concrete_problem(prob, true; erase_callbacks = false).kwargs[:callback] === cb
+    @test_throws ArgumentError DiffEqBase.get_concrete_problem(prob, true; erase_callbacks = 0)
+    if VERSION >= v"1.12"
+        erased = DiffEqBase.get_concrete_problem(prob, true; erase_callbacks = true)
+        @test erased.kwargs[:callback].continuous_callbacks isa Vector{Any}
+    end
+end
