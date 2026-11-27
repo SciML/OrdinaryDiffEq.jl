@@ -22,12 +22,16 @@ tagof(::AutoForwardDiff{CS, T}) where {CS, T} = T
     resid!(du, u, p) = (du .= u .^ 2 .- 4; nothing)
     auto = NonlinearProblem(resid!, [1.5, 1.5])  # AutoSpecialize by default
     full = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(resid!), [1.5, 1.5])
+    nospec = NonlinearProblem(NonlinearFunction{true, SciMLBase.NoSpecialize}(resid!), [1.5, 1.5])
+    oop = NonlinearProblem((u, p) -> u .^ 2 .- 4, [1.5, 1.5])
     u = [1.5, 1.5]
 
     @test _init_autodiff(u, auto, false, Val(1)) isa AutoFiniteDiff
     @test _init_autodiff(u, full, false, Val(1)) isa AutoFiniteDiff
 
-    @test tagof(_init_autodiff(u, full, true, Val(1))) <: ForwardDiff.Tag
+    for prob in (full, nospec, oop)
+        @test tagof(_init_autodiff(u, prob, true, Val(1))) <: ForwardDiff.Tag
+    end
     @test tagof(_init_autodiff(u, auto, true, Val(1))) === Nothing
     @test _init_autodiff(u, auto, true, Val(nothing)) isa AutoForwardDiff{1}
     @test _init_autodiff(u, auto, true, Val(0)) isa AutoForwardDiff{1}
@@ -38,6 +42,37 @@ tagof(::AutoForwardDiff{CS, T}) where {CS, T} = T
         @test SciMLBase.successful_retcode(sol)
         @test sol.u ≈ [2.0, 2.0]
     end
+end
+
+@testset "default OverrideInit reaches the Jacobian step for $specialization" for specialization in (
+        SciMLBase.AutoSpecialize, SciMLBase.NoSpecialize, SciMLBase.FullSpecialize,
+    )
+    saw_dual = Ref(false)
+    function linear!(r, u, p, t)
+        saw_dual[] |= eltype(u) <: ForwardDiff.Dual
+        r[1] = 3u[1] + u[2] - 7
+        r[2] = 2u[1] + 5u[2] - 12
+        return nothing
+    end
+    root = [23, 22] ./ 13
+    # NoSpecialize and FullSpecialize residuals are not wrapped by NonlinearSolve, so they
+    # can call an ODE function wrapper that only accepts OrdinaryDiffEqTag Duals.
+    wrapped = ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(linear!, [1.1, 1.2], (0.0, 0.01)).f
+    rhs! = specialization === SciMLBase.AutoSpecialize ? linear! : wrapped
+    residual!(r, u, p) = rhs!(r, u, p, 0.0)
+    iprob = NonlinearProblem(
+        NonlinearFunction{true, specialization}(residual!), [1.1, 1.2]; maxiters = 1
+    )
+    data = OverrideInitData(iprob, nothing, sol -> copy(sol.u), nothing)
+    f = ODEFunction(linear!; mass_matrix = zeros(2, 2), initialization_data = data)
+    prob = ODEProblem(f, [1.1, 1.2], (0.0, 0.01))
+    integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+    @test saw_dual[]
+    @test integ.sol.retcode != SciMLBase.ReturnCode.InitialFailure
+    @test integ.u ≈ root atol = 1.0e-10
+    r = zeros(2)
+    linear!(r, integ.u, nothing, 0.0)
+    @test maximum(abs, r) < 1.0e-10
 end
 
 function closure!(f, ang, (l1, l2, x, y))

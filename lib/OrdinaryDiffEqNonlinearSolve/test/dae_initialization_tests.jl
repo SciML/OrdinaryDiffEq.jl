@@ -165,7 +165,7 @@ integrator = init(
         du[2] = u[1]^2 - u[2]^2
     end
     prob = ODEProblem(fn, [2.0, 0.0], (0.0, 1.0))
-    integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+    integ = init(prob, Rodas5P())
     @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8
     reinit!(integ)
     @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8

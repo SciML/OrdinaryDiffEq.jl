@@ -29,12 +29,20 @@ _untagged_autodiff(::Val{nothing}) = _untagged_autodiff(Val(1))
 _untagged_autodiff(::Val{0}) = _untagged_autodiff(Val(1))
 _untagged_autodiff(::Val{CS} = Val(1)) where {CS} = AutoForwardDiff(; chunksize = CS)
 
-# Generated initialization residuals can call ODE wrappers that require OrdinaryDiffEqTag.
-# NonlinearSolve selects the tag for AutoSpecialize residuals.
-_needs_ode_tag(nlprob) = SciMLBase.specialization(nlprob.f) === SciMLBase.FullSpecialize
+# Initialization residuals can call ODE wrappers that require OrdinaryDiffEqTag, so keep it
+# unless NonlinearSolveBase wraps the residual in its own FunctionWrapper, which only accepts
+# the tag NonlinearSolve chooses for an untagged backend. These are the conditions under
+# which NonlinearSolveBase wraps.
+function _nonlinearsolve_wraps(u, nlprob)
+    return SciMLBase.isinplace(nlprob) && u isa AbstractArray && !(eltype(u) <: Dual) &&
+        SciMLBase.specialization(nlprob.f) in (
+        SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize, SciMLBase.AutoDePSpecialize,
+    )
+end
 function _init_autodiff(u, nlprob, autodiff, chunksize)
     autodiff || return AutoFiniteDiff()
-    return _needs_ode_tag(nlprob) ? _tagged_autodiff(u, chunksize) : _untagged_autodiff(chunksize)
+    return _nonlinearsolve_wraps(u, nlprob) ? _untagged_autodiff(chunksize) :
+        _tagged_autodiff(u, chunksize)
 end
 
 function default_nlsolve(
