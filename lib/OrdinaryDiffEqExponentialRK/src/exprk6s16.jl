@@ -16,10 +16,16 @@ const _EXPRK6S16_C = (
     1 // 1,
 )
 
+_exprk6s16_phi(z, k) = phi(z, k)
+function _exprk6s16_phi(z::Number, k)
+    iszero(z) || return phi(z, k)
+    return [one(z) / factorial(q) for q in 0:k]
+end
+
 function expRK_operators(::ExpRK6s16, dt, A)
     nodes = (1 // 2, 1 // 3, 1 // 5, 1 // 4, 1 // 1)
     # All internal stages use at most phi_5; only the endpoint needs phi_6.
-    bundles = ntuple(i -> phi(nodes[i] * dt * A, i == 5 ? 6 : 5), 5)
+    bundles = ntuple(i -> _exprk6s16_phi(nodes[i] * dt * A, i == 5 ? 6 : 5), 5)
     return ntuple(16) do i
         c = i == 16 ? 1 // 1 : _EXPRK6S16_C[i]
         bundles[findfirst(==(c), nodes)]
@@ -239,12 +245,12 @@ function _exprk6s16_step(uprev, F1, nonlinear, A, alg, integrator, dt, t, Ds, g1
             opnorm = integrator.opts.internalopnorm,
             iop = alg.iop,
         )
-        (v, stage, q) -> @view(
-            phiv((stage == 16 ? one(dt) : _EXPRK6S16_C[stage]) * dt, A, v, q; kwargs...)[
-                :,
-                q + 1,
-            ]
-        )
+        (v, stage, q) -> iszero(v) ? zero(v) : @view(
+                phiv((stage == 16 ? one(dt) : _EXPRK6S16_C[stage]) * dt, A, v, q; kwargs...)[
+                    :,
+                    q + 1,
+                ]
+            )
     else
         (v, stage, q) -> ops[stage][q + 1] * v
     end
