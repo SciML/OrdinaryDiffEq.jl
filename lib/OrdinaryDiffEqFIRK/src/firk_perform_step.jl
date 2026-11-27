@@ -2165,12 +2165,15 @@ end
         firk_new_J!(J, W1, integrator, cache, W2)
         cache.jage = 0
     end
-    new_W = cache.W_index != index || do_newW(integrator, alg, new_jac, cache.W_γdt)
+    lazy_W = is_lazy_W(W1)
+    # Fixed-step stage preconditioners must follow shifts when a tstop changes dt.
+    new_W = cache.W_index != index || (!adaptive && lazy_W && dt != cache.W_γdt) ||
+        do_newW(integrator, alg, new_jac, cache.W_γdt)
     if new_W
         cache.W_γdt = dt
         cache.W_index = index
     end
-    if is_lazy_W(W1)
+    if lazy_W
         set_W_gamma!(W1, γdt)
         for i in 1:((num_stages - 1) ÷ 2)
             set_W_gamma!(W2[i], αdt[i] + βdt[i] * im)
