@@ -96,14 +96,35 @@ on the first or last step, and on the far side of an interior `tstop` on any ste
   - the drift `f2` for `McAte4`, `CalvoSanz4`, `McAte42`, `McAte5`, `Yoshida6` and
     `McAte8`, which matters only when `f2` depends on `t`.
 
-A `tstop` therefore does not isolate a discontinuity for these methods. For example, with
-`Ruth3`, a force that switches on just after `t = 1`, and a step that ends at the `tstop`
-`1`, the kick at `t + 25/24 dt` already sees the switched-on force.
+For example, with `Ruth3`, a force that switches on just after `t = 1`, and a step that
+ends at the `tstop` `1`, the kick at `t + 25/24 dt` already sees the switched-on force.
 
-If the right-hand side is defined only on the integration interval, or a `tstop` must
-isolate a discontinuity, use a method whose stage times all stay inside `[t, t + dt]`:
-`PseudoVerletLeapfrog`, `McAte2`, `McAte3`, `KahanLi6`, `KahanLi8` or `SofSpa10`. For the
-interval case only, extending the right-hand side slightly beyond the interval also works.
+If the right-hand side is defined only on the integration interval, choose a method whose
+stages stay within each step: `PseudoVerletLeapfrog`, `McAte2`, `McAte3`, `KahanLi6`,
+`KahanLi8` or `SofSpa10`. These methods never evaluate strictly beyond a stop, but their
+last stage is evaluated at the stop itself, so it sees whatever value the right-hand side
+has there. A `tstop` alone therefore does not isolate a jump: with `McAte2`, a force equal
+to `1` for `t >= 1` and zero before, and a unit step ending at the `tstop` `1`, the final
+kick gives `v(1) = 1 - sqrt(2)/2` instead of zero. To isolate a jump, solve the intervals
+separately, using for each interval the one-sided right-hand side, including its value at
+the shared endpoint:
+
+```jldoctest
+julia> using OrdinaryDiffEqSymplecticRK
+
+julia> kick(a) = (v, u, p, t) -> a;
+
+julia> drift(v, u, p, t) = v;
+
+julia> s1 = solve(DynamicalODEProblem(kick(0.0), drift, 0.0, 0.0, (0.0, 1.0)), McAte2(); dt = 1.0);
+
+julia> v1, u1 = s1.u[end].x;
+
+julia> s2 = solve(DynamicalODEProblem(kick(1.0), drift, v1, u1, (1.0, 2.0)), McAte2(); dt = 1.0);
+
+julia> (v1, s2.u[end].x[1])
+(0.0, 1.0)
+```
 
 ### Important Note on Chaotic Systems
 
