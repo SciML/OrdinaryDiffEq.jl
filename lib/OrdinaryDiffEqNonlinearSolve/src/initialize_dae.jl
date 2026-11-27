@@ -172,6 +172,17 @@ function default_nlsolve(
     return nothing
 end
 
+# Newton's first Jacobian would probe each block with finite-difference perturbations or
+# Duals, which can leave a residual's domain or fail on wrapped and Float64-only blocks.
+# Start at Newton only when every nonlinear block supplies its own Jacobian.
+_scc_block_has_jac(p) = !(p isa AbstractNonlinearProblem) || p.u0 === nothing ||
+    SciMLBase.has_jac(p.f)
+function _scc_init_polyalg(u, prob, autodiff, chunksize)
+    ad = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+    all(_scc_block_has_jac, prob.probs) && return _init_polyalg(u, prob, ad)
+    return FastShortcutNonlinearPolyalg(; autodiff = ad)
+end
+
 # An `SCCNonlinearProblem` that contains `HomotopyProblem` blocks must be solved with
 # `nothing` so each block picks its own default: its `HomotopyProblem` blocks continue (via
 # `solve(::HomotopyProblem, ::Nothing)`) while the plain blocks use the standard nonlinear
@@ -195,14 +206,14 @@ function default_nlsolve(
         autodiff = false, chunksize = Val(1)
     )
     any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
-    return _init_polyalg(u, prob, AutoFiniteDiff())
+    return _scc_init_polyalg(u, prob, autodiff, chunksize)
 end
 function default_nlsolve(
         ::Nothing, isinplace::Val{false}, u, prob::SciMLBase.SCCNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
     any(p -> p isa SciMLBase.HomotopyProblem, prob.probs) && return nothing
-    return _init_polyalg(u, prob, AutoFiniteDiff())
+    return _scc_init_polyalg(u, prob, autodiff, chunksize)
 end
 function default_nlsolve(
         ::Nothing, isinplace::Val{false}, u::StaticArray, prob::SciMLBase.SCCNonlinearProblem,
