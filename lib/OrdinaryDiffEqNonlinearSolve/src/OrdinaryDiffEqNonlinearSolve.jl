@@ -2,6 +2,7 @@ module OrdinaryDiffEqNonlinearSolve
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
 import CommonSolve
+using SparseArrays: AbstractSparseMatrix, nonzeros
 using CommonSolve: init, solve, solve!, step!
 
 import SciMLBase
@@ -11,7 +12,7 @@ using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
     NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem,
     get_tmp_cache, ReturnCode,
     AbstractNonlinearProblem, LinearAliasSpecifier,
-    _vec, _reshape, postamble!, alg_order, isadaptive
+    _vec, _reshape, postamble!, alg_order
 import DiffEqBase
 import DiffEqBase: OrdinaryDiffEqTag, calculate_residuals, calculate_residuals!,
     BrownFullBasicInit, ShampineCollocationInit

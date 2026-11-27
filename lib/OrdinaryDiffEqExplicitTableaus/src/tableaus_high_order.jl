@@ -3702,7 +3702,7 @@ function Feagin12(::Type{T} = BigFloat, ::Type{T_time} = T) where {T, T_time}
     c = zeros(T_time, 25)
     α = zeros(T, 25)
     αEEst = zeros(T, 25)
-    c[2] = convert(T, big"2")
+    c[2] = convert(T, big".2")
     c[3] = convert(
         T,
         big".5555555555555555555555555555555555555555555555555555555555555555555555555555555555556"
