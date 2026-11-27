@@ -1,5 +1,6 @@
 using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqSDIRK, OrdinaryDiffEqNonlinearSolve,
-    OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test, ADTypes, ForwardDiff, SciMLBase
+    OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, SparseArrays, Test, ADTypes, ForwardDiff,
+    SciMLBase
 using OrdinaryDiffEqCore: default_nlsolve
 using SymbolicIndexingInterface: parameter_values
 import OrdinaryDiffEqCore, SymbolicIndexingInterface
@@ -478,6 +479,90 @@ end
         sol.u[1][2]
     end
     @test gradient ≈ [0.25, 0.5] atol = 1.0e-10
+end
+
+const override_root_seed = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, Float64))}(2.0, 1.0)
+
+# The direct nonlinear solve, the `init` state and the first saved state for an in-place DAE
+# whose algebraic states are initialized by `nlf` with parameters `(; c = override_root_seed)`.
+function override_root_solutions(
+        nlf, z0, dae_residual; autodiff = true, iip_selector = Val(false)
+    )
+    tolerances = (; abstol = 1.0e-12, reltol = 1.0e-12)
+    c = override_root_seed
+    nlprob = NonlinearProblem(nlf, z0, (; c))
+    nlsolve = default_nlsolve(nothing, iip_selector, z0, nlprob, autodiff)
+    nlsol = solve(nlprob, nlsolve; tolerances...)
+    initialization_data = SciMLBase.OverrideInitData(
+        nlprob, nothing, sol -> vcat(1.0, sol.u), nothing
+    )
+    rhs! = function (du, u, p, t)
+        du[1] = -u[1]
+        du[2:end] .= dae_residual(u[2:end], p)
+        return nothing
+    end
+    f = ODEFunction{true}(
+        rhs!; mass_matrix = Diagonal([1.0; zeros(length(z0))]), initialization_data
+    )
+    prob = ODEProblem(f, Vector(vcat(one(c), z0)), (0.0, 0.1), (; c))
+    alg = autodiff ? Rodas5P() : Rodas5P(autodiff = AutoFiniteDiff())
+    integrator = init(prob, alg; tolerances...)
+    sol = solve(prob, alg; saveat = [0.0], tolerances...)
+    @test SciMLBase.successful_retcode(nlsol)
+    @test SciMLBase.successful_retcode(sol)
+    return [vcat(nlsol.u), integrator.u[2:end], sol.u[1][2:end]]
+end
+
+function test_override_root(states, root, tangent)
+    for z in states
+        @test ForwardDiff.value.(z) ≈ root atol = 1.0e-8
+        @test ForwardDiff.partials.(z, 1) ≈ tangent atol = 1.0e-8
+    end
+    return nothing
+end
+
+# (z - c)^3 = 0 has a singular Jacobian at its root z = c, so a consistent dual warm start
+# z = c keeps its tangent 1.
+@testset "OverrideInit repeated $label root keeps a consistent dual warm start" for (label, residual, z0) in (
+        ("scalar", (z, p) -> (z - p.c)^3, override_root_seed),
+        ("vector", (z, p) -> [(z[1] - p.c)^3], [override_root_seed]),
+    )
+
+    states = override_root_solutions(residual, z0, (z, p) -> z .- p.c)
+    test_override_root(states, [2.0], [1.0])
+end
+
+# 2z₁ + z₂ = c, z₁ + 3z₂ = 0 has root (3c, -c) / 5 and tangent (0.6, -0.2).
+@testset "OverrideInit with a sparse analytic Jacobian" begin
+    residual(z, p) = [2z[1] + z[2] - p.c, z[1] + 3z[2]]
+    nlf = NonlinearFunction(residual; jac = (z, p) -> sparse([2.0 1.0; 1.0 3.0]))
+    states = override_root_solutions(nlf, [0.0, 0.0], residual)
+    test_override_root(states, [1.2, -0.4], [0.6, -0.2])
+end
+
+@testset "OverrideInit of an in-place DAE from a static nonlinear warm start" begin
+    nlf = NonlinearFunction(
+        (z, p) -> SVector(z[1] - p.c); jac = (z, p) -> SMatrix{1, 1}(1.0)
+    )
+    states = override_root_solutions(
+        nlf, SVector(override_root_seed), (z, p) -> z .- p.c; iip_selector = Val(true)
+    )
+    @test states[1] isa SVector
+    test_override_root(states, [2.0], [1.0])
+end
+
+# The state enters the initialization residual only through its value, so the Jacobian
+# must come from the finite-difference backend, giving z = c / 2 with tangent 0.5.
+@testset "OverrideInit with AutoFiniteDiff, analytic Jacobian = $analytic" for analytic in (false, true)
+    jac = analytic ? ((z, p) -> fill(2.0, 1, 1)) : nothing
+    nlf = NonlinearFunction((z, p) -> [2 * ForwardDiff.value(z[1]) - p.c]; jac)
+    states = override_root_solutions(
+        nlf, [0.5], (z, p) -> 2 .* z .- p.c; autodiff = false
+    )
+    test_override_root(states, [1.0], [0.5])
+    for z in states
+        @test ForwardDiff.partials(2 * z[1] - override_root_seed, 1) ≈ 0.0 atol = 1.0e-8
+    end
 end
 
 # records the keywords Brown passes to the nonlinear solve

@@ -335,6 +335,8 @@ end
         z = sol.u[1][2]
         @test ForwardDiff.value(z) isa Float64
         @test ForwardDiff.value(z) ≈ root atol = abstol rtol = 0
-        @test ForwardDiff.partials(z, 1) ≈ slope rtol = 1.0e-12
+        # The default algorithm differentiates with `AutoFiniteDiff()`, so the implicit
+        # tangent uses a forward-difference ∂F/∂u with relative error up to eps / √eps ≈ 1.5e-8.
+        @test ForwardDiff.partials(z, 1) ≈ slope rtol = 2.0e-8
     end
 end

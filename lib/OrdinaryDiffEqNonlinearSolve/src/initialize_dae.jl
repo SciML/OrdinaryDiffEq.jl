@@ -27,17 +27,23 @@ function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
 end
 
 """
-    OverrideInitNLSolve(alg)
+    OverrideInitNLSolve(alg, autodiff)
 
 Default nonlinear solver of `OverrideInit` initialization problems. Problems whose
 parameters are a `Tuple` or `NamedTuple` holding ForwardDiff duals of a single type are
 solved by `alg` on the primal values, and the partials of the root `u` are obtained by
 implicit differentiation, `∂u = -(∂F/∂u) \\ ∂F/∂p`, with the residual, its analytic
-Jacobian and the initialization maps all seeing the original parameter container. Every
+Jacobian and the initialization maps all seeing the original parameter container.
+`∂F/∂u` is the analytic Jacobian of the problem when it has one, and otherwise is
+computed on the primal problem with the ADTypes backend `autodiff`. When `∂F/∂u` is
+singular at the root (a zero scalar derivative, or an LU factorization that fails), the
+partials are not determined by the root, so `alg` is applied to the original dual problem
+and its solution is returned; a consistent dual warm start then keeps its partials. Every
 other problem is passed to `alg` unchanged.
 """
-struct OverrideInitNLSolve{A} <: SciMLBase.AbstractNonlinearAlgorithm
+struct OverrideInitNLSolve{A, AD} <: SciMLBase.AbstractNonlinearAlgorithm
     alg::A
+    autodiff::AD
 end
 
 _collocation_nlsolve(alg) = alg
@@ -76,7 +82,7 @@ function _nonlinear_residual(prob::NonlinearProblem, u, p)
     return resid
 end
 
-function _nonlinear_jacobian(prob::NonlinearProblem, u, p)
+function _nonlinear_jacobian(prob::NonlinearProblem, u, p, autodiff)
     f = prob.f
     if SciMLBase.isinplace(prob)
         if SciMLBase.has_jac(f)
@@ -85,11 +91,17 @@ function _nonlinear_jacobian(prob::NonlinearProblem, u, p)
             f.jac(J, u, p)
             return J
         end
-        return DI.jacobian((resid, x) -> f(resid, x, p), similar(u), AutoForwardDiff(), u)
+        return DI.jacobian((resid, x) -> f(resid, x, p), similar(u), autodiff, u)
     end
     SciMLBase.has_jac(f) && return f.jac(u, p)
-    u isa Number && return DI.derivative(x -> f(x, p), AutoForwardDiff(), u)
-    return DI.jacobian(x -> f(x, p), AutoForwardDiff(), u)
+    u isa Number && return DI.derivative(x -> f(x, p), autodiff, u)
+    return DI.jacobian(x -> f(x, p), autodiff, u)
+end
+
+_implicit_correction(Jᵤ::Number, ΔF) = iszero(Jᵤ) ? nothing : ΔF / Jᵤ
+function _implicit_correction(Jᵤ, ΔF)
+    linsol = solve(LinearProblem(Jᵤ, vec(ΔF)), LinearSolve.LUFactorization())
+    return SciMLBase.successful_retcode(linsol) ? linsol.u : nothing
 end
 
 function CommonSolve.solve(
@@ -109,18 +121,16 @@ function _implicit_dual_solve(
     D = Dual{T, V, N}
     p = map(Base.Fix1(_strip_dual, D), prob.p)
     primal = remake(prob; u0 = _strip_dual(D, prob.u0), p)
-    sol = solve(primal, alg, args...; kwargs...)
+    sol = solve(primal, alg.alg, args...; kwargs...)
     u = sol.u
     S = Dual{T, promote_type(eltype(u), V), N}
     u_dual = u isa Number ? S(u) : S.(u)
     if SciMLBase.successful_retcode(sol)
         ΔF = _nonlinear_residual(prob, u_dual, prob.p) .- _nonlinear_residual(primal, u, p)
-        Jᵤ = _nonlinear_jacobian(primal, u, p)
-        if u isa Number
-            u_dual -= ΔF / Jᵤ
-        else
-            u_dual .-= reshape(Jᵤ \ vec(ΔF), size(u))
-        end
+        correction = _implicit_correction(_nonlinear_jacobian(primal, u, p, alg.autodiff), ΔF)
+        correction === nothing && return solve(prob, alg.alg, args...; kwargs...)
+        u_dual = u isa Number ? u_dual - correction :
+            u_dual .- reshape(correction, size(u))
     end
     resid = _nonlinear_residual(prob, u_dual, prob.p)
     return SciMLBase.build_solution(
@@ -129,10 +139,9 @@ function _implicit_dual_solve(
 end
 
 function _default_nonlinear_polyalg(u, prob, autodiff, chunksize)
-    alg = FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
-    )
-    return prob isa NonlinearProblem ? OverrideInitNLSolve(alg) : alg
+    ad = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+    alg = FastShortcutNonlinearPolyalg(; autodiff = ad)
+    return prob isa NonlinearProblem ? OverrideInitNLSolve(alg, ad) : alg
 end
 
 function default_nlsolve(
