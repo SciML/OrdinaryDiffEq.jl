@@ -194,6 +194,10 @@ function get_current_has_stiff_interpolation(alg::CompositeAlgorithm, cache)
     return _eval_index(has_stiff_interpolation, alg.algs, cache.current)::Bool
 end
 
+function get_current_resumes_dt_after_tstop(alg::CompositeAlgorithm, cache)
+    return _eval_index(resumes_dt_after_tstop, alg.algs, cache.current)::Bool
+end
+
 all_fsal(alg, cache) = isfsal(alg)
 all_fsal(alg::CompositeAlgorithm, cache) = _all_fsal(alg.algs)
 
@@ -362,6 +366,34 @@ post-process the controller's proposed step size `dtnew` before it is applied
 `dtnew` unchanged by default.
 """
 dtnew_modification(integrator, alg, dtnew) = dtnew
+
+"""
+    resumes_dt_after_tstop(alg) -> Bool
+
+Return whether `alg` supports the `resume_dt_after_tstop = true` solve option (`true` by
+default). With the option set, after an accepted step that was shortened to land on a
+tstop, the next step resumes from the step size the controller had proposed before the
+shortening, clamped to `dtmax`. The controller's step factor from the shortened step may
+reduce that step size but not increase it, and the result is never smaller than the
+controller's own proposal. The resumed step is not limited by the controller's growth
+bound (`qmax`) relative to the shortened step.
+
+With `false`, or without the option, the next step is the controller's proposal from the
+shortened step alone, as CVODE does for the Nordsieck BDF methods.
+
+For a `CompositeAlgorithm`, the trait of the member selected by `cache.current` applies
+(`get_current_resumes_dt_after_tstop`).
+"""
+resumes_dt_after_tstop(alg) = true
+
+"""
+    get_current_resumes_dt_after_tstop(alg, cache) -> Bool
+
+`resumes_dt_after_tstop` for the algorithm that is currently active, which for a
+`CompositeAlgorithm` is the sub-algorithm selected by `cache.current` rather than the
+wrapper itself.
+"""
+get_current_resumes_dt_after_tstop(alg, cache) = resumes_dt_after_tstop(alg)
 
 # Whether the algorithm's alg_cache / perform_step! handle `u === nothing` directly.
 # Default: false, and __init coerces a null u0 to Float64[] so generic cache code
