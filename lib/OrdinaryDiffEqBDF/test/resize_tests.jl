@@ -50,6 +50,17 @@ end
     end
 end
 
+@testset "FBDF SDIRK restart after resizing" begin
+    prob = ODEProblem(f!, copy(U0), (0.0, TF))
+    sol = solve(
+        prob, FBDF(rk_start = true); callback = resize_callback!(true, Int[]),
+        tstops = [TG, TS], reltol = 1.0e-10, abstol = 1.0e-12
+    )
+    @test sol.retcode == ReturnCode.Success
+    @test sol(0.75) ≈ exact(0.75) rtol = 1.0e-7 atol = 1.0e-10
+    @test sol.u[end] ≈ exact(TF) rtol = 1.0e-7 atol = 1.0e-10
+end
+
 # Shrinking a vector with `resize!` keeps its trailing memory, so growing it back exposes the old
 # values. QNDF keeps its difference history across a resize when the derivative discontinuity is
 # cleared, so the rows a resize adds to that history must not carry such values.

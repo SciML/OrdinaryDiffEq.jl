@@ -203,6 +203,12 @@ function reinitFBDF!(integrator, cache)
     (; t, dt, uprev) = integrator
 
     if integrator.derivative_discontinuity
+        # Only on the first attempt after an event (retries and t₀ see
+        # iters_from_event == 0). FBDF only: DFBDF has not been evaluated with these.
+        if iters_from_event > 0 && cache isa Union{FBDFCache, FBDFConstantCache}
+            # J at the pre-event state is the wrong linearization after a jump.
+            isnewton(cache.nlsolver) && (cache.nlsolver.cache.firstcall = true)
+        end
         order = cache.order = 1
         consfailcnt = cache.consfailcnt = cache.nconsteps = 0
         cache.qwait = 3 # order + 2, matching nconsteps >= order + 2 for failure-free runs
@@ -210,6 +216,7 @@ function reinitFBDF!(integrator, cache)
         if hasproperty(cache, :stald)
             stald_reset!(cache.stald)
         end
+        hasproperty(cache, :rk_seeded) && (cache.rk_seeded = false)
 
         fill!(ts, zero(eltype(ts)))
         for h in u_history
@@ -224,11 +231,21 @@ function reinitFBDF!(integrator, cache)
         end
     end
 
+    seeded = hasproperty(cache, :rk_seeded) && cache.rk_seeded
+    if iters_from_event == 1 && t != ts[1] && seeded
+        cache.rk_seeded = false
+    else
+        seeded = false
+    end
     if uprev isa AbstractArray && ArrayInterface.ismutable(uprev)
         if iters_from_event == 0
             ts[1] = t
             copyto!(u_history[1], uprev)
         elseif iters_from_event == 1 && t != ts[1]
+            if seeded
+                ts[3] = ts[2]
+                copyto!(u_history[3], u_history[2])
+            end
             ts[2] = ts[1]
             ts[1] = t
             copyto!(u_history[2], u_history[1])
@@ -246,6 +263,10 @@ function reinitFBDF!(integrator, cache)
             ts[1] = t
             u_history[1] = uprev
         elseif iters_from_event == 1 && t != ts[1]
+            if seeded
+                ts[3] = ts[2]
+                u_history[3] = u_history[2]
+            end
             ts[2] = ts[1]
             ts[1] = t
             u_history[2] = u_history[1]

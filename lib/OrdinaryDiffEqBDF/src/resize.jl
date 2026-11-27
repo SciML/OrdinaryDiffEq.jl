@@ -26,6 +26,9 @@ function resize_non_user_cache!(
     resize_bdf_buffers!(cache.u_history, i)
     resize_bdf_buffers!(cache.u_corrector, i)
     resize_bdf_buffers!(cache.dense, i)
+    if cache.rkcache !== nothing
+        resize_bdf_buffers!(cache.rkcache.zs, i)
+    end
     cache.order = 1
     cache.prev_order = 1
     cache.nconsteps = 0

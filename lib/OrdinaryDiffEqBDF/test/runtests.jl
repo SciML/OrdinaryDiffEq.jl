@@ -37,6 +37,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "BDF Regression Tests" include("bdf_regression_tests.jl")
     @time @safetestset "BDF Resize Tests" include("resize_tests.jl")
     @time @safetestset "BDF Time Reversal Tests" include("bdf_time_reversal_tests.jl")
+    @time @safetestset "FBDF Startup Tests" include("fbdf_startup_tests.jl")
     @time @safetestset "FBDF Time Filter Tests" include("fbdf_time_filter_tests.jl")
     @time @safetestset "FBDF Filter Regression Tests" include("fbdf_filter_regression_tests.jl")
     @time @safetestset "Nordsieck BDF Tests" include("nordsieck_tests.jl")

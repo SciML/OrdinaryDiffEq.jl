@@ -123,7 +123,7 @@ end
     # machinery below may run: `f1 + f2` goes to the implicit solve instead, which is what a
     # non-split solve of the same method does (#4149).
     is_imex = integrator.f isa SplitFunction && issplit(alg)
-    predictor = _predictor(alg)
+    predictor = something(tab.predictor, _predictor(alg))
     # A callable `predictor` on the nlsolve algorithm overwrites `nlsolver.z`
     # inside `nlsolve!`; collapse to the zero fill so the interpolant work is
     # not computed then thrown away.
@@ -210,7 +210,10 @@ end
         if tab.explicit_first_stage && is_imex && split_guess[2] > 0
             copyto!(zs[2], zs[split_guess[2]])
         else
-            if predictor == Predictor.Trivial
+            if predictor === Val(:constant_state)
+                # Start Newton at uprev: the stage state is tmp + γ*z.
+                @.. broadcast = false zs[2] = (uprev - tmp) / γ
+            elseif predictor == Predictor.Trivial
                 fill!(zs[2], zero(eltype(u)))
             elseif predictor == Predictor.CopyPrev
                 copyto!(zs[2], zs[1])
@@ -1327,10 +1330,18 @@ end
                     @.. broadcast = false tmp = tmp + ebtilde[j] * ks[j]
                 end
             end
-            if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
-                est = nlsolver.cache.dz
-                linres = dolinsolve(
-                    integrator, nlsolver.cache.linsolve; b = _vec(tmp),
+            scaled_smoothing = tab.smooth_est === Val(:scaled)
+            if can_smooth_est(nlsolver) && (scaled_smoothing || something(tab.smooth_est, _esdirk_smooth_est(alg)))
+                nlcache = nlsolver.cache
+                rhs = tmp
+                if scaled_smoothing
+                    # W = J - M/(γh). Use the scale at which W was factored.
+                    rhs = nlcache.k
+                    @.. broadcast = false rhs = -tmp / nlcache.W_γdt
+                end
+                est = nlcache.dz
+                dolinsolve(
+                    integrator, nlcache.linsolve; b = _vec(rhs),
                     linu = _vec(est)
                 )
                 integrator.stats.nsolve += 1
@@ -1418,7 +1429,7 @@ end
     # machinery below may run: `f1 + f2` goes to the implicit solve instead, which is what a
     # non-split solve of the same method does (#4149).
     is_imex = integrator.f isa SplitFunction && issplit(alg)
-    predictor = _predictor(alg)
+    predictor = something(tab.predictor, _predictor(alg))
     # See `_perform_step_iip!` above: a callable nlsolve `predictor` makes all
     # of this seeding dead work.
     stage_predictor(nlsolver.alg) === nothing || (predictor = Predictor.Trivial)
@@ -1500,7 +1511,9 @@ end
         if tab.explicit_first_stage && is_imex
             z_guess = z1
         else
-            if predictor == Predictor.Trivial
+            if predictor === Val(:constant_state)
+                z_guess = (uprev - tmp) / γ
+            elseif predictor == Predictor.Trivial
                 z_guess = zero(u)
             elseif predictor == Predictor.CopyPrev
                 z_guess = z1
@@ -2386,9 +2399,13 @@ end
                     tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8 + ebtilde[9] * k9 + ebtilde[10] * k10 + ebtilde[11] * k11 + ebtilde[12] * k12
                 end
             end
-            if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
+            scaled_smoothing = tab.smooth_est === Val(:scaled)
+            if can_smooth_est(nlsolver) && (scaled_smoothing || something(tab.smooth_est, _esdirk_smooth_est(alg)))
                 integrator.stats.nsolve += 1
-                est = _reshape(get_W(nlsolver) \ _vec(tmp_est), axes(tmp_est))
+                # Use the factorization's γh here as in the in-place path.
+                rhs = _vec(tmp_est)
+                scaled_smoothing && (rhs = rhs / (-nlsolver.cache.W_γdt))
+                est = _reshape(get_W(nlsolver) \ rhs, axes(tmp_est))
             else
                 est = tmp_est
             end

@@ -25,6 +25,10 @@ get_current_alg_order(alg::FBDF, cache) = cache.filter_order > 0 ? cache.filter_
 get_current_adaptive_order(alg::QNDF, cache) = cache.order
 get_current_adaptive_order(alg::FBDF, cache) = cache.filter_order > 0 ? cache.filter_order : cache.order
 
+# The Hairer-Wanner exponent is 1/(q + 1) for FBDF's order-q error estimate.
+OrdinaryDiffEqCore.initial_timestep_order(alg::FBDF, cache) =
+    get_current_adaptive_order(alg, cache) + 1
+
 isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
 isadaptive(alg::DFBDF) = true

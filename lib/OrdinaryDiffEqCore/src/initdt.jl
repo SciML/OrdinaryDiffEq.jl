@@ -305,7 +305,17 @@ end
     )
 end
 
-# ODE iip entry point
+"""
+    initial_timestep_order(alg, cache) -> Int
+
+Return the order `p` used in the Hairer–Wanner automatic ODE initial
+timestep estimate, which raises the reciprocal of the scaled derivative norm
+to the power `1 / p`. Defaults to [`get_current_alg_order`](@ref). Solver sublibraries can
+extend this hook when the startup estimate uses a different order from the
+step-size controller.
+"""
+initial_timestep_order(alg, cache) = get_current_alg_order(alg, cache)
+
 """
     ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, integrator) -> dt
 
@@ -321,7 +331,7 @@ function ode_determine_initdt(
     return _ode_initdt_iip(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing, nothing,
-        get_current_alg_order(integrator.alg, integrator.cache), integrator
+        initial_timestep_order(integrator.alg, integrator.cache), integrator
     )
 end
 
@@ -475,7 +485,7 @@ function ode_determine_initdt(
     return _ode_initdt_oop(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing,
-        get_current_alg_order(integrator.alg, integrator.cache), integrator
+        initial_timestep_order(integrator.alg, integrator.cache), integrator
     )
 end
 

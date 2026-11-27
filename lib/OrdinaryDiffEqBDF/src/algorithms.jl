@@ -497,6 +497,13 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
         STALD's unfiltered derivative tests are not used on filtered steps.
         Extra `f` evaluations are required; efficiency depends on the problem.
         Default: `false`.
+    - `rk_start`: when there is no usable history (the first step and after
+        discontinuities), take an L-stable two-stage SDIRK step. A quadratic
+        through the endpoint states with the SDIRK endpoint derivative supplies
+        dense output and seeds the history so integration resumes at order 2.
+        Startup step control must resolve stiff transients for accurate
+        interpolation and history seeding.
+        Requires adaptive stepping and `max_order >= 2`. Default: `false`.
     """,
     extra_keyword_default = """
     κ = nothing,
@@ -513,9 +520,10 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
     stald_rrtol = 1e-2,
     stald_tiny = 1e-90,
     time_filter = false,
+    rk_start = false,
     """
 )
-struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT} <:
+struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT, RK} <:
     OrdinaryDiffEqNewtonAdaptiveAlgorithm
     max_order::Val{MO}
     linsolve::F
@@ -537,6 +545,7 @@ struct FBDF{MO, AD, F, F2, K, T, StepLimiter, CJ, QT} <:
     qsteady_min::QT
     qsteady_max::QT
     time_filter::Bool
+    rk_start::Val{RK} # type-level so the cache type (with or without a start cache) infers
 end
 
 function FBDF(;
@@ -554,6 +563,7 @@ function FBDF(;
         stald_tiny = 1.0e-90,
         qsteady_min = 9 // 10, qsteady_max = 2 // 1, qmax = 10 // 1,
         time_filter = false,
+        rk_start = false,
     ) where {MO}
     autodiff = _fixup_ad(autodiff)
 
@@ -564,7 +574,7 @@ function FBDF(;
         Float64(stald_sqtol), Float64(stald_rrtol), Float64(stald_tiny),
         _unwrap_val(concrete_jac),
         qmax, qsteady_min, qsteady_max,
-        time_filter,
+        time_filter, Val(_unwrap_val(rk_start)),
     )
 end
 
