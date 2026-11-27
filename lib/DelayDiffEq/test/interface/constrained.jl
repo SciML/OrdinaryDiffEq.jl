@@ -1,5 +1,6 @@
 using DelayDiffEq, DDEProblemLibrary
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqTsit5
 using SciMLBase: ReturnCode
 using Test
 
@@ -95,5 +96,23 @@ end
 
         @test sol.retcode == ReturnCode.Success
         @test sol.t[end] == 0
+    end
+end
+
+@testset "rounded tstop distance" begin
+    @testset "tdir = $tdir" for tdir in (1, -1)
+        e = eps(1.0)
+        endpoint = tdir * e / 4
+        prob = DDEProblem(
+            (u, h, p, t) -> tdir * h(p, t - 2 * tdir), 1.0, (p, t) -> 1.0,
+            (-tdir * 1.0, endpoint); constant_lags = [2 * tdir]
+        )
+        sol = solve(
+            prob, MethodOfSteps(Tsit5(); constrained = true);
+            adaptive = false, dt = tdir * (1 - 100 * e)
+        )
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == endpoint
+        @test maximum(abs(sol(t) - (2 + tdir * t)) for t in range(-tdir * 1.0, endpoint; length = 5)) <= 104 * e
     end
 end
