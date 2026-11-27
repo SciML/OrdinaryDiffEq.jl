@@ -48,6 +48,13 @@ problem function's specialization. This specializes the solver on all merged cal
 types, including user callbacks. The default preserves the problem's usual callback
 erasure behavior. `erase_callbacks = nothing` inherits from `prob.kwargs`,
 or defaults to `true` when unset.
+
+For an `AbstractJumpProblem{P}` wrapper, an explicit Boolean (passed or stored in
+`prob.kwargs`) is kept in the returned kwargs as `erase_callbacks`, so the wrapper's
+solver hook forwards it to the inner problem's `init` or `solve`, which then decides
+whether its own specialization erases callbacks. The inner problem is never read while
+merging. When `P <: SciMLBase.AbstractDiscreteProblem` the keyword is consumed instead,
+so solvers that reject unknown keywords (e.g. `SSAStepper`) never receive it.
 """
 function merge_problem_kwargs(prob; merge_callbacks = true, erase_callbacks = nothing, kwargs...)
 
@@ -80,7 +87,7 @@ function merge_problem_kwargs(prob; merge_callbacks = true, erase_callbacks = no
     if haskey(kwargs, :erase_callbacks)
         kwargs = Base.structdiff((; kwargs...), (; erase_callbacks = nothing))
     end
-    if explicit_erase !== nothing && !_erases_callback_types(prob) && _wraps_erasable_problem(prob)
+    if explicit_erase !== nothing && !_erases_callback_types(prob) && _forwards_callback_erasure(prob)
         kwargs = merge((; kwargs...), (; erase_callbacks = explicit_erase))
     end
     if erase_callbacks && _erases_callback_types(prob)
@@ -119,13 +126,9 @@ function _callback_erasure_enabled(prob, kwargs, erase_callbacks = nothing)
     return resolved === nothing ? true : resolved
 end
 
-function _wraps_erasable_problem(prob)
-    hasfield(typeof(prob), :prob) || return false
-    # A wrapper whose solver hook has not built its inner problem yet keeps the
-    # setting so the hook can forward it once the inner problem exists.
-    isdefined(prob, :prob) || return prob isa SciMLBase.AbstractJumpProblem
-    inner = prob.prob
-    return !(inner isa SciMLBase.AbstractDiscreteProblem) && _erases_callback_types(inner)
+_forwards_callback_erasure(prob) = false
+function _forwards_callback_erasure(::SciMLBase.AbstractJumpProblem{P}) where {P}
+    return !(P <: SciMLBase.AbstractDiscreteProblem)
 end
 
 # Erasure rewrites `prob.kwargs`, which rebuilds the problem through

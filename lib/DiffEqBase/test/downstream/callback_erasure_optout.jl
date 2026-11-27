@@ -204,30 +204,55 @@ struct PropertyForwardingWrapper{K} <: SciMLBase.AbstractJumpProblem{Nothing, No
     kwargs::K
 end
 
-function Base.getproperty(wrapper::PropertyForwardingWrapper, name::Symbol)
+struct VirtualPropertyWrapper{K} <: SciMLBase.AbstractJumpProblem{Nothing, Nothing}
+    kwargs::K
+end
+
+struct DeferredRefWrapper{K} <: SciMLBase.AbstractJumpProblem{Nothing, Nothing}
+    prob::Base.RefValue{Any}
+    kwargs::K
+end
+DeferredRefWrapper(kwargs) = DeferredRefWrapper(Ref{Any}(), kwargs)
+
+const PropertyWrappers = Union{PropertyForwardingWrapper, VirtualPropertyWrapper, DeferredRefWrapper}
+
+Base.propertynames(::PropertyWrappers) = (:prob, :kwargs)
+
+function Base.getproperty(wrapper::PropertyWrappers, name::Symbol)
     name === :prob || return getfield(wrapper, name)
+    wrapper isa DeferredRefWrapper && return getfield(wrapper, :prob)[]
     return ODEProblem{true, SciMLBase.AutoSpecialize}(callback_erasure_decay!, [1.0], (0.0, 1.0))
 end
 
-function SciMLBase.__init(wrapper::PropertyForwardingWrapper, alg::Tsit5; kwargs...)
-    return init(wrapper.prob, alg; DiffEqBase.merge_problem_kwargs(wrapper; kwargs...)...)
+prepare_inner!(::PropertyWrappers) = nothing
+function prepare_inner!(wrapper::DeferredRefWrapper)
+    getfield(wrapper, :prob)[] = ODEProblem{true, SciMLBase.AutoSpecialize}(
+        callback_erasure_decay!, [1.0], (0.0, 1.0)
+    )
+    return nothing
 end
 
-function SciMLBase.__solve(wrapper::PropertyForwardingWrapper, alg::Tsit5; kwargs...)
+function SciMLBase.__init(wrapper::PropertyWrappers, alg::Tsit5; kwargs...)
+    merged = DiffEqBase.merge_problem_kwargs(wrapper; kwargs...)
+    prepare_inner!(wrapper)
+    return init(wrapper.prob, alg; merged...)
+end
+
+function SciMLBase.__solve(wrapper::PropertyWrappers, alg::Tsit5; kwargs...)
     return SciMLBase.__init(wrapper, alg; kwargs...)
 end
 
-@testset "property-backed wrapper forwards erasure" begin
+@testset "property-backed wrapper forwards erasure: $(nameof(W))" for W in (
+        PropertyForwardingWrapper, VirtualPropertyWrapper, DeferredRefWrapper,
+    )
     callbacks = CallbackSet(
         ContinuousCallback((u, t, integrator) -> t - 0.5, integrator -> (integrator.u .*= 2)),
         DiscreteCallback((u, t, integrator) -> false, integrator -> nothing)
     )
-    wrapper = PropertyForwardingWrapper(nothing, pairs((;)))
-    if VERSION >= v"1.12"
-        @test get(DiffEqBase.merge_problem_kwargs(wrapper; erase_callbacks = false), :erase_callbacks, nothing) === false
-    end
-    for run in (init, solve), setting in (false, nothing)
-        integ = run(wrapper, Tsit5(); callback = callbacks, erase_callbacks = setting, abstol = 1.0e-10, reltol = 1.0e-10)
+    wrapper = () -> W === PropertyForwardingWrapper ? W(nothing, pairs((;))) : W(pairs((;)))
+    @test DiffEqBase.merge_problem_kwargs(wrapper(); erase_callbacks = false)[:erase_callbacks] === false
+    @testset "$(nameof(run)), erase_callbacks = $setting" for run in (init, solve), setting in (false, nothing)
+        integ = run(wrapper(), Tsit5(); callback = callbacks, erase_callbacks = setting, abstol = 1.0e-10, reltol = 1.0e-10)
         if setting === false
             @test integ.opts.callback.continuous_callbacks isa Tuple
             @test integ.opts.callback.discrete_callbacks isa Tuple
@@ -235,5 +260,29 @@ end
             @test integ.opts.callback.continuous_callbacks isa Vector{Any}
         end
         @test solve!(integ).u[end][1] ≈ 2 * exp(-1) atol = 1.0e-8
+    end
+end
+
+struct DiscreteChildWrapper{P, K} <: SciMLBase.AbstractJumpProblem{P, Nothing}
+    prob::P
+    kwargs::K
+end
+
+struct StrictDiscreteAlg <: SciMLBase.AbstractDEAlgorithm end
+
+strict_discrete_hook(; save_everystep = true) = save_everystep
+SciMLBase.__init(::DiscreteChildWrapper, ::StrictDiscreteAlg; save_everystep = true) = save_everystep
+function SciMLBase.__solve(wrapper::DiscreteChildWrapper, ::StrictDiscreteAlg; kwargs...)
+    return strict_discrete_hook(; DiffEqBase.merge_problem_kwargs(wrapper; kwargs...)...)
+end
+
+@testset "discrete wrapper consumes erasure keyword" begin
+    discrete = DiscreteProblem((u, p, t) -> u, [1.0], (0.0, 1.0))
+    for stored in ((;), (; erase_callbacks = false))
+        wrapper = DiscreteChildWrapper(discrete, pairs(stored))
+        @test !haskey(DiffEqBase.merge_problem_kwargs(wrapper; erase_callbacks = false), :erase_callbacks)
+        for run in (init, solve)
+            @test !run(wrapper, StrictDiscreteAlg(); save_everystep = false, erase_callbacks = false)
+        end
     end
 end
