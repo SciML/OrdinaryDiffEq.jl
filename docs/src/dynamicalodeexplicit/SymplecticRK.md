@@ -87,17 +87,23 @@ on `t`) is outside the quadratic-kinetic-energy assumption of `McAte4`, `CalvoSa
 time-dependent drift for `PseudoVerletLeapfrog`, `McAte2`, `Ruth3`, `McAte3`, `CandyRoz4`
 and `McAte42`.
 
-Methods with negative coefficients evaluate some stages outside `[t, t + dt]`, so on the
-first or last step outside the integration interval:
+Methods with negative coefficients evaluate some stages outside `[t, t + dt]`, even when
+the step ends exactly at a `tstop`. Those stages can fall outside the integration interval
+on the first or last step, and on the far side of an interior `tstop` on any step:
 
   - the force `f1` (kick) for `Ruth3` (up to `t + 25/24 dt`) and `CandyRoz4` (from
     about `t - 0.351207 dt` to `t + 1.351207 dt`);
   - the drift `f2` for `McAte4`, `CalvoSanz4`, `McAte42`, `McAte5`, `Yoshida6` and
     `McAte8`, which matters only when `f2` depends on `t`.
 
-If the right-hand side is defined only on the integration interval, extend it slightly
-beyond the interval or use a method whose stage times all stay inside `[t, t + dt]`:
-`PseudoVerletLeapfrog`, `McAte2`, `McAte3`, `KahanLi6`, `KahanLi8` or `SofSpa10`.
+A `tstop` therefore does not isolate a discontinuity for these methods. For example, with
+`Ruth3`, a force that switches on just after `t = 1`, and a step that ends at the `tstop`
+`1`, the kick at `t + 25/24 dt` already sees the switched-on force.
+
+If the right-hand side is defined only on the integration interval, or a `tstop` must
+isolate a discontinuity, use a method whose stage times all stay inside `[t, t + dt]`:
+`PseudoVerletLeapfrog`, `McAte2`, `McAte3`, `KahanLi6`, `KahanLi8` or `SofSpa10`. For the
+interval case only, extending the right-hand side slightly beyond the interval also works.
 
 ### Important Note on Chaotic Systems
 
