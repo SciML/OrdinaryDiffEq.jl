@@ -35,8 +35,12 @@ solved by `alg` on the primal values, and the partials of the root `u` are obtai
 implicit differentiation, `∂u = -(∂F/∂u) \\ ∂F/∂p`, with the residual, its analytic
 Jacobian and the initialization maps all seeing the original parameter container.
 `∂F/∂u` is the analytic Jacobian of the problem when it has one, and otherwise is
-computed on the primal problem with the ADTypes backend `autodiff`. When `∂F/∂u` is
-singular at the root (a zero scalar derivative, or an LU factorization that fails), the
+computed on the primal problem with the ADTypes backend `autodiff`. An `AutoFiniteDiff`
+Jacobian is also estimated with half the relative and absolute steps, and its rank counts
+as unresolved when the smallest singular value of that second estimate is at most twice
+the operator norm of the change between the two estimates, which bounds the first-order
+truncation error of the first estimate. When `∂F/∂u` is singular at the root (a zero scalar
+derivative, an LU factorization that fails, or an unresolved finite-difference rank), the
 partials are not determined by the root, so `alg` is applied to the original dual problem
 and its solution is returned; a consistent dual warm start then keeps its partials. Every
 other problem is passed to `alg` unchanged.
@@ -84,18 +88,48 @@ end
 
 function _nonlinear_jacobian(prob::NonlinearProblem, u, p, autodiff)
     f = prob.f
-    if SciMLBase.isinplace(prob)
-        if SciMLBase.has_jac(f)
-            J = f.jac_prototype === nothing ? similar(u, length(u), length(u)) :
-                similar(f.jac_prototype, eltype(u))
-            f.jac(J, u, p)
-            return J
-        end
-        return DI.jacobian((resid, x) -> f(resid, x, p), similar(u), autodiff, u)
+    if SciMLBase.has_jac(f)
+        SciMLBase.isinplace(prob) || return f.jac(u, p)
+        J = f.jac_prototype === nothing ? similar(u, length(u), length(u)) :
+            similar(f.jac_prototype, eltype(u))
+        f.jac(J, u, p)
+        return J
     end
-    SciMLBase.has_jac(f) && return f.jac(u, p)
+    J = _backend_jacobian(prob, u, p, autodiff)
+    autodiff isa AutoFiniteDiff || return J
+    J_fine = _backend_jacobian(prob, u, p, _halved_step(autodiff, u))
+    return _rank_resolved(J, J_fine) ? J : nothing
+end
+
+function _backend_jacobian(prob::NonlinearProblem, u, p, autodiff)
+    f = prob.f
+    SciMLBase.isinplace(prob) &&
+        return DI.jacobian((resid, x) -> f(resid, x, p), similar(u), autodiff, u)
     u isa Number && return DI.derivative(x -> f(x, p), autodiff, u)
     return DI.jacobian(x -> f(x, p), autodiff, u)
+end
+
+# FiniteDiff's default relative steps; the absolute step defaults to the relative one.
+_default_relstep(::Val{:central}, ::Type{T}) where {T} = cbrt(eps(real(T)))
+_default_relstep(::Val, ::Type{T}) where {T} = sqrt(eps(real(T)))
+
+function _halved_step(ad::AutoFiniteDiff, u)
+    fdtype = u isa Number ? ad.fdtype : ad.fdjtype
+    relstep = something(ad.relstep, _default_relstep(fdtype, eltype(u)))
+    absstep = something(ad.absstep, relstep)
+    return AutoFiniteDiff(;
+        ad.fdtype, ad.fdjtype, ad.fdhtype, relstep = relstep / 2, absstep = absstep / 2, ad.dir
+    )
+end
+
+function _rank_resolved(J::Number, J_fine::Number)
+    return isfinite(J) && isfinite(J_fine) && abs(J_fine) > 2 * abs(J - J_fine)
+end
+function _rank_resolved(J, J_fine)
+    isempty(J) && return true
+    all(isfinite, J) && all(isfinite, J_fine) || return false
+    σ_min = minimum(LinearAlgebra.svdvals(Matrix(J_fine)))
+    return σ_min > 2 * LinearAlgebra.opnorm(Matrix(J) - Matrix(J_fine))
 end
 
 _implicit_correction(Jᵤ::Number, ΔF) = iszero(Jᵤ) ? nothing : ΔF / Jᵤ
@@ -127,7 +161,8 @@ function _implicit_dual_solve(
     u_dual = u isa Number ? S(u) : S.(u)
     if SciMLBase.successful_retcode(sol)
         ΔF = _nonlinear_residual(prob, u_dual, prob.p) .- _nonlinear_residual(primal, u, p)
-        correction = _implicit_correction(_nonlinear_jacobian(primal, u, p, alg.autodiff), ΔF)
+        Jᵤ = _nonlinear_jacobian(primal, u, p, alg.autodiff)
+        correction = Jᵤ === nothing ? nothing : _implicit_correction(Jᵤ, ΔF)
         correction === nothing && return solve(prob, alg.alg, args...; kwargs...)
         u_dual = u isa Number ? u_dual - correction :
             u_dual .- reshape(correction, size(u))

@@ -340,3 +340,24 @@ end
         @test ForwardDiff.partials(z, 1) ≈ slope rtol = 2.0e-8
     end
 end
+
+# (z - c)^3 = 0 has a singular Jacobian at its root z = c, so a consistent dual warm start
+# z = c keeps its tangent 1 under the default finite-difference initialization.
+@testset "Default solver keeps the tangent of a repeated root" begin
+    c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, Float64))}(2.0, 1.0)
+    initprob = SciMLBase.NonlinearProblem((z, p) -> [(z[1] - p.c)^3], [c], (; c))
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> [1.0, nlsol.u[1]], nothing
+    )
+    f = ODEFunction(
+        (u, p, t) -> [-u[1], u[2] - p.c];
+        mass_matrix = Diagonal([1.0, 0.0]), initialization_data
+    )
+    sol = solve(
+        ODEProblem(f, [one(c), c], (0.0, 0.1), (; c));
+        saveat = [0.0], abstol = 1.0e-12, reltol = 1.0e-12
+    )
+    @test SciMLBase.successful_retcode(sol)
+    @test ForwardDiff.value(sol.u[1][2]) ≈ 2.0 atol = 1.0e-8
+    @test ForwardDiff.partials(sol.u[1][2], 1) ≈ 1.0 atol = 1.0e-8
+end

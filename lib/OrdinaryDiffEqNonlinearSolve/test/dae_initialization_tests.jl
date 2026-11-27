@@ -522,13 +522,35 @@ function test_override_root(states, root, tangent)
 end
 
 # (z - c)^3 = 0 has a singular Jacobian at its root z = c, so a consistent dual warm start
-# z = c keeps its tangent 1.
-@testset "OverrideInit repeated $label root keeps a consistent dual warm start" for (label, residual, z0) in (
-        ("scalar", (z, p) -> (z - p.c)^3, override_root_seed),
-        ("vector", (z, p) -> [(z[1] - p.c)^3], [override_root_seed]),
+# z = c keeps its tangent 1. Forward differences estimate that Jacobian as about 9e-16.
+@testset "OverrideInit repeated $label root keeps a consistent dual warm start, autodiff = $autodiff" for (label, residual, z0) in (
+            ("scalar", (z, p) -> (z - p.c)^3, override_root_seed),
+            ("vector", (z, p) -> [(z[1] - p.c)^3], [override_root_seed]),
+        ),
+        autodiff in (true, false)
+
+    states = override_root_solutions(residual, z0, (z, p) -> z .- p.c; autodiff)
+    test_override_root(states, [2.0], [1.0])
+end
+
+# 2^-30 (z - c) = 0 has the regular root z = c with tangent 1. Its finite-difference
+# Jacobian is resolved, so the partials come from implicit differentiation. A residual that
+# sees only the value of z has a ForwardDiff Jacobian of zero, so it is checked with
+# finite differences only.
+small_root_residual(z, p) = [2.0^-30 * (z[1] - p.c)]
+small_root_value_residual(z, p) = [2.0^-30 * (ForwardDiff.value(z[1]) - p.c)]
+@testset "OverrideInit small regular Jacobian, $label residual, autodiff = $autodiff" for (label, residual, autodiff) in (
+        ("dual", small_root_residual, true),
+        ("dual", small_root_residual, false),
+        ("value-only", small_root_value_residual, false),
     )
 
-    states = override_root_solutions(residual, z0, (z, p) -> z .- p.c)
+    nlprob = NonlinearProblem(residual, [0.5], (; c = override_root_seed))
+    nlsolve = default_nlsolve(nothing, Val(false), [0.5], nlprob, autodiff)
+    @test solve(nlprob, nlsolve; abstol = 1.0e-12, reltol = 1.0e-12).alg === nlsolve
+    states = override_root_solutions(
+        residual, [0.5], (z, p) -> 2.0^-30 .* (z .- p.c); autodiff
+    )
     test_override_root(states, [2.0], [1.0])
 end
 
