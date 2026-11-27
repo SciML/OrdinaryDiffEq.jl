@@ -63,36 +63,25 @@ with_jac!(u0) = NonlinearProblem(
     NonlinearFunction((du, u, p) -> (du .= u .^ 2 .- 4; nothing); jac = sq_jac!), u0
 )
 
-@testset "SCCNonlinearProblem with supplied Jacobians is sized by its largest block" begin
-    # The SCC solve hands the same algorithm to every block, so it starts at Newton only when
-    # all of the blocks are small enough for it.
+@testset "SCCNonlinearProblem keeps the Broyden-first default" begin
+    generic = SCCNonlinearProblem((small_oop, small_iip), explicit, nothing, Val(true))
+    partial = SCCNonlinearProblem((with_jac([1.5, 1.5]), small_oop), explicit, nothing, Val(true))
     small = SCCNonlinearProblem((with_jac([1.5, 1.5]), with_jac!([1.5, 1.5])), explicit, nothing, Val(true))
-    # two blocks of 25 are 50 unknowns in total, but each solve only sees 25
     edge = SCCNonlinearProblem((with_jac(fill(1.5, 25)), with_jac(fill(1.5, 25))), explicit, nothing, Val(true))
     big = SCCNonlinearProblem((with_jac([1.5, 1.5]), with_jac(fill(1.5, 26))), explicit, nothing, Val(true))
     slow = SCCNonlinearProblem(
         (with_jac([1.5, 1.5]), with_jac(SlowIndexVector([1.5, 1.5]))), explicit, nothing, Val(true)
     )
-    for iip in (Val(true), Val(false)), ad in (false, true)
-        @test newton_first(default_nlsolve(nothing, iip, zeros(4), small, ad)) == true
-        @test newton_first(default_nlsolve(nothing, iip, zeros(50), edge, ad)) == true
-        @test newton_first(default_nlsolve(nothing, iip, zeros(28), big, ad)) == false
-        # one GPU block keeps the Broyden-first order for the whole problem...
-        @test newton_first(default_nlsolve(nothing, iip, zeros(4), slow, ad)) == false
-        # ...and so does a GPU `u`
-        @test newton_first(default_nlsolve(nothing, iip, SlowIndexVector(zeros(4)), small, ad)) == false
-    end
-end
-
-@testset "SCCNonlinearProblem without supplied Jacobians keeps the Broyden-first default" begin
-    generic = SCCNonlinearProblem((small_oop, small_iip), explicit, nothing, Val(true))
-    partial = SCCNonlinearProblem((with_jac([1.5, 1.5]), small_oop), explicit, nothing, Val(true))
-    for prob in (generic, partial), iip in (Val(true), Val(false))
-        alg = default_nlsolve(nothing, iip, zeros(4), prob, false)
+    cases = (
+        (generic, zeros(4)), (partial, zeros(4)), (small, zeros(4)), (edge, zeros(50)),
+        (big, zeros(28)), (slow, zeros(4)), (small, SlowIndexVector(zeros(4))),
+    )
+    for (prob, u) in cases, iip in (Val(true), Val(false))
+        alg = default_nlsolve(nothing, iip, u, prob, false)
         @test start_index(alg) == 1
         @test first(alg.algs).name === :Broyden
         @test alg.algs[end].autodiff isa AutoFiniteDiff
-        @test tagof(default_nlsolve(nothing, iip, zeros(4), prob, true).algs[end].autodiff) <:
+        @test tagof(default_nlsolve(nothing, iip, u, prob, true).algs[end].autodiff) <:
         ForwardDiff.Tag
     end
 end
@@ -240,17 +229,26 @@ end
 const log_c = 2.0 + 1.0e-9
 log_resid!(r, u, p) = (r[1] = log(log_c - 1.5) - log(log_c - u[1]); nothing)
 log_jac!(J, u, p) = (J[1, 1] = 1 / (log_c - u[1]); nothing)
+# An undamped Newton step from 3.0 lands at 3 - 3log(3) < 0, outside the domain of `log`.
+plain_log!(r, u, p) = (r[1] = log(u[1]); nothing)
+plain_log_jac!(J, u, p) = (J[1, 1] = 1 / u[1]; nothing)
+resid_at(resid!, x) = (r = zeros(1); resid!(r, [x], nothing); r[1])
 
 @testset "SCC initialization with domain-limited residuals" begin
-    for jac in (nothing, log_jac!)
-        block = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(log_resid!; jac), [2.0])
+    cases = (
+        (log_resid!, nothing, 2.0, 1.5),
+        (log_resid!, log_jac!, 2.0, 1.5),
+        (plain_log!, plain_log_jac!, 3.0, 1.0),
+    )
+    for (resid!, jac, guess, root) in cases
+        block = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(resid!; jac), [guess])
         scc = SCCNonlinearProblem((block, block), explicit, nothing, Val(false))
-        @test newton_first(default_nlsolve(nothing, Val(true), [2.0, 2.0], scc, true)) == (jac !== nothing)
+        @test newton_first(default_nlsolve(nothing, Val(true), [guess, guess], scc, true)) == false
         data = OverrideInitData(scc, nothing, sol -> copy(sol.u), nothing)
         f = ODEFunction((du, u, p, t) -> (du .= -u; nothing); initialization_data = data)
-        integ = init(ODEProblem(f, [2.0, 2.0], (0.0, 1.0)), Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+        integ = init(ODEProblem(f, [guess, guess], (0.0, 1.0)), Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
         @test integ.sol.retcode == SciMLBase.ReturnCode.Default
-        @test all(abs.(integ.u .- 1.5) .<= 1.0e-10)
-        @test all(abs.(log(log_c - 1.5) .- log.(log_c .- integ.u)) .< 1.0e-10)
+        @test all(abs.(integ.u .- root) .<= 1.0e-10)
+        @test all(abs(resid_at(resid!, x)) < 1.0e-10 for x in integ.u)
     end
 end
