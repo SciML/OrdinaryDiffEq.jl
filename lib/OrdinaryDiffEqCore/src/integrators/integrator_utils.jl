@@ -370,17 +370,11 @@ function fix_representable_dt!(integrator)
     (opts.adaptive && t isa AbstractFloat && dt isa AbstractFloat) || return true
     stop_ahead = _get_next_step_tstop(integrator)
     target = stop_ahead ? _get_tstop_target(integrator) : t
-    if stop_ahead
-        h_stop = target - t
-        clipped = isfinite(h_stop) && tdir * h_stop > 0 &&
-            abs(dt) >= abs(h_stop) - 100 * eps(max(abs(t), abs(target)))
-        if clipped && abs(h_stop) <= abs(opts.dtmax)
-            # `fixed_t_for_tstop_error!` commits `target`, even where t + h_stop rounds past it.
-            integrator.dt = h_stop
-            return true
-        end
-        _set_tstop_flag!(integrator, false)
-    end
+    h_stop = target - t
+    stop_reachable = stop_ahead && isfinite(h_stop) && tdir * h_stop > 0 &&
+        abs(h_stop) <= abs(opts.dtmax)
+    # `fixed_t_for_tstop_error!` commits `target`, even where t + h_stop rounds past it.
+    stop_reachable && dt == h_stop && return true
     endpoint = t + dt
     if !isfinite(endpoint)
         (isfinite(t) && isfinite(dt)) || return true
@@ -396,9 +390,14 @@ function fix_representable_dt!(integrator)
         endpoint = t + h
     end
     if stop_ahead && tdir * (target - endpoint) <= 0
+        if stop_reachable
+            integrator.dt = h_stop
+            return true
+        end
         endpoint = tdir > 0 ? prevfloat(target) : nextfloat(target)
         h = endpoint - t
     end
+    stop_ahead && _set_tstop_flag!(integrator, false)
     if !isfinite(h) || iszero(h) || tdir * h < 0 || abs(h) > abs(opts.dtmax)
         integrator.dt = zero(dt)
         @SciMLMessage(

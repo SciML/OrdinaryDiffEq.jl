@@ -410,12 +410,15 @@ function _fbdf_first_step_terkp1!(integrator, cache)
     (; nlsolver, terkp1_tmp, terk_tmp, atmp, tmp, u₀) = cache
     (; u, uprev, t, dt, p, fsalfirst, fsallast) = integrator
     mass_matrix = integrator.f.mass_matrix
-    alg_eqs = mass_matrix === I ? nothing :
+    alg_eqs = if mass_matrix isa UniformScaling
+        iszero(mass_matrix.λ) ? true : nothing
+    else
         OrdinaryDiffEqCore.find_algebraic_vars_eqs(mass_matrix)[2]
+    end
     @.. broadcast = false tmp = u - uprev
     _fbdf_first_step_defect!(terkp1_tmp, tmp, fsalfirst, 1, alg_eqs, integrator, nlsolver) ||
         return nothing
-    @.. broadcast = false u₀ = (u + uprev) / 2
+    @.. broadcast = false u₀ = uprev / 2 + u / 2
     integrator.f(fsallast, u₀, p, t + dt / 2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     _fbdf_first_step_defect!(terk_tmp, tmp, fsallast, 2, alg_eqs, integrator, nlsolver) ||
@@ -468,7 +471,7 @@ end
 # keep the history-based first-step estimate.
 function _fbdf_first_step_terkp1(integrator, u)
     (; uprev, t, dt, p, fsalfirst) = integrator
-    fmid = integrator.f((u + uprev) / 2, p, t + dt / 2)
+    fmid = integrator.f(uprev / 2 + u / 2, p, t + dt / 2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     r_endpoint = @.. u - uprev - dt * fsalfirst
     r_midpoint = @.. 2 * (u - uprev - dt * fmid)

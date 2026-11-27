@@ -70,6 +70,25 @@ end
     end
 end
 
+@testset "Uniform-scaling mass matrix first step" begin
+    tol = 1.0e-6
+    first_step(M, scale) = init(
+        ODEProblem(ODEFunction(scaled_decay!; mass_matrix = M), [1.0], (0.0, 1.0), scale),
+        FBDF(); dt = 0.01, abstol = tol, reltol = tol
+    )
+    for scale in (2, 1.0)
+        integ = first_step(scale * I, scale)
+        step!(integ)
+        @test integ.stats.naccept == 1
+        @test 0 < integ.t <= 0.01
+        @test abs(integ.u[1] - exp(-integ.t)) <= tol * (1 + 1.0)   # abstol + reltol * |uprev|
+        diagonal = first_step(Diagonal([float(scale)]), scale)
+        step!(diagonal)
+        @test integ.t == diagonal.t
+        @test integ.u ≈ diagonal.u rtol = 1.0e-12
+    end
+end
+
 sol0 = rlc_solve(rlc_prob(0.0))
 dts0 = diff(sol0.t)
 
@@ -376,5 +395,39 @@ end
         step!(integ)
         @test 0 < integ.t < 1
         @test abs(integ.u[1] - exact(integ.t)) <= tol * (1 + abs(integ.u[1]))
+    end
+end
+
+@testset "FBDF midpoint estimate keeps a finite state" begin
+    # y′ = (y∞ - y) / 4 at its equilibrium y∞ = 1e308, where (u + uprev) / 2 overflows.
+    function slope(y, y∞)
+        isfinite(y) || throw(DomainError(y, "the RHS requires a finite state"))
+        return (y∞ - y) / 4
+    end
+    for iip in (false, true)
+        f = iip ? (du, u, p, t) -> (du[1] = slope(u[1], p); nothing) :
+            (u, p, t) -> [slope(u[1], p)]
+        integ = init(ODEProblem(f, [1.0e308], (0.0, 4.0), 1.0e308), FBDF(); dt = 2.0, reltol = 1.0e-6, abstol = 1.0e-6)
+        step!(integ)
+        @test integ.t == 2.0
+        @test integ.u == [1.0e308]
+        @test integ.stats.nreject == 0
+    end
+end
+
+@testset "FBDF steps short of a nearby time stop" begin
+    # Four clock ticks of decay with time constant 100 ticks, the stop 50 ticks away.
+    t0 = 1.5 * 2.0^40
+    tick = eps(t0)
+    tol = 1.0e-3
+    for direction in (-1, 1), iip in (false, true)
+        f = iip ? (du, u, p, t) -> (du[1] = -p * u[1]; nothing) : (u, p, t) -> -p .* u
+        prob = ODEProblem(f, [1.0], (t0, t0 + direction * 50tick), direction / (100tick))
+        integ = init(prob, FBDF(); dt = direction * 4tick, abstol = tol, reltol = tol, maxiters = 20)
+        step!(integ)
+        @test integ.stats.naccept == 1
+        @test integ.stats.nreject == 0
+        @test integ.t == t0 + direction * 4tick
+        @test abs(integ.u[1] - exp(-0.04)) <= tol * (1 + 1.0)   # abstol + reltol * |uprev|
     end
 end
