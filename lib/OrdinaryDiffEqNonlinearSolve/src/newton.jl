@@ -1114,8 +1114,8 @@ function relax!(
                         if isfinite(slope_full) && slope_full < 0 &&
                                 (isdae || !(f.mass_matrix isa AbstractSciMLOperator))
                             directional_slope = nothing
-                            autodiff = OrdinaryDiffEqCore.get_current_alg_autodiff(
-                                integrator.alg, integrator.cache
+                            autodiff = alg_autodiff(
+                                OrdinaryDiffEqCore.unwrap_alg(integrator, true)
                             )
                             if ADTypes.dense_ad(autodiff) isa AutoForwardDiff
                                 directional_slope = linesearch_directional_slope(

@@ -1,7 +1,7 @@
 using OrdinaryDiffEqNonlinearSolve: NLNewton
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
-using ADTypes: AutoFiniteDiff
+using ADTypes: AutoFiniteDiff, AutoForwardDiff
 using DiffEqDevTools
 using DiffEqBase
 using LineSearches
@@ -173,6 +173,55 @@ end
     rhs = similar(sol.u[end])
     rhs!(rhs, sol.u[end], prob.p, sol.t[end])
     @test abs(mass * (sol.u[end][1] - prob.u0[1]) - rhs[1]) <= 0.1
+end
+
+@testset "in-place line search unwraps composite algorithm backends" begin
+    δ = 2.0^-28
+    mass = 1.0
+    function dual_rhs!(du, u, p, t)
+        du[1] = u[1] - (1 - u[1]) / δ
+        return nothing
+    end
+    function primal_rhs!(du, u, p, t)
+        x = reinterpret(Float64, reinterpret(UInt64, u[1]))
+        du[1] = x - (1 - x) / δ
+        return nothing
+    end
+    jac!(J, u, p, t) = (J[1, 1] = 1 + inv(δ); nothing)
+    predictor!(upred, uprev, p, t, dt) = (upred[1] = 1; nothing)
+    function solve_composite(f!, other_backend, selected_backend, expected_slope)
+        measured = Float64[]
+        function check_slopes(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+            push!(measured, dϕ0)
+            α, value = BackTracking()(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+            @test 0 < α <= 1
+            @test isfinite(value)
+            return α, value
+        end
+        nlsolve = NLNewton(predictor = predictor!, relax = check_slopes)
+        alg = OrdinaryDiffEqCore.CompositeAlgorithm(
+            (
+                ImplicitEuler(autodiff = other_backend, nlsolve = nlsolve),
+                ImplicitEuler(autodiff = selected_backend, nlsolve = nlsolve),
+            ),
+            _ -> 2,
+        )
+        prob = ODEProblem(
+            ODEFunction(f!; jac = jac!, mass_matrix = Diagonal([mass])), [1.0], (0.0, 1.0)
+        )
+        sol = solve(
+            prob, alg; dt = 1.0, adaptive = false, abstol = 0.1, reltol = 0.0
+        )
+        @test sol.retcode == SciMLBase.ReturnCode.Success
+        @test sol.u[end] == [1 - δ]
+        @test measured == [expected_slope]
+        rhs = similar(sol.u[end])
+        f!(rhs, sol.u[end], prob.p, sol.t[end])
+        @test abs(mass * (sol.u[end][1] - prob.u0[1]) - rhs[1]) <= 0.1
+        return sol
+    end
+    solve_composite(primal_rhs!, AutoForwardDiff(), AutoFiniteDiff(), 0.0)
+    solve_composite(dual_rhs!, AutoFiniteDiff(), AutoForwardDiff(), -10.0)
 end
 
 @testset "fixed-step ImplicitEuler respects solve-level adaptivity (#4905)" begin
