@@ -150,9 +150,10 @@ function drain_jvp_count!(integrator, alg, W)
     n, nbase = J.njvps, J.nbase_evals
     J.njvps, J.nbase_evals = 0, 0
     (n == 0 && nbase == 0) && return nothing
-    OrdinaryDiffEqCore.increment_nf!(
-        integrator.stats, rhs_evals_per_jvp(alg_autodiff(alg)) * n + nbase
-    )
+    # A user-supplied `jvp` is applied directly, so no stencil multiplies its calls.
+    per_product = J.jvp_op isa Union{DIPushforward, DAEPushforward, DAESplitPushforward} ?
+        rhs_evals_per_jvp(alg_autodiff(alg)) : 1
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, per_product * n + nbase)
     return nothing
 end
 

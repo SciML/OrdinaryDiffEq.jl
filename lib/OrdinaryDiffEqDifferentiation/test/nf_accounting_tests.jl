@@ -25,10 +25,21 @@ function allencahn_jac!(J, u, p, t)
     end
     return J
 end
+# A user-supplied `jvp` is applied directly whatever `autodiff` says; each call counts once.
+function allencahn_jvp!(Jv, v, u, p, t)
+    NCALLS[] += 1
+    for i in 1:N
+        vm = i == 1 ? zero(eltype(v)) : v[i - 1]
+        vp = i == N ? zero(eltype(v)) : v[i + 1]
+        Jv[i] = 1.0e-3 * (vm - 2v[i] + vp) / dx^2 + (1 - 3u[i]^2) * v[i]
+    end
+    return nothing
+end
 u0 = [tanh((i * dx - 0.5) / 0.1) for i in 1:N]
 tspan = (0.0, 1.0)
 
 matrix_free = ODEProblem(allencahn!, u0, tspan)
+user_jvp = ODEProblem(ODEFunction(allencahn!; jvp = allencahn_jvp!), u0, tspan)
 operator_jac = ODEProblem(
     ODEFunction(
         allencahn!; jac = allencahn_jac!,
@@ -62,6 +73,10 @@ end
 
         # A user-supplied `MatrixOperator` Jacobian applies a stored matrix: no `f` calls.
         real_f, nf = counted_nf(operator_jac, FBDF(linsolve = KrylovJL_GMRES(), autodiff = ad))
+        @test nf == real_f
+
+        # A user-supplied `jvp` performs the products, with no finite differencing.
+        real_f, nf = counted_nf(user_jvp, FBDF(linsolve = KrylovJL_GMRES(), autodiff = ad))
         @test nf == real_f
 
         # Direct solver, no products at all.
