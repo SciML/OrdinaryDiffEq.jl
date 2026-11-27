@@ -933,12 +933,17 @@ solves, the algorithm selects step size and order, so the PID gains and
 `limiter` have no effect and a step is accepted when the scaled error estimate
 is at most one (see [`pid_uses_error_estimate`](@ref)).
 
-Setting `retry_cap` to a number in `(0, 1)` retries a rejected step with at most
-`retry_cap` times its length, and with `retry_cap` itself when the predicted
-factor is not finite and positive. Every retry is then strictly shorter than the
-rejected step, which prevents repeated rejections of nearly equal steps when
-`accept_safety` is close to one. The default `nothing` retries with the
-predicted step size.
+With `retry_cap` in `(0, 1)`, the PID controller bounds its proposed retry factor
+by `retry_cap`. A non-finite or non-positive predicted factor uses the cap. Domain
+rejection, nonlinear failure, discontinuity handling, and algorithm-managed retries
+follow their own step-size rules. The solver applies `dtmin` to the proposed step.
+With `retry_cap = nothing`, PID uses its predicted factor.
+
+`retry_cap` must stay inside `(0, 1)` after conversion to the controller's
+resolved precision: the beta type at construction, and the common type of the
+controller options (such as `qmin`) when the solve initializes. A cap that rounds
+to `0` or `1` there throws an `ArgumentError`, for example `prevfloat(1.0)` with
+`Float32` options.
 
 Some standard controller parameters suggested in the literature are
 
@@ -992,8 +997,13 @@ end
 
 _pid_retry_cap(::Type, ::Nothing) = nothing
 function _pid_retry_cap(::Type{QT}, retry_cap::Real) where {QT}
-    0 < retry_cap < 1 || throw(ArgumentError("`retry_cap` must lie in (0, 1), got $retry_cap"))
-    return QT(retry_cap)
+    converted = QT(retry_cap)
+    0 < converted < 1 || throw(
+        ArgumentError(
+            "`retry_cap` must lie in (0, 1) after conversion to $QT, got $retry_cap ↦ $converted"
+        )
+    )
+    return converted
 end
 
 # Two/three-positional form: betas explicit, common-controller-knobs ride

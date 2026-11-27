@@ -36,10 +36,17 @@ OrdinaryDiffEqCore.PIDController
 OrdinaryDiffEqCore.PredictiveController
 ```
 
-`PIDController(beta1, beta2; accept_safety, retry_cap)` with `retry_cap` in
-`(0, 1)` makes every retry after a rejection at most `retry_cap` times the
-rejected step. The default `retry_cap = nothing` retries with the predicted
-step size.
+With `retry_cap` in `(0, 1)`, the PID controller bounds its proposed retry
+factor by `retry_cap`. A non-finite or non-positive predicted factor uses the
+cap. Domain rejection, nonlinear failure, discontinuity handling, and
+algorithm-managed retries follow their own step-size rules. The solver applies
+`dtmin` to the proposed step. With `retry_cap = nothing`, PID uses its predicted
+factor.
+
+`retry_cap` must stay inside `(0, 1)` after conversion to the controller's
+resolved precision (the beta type at construction, the common type of the
+controller options such as `qmin` at solve initialization); a cap that rounds to
+`0` or `1` throws an `ArgumentError`.
 
 ### Algorithm-integrated controllers
 

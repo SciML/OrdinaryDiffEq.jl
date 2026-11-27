@@ -255,3 +255,49 @@ end
         @test_throws ArgumentError OrdinaryDiffEqCore.PIDController(0.7, -0.4; retry_cap)
     end
 end
+
+@testset "PIDController retry_cap precision and precedence" begin
+    PID = OrdinaryDiffEqCore.PIDController
+    oneshot(value) = (calls = Ref(0); x -> (calls[] += 1; calls[] == 1 ? value : 1.0))
+    zero_rhs(iip) = iip ? ODEProblem((du, u, p, t) -> (du[1] = 0.0; nothing), [0.0], (0.0, 0.5)) :
+        ODEProblem((u, p, t) -> 0.0, 0.0, (0.0, 0.5))
+    dt = 1 / 8
+
+    for cap in (prevfloat(1.0), nextfloat(0.0))
+        @test_throws ArgumentError PID(Float32, QNDF1(); retry_cap = cap)
+        @test_throws ArgumentError PID(0.7f0, -0.4f0; retry_cap = cap)
+        controller = PID(0.7, -0.4; retry_cap = cap, qmin = 0.125f0)
+        @test controller.retry_cap === cap
+        @test_throws ArgumentError init(zero_rhs(false), QNDF1(); dt, controller)
+    end
+    @test PID(Float32, QNDF1(); retry_cap = 0.5).retry_cap === 0.5f0
+
+    for alg in (QNDF1(), ABDF2()), iip in (false, true),
+            (qmin, cap) in ((0.125f0, 0.5), (0.2, 1 / 8)), value in (NaN, -1.0)
+        controller = PID(0.7, -0.4; limiter = oneshot(value), retry_cap = cap, qmin)
+        integ = init(zero_rhs(iip), alg; dt, controller)
+        @test integ.controller_cache.controller.retry_cap === typeof(qmin)(cap)
+        sol = solve!(integ)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject == 1
+        @test sol.t[2] == dt * cap
+    end
+
+    # Domain rejection retries with `qmin` and the solver clamps the retry to `dtmin`,
+    # so both can exceed `dt * retry_cap`.
+    for iip in (false, true)
+        checks = Ref(0)
+        isoutofdomain = (u, p, t) -> (checks[] += 1; checks[] == 1)
+        controller = PID(0.7, -0.4; retry_cap = 1 / 8, qmin = 1 / 2)
+        sol = solve(zero_rhs(iip), QNDF1(); dt, isoutofdomain, controller)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject == 1
+        @test sol.t[2] == dt / 2
+
+        controller = PID(0.7, -0.4; limiter = oneshot(NaN), retry_cap = 1 / 8)
+        sol = solve(zero_rhs(iip), QNDF1(); dt, dtmin = 1 / 16, force_dtmin = true, controller)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject == 1
+        @test sol.t[2] == 1 / 16
+    end
+end
