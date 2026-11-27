@@ -3,30 +3,30 @@
 
 **RandomEM: Random Euler Method (RODE)**
 
-Euler method for Random Ordinary Differential Equations (RODEs) with random parameters.
+Euler method for Random Ordinary Differential Equations. Each step advances `u` by
+`dt * f(u, p, t, W)` with the driving noise `W` taken at the start of the step. Any
+noise process can drive the problem; a `RODEProblem` given no noise is driven by a
+Wiener process.
 
 ## Method Properties
 
   - **Problem type**: Random ODEs (RODEs)
-  - **Strong Order**: 1.0 (for deterministic part)
-  - **Randomness**: Handles random parameters, not Brownian motion
+  - **Strong order**: 1 on Wiener and other semimartingale noise, under the conditions
+    of Kloeden and Rosa
   - **Time stepping**: Fixed step size
+  - **Right-hand side evaluations**: 1 per step
 
 ## When to Use
 
-  - Random ODEs with random parameters but no Brownian motion
-  - Uncertainty quantification with parameter randomness
-  - Problems with random coefficients or initial conditions
-  - Monte Carlo simulation of deterministic systems with random inputs
-
-## RODE vs SDE
-
-  - **RODE**: Random parameters, deterministic evolution
-  - **SDE**: Fixed parameters, stochastic (Brownian) evolution
+The default RODE method. Higher-order classical tableaus do not raise the rate on a
+Wiener-driven RODE, so this is the reference for cost; `RandomTaylor15` reaches past
+order 1 when the path is stored on a grid finer than the solver steps.
 
 ## References
 
-  - Random ordinary differential equation methods
+  - Kloeden and Rosa, Strong order-one convergence of the Euler method for random
+    ordinary differential equations driven by semi-martingale noises, ESAIM: M2AN 59
+    (2025), arXiv:2306.15418.
 """
 struct RandomEM <: StochasticDiffEqRODEAlgorithm end
 
@@ -35,24 +35,23 @@ struct RandomEM <: StochasticDiffEqRODEAlgorithm end
 
 **RandomHeun: Random Heun Method (RODE)**
 
-Heun method for Random Ordinary Differential Equations with improved accuracy.
+Two-stage Heun method for Random Ordinary Differential Equations. The predictor uses
+`W` at the start of the step and the corrector uses `W` at the end. When `f` does not
+depend on `W` this is the classical second-order Heun method.
 
 ## Method Properties
 
   - **Problem type**: Random ODEs (RODEs)
-  - **Strong Order**: 2.0 (for deterministic part)
-  - **Randomness**: Handles random parameters
+  - **Strong order**: 1 measured on Wiener noise; 2 when `f` does not depend on the
+    noise
   - **Time stepping**: Fixed step size
+  - **Right-hand side evaluations**: 2 per step
 
 ## When to Use
 
-  - RODEs requiring higher accuracy than RandomEM
-  - When computational cost per step is acceptable
-  - Random parameter problems needing second-order accuracy
-
-## References
-
-  - Higher-order methods for random ODEs
+  - When `f` depends weakly on the noise, so the second stage lowers the error constant
+  - On a Wiener-driven RODE it measures the same order 1 as `RandomEM` at twice the cost
+    per step, so it does not raise the rate there
 """
 struct RandomHeun <: StochasticDiffEqRODEAlgorithm end
 
@@ -61,29 +60,29 @@ struct RandomHeun <: StochasticDiffEqRODEAlgorithm end
 
 **RandomTamedEM: Tamed Random Euler Method (RODE)**
 
-Tamed Euler method for RODEs with potentially explosive behavior.
+Tamed Euler method for Random Ordinary Differential Equations. Each step advances `u`
+by `dt * k / (1 + dt * norm(k))` with `k = f(u, p, t, W)` and `W` taken at the start of
+the step, so no step moves `u` by more than about 1 in the Euclidean norm however large
+`f` is. The bound is in the units of `u`, so rescaling `u` changes the numerical
+solution.
 
 ## Method Properties
 
-  - **Problem type**: Random ODEs with potential blow-up
-  - **Approach**: Taming to prevent numerical explosion
-  - **Stability**: Enhanced stability for unstable random systems
-  - **Time stepping**: Fixed step size with taming
+  - **Problem type**: Random ODEs (RODEs)
+  - **Strong order**: 1 measured on Wiener noise
+  - **Time stepping**: Fixed step size
+  - **Right-hand side evaluations**: 1 per step
 
 ## When to Use
 
-  - RODEs that may exhibit explosive growth
-  - When RandomEM gives unstable or explosive solutions
-  - Random systems with strong nonlinearities
-  - Problems requiring enhanced numerical stability
-
-## Taming Mechanism
-
-Applies taming technique to prevent numerical blow-up while maintaining accuracy for well-behaved solutions.
+  - RODEs whose `f` grows superlinearly, where `RandomEM` can blow up
 
 ## References
 
-  - Tamed methods for random differential equations
+  - Hutzenthaler, Jentzen and Kloeden, Strong convergence of an explicit numerical
+    method for SDEs with non-globally Lipschitz continuous coefficients, Ann. Appl.
+    Probab. 22 (2012), DOI 10.1214/11-AAP803. The taming factor comes from there; its
+    convergence result is for SDEs, not RODEs.
 """
 struct RandomTamedEM <: StochasticDiffEqRODEAlgorithm end
 

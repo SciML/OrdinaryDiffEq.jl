@@ -17,6 +17,10 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Core"
         @test RandomTamedEM() isa StochasticDiffEqRODEAlgorithm
         @test BAOAB() isa StochasticDiffEqAlgorithm
         @test BAOAB(gamma = 2.0, scale_noise = false).gamma == 2.0
+
+        for alg in (RandomEM(), RandomHeun(), RandomTamedEM())
+            @test StochasticDiffEqRODE.alg_order(alg) == 1 // 1
+        end
     end
 end
 
