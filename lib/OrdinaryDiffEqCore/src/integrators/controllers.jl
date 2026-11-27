@@ -945,12 +945,12 @@ controller options (such as `qmin`) when the solve initializes. A cap that round
 to `0` or `1` there throws an `ArgumentError`, for example `prevfloat(1.0)` with
 `Float32` options.
 
-The capped retry step is computed in the time type of the integrator. If it rounds
-back to the rejected step's magnitude there (for example `retry_cap = prevfloat(1.0)`
-with `Float32` time), the retry uses the next smaller representable magnitude,
-`prevfloat(abs(dt))`. `dtmin` still takes precedence over that step: a retry at or
-below `dtmin` ends the solve with `DtLessThanMin`, or is accepted at `dtmin` with
-`force_dtmin = true`.
+The capped retry step is computed in the time type of the integrator. For time types
+supporting `prevfloat`, if it rounds back to the rejected step's magnitude there (for
+example `retry_cap = prevfloat(1.0)` with `Float32` time), the retry uses the next smaller
+representable magnitude, `prevfloat(abs(dt))`. `dtmin` still takes precedence over that
+step: a retry at or below `dtmin` ends the solve with `DtLessThanMin`, or is accepted at
+`dtmin` with `force_dtmin = true`.
 
 Some standard controller parameters suggested in the literature are
 
@@ -1154,9 +1154,10 @@ _pid_retry_factor(factor, cap) =
 _pid_retry_dt(dt, factor, ::Nothing) = dt * factor
 function _pid_retry_dt(dt, factor, cap)
     trial = oftype(dt, dt * _pid_retry_factor(factor, cap))
-    dt isa AbstractFloat && !iszero(dt) && abs(trial) >= abs(dt) || return trial
-    # The capped product rounded back to `abs(dt)` in the time type.
-    return copysign(prevfloat(abs(dt)), dt)
+    !iszero(dt) && abs(trial) >= abs(dt) || return trial
+    applicable(prevfloat, abs(dt)) || return trial
+    smaller = prevfloat(abs(dt))
+    return dt < zero(dt) ? -smaller : smaller
 end
 
 @inline function accept_step_controller(integrator, cache::PIDControllerCache, alg)
