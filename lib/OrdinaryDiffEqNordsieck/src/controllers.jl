@@ -13,13 +13,7 @@ cache falls through to alg-level dispatch but the knobs are exposed as a
 real, settable controller (instead of being hard-wired on the algorithm
 struct as before).
 
-Selecting `DummyController()` for `JVODE` resolves to a `JVODEController` whose
-`basic` field is a `NamedTuple` of `qmin`, `qmax`, `qsteady_min`, `qsteady_max`,
-`qmax_first_step`, `gamma`, `failfactor`, `discontinuity_detection` and
-`disco_probs`. The four algorithm bounds keep their own types, the next three
-entries take the Core defaults, and `discontinuity_detection` is `false`. Passing
-this controller to another solve keeps those values and uses that solve's
-`disco_probs`.
+The cache uses the discontinuity problems from the current solve.
 """
 struct JVODEController{B <: Union{NamedTuple, CommonControllerOptions}} <: AbstractController
     basic::B
@@ -37,18 +31,14 @@ mutable struct JVODEControllerCache{J <: JVODEController, C, E} <: AbstractContr
     EEst::E
 end
 
-const JVODEResolvedOptions = NamedTuple{
-    (
-        :qmin, :qmax, :qsteady_min, :qsteady_max, :qmax_first_step, :gamma, :failfactor,
-        :discontinuity_detection, :disco_probs,
-    ),
-    <:Tuple{Any, Any, Any, Any, Any, Any, Any, Bool, AbstractVector},
-}
-
 _resolve_jvode_options(basic, alg, disco_probs) =
     resolve_basic(basic, alg, _resolved_QT(basic); disco_probs)
-_resolve_jvode_options(basic::JVODEResolvedOptions, alg, disco_probs) =
-    merge(basic, (; disco_probs))
+
+function _resolve_jvode_options(basic::NamedTuple, alg, disco_probs)
+    knobs = (:qmin, :qmax, :qsteady_min, :qsteady_max, :qmax_first_step, :gamma, :failfactor)
+    supplied = filter(key -> haskey(basic, key) && getproperty(basic, key) !== nothing, knobs)
+    return resolve_basic(basic, alg, _resolved_QT(basic[supplied]); disco_probs)
+end
 
 function setup_controller_cache(
         alg::JVODE, cache, controller::JVODEController, ::Type{E}, disco_probs,
@@ -57,20 +47,12 @@ function setup_controller_cache(
     return JVODEControllerCache{typeof(resolved), typeof(cache), E}(resolved, cache, oneunit(E))
 end
 
-function setup_controller_cache(
-        alg::JVODE, cache, ::DummyController, ::Type{E}, disco_probs,
-    ) where {E}
-    basic = (;
-        qmin = alg.qmin, qmax = alg.qmax,
-        qsteady_min = alg.qsteady_min, qsteady_max = alg.qsteady_max,
-        qmax_first_step = qmax_first_step_default(alg), gamma = gamma_default(alg),
-        failfactor = failfactor_default(alg), discontinuity_detection = false, disco_probs,
-    )
-    return setup_controller_cache(alg, cache, JVODEController(basic), E, disco_probs)
+function post_newton_controller!(integrator, ::DummyControllerCache, ::JVODE)
+    integrator.dt = integrator.dt / get_failfactor(integrator)
+    return nothing
 end
 
-# Algorithm owns the stepsize logic; controller cache delegates back to
-# alg-level dispatch (mirroring how DummyControllerCache used to behave).
+# The controller cache delegates step-size selection to the algorithm.
 @inline stepsize_controller!(integrator, ::JVODEControllerCache, alg) =
     stepsize_controller!(integrator, alg)
 @inline step_accept_controller!(integrator, ::JVODEControllerCache, alg, q) =

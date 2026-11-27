@@ -525,16 +525,12 @@ end
 
 Placeholder controller for algorithms that manage step-size selection
 themselves (BDF, Nordsieck, Leaping, …). Selecting it makes
-[`setup_controller_cache`](@ref) hand back a `DummyControllerCache`
+[`setup_controller_cache`](@ref) hand back a [`DummyControllerCache`](@ref)
 whose dispatch methods fall through to the algorithm-level
 `stepsize_controller!` / `step_accept_controller!` / `step_reject_controller!`
 methods that own the actual logic. The per-knob accessors
 ([`get_qmin`](@ref) etc.) fall back to fields on `integrator.alg` for
 SDE algorithms still using this transitional path.
-
-For `OrdinaryDiffEqNordsieck.JVODE`, selecting `DummyController()` uses a
-`JVODEController` cache initialized from the algorithm's step-size options.
-The dedicated cache handles corrector failures through the controller hook.
 
 New code should prefer dedicated controllers like
 [`OrdinaryDiffEqBDF.BDFController`](@ref) or
@@ -560,11 +556,9 @@ end
 Controller cache used by algorithms that manage step-size selection themselves
 (BDF, Nordsieck, Leaping, …). Holds the scalar error estimate exposed through
 `get_EEst(integrator)` and a reference to the algorithm cache so existing dispatch
-on the algorithm cache continues to work.
-If `discontinuity_detection` is set to true, the algorithm will run the autonomous
-discontinuity detection to predict the best next timestep after step rejection. 
-Otherwise, it follows the default step rejection algorithm. This feature is currently
-defaulted off. 
+on the algorithm cache continues to work. Setting `discontinuity_detection` to
+`true` enables autonomous discontinuity detection to select the next time step
+after a rejection. The default is `false`.
 """
 mutable struct DummyControllerCache{T, C, NLPType} <: AbstractControllerCache
     EEst::T

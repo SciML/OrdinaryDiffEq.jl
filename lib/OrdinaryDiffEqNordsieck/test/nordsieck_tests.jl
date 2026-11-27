@@ -1,7 +1,9 @@
 using OrdinaryDiffEqNordsieck
 using OrdinaryDiffEqNordsieck: JVODEController
 using OrdinaryDiffEqCore: AbstractController, AbstractControllerCache, DummyController,
-    accept_step_controller, get_qmin, get_qmax, get_qsteady_min, get_qsteady_max
+    DummyControllerCache, accept_step_controller, get_qmin, get_qmax, get_qsteady_min,
+    get_qsteady_max
+using SciMLBase: IntervalNonlinearProblem
 import OrdinaryDiffEqCore: get_EEst, post_newton_controller!, set_EEst!, setup_controller_cache
 using OrdinaryDiffEqTsit5: Tsit5
 using DiffEqDevTools, Test, LinearAlgebra
@@ -120,22 +122,28 @@ end
                 @test SciMLBase.successful_retcode(sol)
                 @test sol.t[end] == 1.0
                 @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
-
-                adapted = integrator.controller_cache.controller
-                event = ContinuousCallback(
-                    (u, t, integrator) -> t - 0.5, integrator -> nothing; maybe_discontinuity = true,
-                )
-                reused = init(prob, compact_alg; opts..., controller = adapted, callback = event)
-                @test map(getter -> getter(reused), getters) === values(bounds)
-                @test isempty(adapted.basic.disco_probs)
-                @test length(reused.controller_cache.controller.basic.disco_probs) == 1
-                sol = solve!(reused)
-                @test SciMLBase.successful_retcode(sol)
-                @test sol.t[end] == 1.0
-                @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
             end
 
             sol = solve(prob, alg; opts..., controller = DummyController())
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.t[end] == 1.0
+            @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
+        end
+
+        @testset "Reuse a dedicated controller" begin
+            bounds = (; qmin = 1 // 4, qmax = 5 // 1, qsteady_min = 9 // 8, qsteady_max = 7 // 4)
+            controller = JVODEController(; bounds...)
+            initial = init(prob, alg; opts..., controller)
+            resolved = initial.controller_cache.controller
+            event = ContinuousCallback(
+                (u, t, integrator) -> t - 0.5, integrator -> nothing; maybe_discontinuity = true,
+            )
+            reused = init(prob, alg; opts..., controller = resolved, callback = event)
+            getters = (get_qmin, get_qmax, get_qsteady_min, get_qsteady_max)
+            @test map(getter -> getter(reused), getters) === values(bounds)
+            @test isempty(resolved.basic.disco_probs)
+            @test length(reused.controller_cache.controller.basic.disco_probs) == 1
+            sol = solve!(reused)
             @test SciMLBase.successful_retcode(sol)
             @test sol.t[end] == 1.0
             @test only(sol.u[end]) ≈ cos(1) atol = 1.0e-6
@@ -206,12 +214,17 @@ end
     alg = JVODE_BDF()
     overrides = (;
         qmin = 0.25, qmax = 5, qsteady_min = 0.25, qsteady_max = 1.5,
-        qmax_first_step = 10000, gamma = 0.9, failfactor = 3, discontinuity_detection = 0,
+        qmax_first_step = 10000, gamma = 0.9, failfactor = 3,
     )
-    @testset "$order" for (order, kwargs) in (
-            ("disco_probs last", (; overrides..., disco_probs = 0)),
-            ("disco_probs first", (; disco_probs = 0, overrides...)),
-        )
+    @testset "$kind, disco_probs $order" for
+        (kind, discontinuity_detection, disco_probs) in (
+                ("integer options", 0, 0),
+                ("typed options", false, IntervalNonlinearProblem[]),
+            ),
+            (order, kwargs) in (
+                ("last", (; overrides..., discontinuity_detection, disco_probs)),
+                ("first", (; disco_probs, overrides..., discontinuity_detection)),
+            )
         events = Ref(0)
         callback = ContinuousCallback(
             (u, t, integrator) -> t - 0.5, integrator -> (events[] += 1);
@@ -222,8 +235,10 @@ end
             reltol = 1.0e-7, abstol = 1.0e-7,
         )
         basic = integrator.controller_cache.controller.basic
+        @test map(key -> getproperty(basic, key), keys(overrides)) === values(map(Float64, overrides))
         @test basic.discontinuity_detection === false
         @test length(basic.disco_probs) == 1
+        @test basic.disco_probs !== disco_probs
         sol = solve!(integrator)
         @test events[] == 1
         @test SciMLBase.successful_retcode(sol)
@@ -234,22 +249,44 @@ end
 
 struct JVODEViewController <: AbstractController end
 
+checked_dummy_cache(cache::DummyControllerCache) = cache
+
 function setup_controller_cache(alg, cache, ::JVODEViewController, ::Type{E}, problems) where {E}
-    return setup_controller_cache(alg, cache, DummyController(), E, view(problems, eachindex(problems)))
+    stock = setup_controller_cache(alg, cache, DummyController(), E, view(problems, eachindex(problems)))
+    return checked_dummy_cache(stock)
 end
 
-@testset "JVODE DummyController adapter accepts a view of discontinuity problems" begin
+struct JVODEWrappedCacheController <: AbstractController end
+
+struct JVODEWrappedCache{C}
+    inner::C
+end
+
+function setup_controller_cache(alg, cache::JVODEWrappedCache, controller::DummyController, ::Type{E}, problems) where {E}
+    return setup_controller_cache(alg, cache.inner, controller, E, problems)
+end
+
+function setup_controller_cache(alg, cache, ::JVODEWrappedCacheController, ::Type{E}, problems) where {E}
+    return setup_controller_cache(alg, JVODEWrappedCache(cache), DummyController(), E, problems)
+end
+
+@testset "JVODE DummyController cache delegation" begin
     prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
-    @testset "$(alg.algorithm)" for alg in (JVODE_Adams(), JVODE_BDF())
+    @testset "$(alg.algorithm), $(nameof(typeof(controller)))" for
+        alg in (JVODE_Adams(), JVODE_BDF()),
+            controller in (JVODEViewController(), JVODEWrappedCacheController())
         events = Float64[]
         callback = ContinuousCallback(
             (u, t, integrator) -> t - 0.5, integrator -> push!(events, integrator.t);
             maybe_discontinuity = true,
         )
-        sol = solve(
-            prob, alg; controller = JVODEViewController(), callback,
+        integrator = init(
+            prob, alg; controller, callback,
             reltol = 1.0e-8, abstol = 1.0e-8,
         )
+        @test integrator.controller_cache isa DummyControllerCache
+        @test integrator.controller_cache.cache === integrator.cache
+        sol = solve!(integrator)
         @test length(events) == 1
         @test only(events) ≈ 0.5
         @test SciMLBase.successful_retcode(sol)
