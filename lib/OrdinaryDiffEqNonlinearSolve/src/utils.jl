@@ -335,7 +335,13 @@ function check_dae_krylov(linsolver, autodiff = nothing)
                 "KrylovJL_BICGSTAB."
         )
     )
-    linsolver isa LinearSolve.KrylovJL || return nothing
+    linsolver isa LinearSolve.KrylovJL || throw(
+        ArgumentError(
+            "`$(nameof(typeof(linsolver)))` is not supported for a matrix-free Krylov solve " *
+                "of a DAE Newton system. Use KrylovJL_GMRES, KrylovJL_FGMRES or " *
+                "KrylovJL_BICGSTAB, or a factorization `linsolve` such as the default."
+        )
+    )
     kwargs = linsolver.kwargs
     keeps_defaults = get(kwargs, :ldiv, true) &&
         !any(k -> haskey(kwargs, k), DAE_KRYLOV_OWN_KWARGS)
