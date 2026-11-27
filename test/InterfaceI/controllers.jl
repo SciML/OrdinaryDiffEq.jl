@@ -106,3 +106,40 @@ end
     @test integ.controller_cache.errold == errold_before
     @test integ.controller_cache.q11 == q11_before
 end
+
+struct DoublingController <: OrdinaryDiffEqCore.AbstractController end
+mutable struct DoublingControllerCache{E} <: OrdinaryDiffEqCore.AbstractControllerCache
+    EEst::E
+end
+function OrdinaryDiffEqCore.setup_controller_cache(
+        alg, alg_cache, ::DoublingController, ::Type{E}, disco_probs
+    ) where {E}
+    return DoublingControllerCache(zero(E))
+end
+OrdinaryDiffEqCore.stepsize_controller!(integ, ::DoublingControllerCache, alg) = 2
+function OrdinaryDiffEqCore.step_accept_controller!(integ, ::DoublingControllerCache, alg, q)
+    return integ.dt *= q
+end
+
+@testset "Callbacks see the accepted step when the accept hook mutates dt" begin
+    seen = Ref{Any}()
+    cb = DiscreteCallback(
+        (u, t, i) -> !isassigned(seen),
+        i -> begin
+            midpoint = (i.t + i.tprev) / 2
+            seen[] = (;
+                i.dt, accepted_dt = i.t - i.tprev, proposed = get_proposed_dt(i),
+                midpoint, interp = i(midpoint),
+            )
+        end
+    )
+    prob_growth = ODEProblem((u, p, t) -> u, 1.0, (0.0, 2.0))
+    integ = init(
+        prob_growth, Tsit5(); dt = 0.125, callback = cb,
+        controller = DoublingController(), abstol = 1.0e-6, reltol = 1.0e-6
+    )
+    step!(integ)
+    @test seen[].proposed == 0.25
+    @test seen[].dt == seen[].accepted_dt == 0.125
+    @test seen[].interp ≈ exp(seen[].midpoint) rtol = 1.0e-7
+end
