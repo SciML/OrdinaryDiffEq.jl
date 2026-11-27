@@ -397,22 +397,16 @@ end
 end
 
 @testset "PredictiveController records a step shortened onto a tstop at its accepted length" begin
-    prob = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 10.0))
-    for alg in (RadauIIA5(), AdaptiveRadau()), resume_dt_after_tstop in (false, true)
-        free = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
-        j = length(free.t) ÷ 2
-        tstop = free.t[j] + 0.01 * (free.t[j + 1] - free.t[j])
+    prob = ODEProblem((u, p, t) -> one.(u), [0.0], (0.0, 1.0))
+    for alg in (RadauIIA5(), AdaptiveRadau()), tstop in (2.0^-16, 0.125 + 2.0^-16),
+            resume_dt_after_tstop in (false, true)
         integ = init(
-            prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, tstops = [tstop],
-            resume_dt_after_tstop
+            prob, alg; dt = 0.125, dtmax = 0.125, tstops = [tstop], resume_dt_after_tstop
         )
-        while integ.t + integ.dtpropose < tstop
+        while integ.t < tstop
             step!(integ)
         end
-        proposed = integ.dtpropose
-        step!(integ)
         @test integ.t == tstop
-        @test integ.t - integ.tprev < 0.02proposed
-        @test integ.controller_cache.dtacc ≈ integ.t - integ.tprev
+        @test integ.controller_cache.dtacc == integ.t - integ.tprev
     end
 end
