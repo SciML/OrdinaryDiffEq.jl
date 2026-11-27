@@ -368,6 +368,19 @@ be shorter than the minimum step.
 function fix_representable_dt!(integrator)
     (; t, dt, tdir, opts) = integrator
     (opts.adaptive && t isa AbstractFloat && dt isa AbstractFloat) || return true
+    stop_ahead = _get_next_step_tstop(integrator)
+    target = stop_ahead ? _get_tstop_target(integrator) : t
+    if stop_ahead
+        h_stop = target - t
+        clipped = isfinite(h_stop) && tdir * h_stop > 0 &&
+            abs(dt) >= abs(h_stop) - 100 * eps(max(abs(t), abs(target)))
+        if clipped && abs(h_stop) <= abs(opts.dtmax)
+            # `fixed_t_for_tstop_error!` commits `target`, even where t + h_stop rounds past it.
+            integrator.dt = h_stop
+            return true
+        end
+        _set_tstop_flag!(integrator, false)
+    end
     endpoint = t + dt
     if !isfinite(endpoint)
         (isfinite(t) && isfinite(dt)) || return true
@@ -378,12 +391,15 @@ function fix_representable_dt!(integrator)
         endpoint = tdir > 0 ? prevfloat(endpoint) : nextfloat(endpoint)
         h = endpoint - t
     end
-    at_tstop = _get_next_step_tstop(integrator) && endpoint == _get_tstop_target(integrator)
-    if !at_tstop && abs(h) < timedepentdtmin(integrator)
+    if abs(h) < timedepentdtmin(integrator)
         h = tdir * _representable_dtmin(integrator)
         endpoint = t + h
     end
-    if !isfinite(h) || iszero(h) || abs(h) > abs(opts.dtmax)
+    if stop_ahead && tdir * (target - endpoint) <= 0
+        endpoint = tdir > 0 ? prevfloat(target) : nextfloat(target)
+        h = endpoint - t
+    end
+    if !isfinite(h) || iszero(h) || tdir * h < 0 || abs(h) > abs(opts.dtmax)
         integrator.dt = zero(dt)
         @SciMLMessage(
             lazy"No positive representable step satisfies the time-step bounds at t=$(t).",
@@ -391,11 +407,7 @@ function fix_representable_dt!(integrator)
         )
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.DtLessThanMin)
         integrator.force_stepfail = true
-        _set_tstop_flag!(integrator, false)
         return false
-    end
-    if _get_next_step_tstop(integrator) && endpoint != _get_tstop_target(integrator)
-        _set_tstop_flag!(integrator, false)
     end
     integrator.dt = h
     return true
