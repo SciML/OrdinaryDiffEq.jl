@@ -41,7 +41,11 @@ unset or false, for example `DFBDF(; linsolve = KrylovJL_GMRES())`. The Newton m
 `∂F/∂u + (α/(γ h)) ∂F/∂du` is then applied as a Jacobian-vector product, and
 `stats.njacs` stays zero. The `cj = α/(γ h)` of the current step is used at every stage. The
 matrix-free path uses the selected `autodiff` backend for Jacobian-vector products, including
-when `DAEFunction.jvp` is supplied.
+when `DAEFunction.jvp` is supplied. It never forms the Newton matrix, so the `DAEFunction` fields
+`jac`, `jac_u`, `jac_du`, `vjp`, `jac_prototype`, `sparsity` and `colorvec` are not used for it
+(`jac` and `jac_prototype` still serve the DAE initialization), and a `DAEFunction` with `Wfact`
+or `Wfact_t` throws an `ArgumentError` when the integrator is initialized. A SciMLOperator
+`jac_prototype` is not supported for a `DAEFunction` and throws an `ArgumentError`.
 
 The supported combinations of Jacobian-vector product and Krylov solver are:
 
@@ -76,8 +80,9 @@ and the step is rejected unless the retry supplies a nonzero correction that cle
 residual (the same bound with `sqrt(r)` in place of `r`). Every linear solve, a rejected retry included, is counted in
 `stats.nsolve`. Because the stopping test is on a residual norm, rows of the residual
 scaled orders of magnitude below the others are invisible to it: give such a problem a
-preconditioner that equilibrates the rows. On the matrix-free path `resize!` of a
-`DFBDF` integrator throws an `ArgumentError`: the state dimension is fixed at initialization.
+preconditioner that equilibrates the rows. On the matrix-free path the state dimension is
+fixed at initialization: `resize!`, `deleteat!` and `addat!` of a `DFBDF` integrator throw an
+`ArgumentError` before changing any state.
 
 ## Optional FBDF time filtering
 

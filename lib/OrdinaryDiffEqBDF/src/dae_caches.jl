@@ -426,15 +426,39 @@ end
 # correction column valid for the order increase.
 
 # The matrix-free DAE Newton matrix (`dae_jvp_cache`) is built once for the initial state
-# dimension, so refuse before `resize!` mutates any state buffer.
-function Base.resize!(integrator::OrdinaryDiffEqCore.ODEIntegrator{<:DFBDF}, i::Int)
+# dimension, so every public change of the state size refuses before mutating any buffer.
+function check_fixed_dimension(integrator)
     nlcache = integrator.cache.nlsolver.cache
     if hasproperty(nlcache, :W) && jvp_counter(nlcache.W) !== nothing
         throw(
             ArgumentError(
-                "`resize!` is not supported for `DFBDF` with a matrix-free Krylov `linsolve`."
+                "Changing the state size (`resize!`, `deleteat!`, `addat!`) is not supported " *
+                    "for `DFBDF` with a matrix-free Krylov `linsolve`."
             )
         )
     end
+    return nothing
+end
+
+const DFBDFIntegrator = OrdinaryDiffEqCore.ODEIntegrator{<:DFBDF}
+
+function Base.resize!(integrator::DFBDFIntegrator, i::Int)
+    check_fixed_dimension(integrator)
     return invoke(resize!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Int}, integrator, i)
+end
+function Base.resize!(integrator::DFBDFIntegrator, i::NTuple{N, Int}) where {N}
+    check_fixed_dimension(integrator)
+    return invoke(
+        resize!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, NTuple{N, Int}}, integrator, i
+    )
+end
+function Base.deleteat!(integrator::DFBDFIntegrator, idxs)
+    check_fixed_dimension(integrator)
+    return invoke(deleteat!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Any}, integrator, idxs)
+end
+function SciMLBase.addat!(integrator::DFBDFIntegrator, idxs)
+    check_fixed_dimension(integrator)
+    return invoke(
+        SciMLBase.addat!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Any}, integrator, idxs
+    )
 end
