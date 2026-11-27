@@ -32,9 +32,16 @@ function expRK_operators(::ExpRK6s16, dt, A)
     end
 end
 
-struct ExpRK6s16ConstantCache{OpType, FType} <: ExpRKConstantCache
+function _exprk6s16_check_split(f)
+    isa(f, SplitFunction) ||
+        throw(ArgumentError("Caching can only be used with SplitFunction"))
+    return nothing
+end
+
+mutable struct ExpRK6s16ConstantCache{OpType, FType, tType} <: ExpRKConstantCache
     ops::OpType
     uf::FType
+    dtcache::tType
 end
 
 function alg_cache(
@@ -58,20 +65,17 @@ function alg_cache(
     ops =
         alg.krylov ? nothing :
         begin
-            isa(f, SplitFunction) ||
-            throw(ArgumentError("Caching can only be used with SplitFunction"))
-            A =
-            size(f.f1.f) == () ? convert(Number, f.f1.f) :
-            convert(AbstractMatrix, f.f1.f)
-            expRK_operators(alg, dt, A)
+            _exprk6s16_check_split(f)
+            expRK_operators(alg, dt, _expRK_linear_operator(f))
         end
     uf =
         isa(f, SplitFunction) || SciMLBase.has_jac(f) ? nothing :
         UDerivativeWrapper(f, t, p)
-    return ExpRK6s16ConstantCache(ops, uf)
+    return ExpRK6s16ConstantCache(ops, uf, dt)
 end
 
-@cache struct ExpRK6s16Cache{uType, rateType, JCType, FType, JType, OpType, KsType} <: ExpRKCache
+@cache mutable struct ExpRK6s16Cache{uType, rateType, JCType, FType, JType, OpType, KsType, tType} <:
+    ExpRKCache
     u::uType
     uprev::uType
     tmp::uType
@@ -86,6 +90,7 @@ end
     J::JType
     ops::OpType
     KsCache::KsType
+    dtcache::tType
 end
 
 function alg_cache(
@@ -106,6 +111,7 @@ function alg_cache(
         ::Val{true},
         verbose,
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    alg.krylov || _exprk6s16_check_split(f)
     tmp, dz = (zero(u) for _ in 1:2)
     rtmp, g1, Au, du1 = (zero(rate_prototype) for _ in 1:4)
     Ds = [zero(rate_prototype) for _ in 1:15]
@@ -126,6 +132,7 @@ function alg_cache(
         J,
         ops,
         KsCache,
+        dt,
     )
 end
 
@@ -177,8 +184,10 @@ end
     return [scaled^q * numerator[q - 1] / denominator for q in 2:order]
 end
 
+_exprk6s16_node(stage, dt) = stage == 16 ? one(dt) : _EXPRK6S16_C[stage]
+
 function _exprk6s16_stage(uprev, F1, Ds, stage, terms, phi_action, dt)
-    c = stage == 16 ? one(dt) : _EXPRK6S16_C[stage]
+    c = _exprk6s16_node(stage, dt)
     u = uprev + dt * c * phi_action(F1, stage, 1)
     for (D, coefficients) in terms
         for (index, coefficient) in enumerate(coefficients)
@@ -239,14 +248,17 @@ function _exprk6s16_terms(Ds, stage)
 end
 
 function _exprk6s16_step(uprev, F1, nonlinear, A, alg, integrator, dt, t, Ds, g1, ops)
-    phi_action = if alg.krylov
+    phi_action = if alg.krylov && size(A) == ()
+        a = convert(Number, A)
+        (v, stage, q) -> _exprk6s16_phi(_exprk6s16_node(stage, dt) * dt * a, q)[q + 1] * v
+    elseif alg.krylov
         kwargs = (
             m = min(alg.m, size(A, 1)),
             opnorm = integrator.opts.internalopnorm,
             iop = alg.iop,
         )
         (v, stage, q) -> iszero(v) ? zero(v) : @view(
-                phiv((stage == 16 ? one(dt) : _EXPRK6S16_C[stage]) * dt, A, v, q; kwargs...)[
+                phiv(_exprk6s16_node(stage, dt) * dt, A, v, q; kwargs...)[
                     :,
                     q + 1,
                 ]
@@ -273,6 +285,7 @@ function perform_step!(integrator, cache::ExpRK6s16ConstantCache, repeat_step = 
     (; t, dt, uprev, f, p) = integrator
     A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator, cache)
     alg = unwrap_alg(integrator, true)
+    update_expRK_operators!(cache, alg, f, dt)
     F1 = integrator.fsalfirst
     nonlinear = (u, time) -> _compute_nl(f, u, p, time, A)
     g1 = nonlinear(uprev, t)
@@ -293,9 +306,10 @@ end
 
 function perform_step!(integrator, cache::ExpRK6s16Cache, repeat_step = false)
     (; t, dt, uprev, u, f, p) = integrator
-    (; g1, Au, J, Ds, ops) = cache
+    (; g1, Au, J, Ds) = cache
     A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(J, integrator, cache); J)
     alg = unwrap_alg(integrator, true)
+    update_expRK_operators!(cache, alg, f, dt)
     F1 = integrator.fsalfirst
     _compute_nl!(g1, f, uprev, p, t, A, Au)
     nonlinear = function (state, time)
@@ -303,7 +317,7 @@ function perform_step!(integrator, cache::ExpRK6s16Cache, repeat_step = false)
         _compute_nl!(G, f, state, p, time, A, Au)
         return G
     end
-    result = _exprk6s16_step(uprev, F1, nonlinear, A, alg, integrator, dt, t, Ds, g1, ops)
+    result = _exprk6s16_step(uprev, F1, nonlinear, A, alg, integrator, dt, t, Ds, g1, cache.ops)
     u .= result
     if isa(f, SplitFunction)
         integrator.stats.nf2 += 17

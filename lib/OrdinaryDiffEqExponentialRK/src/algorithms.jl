@@ -9,6 +9,31 @@ for stiff systems." Applied Mathematics Letters 153 (2024): 109036.
 doi:10.1016/j.aml.2024.109036.
 """
 
+EXPRK6S16_DESCRIPTION = """
+6th order exponential-RK scheme with stiff order 6, using 15 internal stages. It
+takes fixed steps of the nominal `dt`, shortened only to land on `tstops` and the
+final time, and evaluates off-grid `saveat` values and dense output by cubic
+Hermite interpolation between steps. The default cached mode requires a
+`SplitODEProblem`; `krylov = true` also accepts an unsplit `ODEProblem`, using
+its Jacobian as the linear operator."""
+
+EXPRK_KRYLOV_ARNOLDI_HELP = """
+- `m`: Controls the size of Krylov subspace.
+- `iop`: If not zero, determines the length of the incomplete orthogonalization procedure (IOP).
+        Note that if the linear operator/Jacobian is hermitian, then the Lanczos algorithm will always be used and the IOP setting is ignored.
+"""
+
+EXPRK_KRYLOV_HELP = """
+    - `krylov`: Determines whether Krylov approximation or operator caching is used, the latter only available for semilinear problems.
+        `krylov=true` is much faster for larger systems and is thus recommended whenever there are >100 ODEs.
+    """ * EXPRK_KRYLOV_ARNOLDI_HELP
+
+EXPRK6S16_KRYLOV_HELP = """
+    - `krylov`: Krylov mode computes φ-function actions with matrix-vector products.
+        Cached mode requires a `SplitODEProblem` and reuses the precomputed operators.
+        Performance depends on operator structure and the number of steps.
+    """ * EXPRK_KRYLOV_ARNOLDI_HELP
+
 function _resolve_step_limiter_keyword(step_limiter, kwargs)
     kwargs_nt = values(kwargs)
     old_kw = Symbol("step_limiter!")
@@ -32,21 +57,16 @@ for (Alg, Description, Ref) in [
         (:ETDRK4, "4th order exponential-RK scheme (fixed timestepping)", REF1),
         (:HochOst4, "4th order exponential-RK scheme with stiff order 4.", REF1),
         (:Friedli, "4th order (stiff order 3) exponential-RK scheme.", REF1),
-        (:ExpRK6s16, "6th order exponential-RK scheme with stiff order 6.", REF6),
+        (:ExpRK6s16, EXPRK6S16_DESCRIPTION, REF6),
     ]
+    KrylovHelp = Alg === :ExpRK6s16 ? EXPRK6S16_KRYLOV_HELP : EXPRK_KRYLOV_HELP
     @eval begin
         @doc generic_solver_docstring(
             $Description,
             $(string(Alg)),
             "Semilinear ODE solver",
             $Ref,
-            """
-            - `krylov`: Determines whether Krylov approximation or operator caching is used, the latter only available for semilinear problems.
-                `krylov=true` is much faster for larger systems and is thus recommended whenever there are >100 ODEs.
-            - `m`: Controls the size of Krylov subspace.
-            - `iop`: If not zero, determines the length of the incomplete orthogonalization procedure (IOP).
-                    Note that if the linear operator/Jacobian is hermitian, then the Lanczos algorithm will always be used and the IOP setting is ignored.
-            """,
+            $KrylovHelp,
             """
             krylov = false,
             m = 30,

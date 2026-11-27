@@ -63,3 +63,35 @@ end
     sol = solve(prob, ExpRK6s16(); dt = 0.25)
     @test sol.u[end] ≈ fill(exp(-1), 2)
 end
+
+@testset "ExpRK6s16 off-grid final time" begin
+    for iip in (false, true), krylov in (false, true)
+        g = iip ? ((du, u, p, t) -> (du .= 0)) : ((u, p, t) -> zero(u))
+        prob = SplitODEProblem{iip}(MatrixOperator(fill(-2.0, 1, 1)), g, [1.0], (0.0, 1.0))
+        sol = solve(prob, ExpRK6s16(; krylov, m = 1); dt = 0.3)
+        @test successful_retcode(sol)
+        @test all(diff(sol.t) .> 0)
+        @test first(sol.t) == 0.0 && last(sol.t) == 1.0
+        @test abs(sol.u[end][1] - exp(-2.0)) < 100eps(Float64)
+    end
+end
+
+@testset "ExpRK6s16 scalar split problem" begin
+    for krylov in (false, true)
+        prob = SplitODEProblem(ScalarOperator(-1.0), (u, p, t) -> t, 1.0, (0.0, 1.0))
+        sol = solve(prob, ExpRK6s16(; krylov); dt = 0.25)
+        @test successful_retcode(sol)
+        @test sol.u[end] isa Float64
+        @test abs(sol.u[end] - 2exp(-1)) < 1.0e-12
+    end
+end
+
+@testset "ExpRK6s16 caching requires a split problem" begin
+    for iip in (false, true)
+        f = iip ? ((du, u, p, t) -> (du .= -u)) : ((u, p, t) -> -u)
+        prob = ODEProblem{iip}(f, [1.0], (0.0, 1.0))
+        @test_throws ArgumentError("Caching can only be used with SplitFunction") init(
+            prob, ExpRK6s16(); dt = 0.25
+        )
+    end
+end

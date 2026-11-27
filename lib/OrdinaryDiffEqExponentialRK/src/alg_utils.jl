@@ -1,7 +1,6 @@
 function isdtchangeable(
         alg::Union{
             LawsonEuler, NorsettEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2, Friedli,
-            ExpRK6s16,
         }
     )
     return false
