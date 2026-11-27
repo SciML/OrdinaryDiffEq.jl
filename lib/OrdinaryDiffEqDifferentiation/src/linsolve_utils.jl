@@ -112,7 +112,8 @@ function linear_residual!(integrator, linsolve, rlin, work)
     residual = LinearAlgebra.norm(work)
     LinearAlgebra.ldiv!(work, Pl, b)
     bnorm = LinearAlgebra.norm(work)
-    roundoff = 100 * eps(T) * (bnorm + Auscaled)
+    # Each norm is scaled before the sum, which would overflow for norms near `floatmax`.
+    roundoff = 100 * eps(T) * bnorm + 100 * eps(T) * Auscaled
     rtol = uses_finite_differences(A) ? max(reltol, cbrt(eps(T))) : reltol
     return (; residual, bnorm, roundoff, rtol, zero_correction = iszero(unorm))
 end
@@ -129,7 +130,7 @@ while the iterate is far from the solution: a badly scaled preconditioner can en
 `u = 0` after one iteration. With `evidence = true` the tolerance is `sqrt(rtol)`, a guard
 against gross failure that accepts an iterate that clearly reduced the residual.
 
-Either way, nonfinite norms are rejected, and for a nonzero `b` so are a zero `u` and a
+Either way, nonfinite norms and bound terms are rejected, and for a nonzero `b` so are a zero `u` and a
 relative bound `rtol * ‖Pl \\ b‖` below `floatmin`. A bound in the normal range resolves a
 residual at it to full precision, and a residual that underflows to zero is then genuinely
 below it; below `floatmin` the preconditioned norms are subnormal or flushed to zero (`Pl \\ b`
@@ -139,7 +140,8 @@ function linear_residual_converged!(integrator, linsolve, rlin, work; evidence =
     (; residual, bnorm, roundoff, rtol, zero_correction) =
         linear_residual!(integrator, linsolve, rlin, work)
     tol = (evidence ? sqrt(rtol) : rtol) * bnorm
-    (isfinite(residual) && isfinite(tol + roundoff)) || return false
+    # The terms, not their sum: a sum past `floatmax` is a bound no finite residual exceeds.
+    (isfinite(residual) && isfinite(tol) && isfinite(roundoff)) || return false
     if !iszero(linsolve.b)
         (zero_correction || tol < floatmin(tol)) && return false
     end
