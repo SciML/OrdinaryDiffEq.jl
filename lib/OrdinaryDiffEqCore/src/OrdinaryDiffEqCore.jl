@@ -427,10 +427,10 @@ include("precompilation_setup.jl")
         Expr(
             :public,
             :AbstractController, :AbstractControllerCache, :AbstractNLSolver, :AbstractNLSolverAlgorithm, :AbstractNLSolverCache, :AbstractThreadingOption,
-            :accept_step_controller, :pid_uses_error_estimate, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
+            :accept_step_controller, :pid_uses_error_estimate, :pid_retry_cap, :alg_adaptive_order, :alg_autodiff, :alg_cache, :alg_difftype, :alg_extrapolates,
             :alg_maximum_order, :alg_stability_size, :AutoAlgSwitch, :AutoSwitch, :AutoSwitchCache, :BaseThreads,
             :beta1_default, :beta2_default, Symbol("@cache"), Symbol("@fold"), Symbol("@OnDemandTableauExtract"), :COEFFICIENT_MULTISTEP, :CommonControllerOptions, :CompositeAlgorithm,
-            :CompositeController, :constvalue, :Convergence, :current_extrapolant,
+            :commit_step!, :CompositeController, :constvalue, :Convergence, :current_extrapolant,
             :current_interpolant, :DAEAlgorithm, :default_autoswitch, :DefaultCache, :default_controller, :default_linear_interpolation,
             :default_nlsolve, :DEOptions, :DIRK, :Divergence, :dt_required, :DummyController,
             :explicit_rk_docstring, :ExponentialAlgorithm, :FastConvergence, :gamma_default, :generic_solver_docstring,

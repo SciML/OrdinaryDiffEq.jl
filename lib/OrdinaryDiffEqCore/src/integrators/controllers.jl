@@ -927,10 +927,13 @@ as proposed by Söderlind and Wang (2006). A step will be accepted whenever the
 predicted step size change is bigger than `accept_safety`. Otherwise, the step
 is rejected and re-tried with the predicted step size.
 
-BDF methods that commit history at the error-estimate threshold accept a step
-when the scaled error estimate is at most one. Fixed-order BDF methods cap the
-PID retry factor at 0.81 independently of `accept_safety`; variable-order BDF
-methods select their own step size and order.
+For standalone `QNDF`, `FBDF`, `DFBDF`, `NordsieckBDF`, and `DNordsieckBDF`
+solves, the algorithm selects step size and order, so the PID gains and
+`limiter` have no effect and a step is accepted when the scaled error estimate
+is at most one (see [`pid_uses_error_estimate`](@ref)). `ABDF2`, `QNDF1`, and
+`QNDF2` retry a rejected step with at most 0.81 times its length (see
+[`pid_retry_cap`](@ref)), which only differs from the predicted step size when
+`accept_safety > 0.81`.
 
 Some standard controller parameters suggested in the literature are
 
@@ -1106,10 +1109,25 @@ end
     pid_uses_error_estimate(alg) -> Bool
 
 Return whether `PIDController` accepts steps using the scaled error estimate
-(`<= 1`) instead of its predicted step-size factor. Algorithms whose step
-history is committed at that threshold can specialize this hook.
+(`<= 1`) instead of its predicted step-size factor. Algorithms that choose
+their own step size, so that the PID step-size factor is never computed for
+them, specialize this hook to return `true`.
 """
 pid_uses_error_estimate(alg) = false
+
+"""
+    pid_retry_cap(alg) -> Union{Nothing, Real}
+
+Return the largest factor by which `PIDController` scales `dt` when it retries a
+rejected step of `alg`, or `nothing` (the default) to retry with the predicted
+factor. With a cap, a non-finite or non-positive predicted factor is replaced by
+the cap, so every retry is strictly shorter than the rejected step.
+"""
+pid_retry_cap(alg) = nothing
+
+_pid_retry_factor(factor, ::Nothing) = factor
+_pid_retry_factor(factor, cap) =
+    isfinite(factor) && factor > 0 ? min(factor, oftype(factor, cap)) : oftype(factor, cap)
 
 @inline function accept_step_controller(integrator, cache::PIDControllerCache, alg)
     return pid_uses_error_estimate(alg) ? get_EEst(integrator) <= 1 :
@@ -1134,11 +1152,7 @@ end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
     handle_disco_reject!(integrator, cache.controller.basic) && return integrator.dt
-    factor = cache.dt_factor
-    if pid_uses_error_estimate(alg)
-        factor = isfinite(factor) && factor > 0 ? min(factor, oftype(factor, 0.81)) : oftype(factor, 0.81)
-    end
-    return integrator.dt *= factor
+    return integrator.dt *= _pid_retry_factor(cache.dt_factor, pid_retry_cap(alg))
 end
 
 function sync_controllers!(cache1::PIDControllerCache, cache2::PIDControllerCache)

@@ -597,6 +597,29 @@ function finalize_endpoint!(integrator)
     end
 end
 
+"""
+    commit_step!(integrator, cache) -> Nothing
+
+Record the step just taken by `perform_step!` in the step history held by
+`cache`. The integrator calls this once per accepted step, after the
+controller and `isoutofdomain` have accepted it and while `integrator.dt` is
+still the length of that step; rejected attempts never reach it. Multistep
+methods whose next step reads that history specialize this hook, so that
+`perform_step!` only builds the trial state and a rejected attempt leaves the
+history untouched. The default does nothing.
+"""
+commit_step!(integrator, cache) = nothing
+
+function commit_step!(integrator, cache::CompositeCache)
+    return if cache.current == 1
+        commit_step!(integrator, @inbounds(cache.caches[1]))
+    elseif cache.current == 2
+        commit_step!(integrator, @inbounds(cache.caches[2]))
+    else
+        commit_step!(integrator, @inbounds(cache.caches[cache.current]))
+    end
+end
+
 # Want to extend loopfooter! for DDEIntegrator
 loopfooter!(integrator::ODEIntegrator) = _loopfooter!(integrator)
 
@@ -628,6 +651,7 @@ function _loopfooter!(integrator)
         )
         if integrator.accept_step # Accept
             increment_accept!(integrator.stats)
+            commit_step!(integrator, integrator.cache)
             apply_solve_step_limiter!(integrator, ttmp)
             integrator.last_stepfail = false
             integrator.tprev = integrator.t
@@ -656,6 +680,7 @@ function _loopfooter!(integrator)
         end
     elseif !integrator.opts.adaptive #Not adaptive
         increment_accept!(integrator.stats)
+        commit_step!(integrator, integrator.cache)
         apply_solve_step_limiter!(integrator, ttmp)
         integrator.tprev = integrator.t
         integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)

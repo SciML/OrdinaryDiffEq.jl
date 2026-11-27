@@ -38,14 +38,20 @@ const MAXITERS = 100_000
         for alg in (QNDF1(), QNDF2(), QNDF(), FBDF(), ABDF2()), prob in blowup_probs,
                 controller in pid_controllers(alg)
             integ = init(prob, alg; reltol = 1.0e-6, abstol = 1.0e-6, controller)
-            accepted_with_large_EEst = 0
+            fixed_order = alg isa Union{QNDF1, QNDF2, ABDF2}
+            mismatched = 0
             while integ.t < prob.tspan[2] && integ.iter < MAXITERS
                 step!(integ)
-                integ.accept_step &&
-                    OrdinaryDiffEqCore.get_EEst(integ) > 1 &&
-                    (accepted_with_large_EEst += 1)
+                integ.accept_step || continue
+                # Fixed-order methods follow PID's own acceptance rule and must record
+                # every accepted step; variable-order methods accept on the error estimate.
+                if fixed_order
+                    integ.cache.dtₙ₋₁ == integ.dt || (mismatched += 1)
+                else
+                    OrdinaryDiffEqCore.get_EEst(integ) > 1 && (mismatched += 1)
+                end
             end
-            @test accepted_with_large_EEst == 0
+            @test mismatched == 0
             @test integ.t == prob.tspan[2]
         end
     end
@@ -96,6 +102,7 @@ struct VetoController <: OrdinaryDiffEqCore.AbstractController
     calls::Base.RefValue{Int}
     vetoes::Base.RefValue{Int}
     rejects_at_veto::Base.RefValue{Int}
+    transition::Vector{Tuple{Float64, Int}}
 end
 
 mutable struct VetoCache{C, E} <: OrdinaryDiffEqCore.AbstractControllerCache
@@ -104,16 +111,21 @@ mutable struct VetoCache{C, E} <: OrdinaryDiffEqCore.AbstractControllerCache
     calls::Base.RefValue{Int}
     vetoes::Base.RefValue{Int}
     rejects_at_veto::Base.RefValue{Int}
+    transition::Vector{Tuple{Float64, Int}}
 end
 
 function OrdinaryDiffEqCore.setup_controller_cache(alg, _, c::VetoController, ::Type{E}, disco_probs) where {E}
     basic = OrdinaryDiffEqCore.resolve_basic((;), alg, Float64; disco_probs)
-    return VetoCache((; basic), oneunit(E), c.calls, c.vetoes, c.rejects_at_veto)
+    return VetoCache((; basic), oneunit(E), c.calls, c.vetoes, c.rejects_at_veto, c.transition)
 end
 
 function OrdinaryDiffEqCore.accept_step_controller(integrator, cache::VetoCache, alg)
     cache.calls[] += 1
+    if length(cache.transition) == 1
+        push!(cache.transition, (integrator.t, integrator.stats.nreject))
+    end
     if OrdinaryDiffEqCore.get_EEst(integrator) <= 1 && cache.vetoes[] == 0
+        push!(cache.transition, (integrator.t, integrator.stats.nreject))
         cache.vetoes[] += 1
         cache.rejects_at_veto[] = integrator.stats.nreject
         return false
@@ -123,11 +135,16 @@ end
 
 @testset "BDF controller acceptance regressions" begin
     calls, vetoes, rejects_at_veto = Ref(0), Ref(0), Ref(0)
-    sol = solve(blowup_probs[2], FBDF(); controller = VetoController(calls, vetoes, rejects_at_veto), abstol = 1.0e-6, reltol = 1.0e-6)
+    transition = Tuple{Float64, Int}[]
+    sol = solve(blowup_probs[2], FBDF(); controller = VetoController(calls, vetoes, rejects_at_veto, transition), abstol = 1.0e-6, reltol = 1.0e-6)
     @test calls[] > 0
     @test vetoes[] == 1
     @test sol.stats.nreject > rejects_at_veto[]
+    @test length(transition) == 2
+    @test transition[2][1] == transition[1][1]
+    @test transition[2][2] == transition[1][2] + 1
     @test sol.retcode == ReturnCode.Success
+    @test sol.u[end][2] ≈ 0.9 atol = 1.0e-6
 
     controller = OrdinaryDiffEqCore.PIDController(1 // 6, 1 // 6; accept_safety = 1.0)
     integ = init(blowup_probs[2], QNDF1(); controller, abstol = 1.0e-6, reltol = 1.0e-6)
@@ -150,5 +167,48 @@ end
         @test OrdinaryDiffEqCore.get_EEst(integ) == 1.0
         @test integ.cache.dtₙ₋₁ == 0.0625
         @test integ.cache.fsalfirstprev == (integ.u isa Number ? 0.125^2 : [0.125^2])
+    end
+
+    # The same tie rejected by `isoutofdomain` must leave the ABDF2 history at the
+    # Euler step, and the retry must use that history.
+    for prob in (ODEProblem(f, 0.0, (0.0, 0.5)), ODEProblem(f!, [0.0], (0.0, 0.5)))
+        integ_ref = Ref{Any}()
+        at_tie = Ref{Any}(nothing)
+        isout = function (u, p, t)
+            if t == 0.1875 && at_tie[] === nothing
+                c = integ_ref[].cache
+                at_tie[] = (OrdinaryDiffEqCore.get_EEst(integ_ref[]), c.dtₙ₋₁, first(c.fsalfirstprev))
+            end
+            return t == 0.1875 && first(u) > 0.0036
+        end
+        integ = init(prob, ABDF2(); dt = 0.125, dtmax = 0.125, abstol = 3 / 8192, reltol = 0.0, tstops = [0.1875], isoutofdomain = isout)
+        integ_ref[] = integ
+        step!(integ)
+        u₁ = first(integ.u)
+        step!(integ)
+        @test at_tie[] == (1.0, 0.125, 0.0)
+        @test integ.stats.nreject == 1
+        h = integ.dt
+        @test 0 < h < 0.0625
+        @test integ.t ≈ 0.125 + h
+        ρ = h / 0.125
+        abdf2 = (1 + ρ^2 / 3) * u₁ + h * (2 / 3 * integ.t^2 - (ρ - 1) / 3 * 0.125^2)
+        @test first(integ.u) ≈ abdf2 rtol = 1.0e-12
+        @test integ.cache.dtₙ₋₁ == h
+    end
+
+    # `PIDController` accepts on its predicted factor: a limiter that returns 0.5 on its
+    # first call rejects a step whose error estimate passes, and the history must follow.
+    for alg in (QNDF1(), QNDF2()), iip in (false, true)
+        calls = Ref(0)
+        limiter(x) = (calls[] += 1; calls[] == 1 ? 0.5 : 1.0)
+        prob = iip ? ODEProblem((du, u, p, t) -> (du[1] = 1.0; nothing), [0.0], (0.0, 0.5)) :
+            ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 0.5))
+        controller = OrdinaryDiffEqCore.PIDController(0.7, -0.4; limiter, accept_safety = 0.81)
+        sol = solve(prob, alg; dt = 0.01, abstol = 1.0e-4, reltol = 1.0e-4, controller)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nreject == 1
+        @test sol.t[2] == 0.0025
+        @test first(sol.u[end]) ≈ 0.5 atol = 1.0e-12
     end
 end
