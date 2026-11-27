@@ -3,8 +3,9 @@ using SparseArrays
 using LinearAlgebra
 using OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqBDF
+using OrdinaryDiffEqCore: alg_autodiff
 using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs, algebraic_jacobian,
-    BrownFullBasicInit, alg_autodiff, _isforwarddiff_alg
+    BrownFullBasicInit, _isforwarddiff_alg
 using NonlinearSolve: NewtonRaphson, FastShortcutNonlinearPolyalg
 using ADTypes: AutoSparse, AutoForwardDiff
 using SciMLBase: ReturnCode
@@ -355,10 +356,14 @@ end
     f = DAEFunction(dae!; jac_prototype = sparse(ones(2, 2)))
     prob = DAEProblem(f, [0.0, 0.0], [0.0, 0.3], (0.0, 1.0); differential_vars = [true, false])
 
-    sol = solve(
+    integ = init(
         prob, DFBDF(autodiff = AutoSparse(AutoForwardDiff()));
         initializealg = BrownFullBasicInit(), reltol = 1.0e-8, abstol = 1.0e-10
     )
+    @test alg_autodiff(integ.alg) isa AutoSparse
+    @test integ.du[1] ≈ 1.0 atol = 1.0e-8
+
+    sol = solve!(integ)
     @test sol.retcode == ReturnCode.Success
     @test sol.u[1] ≈ [0.0, 1.0] atol = 1.0e-8
     x1 = 1 / 2 - exp(-2) / 2
