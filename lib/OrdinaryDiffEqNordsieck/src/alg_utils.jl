@@ -3,6 +3,7 @@ alg_order(alg::JVODE) = 1  #dummy value
 
 alg_adaptive_order(alg::AN5) = 5
 qsteady_max_default(alg::AN5) = 3 // 2
+resumes_dt_after_tstop(::AN5) = false
 
 # JVODE-tuned CommonControllerOptions defaults match the historical alg-struct kwargs
 # `JVODE(qmin=1/5, qmax=10, qsteady_min=1, qsteady_max=3//2)`.

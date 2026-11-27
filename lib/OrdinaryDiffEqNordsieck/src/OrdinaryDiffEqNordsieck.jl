@@ -23,7 +23,7 @@ import OrdinaryDiffEqCore: alg_adaptive_order,
     get_current_adaptive_order, get_fsalfirstlast,
     ode_interpolant, ode_interpolant!, trivial_limiter!,
     generic_solver_docstring, default_controller,
-    @cache, ODEIntegrator, reinit_controller!
+    @cache, ODEIntegrator, reinit_controller!, resumes_dt_after_tstop
 using MuladdMacro: @muladd
 using FastBroadcast: @.., Serial
 using RecursiveArrayTools: recursivefill!
