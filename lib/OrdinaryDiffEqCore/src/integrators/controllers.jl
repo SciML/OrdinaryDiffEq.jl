@@ -556,9 +556,9 @@ end
 Controller cache used by algorithms that manage step-size selection themselves
 (BDF, Nordsieck, Leaping, …). Holds the scalar error estimate exposed through
 `get_EEst(integrator)` and a reference to the algorithm cache so existing dispatch
-on the algorithm cache continues to work. Setting `discontinuity_detection` to
-`true` enables autonomous discontinuity detection to select the next time step
-after a rejection. The default is `false`.
+on the algorithm cache continues to work. The cache stores the callback root
+problems and a `discontinuity_detection` flag, initially `false`. Each
+algorithm's rejection method determines whether it uses them.
 """
 mutable struct DummyControllerCache{T, C, NLPType} <: AbstractControllerCache
     EEst::T

@@ -37,8 +37,13 @@ _resolve_jvode_options(basic, alg, disco_probs) =
 function _resolve_jvode_options(basic::NamedTuple, alg, disco_probs)
     knobs = (:qmin, :qmax, :qsteady_min, :qsteady_max, :qmax_first_step, :gamma, :failfactor)
     supplied = filter(key -> haskey(basic, key) && getproperty(basic, key) !== nothing, knobs)
-    return resolve_basic(basic, alg, _resolved_QT(basic[supplied]); disco_probs)
+    QT = _fit_jvode_defaults(_resolved_QT(basic[supplied]))
+    return resolve_basic(basic, alg, QT; disco_probs)
 end
+
+# The JVODE defaults are `Rational{Int}` or `Int` values (`qmax_first_step = 10000`).
+_fit_jvode_defaults(::Type{QT}) where {QT} = QT
+_fit_jvode_defaults(::Type{QT}) where {QT <: Rational} = promote_type(QT, Rational{Int})
 
 function setup_controller_cache(
         alg::JVODE, cache, controller::JVODEController, ::Type{E}, disco_probs,
@@ -47,10 +52,19 @@ function setup_controller_cache(
     return JVODEControllerCache{typeof(resolved), typeof(cache), E}(resolved, cache, oneunit(E))
 end
 
-function post_newton_controller!(integrator, ::DummyControllerCache, ::JVODE)
-    integrator.dt = integrator.dt / get_failfactor(integrator)
+function post_newton_controller!(integrator, cache::DummyControllerCache, ::JVODE)
+    integrator.dt = _jvode_failed_dt(integrator.dt, get_failfactor(integrator, cache))
     return nothing
 end
+
+function post_newton_controller!(integrator, cache::JVODEControllerCache, ::JVODE)
+    integrator.dt = _jvode_failed_dt(integrator.dt, get_failfactor(integrator, cache))
+    return nothing
+end
+
+_jvode_failed_dt(dt, factor) = dt / factor
+# Divide rational time by the exact value of a floating-point factor.
+_jvode_failed_dt(dt::Rational, factor::AbstractFloat) = dt / oftype(dt, factor)
 
 # The controller cache delegates step-size selection to the algorithm.
 @inline stepsize_controller!(integrator, ::JVODEControllerCache, alg) =

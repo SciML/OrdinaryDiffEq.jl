@@ -1,8 +1,8 @@
 using OrdinaryDiffEqNordsieck
 using OrdinaryDiffEqNordsieck: JVODEController
 using OrdinaryDiffEqCore: AbstractController, AbstractControllerCache, DummyController,
-    DummyControllerCache, accept_step_controller, get_qmin, get_qmax, get_qsteady_min,
-    get_qsteady_max
+    DummyControllerCache, accept_step_controller, get_qmin, get_qmax, get_qmax_first_step,
+    get_qsteady_min, get_qsteady_max
 using SciMLBase: IntervalNonlinearProblem
 import OrdinaryDiffEqCore: get_EEst, post_newton_controller!, set_EEst!, setup_controller_cache
 using OrdinaryDiffEqTsit5: Tsit5
@@ -191,6 +191,38 @@ end
     @test SciMLBase.successful_retcode(sol)
     @test sol.t[end] == h
     @test sol.u[end] ≈ exp(-1) atol = tol rtol = 0
+end
+
+@testset "JVODEController retry with rational time ($(alg.algorithm), flag = $flag)" for
+    alg in (JVODE_Adams(), JVODE_BDF()), flag in (0.0, false)
+    h = 1 // 2^26
+    prob = ODEProblem((u, p, t) -> -u / h, 1.0, (0 // 1, h))
+    tol = 0.1
+    controller = JVODEController(; failfactor = Float16(2), discontinuity_detection = flag)
+    opts = (; dt = h, controller, abstol = tol, reltol = tol)
+
+    integrator = init(prob, alg; opts...)
+    post_newton_controller!(integrator, alg)
+    @test integrator.dt == h / 2
+
+    sol = solve(prob, alg; opts...)
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.t[2] == h / 2
+    @test sol.t[end] == h
+    @test sol.u[end] ≈ exp(-1) atol = tol rtol = 0
+end
+
+@testset "JVODEController compact rational override ($(alg.algorithm), flag = $flag)" for
+    alg in (JVODE_Adams(), JVODE_BDF()), flag in (0, false)
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    controller = JVODEController(; qmin = Rational{Int8}(1, 4), discontinuity_detection = flag)
+    integrator = init(prob, alg; controller, reltol = 1.0e-8, abstol = 1.0e-8)
+    @test get_qmin(integrator) === 1 // 4
+    @test get_qmax_first_step(integrator) === 10000 // 1
+    sol = solve!(integrator)
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.t[end] == 1.0
+    @test sol.u[end] ≈ exp(-1) atol = 1.0e-6
 end
 
 @testset "JVODE controller caches keep the requested error-estimate type" begin
