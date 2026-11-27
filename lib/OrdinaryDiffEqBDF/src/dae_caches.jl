@@ -424,3 +424,17 @@ end
 # the array has to be committed here instead. The order still ramps up to
 # `max_order` through the usual `qwait` countdown, which keeps the saved
 # correction column valid for the order increase.
+
+# The matrix-free DAE Newton matrix (`dae_jvp_cache`) is built once for the initial state
+# dimension, so refuse before `resize!` mutates any state buffer.
+function Base.resize!(integrator::OrdinaryDiffEqCore.ODEIntegrator{<:DFBDF}, i::Int)
+    nlcache = integrator.cache.nlsolver.cache
+    if hasproperty(nlcache, :W) && jvp_counter(nlcache.W) !== nothing
+        throw(
+            ArgumentError(
+                "`resize!` is not supported for `DFBDF` with a matrix-free Krylov `linsolve`."
+            )
+        )
+    end
+    return invoke(resize!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Int}, integrator, i)
+end

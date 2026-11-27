@@ -56,6 +56,7 @@ end
 
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
     nlsolve!, nlsolvefail, markfirststage!
+using OrdinaryDiffEqDifferentiation: jvp_counter
 import ADTypes: AutoForwardDiff
 
 using Reexport: Reexport, @reexport

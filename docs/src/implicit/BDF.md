@@ -76,8 +76,8 @@ and the step is rejected unless the retry supplies a nonzero correction that cle
 residual (the same bound with `sqrt(r)` in place of `r`). Every linear solve, a rejected retry included, is counted in
 `stats.nsolve`. Because the stopping test is on a residual norm, rows of the residual
 scaled orders of magnitude below the others are invisible to it: give such a problem a
-preconditioner that equilibrates the rows. DFBDF cannot shrink the state dimension after
-initialization on the matrix-free path.
+preconditioner that equilibrates the rows. On the matrix-free path `resize!` of a
+`DFBDF` integrator throws an `ArgumentError`: the state dimension is fixed at initialization.
 
 ## Optional FBDF time filtering
 
