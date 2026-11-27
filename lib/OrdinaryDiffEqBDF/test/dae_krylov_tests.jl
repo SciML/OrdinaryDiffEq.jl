@@ -467,6 +467,52 @@ end
     @test !converged([1.0, 0.0])
     @test converged([1.0, 1.0])
     @test !converged([0.0, 0.0])
+
+    # Norms near `floatmax`: the roundoff allowance once summed them before scaling, overflowed
+    # and rejected an exact correction.
+    for T in (Float32, Float64)
+        big = T(0.9) * floatmax(T)
+        exact = init(LinearProblem(Diagonal([big]), [big]), KrylovJL_GMRES())
+        solve!(exact)
+        exact.u .= one(T)
+        @test OrdinaryDiffEqDifferentiation.linear_residual_converged!(
+            integrator, exact, zeros(T, 1), zeros(T, 1)
+        )
+    end
+    # With the identity `Pl` the step is exact. The default weight preconditioner makes
+    # `Pl \ b` overflow, so GMRES itself starts from an infinite residual: the step may be
+    # rejected, but never accepted wrong.
+    huge!(r, du, u, p, t) = (r[1] = 1.0e308 * (u[1] - t); nothing)
+    prob = DAEProblem(huge!, [0.0], [0.0], (0.0, 1.0); differential_vars = [false])
+    for (linsolve, must_accept) in
+        ((KrylovJL_GMRES(; precs = Returns((I, I))), true), (KrylovJL_GMRES(), false))
+        huge_step = init(
+            prob, DFBDF(; linsolve); dt = 1.0, adaptive = false,
+            initializealg = SciMLBase.NoInit()
+        )
+        step!(huge_step)
+        accepted = huge_step.t == 1.0
+        must_accept && @test accepted
+        @test !accepted || isapprox(only(huge_step.u), 1; rtol = 1.0e-10)
+    end
+end
+
+# The matrix-free Newton matrix is built for the initial state dimension; `resize!` refuses
+# before changing any state, so the integrator can carry on.
+@testset "resize! of a matrix-free DFBDF integrator" begin
+    prob = DAEProblem(decay!, -ones(2), ones(2), (0.0, 1.0))
+    integrator = init(
+        prob, DFBDF(; linsolve = KrylovJL_GMRES()); abstol = 1.0e-8, reltol = 1.0e-8,
+        initializealg = SciMLBase.NoInit()
+    )
+    step!(integrator, 0.5, true)
+    for n in (3, 1)
+        @test_throws ArgumentError resize!(integrator, n)
+        @test length(integrator.u) == 2
+    end
+    solve!(integrator)
+    @test successful_retcode(integrator.sol)
+    @test integrator.u ≈ fill(exp(-1), 2) rtol = 1.0e-5
 end
 
 # `cj` is a scalar, so the matrix-free `W` takes the current one every stage rather than when
