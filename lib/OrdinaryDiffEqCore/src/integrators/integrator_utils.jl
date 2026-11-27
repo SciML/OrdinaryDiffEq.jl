@@ -861,10 +861,13 @@ end
 """
     reset_progress!(integrator)
 
-Reset the progress state in `integrator.opts` for a new solve from the current
-`integrator.t`, e.g. on `reinit!`. Progress is still measured against `prob.tspan`, so
-only the part of the new interval inside `prob.tspan` sends intermediate updates. When
+Reset the progress state in `integrator.opts` for a solve from the current
+`integrator.t`, and start the wall-clock throttle. Called at the end of `init` and by
+`reinit!`. Progress is still measured against `prob.tspan`, so after `reinit!` only the
+part of the new interval inside `prob.tspan` sends intermediate updates. When
 `integrator.t` is outside it, the gate restarts from 0.
+
+It reads the clock, so it is marked inactive for Enzyme and Mooncake.
 """
 function reset_progress!(integrator)
     opts = integrator.opts
@@ -872,7 +875,7 @@ function reset_progress!(integrator)
     # NaN would block the gate for good; the fraction may still become defined if the
     # new interval runs into prob.tspan
     opts.progress_last_frac = isnan(frac) ? 0.0 : frac
-    opts.progress_last_ns = UInt64(0)
+    opts.progress_last_ns = opts.progress ? time_ns() : UInt64(0)
     return integrator
 end
 
@@ -888,9 +891,9 @@ two gates apply, cheapest first:
  2. At least `opts.progress_min_interval_ns` of wall time (the `progress_min_interval`
     keyword, by default [`progress_min_interval_ns()`](@ref progress_min_interval_ns))
     must have passed since the last message (`opts.progress_last_ns`). The clock
-    starts at the first step this function sees (an accepted step whose iteration is
-    a multiple of `progress_steps`; it isn't read at `init`), so a solve that
-    finishes within the interval sends only 0 and "done".
+    starts at the end of `init` or at `reinit!` (see [`reset_progress!`](@ref)), so a
+    slow first step can send right away, and a solve that finishes within the
+    interval sends only 0 and "done".
 
 The first gate re-arms whenever it passes, even if the throttle then drops the
 message, so the clock is read only about `1 / progress_tspan` times per solve. A
@@ -904,7 +907,9 @@ is sent.
 function maybe_log_progress!(integrator)
     integrator.accept_step || return nothing
     opts = integrator.opts
-    if iszero(opts.progress_last_ns)  # first accepted step: start the throttle clock
+    # only `DEOptions` from the constructors for the previous field list get here with
+    # the clock unset (their `init` doesn't call `reset_progress!`)
+    if iszero(opts.progress_last_ns)
         opts.progress_last_ns = time_ns()
     end
     frac = progress_fraction(integrator.t, integrator.sol.prob.tspan)

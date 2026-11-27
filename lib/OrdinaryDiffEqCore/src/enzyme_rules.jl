@@ -47,6 +47,12 @@ function EnzymeCore.EnzymeRules.inactive_noinl(
 end
 
 function EnzymeCore.EnzymeRules.inactive_noinl(
+        ::typeof(reset_progress!), args...
+    )
+    return true
+end
+
+function EnzymeCore.EnzymeRules.inactive_noinl(
         ::typeof(ode_determine_initdt), args...
     )
     return true

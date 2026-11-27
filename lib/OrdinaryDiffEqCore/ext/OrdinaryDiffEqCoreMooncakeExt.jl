@@ -51,6 +51,9 @@ Mooncake.@zero_adjoint Mooncake.MinimalCtx Tuple{
 Mooncake.@zero_derivative Mooncake.MinimalCtx Tuple{
     typeof(OrdinaryDiffEqCore.maybe_log_progress!), Vararg,
 }
+Mooncake.@zero_derivative Mooncake.MinimalCtx Tuple{
+    typeof(OrdinaryDiffEqCore.reset_progress!), Vararg,
+}
 # NOTE: ode_determine_initdt depends on `u0`, so its return value (dt0) IS
 # mathematically a function of `u0`. Marking it zero-derivative is therefore
 # not strictly correct — it drops the (small) contribution of dt0 to the

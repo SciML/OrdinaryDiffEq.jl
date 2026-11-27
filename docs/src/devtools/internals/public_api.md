@@ -375,7 +375,8 @@ OrdinaryDiffEqCore.DummyController
 ### Progress reporting
 
 Packages that build `DEOptions` or implement their own `reinit!` use these to set up
-and reset the progress state. See `maybe_log_progress!` for when updates are sent.
+and reset the progress state; a custom `init` calls `reset_progress!` at the end, which
+starts the throttle clock. See `maybe_log_progress!` for when updates are sent.
 
 ```@docs
 OrdinaryDiffEqCore.DEFAULT_PROGRESS_TSPAN

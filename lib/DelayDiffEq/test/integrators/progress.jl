@@ -35,8 +35,9 @@ end
     integrator = init(prob, alg; dt = 0.01, progress = true)
     first_fracs = progress_solve!(integrator)
     @test integrator.opts.progress_last_frac > 0.9
+    last_ns = integrator.opts.progress_last_ns
     reinit!(integrator)
     @test integrator.opts.progress_last_frac == 0
-    @test integrator.opts.progress_last_ns == 0
+    @test integrator.opts.progress_last_ns >= last_ns  # clock restarted
     @test length(progress_solve!(integrator)) == length(first_fracs)
 end

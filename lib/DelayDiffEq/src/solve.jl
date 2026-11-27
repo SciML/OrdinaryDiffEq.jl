@@ -586,6 +586,7 @@ function SciMLBase.__init(
     # Starting-time discontinuity handling: mirrors OrdinaryDiffEqCore's __init.
     OrdinaryDiffEqCore.handle_starting_time_discontinuity!(integrator)
 
+    OrdinaryDiffEqCore.reset_progress!(integrator)  # starts the progress throttle clock
 
     return integrator
 end

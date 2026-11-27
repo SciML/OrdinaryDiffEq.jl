@@ -74,8 +74,9 @@ end
     @test integrator.opts.progress_steps == 1
     @test init(ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0)), Tsit5()).opts.progress_min_interval_ns ==
         progress_min_interval_ns()
-    # no clock read at init, so AD through init never sees `time_ns()`
-    @test integrator.opts.progress_last_ns == 0
+    # the throttle clock starts at init, and only with progress on
+    @test integrator.opts.progress_last_ns > 0
+    @test init(ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0)), Tsit5()).opts.progress_last_ns == 0
 end
 
 @testset "Throttle holds between messages" begin
@@ -96,22 +97,26 @@ end
     @test integrator.opts.progress_last_frac >= 1 - integrator.opts.progress_tspan
 end
 
-@testset "The throttle clock starts at the first accepted step" begin
-    # Not at init (AD-opaque), and not at the first gate pass, which would drop the first
-    # update however long the solve already took.
-    integrator = init(ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0)), Tsit5(); progress = true)
-    @test integrator.opts.progress_last_ns == 0
-    step!(integrator)
-    @test integrator.opts.progress_last_ns > 0
-    # with a 1 ns throttle the first gate pass (100 fixed steps after the clock started,
-    # so two clock reads apart even on coarse clocks) already sends
-    integrator, logger = progress_solve(
-        ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0)), Tsit5();
-        throttle = UInt64(1), adaptive = false, dt = 1.0e-3
-    )
-    fracs = intermediate_fracs(logger)
-    @test !isempty(fracs)
-    @test first(fracs) < 2 * integrator.opts.progress_tspan
+@testset "The throttle clock starts at init" begin
+    # Not at the first accepted step: when that step already passes the tspan gate
+    # (here 10% of tspan), its update must not be dropped however long the step took.
+    # The sleep stands in for a slow first step; it guarantees at least 2 ms on the
+    # clock, so with a 1 ms throttle the outcome doesn't depend on machine speed.
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    logger = Test.TestLogger(min_level = LogLevel(-1))
+    integrator = with_logger(logger) do
+        integrator = init(prob, Tsit5(); progress = true, adaptive = false, dt = 0.1)
+        integrator.opts.progress_min_interval_ns = UInt64(1_000_000)
+        sleep(0.002)
+        step!(integrator)
+        integrator
+    end
+    @test intermediate_fracs(logger) ≈ [0.1]
+
+    # reinit! restarts the clock
+    integrator.opts.progress_last_ns = UInt64(1)
+    reinit!(integrator)
+    @test integrator.opts.progress_last_ns > 1
 end
 
 @testset "Rejected attempts never emit" begin
@@ -224,9 +229,10 @@ end
         ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0)), Tsit5(); throttle = THROTTLE_OPEN
     )
     @test integrator.opts.progress_last_frac > 0
+    last_ns = integrator.opts.progress_last_ns
     reinit!(integrator)
     @test integrator.opts.progress_last_frac == 0
-    @test integrator.opts.progress_last_ns == 0
+    @test integrator.opts.progress_last_ns >= last_ns  # clock restarted
 
     # Progress stays measured against prob.tspan after reinit! onto another interval,
     # and only the part of the interval inside prob.tspan sends updates (no fractions
