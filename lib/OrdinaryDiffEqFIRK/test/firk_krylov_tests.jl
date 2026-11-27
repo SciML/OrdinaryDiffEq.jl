@@ -151,32 +151,41 @@ end
 @testset "AdaptiveRadau refreshes stage preconditioners on a shortened fixed step" begin
     rates = [1.0, 265.8]
     rhs!(du, u, p, t) = (@. du = rates * (u - (1 + t)) + 1; nothing)
-    f = ODEFunction(rhs!; jac_prototype = MatrixOperator(Diagonal(rates)))
+    linear_rates = [-1.0, -8.0]
     tf = 15 / 512
-    prob = ODEProblem(f, ones(2), (0.0, tf))
-    precs_calls = Ref(0)
-    function precs(W, p)
-        precs_calls[] += 1
-        T = eltype(W)
-        return Diagonal([(W * T[1, 0])[1], (W * T[0, 1])[2]]), I
-    end
-    alg = AdaptiveRadau(
-        max_order = 5, extrapolant = :constant,
-        linsolve = KrylovJL_GMRES(; precs, itmax = 1)
+    cases = (
+        ("operator RHS", ODEFunction(MatrixOperator(Diagonal(linear_rates))), exp.(linear_rates .* tf)),
+        (
+            "operator Jacobian", ODEFunction(rhs!; jac_prototype = MatrixOperator(Diagonal(rates))),
+            fill(1 + tf, 2),
+        ),
     )
-    dt = 1 / 64
-    integ = init(prob, alg; dt, adaptive = false, reltol = 1.0e-10, abstol = 1.0e-10)
-    step!(integ)
-    @test integ.t == dt
-    calls_after_first_step = precs_calls[]
+    @testset "$name" for (name, f, exact) in cases
+        prob = ODEProblem(f, ones(2), (0.0, tf))
+        precs_calls = Ref(0)
+        function precs(W, p)
+            precs_calls[] += 1
+            T = eltype(W)
+            return Diagonal([(W * T[1, 0])[1], (W * T[0, 1])[2]]), I
+        end
+        alg = AdaptiveRadau(
+            max_order = 5, maxiters = 2, extrapolant = :constant,
+            linsolve = KrylovJL_GMRES(; precs, itmax = 1)
+        )
+        dt = 1 / 64
+        integ = init(prob, alg; dt, adaptive = false, reltol = 1.0e-10, abstol = 1.0e-10)
+        step!(integ)
+        @test integ.t == dt
+        calls_after_first_step = precs_calls[]
 
-    sol = solve!(integ)
-    @test SciMLBase.successful_retcode(sol)
-    @test integ.t == tf
-    @test integ.stats.naccept == 2
-    @test integ.stats.nnonlinconvfail == 0
-    @test precs_calls[] == calls_after_first_step + 2
-    @test norm(integ.u .- (1 + tf), Inf) < 1.0e-8
+        sol = solve!(integ)
+        @test SciMLBase.successful_retcode(sol)
+        @test integ.t == tf
+        @test integ.stats.naccept == 2
+        @test integ.stats.nnonlinconvfail == 0
+        @test precs_calls[] == calls_after_first_step + 2
+        @test norm(integ.u - exact, Inf) < 1.0e-8
+    end
 end
 
 @testset "$alg counts matrix-free Jacobian-vector products" for alg in firk_algs
