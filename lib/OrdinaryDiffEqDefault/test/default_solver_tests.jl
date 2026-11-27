@@ -383,6 +383,28 @@ end
     @test ForwardDiff.partials.(sol.u[1][2:3], 1) ≈ [1.0, 0.0] atol = 1.0e-8
 end
 
+# z₁ - c + a ((z₂ - 2)^2 + (z₃ - 2)^2) = 0, z₂ = 2, z₃ = 2 has the regular root (c, 2, 2)
+# and tangent (1, 0, 0); the curvature a perturbs the finite-difference Jacobian of row 1.
+@testset "Default solver keeps the tangent of a regular coupled root, a = $a" for a in (0.0, 17 * 2.0^20)
+    c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, Float64))}(2.0, 1.0)
+    residual(z, p) = [z[1] - p.c + a * ((z[2] - 2)^2 + (z[3] - 2)^2), z[2] - 2, z[3] - 2]
+    initprob = SciMLBase.NonlinearProblem(residual, [2.0, 2.0, 2.0], (; c))
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> vcat(1.0, nlsol.u), nothing
+    )
+    f = ODEFunction(
+        (u, p, t) -> vcat(-u[1], residual(u[2:4], p));
+        mass_matrix = Diagonal([1.0, 0.0, 0.0, 0.0]), initialization_data
+    )
+    sol = solve(
+        ODEProblem(f, [one(c), 2.0, 2.0, 2.0], (0.0, 0.1), (; c));
+        saveat = [0.0], abstol = 1.0e-12, reltol = 1.0e-12
+    )
+    @test SciMLBase.successful_retcode(sol)
+    @test ForwardDiff.value.(sol.u[1][2:4]) ≈ [2.0, 2.0, 2.0] atol = 1.0e-8
+    @test ForwardDiff.partials.(sol.u[1][2:4], 1) ≈ [1.0, 0.0, 0.0] atol = 1.0e-8
+end
+
 @testset "Default solver initializes a regular BigFloat root" begin
     c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, BigFloat))}(big"2.0", big"1.0")
     initprob = SciMLBase.NonlinearProblem((z, p) -> [z[1] - p.c], [big"2.0"], (; c))

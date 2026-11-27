@@ -37,14 +37,15 @@ Jacobian and the initialization maps all seeing the original parameter container
 `∂F/∂u` is the analytic Jacobian of the problem when it has one, and otherwise is
 computed on the primal problem with the ADTypes backend `autodiff`. The rank of an
 `AutoFiniteDiff` Jacobian `J` is estimated by finite differences: `J` is estimated again
-as `J_fine` with half the relative and absolute steps, and the rank counts as unresolved
-when `J_fine` has no LU factorization or `opnorm(J_fine \\ (J - J_fine), Inf) ≥ 1/2`, that
-is, when the truncation error of `J` is not small relative to `J` itself. This test is
-invariant to scaling the equations. When `∂F/∂u` is singular at the root (a zero scalar
-derivative, an LU factorization that fails, or an unresolved finite-difference rank), the
-partials are not determined by the root, so `alg` is applied to the original dual problem
-and its solution is returned; a consistent dual warm start then keeps its partials. Every
-other problem is passed to `alg` unchanged.
+as `J_fine` with half the relative and absolute steps, and with `R = J_fine \\ (J - J_fine)`
+the rank counts as resolved when `J_fine` has an LU factorization and `opnorm(R, Inf) < 1/2`
+or `opnorm(R, 1) < 1/2`, or, for `Float32` and `Float64` Jacobians, `opnorm(R, 2) < 1/2`.
+Each bound keeps `J = J_fine (I + R)` nonsingular, so the truncation error of `J` is small
+relative to `J` itself, and `R` is invariant to scaling the equations. When `∂F/∂u` is
+singular at the root (a zero scalar derivative, an LU factorization that fails, or an
+unresolved finite-difference rank), the partials are not determined by the root, so `alg`
+is applied to the original dual problem and its solution is returned; a consistent dual
+warm start then keeps its partials. Every other problem is passed to `alg` unchanged.
 """
 struct OverrideInitNLSolve{A, AD} <: SciMLBase.AbstractNonlinearAlgorithm
     alg::A
@@ -131,8 +132,14 @@ function _rank_resolved(J, J_fine)
     all(isfinite, J) && all(isfinite, J_fine) || return false
     F = LinearAlgebra.lu(Matrix(J_fine); check = false)
     LinearAlgebra.issuccess(F) || return false
-    return LinearAlgebra.opnorm(F \ (Matrix(J) - Matrix(J_fine)), Inf) < 1 / 2
+    R = F \ (Matrix(J) - Matrix(J_fine))
+    LinearAlgebra.opnorm(R, Inf) < 1 / 2 && return true
+    LinearAlgebra.opnorm(R, 1) < 1 / 2 && return true
+    return _spectral_rank_resolved(R)
 end
+
+_spectral_rank_resolved(R::AbstractMatrix{<:Union{Float32, Float64}}) = LinearAlgebra.opnorm(R, 2) < 1 / 2
+_spectral_rank_resolved(R) = false
 
 _implicit_correction(Jᵤ::Number, ΔF) = iszero(Jᵤ) ? nothing : ΔF / Jᵤ
 function _implicit_correction(Jᵤ, ΔF)

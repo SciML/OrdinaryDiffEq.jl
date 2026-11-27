@@ -564,6 +564,27 @@ end
     test_override_root(states, [2.0, 2.0], [1.0, 0.0])
 end
 
+# z₁ - c + a ((z₂ - 2)^2 + (z₃ - 2)^2) = 0, z₂ = 2, z₃ = 2 has the regular root (c, 2, 2),
+# identity Jacobian and tangent (1, 0, 0). For a = 17 * 2^20 the curvature makes the
+# finite-difference estimates of row 1 differ, with ‖J_fine \\ (J - J_fine)‖ about 0.53 in
+# the ∞-norm but about 0.27 in the 1-norm.
+@testset "OverrideInit regular coupled root with curvature $a, autodiff = $autodiff" for a in (0.0, 17 * 2.0^20),
+        autodiff in (true, false)
+
+    residual(z, p) = [z[1] - p.c + a * ((z[2] - 2)^2 + (z[3] - 2)^2), z[2] - 2, z[3] - 2]
+    states = override_root_solutions(residual, [2.0, 2.0, 2.0], residual; autodiff)
+    test_override_root(states, [2.0, 2.0, 2.0], [1.0, 0.0, 0.0])
+end
+
+@testset "Finite-difference rank bounds, $T" for T in (Float64, BigFloat)
+    J_fine = Matrix{T}(I, 2, 2)
+    @test OrdinaryDiffEqNonlinearSolve._rank_resolved(J_fine + T[0.3 0.3; 0.0 0.0], J_fine)
+    @test OrdinaryDiffEqNonlinearSolve._rank_resolved(J_fine + T[0.3 0.0; 0.3 0.0], J_fine)
+    @test OrdinaryDiffEqNonlinearSolve._rank_resolved(J_fine + T[0.3 0.3; 0.3 -0.3], J_fine) ==
+        (T === Float64)
+    @test !OrdinaryDiffEqNonlinearSolve._rank_resolved(J_fine + T[0.3 0.3; 0.3 0.3], J_fine)
+end
+
 # z - c = 0 in BigFloat has root 2 and tangent 1 for c = 2 + ε.
 @testset "OverrideInit regular BigFloat root, autodiff = $autodiff" for autodiff in (true, false)
     c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, BigFloat))}(big"2.0", big"1.0")
