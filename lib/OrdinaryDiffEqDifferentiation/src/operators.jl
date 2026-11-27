@@ -108,13 +108,14 @@ backend `ad`.
 `stats.nf` counts calls to `f`, not cost-equivalent work. A dual-number JVP calls `f` once,
 on a dual input that costs more per call but is still one call. A finite-difference JVP
 evaluates only the perturbed point, its base evaluation having been paid once for the whole
-linearization point and counted by `base_evals_per_jvp_point`. `AutoFiniteDifferences` is
-the one backend `DifferentiationInterface` gives no such reuse, so it keeps its second
-evaluation.
+linearization point and counted by `base_evals_per_jvp_point`. A centered `AutoFiniteDiff`
+JVP does not use the base evaluation and evaluates both perturbed points, and
+`AutoFiniteDifferences` is the one backend `DifferentiationInterface` gives no such reuse,
+so both cost two evaluations.
 """
 function rhs_evals_per_jvp(ad)
     ad = ad isa AutoSparse ? ADTypes.dense_ad(ad) : ad
-    return ad isa ADTypes.AutoFiniteDifferences ? 2 : 1
+    return ad isa ADTypes.AutoFiniteDifferences || is_central_finite_diff(ad) ? 2 : 1
 end
 
 """
