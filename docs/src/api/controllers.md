@@ -137,7 +137,7 @@ The keyword is accepted only by OrdinaryDiffEq algorithms; other solvers,
 such as DelayDiffEq's `MethodOfSteps`, reject it under the usual keyword
 checks. Algorithms opt out through
 [`resumes_dt_after_tstop`](@ref OrdinaryDiffEqCore.resumes_dt_after_tstop);
-the Nordsieck BDF methods do, and for a `CompositeAlgorithm` the
+the Nordsieck BDF methods and `AN5` do, and for a `CompositeAlgorithm` the
 currently active member decides.
 
 ## Implementing a custom controller
