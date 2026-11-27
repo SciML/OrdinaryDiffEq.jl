@@ -554,6 +554,45 @@ small_root_value_residual(z, p) = [2.0^-30 * (ForwardDiff.value(z[1]) - p.c)]
     test_override_root(states, [2.0], [1.0])
 end
 
+# λ (z₁ - c) = 0, (z₂ - 2) + (z₂ - 2)^2 = 0 has the regular root (c, 2) and tangent (1, 0)
+# for every λ; the curvature of the second equation must not hide a small but resolved λ.
+@testset "OverrideInit regular root with a row scaled by $λ, autodiff = $autodiff" for λ in (1.0, 2.0^-30),
+        autodiff in (true, false)
+
+    residual(z, p) = [λ * (z[1] - p.c), (z[2] - 2) + (z[2] - 2)^2]
+    states = override_root_solutions(residual, [2.0, 2.0], residual; autodiff)
+    test_override_root(states, [2.0, 2.0], [1.0, 0.0])
+end
+
+# z - c = 0 in BigFloat has root 2 and tangent 1 for c = 2 + ε.
+@testset "OverrideInit regular BigFloat root, autodiff = $autodiff" for autodiff in (true, false)
+    c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, BigFloat))}(big"2.0", big"1.0")
+    residual(z, p) = [z[1] - p.c]
+    tolerances = (; abstol = big"1e-12", reltol = big"1e-12")
+    nlprob = NonlinearProblem(residual, [big"2.0"], (; c))
+    nlsolve = default_nlsolve(nothing, Val(false), [big"2.0"], nlprob, autodiff)
+    nlsol = solve(nlprob, nlsolve; tolerances...)
+    initialization_data = SciMLBase.OverrideInitData(
+        nlprob, nothing, sol -> vcat(one(BigFloat), sol.u), nothing
+    )
+    f = ODEFunction(
+        (u, p, t) -> [-u[1], u[2] - p.c];
+        mass_matrix = Diagonal(BigFloat[1, 0]), initialization_data
+    )
+    prob = ODEProblem(f, [one(c), c], (big"0.0", big"1e-6"), (; c))
+    alg = autodiff ? Rodas5P() : Rodas5P(autodiff = AutoFiniteDiff())
+    integrator = init(prob, alg; tolerances...)
+    sol = solve(prob, alg; saveat = [big"0.0"], tolerances...)
+    @test SciMLBase.successful_retcode(nlsol)
+    @test SciMLBase.successful_retcode(sol)
+    for z in (nlsol.u[1], integrator.u[2], sol.u[1][2])
+        @test ForwardDiff.value(z) isa BigFloat
+        @test ForwardDiff.partials(z, 1) isa BigFloat
+        @test ForwardDiff.value(z) ≈ 2 atol = big"1e-30"
+        @test ForwardDiff.partials(z, 1) ≈ 1 atol = big"1e-30"
+    end
+end
+
 # 2z₁ + z₂ = c, z₁ + 3z₂ = 0 has root (3c, -c) / 5 and tangent (0.6, -0.2).
 @testset "OverrideInit with a sparse analytic Jacobian" begin
     residual(z, p) = [2z[1] + z[2] - p.c, z[1] + 3z[2]]

@@ -35,11 +35,12 @@ solved by `alg` on the primal values, and the partials of the root `u` are obtai
 implicit differentiation, `∂u = -(∂F/∂u) \\ ∂F/∂p`, with the residual, its analytic
 Jacobian and the initialization maps all seeing the original parameter container.
 `∂F/∂u` is the analytic Jacobian of the problem when it has one, and otherwise is
-computed on the primal problem with the ADTypes backend `autodiff`. An `AutoFiniteDiff`
-Jacobian is also estimated with half the relative and absolute steps, and its rank counts
-as unresolved when the smallest singular value of that second estimate is at most twice
-the operator norm of the change between the two estimates, which bounds the first-order
-truncation error of the first estimate. When `∂F/∂u` is singular at the root (a zero scalar
+computed on the primal problem with the ADTypes backend `autodiff`. The rank of an
+`AutoFiniteDiff` Jacobian `J` is estimated by finite differences: `J` is estimated again
+as `J_fine` with half the relative and absolute steps, and the rank counts as unresolved
+when `J_fine` has no LU factorization or `opnorm(J_fine \\ (J - J_fine), Inf) ≥ 1/2`, that
+is, when the truncation error of `J` is not small relative to `J` itself. This test is
+invariant to scaling the equations. When `∂F/∂u` is singular at the root (a zero scalar
 derivative, an LU factorization that fails, or an unresolved finite-difference rank), the
 partials are not determined by the root, so `alg` is applied to the original dual problem
 and its solution is returned; a consistent dual warm start then keeps its partials. Every
@@ -128,8 +129,9 @@ end
 function _rank_resolved(J, J_fine)
     isempty(J) && return true
     all(isfinite, J) && all(isfinite, J_fine) || return false
-    σ_min = minimum(LinearAlgebra.svdvals(Matrix(J_fine)))
-    return σ_min > 2 * LinearAlgebra.opnorm(Matrix(J) - Matrix(J_fine))
+    F = LinearAlgebra.lu(Matrix(J_fine); check = false)
+    LinearAlgebra.issuccess(F) || return false
+    return LinearAlgebra.opnorm(F \ (Matrix(J) - Matrix(J_fine)), Inf) < 1 / 2
 end
 
 _implicit_correction(Jᵤ::Number, ΔF) = iszero(Jᵤ) ? nothing : ΔF / Jᵤ

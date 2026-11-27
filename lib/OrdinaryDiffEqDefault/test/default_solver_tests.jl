@@ -361,3 +361,46 @@ end
     @test ForwardDiff.value(sol.u[1][2]) ≈ 2.0 atol = 1.0e-8
     @test ForwardDiff.partials(sol.u[1][2], 1) ≈ 1.0 atol = 1.0e-8
 end
+
+# 2^-30 (z₁ - c) = 0, (z₂ - 2) + (z₂ - 2)^2 = 0 has the regular root (c, 2) and tangent (1, 0).
+@testset "Default solver keeps the tangent of a regular root with a small scaled row" begin
+    c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, Float64))}(2.0, 1.0)
+    residual(z, p) = [2.0^-30 * (z[1] - p.c), (z[2] - 2) + (z[2] - 2)^2]
+    initprob = SciMLBase.NonlinearProblem(residual, [2.0, 2.0], (; c))
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> vcat(1.0, nlsol.u), nothing
+    )
+    f = ODEFunction(
+        (u, p, t) -> vcat(-u[1], residual(u[2:3], p));
+        mass_matrix = Diagonal([1.0, 0.0, 0.0]), initialization_data
+    )
+    sol = solve(
+        ODEProblem(f, [one(c), 2.0, 2.0], (0.0, 0.1), (; c));
+        saveat = [0.0], abstol = 1.0e-12, reltol = 1.0e-12
+    )
+    @test SciMLBase.successful_retcode(sol)
+    @test ForwardDiff.value.(sol.u[1][2:3]) ≈ [2.0, 2.0] atol = 1.0e-8
+    @test ForwardDiff.partials.(sol.u[1][2:3], 1) ≈ [1.0, 0.0] atol = 1.0e-8
+end
+
+@testset "Default solver initializes a regular BigFloat root" begin
+    c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, BigFloat))}(big"2.0", big"1.0")
+    initprob = SciMLBase.NonlinearProblem((z, p) -> [z[1] - p.c], [big"2.0"], (; c))
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> vcat(one(BigFloat), nlsol.u), nothing
+    )
+    f = ODEFunction(
+        (u, p, t) -> [-u[1], u[2] - p.c];
+        mass_matrix = Diagonal(BigFloat[1, 0]), initialization_data
+    )
+    sol = solve(
+        ODEProblem(f, [one(c), c], (big"0.0", big"1e-6"), (; c));
+        saveat = [big"0.0"], abstol = big"1e-12", reltol = big"1e-12"
+    )
+    @test SciMLBase.successful_retcode(sol)
+    z = sol.u[1][2]
+    @test ForwardDiff.value(z) isa BigFloat
+    @test ForwardDiff.partials(z, 1) isa BigFloat
+    @test ForwardDiff.value(z) ≈ 2 atol = big"1e-30"
+    @test ForwardDiff.partials(z, 1) ≈ 1 atol = big"1e-30"
+end
