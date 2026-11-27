@@ -3,9 +3,6 @@ function build_fpsolver(
         alg, fpalg::Union{NLFunctional, NLAnderson}, u, uEltypeNoUnits,
         uBottomEltypeNoUnits, ::Val{true}
     )
-    # no fixed-point iterations if the algorithm is constrained
-    isconstrained(alg) && return
-
     # define unitless type
     uTolType = real(uBottomEltypeNoUnits)
 
@@ -39,9 +36,6 @@ function build_fpsolver(
         alg, fpalg::Union{NLFunctional, NLAnderson}, u, uEltypeNoUnits,
         uBottomEltypeNoUnits, ::Val{false}
     )
-    # no fixed-point iterations if the algorithm is constrained
-    isconstrained(alg) && return
-
     # define unitless type
     uTolType = real(uBottomEltypeNoUnits)
 
