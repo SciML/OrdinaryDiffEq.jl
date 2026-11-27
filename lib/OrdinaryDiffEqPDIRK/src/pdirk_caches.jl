@@ -76,19 +76,19 @@ function alg_cache(
         nlsolver1 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(true), verbose
+            Val(true), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
         )
         nlsolver2 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(true), verbose
+            Val(true), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
         )
         nlsolver = [nlsolver1, nlsolver2]
     else
         _nlsolver = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(true), verbose
+            Val(true), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
         )
         nlsolver = [_nlsolver]
     end
@@ -109,19 +109,19 @@ function alg_cache(
         nlsolver1 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(false), verbose
+            Val(false), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
         )
         nlsolver2 = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(false), verbose
+            Val(false), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
         )
         nlsolver = [nlsolver1, nlsolver2]
     else
         _nlsolver = build_nlsolver(
             alg, u, uprev, p, t, dt, f, rate_prototype,
             uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, γ, c,
-            Val(false), verbose
+            Val(false), verbose; stats_delta = isthreaded(alg.threading) ? StatsDelta() : nothing
         )
         nlsolver = [_nlsolver]
     end

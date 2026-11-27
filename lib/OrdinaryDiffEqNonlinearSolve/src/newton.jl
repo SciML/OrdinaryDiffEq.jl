@@ -48,11 +48,11 @@ function initialize!(
         # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
         # inner cache's counters, so that evaluation is never visible in
         # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
-        integrator.stats.nf += cache.cache.stats.nf + 1
+        charge_nf!(integrator, cache, cache.cache.stats.nf + 1)
         if cache.W === nothing
-            integrator.stats.njacs += cache.cache.stats.njacs
+            charge_njacs!(integrator, cache, cache.cache.stats.njacs)
         end
-        integrator.stats.nsolve += cache.cache.stats.nsolve
+        charge_nsolve!(integrator, cache, cache.cache.stats.nsolve)
     end
 
     if cache.W !== nothing
@@ -120,15 +120,15 @@ function initialize!(
         # The `reinit!` below evaluates the residual at the new `z` and *then* zeroes the
         # inner cache's counters, so that evaluation is never visible in
         # `cache.cache.stats.nf`. Left uncounted it loses one `f` call per stage.
-        integrator.stats.nf += cache.cache.stats.nf + 1
+        charge_nf!(integrator, cache, cache.cache.stats.nf + 1)
         # Under `W` reuse the inner solver's "Jacobian" is `WReuseJac`, which copies the
         # `W` assembled here rather than evaluating anything, so its `njacs` counts copies
         # (it tracks `nw`, not Jacobian evaluations). `_update_nlsolvealg_W!` counts the
         # real ones. Without reuse the inner solver owns the Jacobian and its count stands.
         if cache.W === nothing
-            integrator.stats.njacs += cache.cache.stats.njacs
+            charge_njacs!(integrator, cache, cache.cache.stats.njacs)
         end
-        integrator.stats.nsolve += cache.cache.stats.nsolve
+        charge_nsolve!(integrator, cache, cache.cache.stats.nsolve)
     end
 
     nlstep_data = get_nlstep_data(f)
@@ -292,11 +292,11 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
                 if !(p isa SciMLBase.NullParameters)
                     uf.p = p
                 end
-                jacobian!(J, uf, uprev, du1, integrator, jac_config)
+                jacobian!(J, uf, uprev, du1, integrator, jac_config; stats_sink = stats_sink(nlcache))
             end
             # `calc_J!` is bypassed here, so this is the only place the reused-`W`
             # path can record a Jacobian evaluation.
-            integrator.stats.njacs += 1
+            charge_njacs!(integrator, nlcache, 1)
             # A solver caching a reduction of `J` cannot see an in-place write.
             mark_jacobian_updated!(W)
         end
@@ -306,7 +306,7 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
     # factorization, which the inner Newton re-factorizes itself when it refreshes W.
     nlcache.W_γdt = dtgamma
     new_jac && (nlcache.J_t = integrator.t)
-    integrator.stats.nw += 1
+    charge_nw!(integrator, nlcache, 1)
     return nothing
 end
 
@@ -485,7 +485,7 @@ function _update_nlsolvealg_W_oop!(nlcache, integrator, dtgamma, new_jac = true)
     end
     nlcache.W[] = nlcache.J - integrator.f.mass_matrix * inv(dtgamma)
     nlcache.W_γdt = dtgamma
-    integrator.stats.nw += 1
+    charge_nw!(integrator, nlcache, 1)
     return nothing
 end
 
@@ -719,9 +719,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
         ztmp, ustep = _compute_rhs(tmp, γ, α, tstep, invγdt, method, p, dt, f, z)
     end
 
-    if SciMLBase.has_stats(integrator)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    end
+    charge_nf!(integrator, cache, 1)
 
     # update W
     if W isa Union{WOperator, StaticWOperator}
@@ -734,9 +732,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
     dz = _restructure_state(ztmp, W \ _vec(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
-    if SciMLBase.has_stats(integrator)
-        integrator.stats.nsolve += 1
-    end
+    charge_nsolve!(integrator, cache, 1)
 
     atmp = calculate_residuals(
         dz, uprev, ustep, opts.abstol, opts.reltol,
@@ -763,9 +759,7 @@ end
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 
-    if SciMLBase.has_stats(integrator)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    end
+    charge_nf!(integrator, cache, 1)
 
     if isdae
         _uprev = get_dae_uprev(integrator, uprev)
@@ -793,12 +787,12 @@ end
     if is_always_new(nlsolver) || (iter == 1 && new_W)
         linres = dolinsolve(
             integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
-            reltol
+            reltol, stats_sink = stats_sink(cache)
         )
     else
         linres = dolinsolve(
             integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
-            reltol
+            reltol, stats_sink = stats_sink(cache)
         )
     end
 
@@ -807,9 +801,7 @@ end
         return convert(eltype(atmp), Inf)
     end
 
-    if SciMLBase.has_stats(integrator)
-        integrator.stats.nsolve += 1
-    end
+    charge_nsolve!(integrator, cache, 1)
 
     # relaxed Newton
     # Diagonally Implicit Runge-Kutta Methods for Ordinary Differential
