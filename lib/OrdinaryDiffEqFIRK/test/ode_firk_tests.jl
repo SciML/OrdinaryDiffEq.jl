@@ -1,5 +1,7 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
 using SparseArrays
+import LinearSolve
+using LinearSolve: LUFactorization
 using OrdinaryDiffEqTsit5: AutoTsit5
 using ADTypes: AutoFiniteDiff
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
@@ -376,4 +378,55 @@ end
     oop = solve(ODEProblem(foop, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
     @test oop.retcode == ReturnCode.Success
     @test oop.u[end] ≈ iip.u[end] rtol = 1.0e-8
+end
+
+# Solves with `\` and reports `Failure` on call number `fail_at`
+struct FailNthLdiv <: LinearSolve.SciMLLinearSolveAlgorithm
+    calls::Threads.Atomic{Int}
+    fail_at::Int
+end
+FailNthLdiv(fail_at) = FailNthLdiv(Threads.Atomic{Int}(0), fail_at)
+LinearSolve.needs_concrete_A(::FailNthLdiv) = true
+function LinearSolve.SciMLBase.solve!(
+        cache::LinearSolve.LinearCache, alg::FailNthLdiv, args...; kwargs...
+    )
+    n = Threads.atomic_add!(alg.calls, 1) + 1
+    cache.u .= cache.A \ cache.b
+    retcode = n == alg.fail_at ? ReturnCode.Failure : ReturnCode.Success
+    return LinearSolve.SciMLBase.build_linear_solution(alg, cache.u, nothing, cache; retcode)
+end
+
+@testset "In-place FIRK rejects the step when the linear solve fails (#4997)" begin
+    # ∂w'/∂c = -Inf at c = 0, so W is non-finite and LU reports a failed factorization
+    function f!(du, u, p, t)
+        d, c, w = u
+        du[1] = -d
+        du[2] = d - c
+        du[3] = -(c < 0 ? NaN : c^0.1) - w
+        return nothing
+    end
+    prob = ODEProblem(f!, [1.0, 0.0, 0.0], (0.0, 10.0))
+    algs = (
+        RadauIIA3(linsolve = LUFactorization()), RadauIIA5(linsolve = LUFactorization()),
+        RadauIIA9(linsolve = LUFactorization()), AdaptiveRadau(linsolve = LUFactorization()),
+        AdaptiveRadau(linsolve = LUFactorization(), threading = true),
+    )
+    for alg in algs, kw in ((;), (; adaptive = false, dt = 1.0e-3))
+        sol = solve(prob, alg; kw...)
+        @test sol.retcode != ReturnCode.Success || isapprox(sol.u[end][1], exp(-10); rtol = 1.0e-2)
+    end
+
+    # nsolve counts every solve that ran, including the failed one and its siblings
+    linprob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 2.0], (0.0, 1.0))
+    for mkalg in (
+            a -> RadauIIA3(linsolve = a), a -> RadauIIA5(linsolve = a),
+            a -> RadauIIA9(linsolve = a), a -> GaussLegendre(linsolve = a),
+            a -> AdaptiveRadau(linsolve = a, min_order = 9, max_order = 9),
+            a -> AdaptiveRadau(linsolve = a, min_order = 9, max_order = 9, threading = true),
+        )
+        linalg = FailNthLdiv(2)
+        sol = solve(linprob, mkalg(linalg))
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nsolve == linalg.calls[]
+    end
 end
