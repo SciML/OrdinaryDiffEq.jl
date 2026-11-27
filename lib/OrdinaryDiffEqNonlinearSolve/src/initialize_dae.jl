@@ -54,11 +54,11 @@ function default_nlsolve(
     )
 end
 function default_nlsolve(
-        ::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem,
+        ::Nothing, isinplace::Val{true}, u, nlprob::NonlinearLeastSquaresProblem,
         autodiff = false, chunksize = Val(1)
     )
     return FastShortcutNLLSPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize)
     )
 end
 function default_nlsolve(
@@ -70,11 +70,11 @@ function default_nlsolve(
     )
 end
 function default_nlsolve(
-        ::Nothing, isinplace::Val{false}, u, ::NonlinearLeastSquaresProblem,
+        ::Nothing, isinplace::Val{false}, u, nlprob::NonlinearLeastSquaresProblem,
         autodiff = false, chunksize = Val(1)
     )
     return FastShortcutNLLSPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize)
     )
 end
 function default_nlsolve(

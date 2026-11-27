@@ -171,6 +171,30 @@ end
     end
 end
 
+@testset "default solver differentiates a least-squares problem returned by the updater (outer iip = $iip)" for iip in (true, false)
+    saw_dual = Ref(false)
+    residual!(r, u, p) = (saw_dual[] |= eltype(u) <: ForwardDiff.Dual; r[1] = u[1] - 2; nothing)
+    calls = Ref(0)
+    updated = NonlinearLeastSquaresProblem(
+        NonlinearFunction{true, SciMLBase.AutoSpecialize}(residual!; resid_prototype = zeros(1)), [1.5]
+    )
+    placeholder = NonlinearLeastSquaresProblem((u, p) -> [1.0], nothing)
+    data = OverrideInitData(
+        placeholder, (_, _) -> (calls[] += 1; updated), sol -> copy(sol.u), nothing;
+        is_update_oop = Val(true)
+    )
+    rhs = iip ? (du, u, p, t) -> (du .= 2 .- u; nothing) : (u, p, t) -> 2 .- u
+    fn = ODEFunction{iip, SciMLBase.FullSpecialize}(rhs; mass_matrix = zeros(1, 1), initialization_data = data)
+    integ = init(ODEProblem(fn, [1.5], (0.0, 0.01)), Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+    @test calls[] == 1
+    @test saw_dual[]
+    @test integ.sol.retcode == SciMLBase.ReturnCode.Default
+    @test abs(only(integ.u) - 2) < 1.0e-10
+    r = zeros(1)
+    residual!(r, integ.u, nothing)
+    @test abs(only(r)) < 1.0e-10
+end
+
 @testset "default solver accepts an interval problem returned by the initializer updater" begin
     calls = Ref(0)
     placeholder = NonlinearLeastSquaresProblem((u, p) -> [1.0], nothing)
