@@ -43,22 +43,13 @@ This is called from the `resize!` integrator interface; see
 [`deleteat_noise!`](@ref) and [`addat_noise!`](@ref) for the index-wise variants.
 """
 function resize_noise!(integrator, cache, bot_idx, i)
-    for c in integrator.W.S₁
+    extra = alg_needs_extra_process(integrator.alg)
+    zindexed = extra && z_follows_w(integrator)
+    for S in (integrator.W.S₁, integrator.W.S₂), c in S
         resize!(c[2], i)
-        if alg_needs_extra_process(integrator.alg)
-            resize!(c[3], i)
-        end
+        zindexed && resize!(c[3], i)
         if i >= bot_idx # fill in rands
-            fill_new_noise_caches!(integrator, c, c[1], bot_idx:i)
-        end
-    end
-    for c in integrator.W.S₂
-        resize!(c[2], i)
-        if alg_needs_extra_process(integrator.alg)
-            resize!(c[3], i)
-        end
-        if i >= bot_idx # fill in rands
-            fill_new_noise_caches!(integrator, c, c[1], bot_idx:i)
+            fill_new_noise_caches!(integrator, c, c[1], bot_idx:i, zindexed ? (bot_idx:i) : (1:0))
         end
     end
     resize!(integrator.W.dW, i)
@@ -71,7 +62,7 @@ function resize_noise!(integrator, cache, bot_idx, i)
     integrator.W.curW[end] = zero(eltype(integrator.u))
     DiffEqNoiseProcess.resize_stack!(integrator.W, i)
 
-    if alg_needs_extra_process(integrator.alg)
+    if zindexed
         resize!(integrator.W.dZ, i)
         integrator.W.dZ[end] = zero(eltype(integrator.u))
         resize!(integrator.W.dZtilde, i)
@@ -80,19 +71,74 @@ function resize_noise!(integrator, cache, bot_idx, i)
         integrator.W.dZtmp[end] = zero(eltype(integrator.u))
         resize!(integrator.W.curZ, i)
         integrator.W.curZ[end] = zero(eltype(integrator.u))
+    elseif extra
+        resize_extra_process!(integrator, extra_process_length(integrator, i))
     end
     return if i >= bot_idx # fill in rands
         fill!(@view(integrator.W.curW[bot_idx:i]), zero(eltype(integrator.u)))
-        if alg_needs_extra_process(integrator.alg)
-            fill!(@view(integrator.W.curZ[bot_idx:i]), zero(eltype(integrator.u)))
-        end
+        zindexed && fill!(@view(integrator.W.curZ[bot_idx:i]), zero(eltype(integrator.u)))
     end
 end
 
 """
-    fill_new_noise_caches!(integrator, c, scaling_factor, idxs) -> nothing
+    extra_process_length(integrator, i) -> Int
 
-Sample fresh noise increments into positions `idxs` of a cached noise entry `c`.
+Length of the extra noise process `Z` once the Brownian process `W` has `i` components.
+
+This is the length of the [`_z_prototype`](@ref) that the integrator's algorithm builds
+for an `i`-dimensional `W`. Most methods use a `Z` shaped like `W`, but `PL1WM` has
+`i(i-1)/2` entries and `W2Ito1` always has 2.
+"""
+function extra_process_length(integrator, i)
+    W = integrator.W
+    return length(_z_prototype(integrator.alg, similar(W.dW, i), isinplace(W), integrator.dt))
+end
+
+"""
+    resize_extra_process!(integrator, zlen) -> nothing
+
+Resize every buffer of the extra noise process `Z` to `zlen` entries.
+
+Entries are kept or dropped at the end. New entries of the cached increments in the
+interpolation stacks are sampled fresh, and new entries of `dZ`, `dZtilde`, `dZtmp` and
+`curZ` start at zero.
+"""
+function resize_extra_process!(integrator, zlen)
+    W = integrator.W
+    zidxs = (length(W.dZ) + 1):zlen
+    for S in (W.S₁, W.S₂), c in S
+        resize!(c[3], zlen)
+        fill_new_noise_caches!(integrator, c, c[1], 1:0, zidxs)
+    end
+    # Unused stack slots are copied into when reused, so they need the new length too.
+    for c in W.S₂.data
+        c[3] === nothing || resize!(c[3], zlen)
+    end
+    for Z in (W.dZ, W.dZtilde, W.dZtmp, W.curZ)
+        resize!(Z, zlen)
+        fill!(@view(Z[zidxs]), zero(eltype(integrator.u)))
+    end
+    return nothing
+end
+
+"""
+    z_follows_w(integrator) -> Bool
+
+Whether the algorithm's extra noise process `Z` has one entry per component of `W` by
+construction, i.e. its [`_z_prototype`](@ref) is the `W` prototype itself, so that
+state indices also index `Z`.
+"""
+function z_follows_w(integrator)
+    W = integrator.W
+    proto = similar(W.dW)
+    return _z_prototype(integrator.alg, proto, isinplace(W), integrator.dt) === proto
+end
+
+"""
+    fill_new_noise_caches!(integrator, c, scaling_factor, idxs, zidxs = idxs) -> nothing
+
+Sample fresh noise increments into positions `idxs` of a cached noise entry `c`, and
+into positions `zidxs` of its `ΔZ` entry.
 
 `c` is one entry of the noise process's interpolation stacks (`W.S₁`/`W.S₂`), a tuple
 whose first element is the step's scaling factor and whose remaining elements hold the
@@ -102,22 +148,23 @@ the correct law.
 
 Used by [`resize_noise!`](@ref) and [`addat_noise!`](@ref) whenever the state grows.
 """
-@inline function fill_new_noise_caches!(integrator, c, scaling_factor, idxs)
+@inline function fill_new_noise_caches!(integrator, c, scaling_factor, idxs, zidxs = idxs)
     return if isinplace(integrator.W)
-        integrator.W.dist(
+        isempty(idxs) || integrator.W.dist(
             @view(c[2][idxs]), integrator.W, scaling_factor,
             integrator.u, integrator.p, integrator.t, integrator.W.rng
         )
-        if alg_needs_extra_process(integrator.alg)
+        if alg_needs_extra_process(integrator.alg) && !isempty(zidxs)
             integrator.W.dist(
-                @view(c[3][idxs]), integrator.W, scaling_factor,
+                @view(c[3][zidxs]), integrator.W, scaling_factor,
                 integrator.u, integrator.p, integrator.t, integrator.W.rng
             )
         end
     else
-        c[2][idxs] .= integrator.noise(length(idxs), integrator, scaling_factor)
-        if alg_needs_extra_process(integrator.alg)
-            c[3][idxs] .= integrator.noise(length(idxs), integrator, scaling_factor)
+        isempty(idxs) ||
+            (c[2][idxs] .= integrator.noise(length(idxs), integrator, scaling_factor))
+        if alg_needs_extra_process(integrator.alg) && !isempty(zidxs)
+            c[3][zidxs] .= integrator.noise(length(zidxs), integrator, scaling_factor)
         end
     end
 end
@@ -194,30 +241,28 @@ increments in the interpolation stacks, keeping the process dimension in step wi
 the shrunken state.
 """
 function deleteat_noise!(integrator, cache, idxs)
-    for c in integrator.W.S₁
+    i = length(integrator.u)
+    extra = alg_needs_extra_process(integrator.alg)
+    zindexed = extra && z_follows_w(integrator)
+    for S in (integrator.W.S₁, integrator.W.S₂), c in S
         deleteat!(c[2], idxs)
-        if alg_needs_extra_process(integrator.alg)
-            deleteat!(c[3], idxs)
-        end
-    end
-    for c in integrator.W.S₂
-        deleteat!(c[2], idxs)
-        if alg_needs_extra_process(integrator.alg)
-            deleteat!(c[3], idxs)
-        end
+        zindexed && deleteat!(c[3], idxs)
     end
     deleteat!(integrator.W.dW, idxs)
     deleteat!(integrator.W.dWtilde, idxs)
     deleteat!(integrator.W.dWtmp, idxs)
     deleteat!(integrator.W.curW, idxs)
-    DiffEqNoiseProcess.resize_stack!(integrator.W, length(integrator.u))
+    DiffEqNoiseProcess.resize_stack!(integrator.W, i)
 
-    return if alg_needs_extra_process(integrator.alg)
+    if zindexed
         deleteat!(integrator.W.curZ, idxs)
         deleteat!(integrator.W.dZtmp, idxs)
         deleteat!(integrator.W.dZtilde, idxs)
         deleteat!(integrator.W.dZ, idxs)
+    elseif extra
+        resize_extra_process!(integrator, extra_process_length(integrator, i))
     end
+    return nothing
 end
 
 """
@@ -231,44 +276,38 @@ stacks, and the new slots are filled with freshly sampled increments through
 [`fill_new_noise_caches!`](@ref).
 """
 function addat_noise!(integrator, cache, idxs)
-    for c in integrator.W.S₁
+    i = length(integrator.u)
+    extra = alg_needs_extra_process(integrator.alg)
+    zindexed = extra && z_follows_w(integrator)
+    for S in (integrator.W.S₁, integrator.W.S₂), c in S
         addat!(c[2], idxs)
-        if alg_needs_extra_process(integrator.alg)
-            addat!(c[3], idxs)
-        end
-        fill_new_noise_caches!(integrator, c, c[1], idxs)
-    end
-    for c in integrator.W.S₂
-        addat!(c[2], idxs)
-        if alg_needs_extra_process(integrator.alg)
-            addat!(c[3], idxs)
-        end
-        fill_new_noise_caches!(integrator, c, c[1], idxs)
+        zindexed && addat!(c[3], idxs)
+        fill_new_noise_caches!(integrator, c, c[1], idxs, zindexed ? idxs : (1:0))
     end
 
     addat!(integrator.W.dW, idxs)
     integrator.W.dW[idxs] .= zero(eltype(integrator.u))
     addat!(integrator.W.curW, idxs)
     integrator.W.curW[idxs] .= zero(eltype(integrator.u))
-    if alg_needs_extra_process(integrator.alg)
+    if zindexed
         addat!(integrator.W.dZ, idxs)
         integrator.W.dZ[idxs] .= zero(eltype(integrator.u))
         addat!(integrator.W.curZ, idxs)
         integrator.W.curZ[idxs] .= zero(eltype(integrator.u))
     end
 
-    i = length(integrator.u)
     resize!(integrator.W.dWtilde, i)
     resize!(integrator.W.dWtmp, i)
     DiffEqNoiseProcess.resize_stack!(integrator.W, i)
-    if alg_needs_extra_process(integrator.alg)
+    if zindexed
         resize!(integrator.W.dZtmp, i)
         resize!(integrator.W.dZtilde, i)
+    elseif extra
+        resize_extra_process!(integrator, extra_process_length(integrator, i))
     end
 
     # fill in rands
     fill!(@view(integrator.W.curW[idxs]), zero(eltype(integrator.u)))
-    return if alg_needs_extra_process(integrator.alg)
-        fill!(@view(integrator.W.curZ[idxs]), zero(eltype(integrator.u)))
-    end
+    zindexed && fill!(@view(integrator.W.curZ[idxs]), zero(eltype(integrator.u)))
+    return nothing
 end
