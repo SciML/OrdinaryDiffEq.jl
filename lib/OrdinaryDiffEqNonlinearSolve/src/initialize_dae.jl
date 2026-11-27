@@ -29,39 +29,29 @@ _untagged_autodiff(::Val{nothing}) = _untagged_autodiff(Val(1))
 _untagged_autodiff(::Val{0}) = _untagged_autodiff(Val(1))
 _untagged_autodiff(::Val{CS} = Val(1)) where {CS} = AutoForwardDiff(; chunksize = CS)
 
-# Which ForwardDiff tag the init solve should use. `BrownFullBasicInit` and
-# `ShampineCollocationInit` build `FullSpecialize` residuals that call the ODE function,
-# whose FunctionWrappers were compiled for `OrdinaryDiffEqTag` duals, so they need that tag.
-# An init problem handed over through `OverrideInitData` is a separate function though. If it
-# is `AutoSpecialize` (the default), NonlinearSolveBase wraps it for `NonlinearSolveTag` duals
-# and only swaps that tag into an *untagged* backend, so ours would hit
-# `NoFunctionWrapperFoundError` on the first Jacobian. Leave the tag to NonlinearSolve there.
-_needs_ode_tag(nlprob) = SciMLBase.specialization(nlprob.f) === SciMLBase.FullSpecialize
+# Initialization residuals can call ODE wrappers that require OrdinaryDiffEqTag, so keep it
+# unless NonlinearSolveBase wraps the residual in its own FunctionWrapper, which only accepts
+# the tag NonlinearSolve chooses for an untagged backend. These are the conditions under
+# which NonlinearSolveBase wraps.
+function _nonlinearsolve_wraps(u, nlprob)
+    return SciMLBase.isinplace(nlprob) && u isa AbstractArray && !(eltype(u) <: Dual) &&
+        SciMLBase.specialization(nlprob.f) in (
+        SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize, SciMLBase.AutoDePSpecialize,
+    )
+end
 function _init_autodiff(u, nlprob, autodiff, chunksize)
     autodiff || return AutoFiniteDiff()
-    return _needs_ode_tag(nlprob) ? _tagged_autodiff(u, chunksize) : _untagged_autodiff(chunksize)
-end
-
-# Brown initialization passes the full state alongside a reduced algebraic problem.
-# Dense ForwardDiff Jacobian construction can scalar-index the state.
-function _init_u0_len(u, nlprob)
-    u0 = nlprob.u0
-    u0 === nothing && return nothing
-    fast = ArrayInterface.fast_scalar_indexing(u) && ArrayInterface.fast_scalar_indexing(u0)
-    return fast ? length(u0) : nothing
-end
-function _init_polyalg(u, prob, autodiff)
-    len = _init_u0_len(u, prob)
-    fallback = FastShortcutNonlinearPolyalg(; autodiff)
-    return len !== nothing && len <= 25 ?
-        NonlinearSolveBase.NonlinearSolvePolyAlgorithm((NewtonRaphson(; autodiff), fallback)) : fallback
+    return _nonlinearsolve_wraps(u, nlprob) ? _untagged_autodiff(chunksize) :
+        _tagged_autodiff(u, chunksize)
 end
 
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, nlprob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
-    return _init_polyalg(u, nlprob, _init_autodiff(u, nlprob, autodiff, chunksize))
+    return FastShortcutNonlinearPolyalg(;
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize)
+    )
 end
 function default_nlsolve(
         ::Nothing, isinplace::Val{true}, u, ::NonlinearLeastSquaresProblem,
@@ -75,7 +65,9 @@ function default_nlsolve(
         ::Nothing, isinplace::Val{false}, u, nlprob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
-    return _init_polyalg(u, nlprob, _init_autodiff(u, nlprob, autodiff, chunksize))
+    return FastShortcutNonlinearPolyalg(;
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize)
+    )
 end
 function default_nlsolve(
         ::Nothing, isinplace::Val{false}, u, ::NonlinearLeastSquaresProblem,

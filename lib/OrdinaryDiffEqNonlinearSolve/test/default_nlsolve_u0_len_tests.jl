@@ -7,138 +7,76 @@ using SciMLBase: OverrideInitData, OverrideInit
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
 using ForwardDiff
 using LinearAlgebra: Diagonal
-import ArrayInterface
 using Test
 
-start_index(alg) = alg.start_index
-newton_first(alg) = first(alg.algs).name === :NewtonRaphson
-
-small_oop = NonlinearProblem((u, p) -> u .^ 2 .- 4, [1.5, 1.5])
-small_iip = NonlinearProblem((du, u, p) -> (du .= u .^ 2 .- 4; nothing), [1.5, 1.5])
-big_oop = NonlinearProblem((u, p) -> u .^ 2 .- 4, fill(1.5, 26))
-edge_oop = NonlinearProblem((u, p) -> u .^ 2 .- 4, fill(1.5, 25))
-
-@testset "polyalg start follows the init problem size" begin
-    for ad in (false, true)
-        @test newton_first(default_nlsolve(nothing, Val(false), small_oop.u0, small_oop, ad)) == true
-        @test newton_first(default_nlsolve(nothing, Val(true), small_iip.u0, small_iip, ad)) == true
-        # NonlinearSolve's cutoff is `u0_len <= 25`
-        @test newton_first(default_nlsolve(nothing, Val(false), edge_oop.u0, edge_oop, ad)) == true
-        @test newton_first(default_nlsolve(nothing, Val(false), big_oop.u0, big_oop, ad)) == false
-    end
+@testset "least-squares initialization solver" begin
+    f(u, p) = [u[1]^2 - 4, u[2] - 1, u[1] - 2]
+    prob = NonlinearLeastSquaresProblem(NonlinearFunction(f; resid_prototype = zeros(3)), [1.5, 1.5])
+    sol = solve(prob, default_nlsolve(nothing, Val(false), prob.u0, prob); abstol = 1.0e-12)
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.u ≈ [2.0, 1.0] atol = 1.0e-8
+    @test f(sol.u, nothing) ≈ zeros(3) atol = 1.0e-8
 end
 
-@testset "size comes from the problem, not from `u`" begin
-    # BrownFullBasicInit passes the whole state as `u` but only solves the algebraic part,
-    # so a big ODE with a handful of algebraic variables should still start with Newton...
-    @test newton_first(default_nlsolve(nothing, Val(true), zeros(100), small_iip)) == true
-    @test newton_first(default_nlsolve(nothing, Val(false), zeros(100), small_oop)) == true
-    # ...and a short `u` must not make a big problem look small.
-    @test newton_first(default_nlsolve(nothing, Val(false), [0.0], big_oop)) == false
-end
-
-# Stand-in for a GPU array: anything that says scalar indexing is slow. Newton would need a
-# dense ForwardDiff Jacobian of it up front, so those keep the Broyden-first order.
-struct SlowIndexVector{T} <: AbstractVector{T}
-    x::Vector{T}
-end
-Base.size(v::SlowIndexVector) = size(v.x)
-Base.getindex(v::SlowIndexVector, i::Int) = v.x[i]
-ArrayInterface.fast_scalar_indexing(::Type{<:SlowIndexVector}) = false
-
-@testset "arrays without fast scalar indexing keep the old order" begin
-    slow = NonlinearProblem((u, p) -> u .^ 2 .- 4, SlowIndexVector([1.5, 1.5]))
-    @test newton_first(default_nlsolve(nothing, Val(false), slow.u0, slow)) == false
-    # a slow `u` alone is enough, e.g. Brown's full state living on the GPU
-    @test newton_first(default_nlsolve(nothing, Val(false), SlowIndexVector(zeros(4)), small_oop)) == false
-end
-
-const explicit = (Returns(nothing), Returns(nothing))
 tagof(::AutoForwardDiff{CS, T}) where {CS, T} = T
-
-sq_jac(u, p) = Diagonal(2 .* u)
-sq_jac!(J, u, p) = (J .= Diagonal(2 .* u); nothing)
-with_jac(u0) = NonlinearProblem(NonlinearFunction((u, p) -> u .^ 2 .- 4; jac = sq_jac), u0)
-with_jac!(u0) = NonlinearProblem(
-    NonlinearFunction((du, u, p) -> (du .= u .^ 2 .- 4; nothing); jac = sq_jac!), u0
-)
-
-@testset "SCCNonlinearProblem keeps the Broyden-first default" begin
-    generic = SCCNonlinearProblem((small_oop, small_iip), explicit, nothing, Val(true))
-    partial = SCCNonlinearProblem((with_jac([1.5, 1.5]), small_oop), explicit, nothing, Val(true))
-    small = SCCNonlinearProblem((with_jac([1.5, 1.5]), with_jac!([1.5, 1.5])), explicit, nothing, Val(true))
-    edge = SCCNonlinearProblem((with_jac(fill(1.5, 25)), with_jac(fill(1.5, 25))), explicit, nothing, Val(true))
-    big = SCCNonlinearProblem((with_jac([1.5, 1.5]), with_jac(fill(1.5, 26))), explicit, nothing, Val(true))
-    slow = SCCNonlinearProblem(
-        (with_jac([1.5, 1.5]), with_jac(SlowIndexVector([1.5, 1.5]))), explicit, nothing, Val(true)
-    )
-    cases = (
-        (generic, zeros(4)), (partial, zeros(4)), (small, zeros(4)), (edge, zeros(50)),
-        (big, zeros(28)), (slow, zeros(4)), (small, SlowIndexVector(zeros(4))),
-    )
-    for (prob, u) in cases, iip in (Val(true), Val(false))
-        alg = default_nlsolve(nothing, iip, u, prob, false)
-        @test start_index(alg) == 1
-        @test first(alg.algs).name === :Broyden
-        @test alg.algs[end].autodiff isa AutoFiniteDiff
-        @test tagof(default_nlsolve(nothing, iip, u, prob, true).algs[end].autodiff) <:
-        ForwardDiff.Tag
-    end
-end
-
-@testset "least-squares default is untouched" begin
-    nlls = NonlinearLeastSquaresProblem(
-        NonlinearFunction((u, p) -> [u[1]^2 - 4, u[2] - 1, u[1] - 2]; resid_prototype = zeros(3)),
-        [1.5, 1.5]
-    )
-    alg = default_nlsolve(nothing, Val(false), nlls.u0, nlls)
-    @test start_index(alg) == 1
-    @test first(alg.algs).name === :GaussNewton
-end
 
 @testset "ForwardDiff tag matches the init problem's specialization" begin
     resid!(du, u, p) = (du .= u .^ 2 .- 4; nothing)
     auto = NonlinearProblem(resid!, [1.5, 1.5])  # AutoSpecialize by default
     full = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(resid!), [1.5, 1.5])
+    nospec = NonlinearProblem(NonlinearFunction{true, SciMLBase.NoSpecialize}(resid!), [1.5, 1.5])
+    oop = NonlinearProblem((u, p) -> u .^ 2 .- 4, [1.5, 1.5])
     u = [1.5, 1.5]
 
     @test _init_autodiff(u, auto, false, Val(1)) isa AutoFiniteDiff
     @test _init_autodiff(u, full, false, Val(1)) isa AutoFiniteDiff
 
-    # FullSpecialize residuals (what BrownFullBasicInit / ShampineCollocationInit build) call
-    # the ODE's FunctionWrappers, so they keep the OrdinaryDiffEqTag.
-    @test tagof(_init_autodiff(u, full, true, Val(1))) <: ForwardDiff.Tag
-    # AutoSpecialize init problems get wrapped by NonlinearSolve for its own tag, which it
-    # only stamps onto an untagged backend.
+    for prob in (full, nospec, oop)
+        @test tagof(_init_autodiff(u, prob, true, Val(1))) <: ForwardDiff.Tag
+    end
     @test tagof(_init_autodiff(u, auto, true, Val(1))) === Nothing
-    # chunk size normalization is the same either way
     @test _init_autodiff(u, auto, true, Val(nothing)) isa AutoForwardDiff{1}
     @test _init_autodiff(u, auto, true, Val(0)) isa AutoForwardDiff{1}
     @test _init_autodiff(u, auto, true, Val(2)) isa AutoForwardDiff{2}
 
-    # and the default solver actually goes through Newton's Jacobian on the wrapped problem
     for prob in (auto, full)
         sol = solve(prob, default_nlsolve(nothing, Val(true), u, prob, true); abstol = 1.0e-12)
         @test SciMLBase.successful_retcode(sol)
         @test sol.u ≈ [2.0, 2.0]
     end
-
-    full_scc = SCCNonlinearProblem((full, full), explicit, nothing, Val(true))
-    mixed_scc = SCCNonlinearProblem((full, auto), explicit, nothing, Val(true))
-    for prob in (full_scc, mixed_scc)
-        alg = default_nlsolve(nothing, Val(true), zeros(4), prob, true)
-        @test start_index(alg) == 1
-        for block in prob.probs
-            sol = solve(block, alg; abstol = 1.0e-12)
-            @test SciMLBase.successful_retcode(sol)
-            @test sol.u ≈ [2.0, 2.0]
-        end
-    end
 end
 
-# The reproducer from the issue: a closed two-rod linkage between fixed anchors, unknowns
-# are the absolute rod angles. The guess is 0.005 rad away from the intended assembly, and
-# the closure equations have other (far away) solutions that Broyden used to land on.
+@testset "default OverrideInit reaches the Jacobian step for $specialization" for specialization in (
+        SciMLBase.AutoSpecialize, SciMLBase.NoSpecialize, SciMLBase.FullSpecialize,
+    )
+    saw_dual = Ref(false)
+    function linear!(r, u, p, t)
+        saw_dual[] |= eltype(u) <: ForwardDiff.Dual
+        r[1] = 3u[1] + u[2] - 7
+        r[2] = 2u[1] + 5u[2] - 12
+        return nothing
+    end
+    root = [23, 22] ./ 13
+    # NoSpecialize and FullSpecialize residuals are not wrapped by NonlinearSolve, so they
+    # can call an ODE function wrapper that only accepts OrdinaryDiffEqTag Duals.
+    wrapped = ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(linear!, [1.1, 1.2], (0.0, 0.01)).f
+    rhs! = specialization === SciMLBase.AutoSpecialize ? linear! : wrapped
+    residual!(r, u, p) = rhs!(r, u, p, 0.0)
+    iprob = NonlinearProblem(
+        NonlinearFunction{true, specialization}(residual!), [1.1, 1.2]; maxiters = 1
+    )
+    data = OverrideInitData(iprob, nothing, sol -> copy(sol.u), nothing)
+    f = ODEFunction(linear!; mass_matrix = zeros(2, 2), initialization_data = data)
+    prob = ODEProblem(f, [1.1, 1.2], (0.0, 0.01))
+    integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+    @test saw_dual[]
+    @test integ.sol.retcode != SciMLBase.ReturnCode.InitialFailure
+    @test integ.u ≈ root atol = 1.0e-10
+    r = zeros(2)
+    linear!(r, integ.u, nothing, 0.0)
+    @test maximum(abs, r) < 1.0e-10
+end
+
 function closure!(f, ang, (l1, l2, x, y))
     f[1] = l1 * cos(ang[1]) + l2 * cos(ang[2]) - x
     f[2] = l1 * sin(ang[1]) + l2 * sin(ang[2]) - y
@@ -153,7 +91,7 @@ const linkage_p = (
     sin(intended[1]) + 0.7sin(intended[2]),
 )
 
-@testset "OverrideInit converges to the nearby assembly (#5005)" begin
+@testset "explicit NewtonRaphson in OverrideInit selects the nearby assembly" begin
     data = OverrideInitData(
         NonlinearProblem(closure!, copy(guess), linkage_p), nothing, sol -> copy(sol.u), nothing
     )
@@ -162,30 +100,143 @@ const linkage_p = (
         initialization_data = data
     )
     prob = ODEProblem(f, copy(guess), (0.0, 0.01), linkage_p)
-    integ = init(prob, Rodas5P(); initializealg = OverrideInit(), abstol = 1.0e-10, reltol = 1.0e-10)
+    integ = init(prob, Rodas5P(); initializealg = OverrideInit(nlsolve = NewtonRaphson()), abstol = 1.0e-10, reltol = 1.0e-10)
     @test integ.u ≈ intended atol = 1.0e-8
 end
 
-@testset "BrownFullBasicInit converges to the nearby assembly (#5005)" begin
+@testset "explicit NewtonRaphson in BrownFullBasicInit selects the nearby assembly" begin
     f = ODEFunction((du, u, p, t) -> closure!(du, u, p); mass_matrix = zeros(2, 2))
     prob = ODEProblem(f, copy(guess), (0.0, 0.01), linkage_p)
     integ = init(
-        prob, Rodas5P(); initializealg = BrownFullBasicInit(), abstol = 1.0e-10, reltol = 1.0e-10
+        prob, Rodas5P(); initializealg = BrownFullBasicInit(nlsolve = NewtonRaphson()), abstol = 1.0e-10, reltol = 1.0e-10
     )
     @test integ.u ≈ intended atol = 1.0e-8
 end
 
-function override_initialization(nlprob, u0; nlsolve = nothing)
-    data = OverrideInitData(nlprob, nothing, sol -> copy(sol.u), nothing)
-    f = ODEFunction((du, u, p, t) -> (du .= -u; nothing); initialization_data = data)
-    prob = ODEProblem(f, u0, (0.0, 1.0))
-    return init(
-        prob, Rodas5P(); initializealg = OverrideInit(; nlsolve),
-        abstol = 1.0e-10, reltol = 1.0e-10
-    )
+@testset "default initialization preserves root and domain" begin
+    for (g, guess, expected) in ((x -> x * (x - 2) * (x - 10), 0.97, 0.0), (x -> log(x / 2), 6.0, 2.0))
+        residual!(r, u, p) = (r[1] = g(u[1]); nothing)
+        f!(du, u, p, t) = residual!(du, u, p)
+        for initializealg in (nothing, BrownFullBasicInit(), ShampineCollocationInit())
+            data = isnothing(initializealg) ? OverrideInitData(
+                    NonlinearProblem(residual!, [guess]), nothing, sol -> copy(sol.u), nothing
+                ) : nothing
+            prob = ODEProblem(ODEFunction(f!; mass_matrix = zeros(1, 1), initialization_data = data), [guess], (0.0, 0.01))
+            for ad in (AutoForwardDiff(), AutoFiniteDiff())
+                kwargs = isnothing(initializealg) ? (;) : (; initializealg)
+                integ = init(prob, Rodas5P(autodiff = ad); abstol = 1.0e-10, reltol = 1.0e-10, kwargs...)
+                @test only(integ.u) ≈ expected atol = 1.0e-8
+                @test abs(g(only(integ.u))) < 1.0e-8
+            end
+        end
+    end
 end
 
-@testset "Newton initialization retains Jacobian-free fallback" begin
+@testset "typed supplied initialization residual" begin
+    typed_residual!(out::Vector{Float64}, u::Vector{Float64}, p) = (out[1] = u[1] - 2; nothing)
+    for specialization in (SciMLBase.AutoSpecialize, SciMLBase.FullSpecialize)
+        initprob = NonlinearProblem(NonlinearFunction{true, specialization}(typed_residual!), [1.0])
+        data = OverrideInitData(initprob, nothing, sol -> copy(sol.u), nothing)
+        f!(du, u, p, t) = (du .= 2 .- u; nothing)
+        prob = ODEProblem(ODEFunction(f!; mass_matrix = zeros(1, 1), initialization_data = data), [0.0], (0.0, 0.01))
+        integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+        @test integ.u ≈ [2.0] atol = 1.0e-8
+    end
+end
+
+@testset "default solver follows the problem returned by the initializer updater" begin
+    g(x) = 0.5 - exp(-1.0e4 * (x - 1)^2)
+    root = 1 + sqrt(log(2)) / 100
+    residual!(r, u, p) = (r[1] = g(u[1]); nothing)
+    f!(du, u, p, t) = residual!(du, u, p)
+    supplied = NonlinearProblem(NonlinearFunction{true, SciMLBase.AutoSpecialize}(residual!), [1.01])
+    placeholder = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(residual!), [1.01])
+    for updated in (false, true)
+        calls = Ref(0)
+        data = if updated
+            OverrideInitData(
+                placeholder, (_, _) -> (calls[] += 1; supplied), sol -> copy(sol.u), nothing;
+                is_update_oop = Val(true)
+            )
+        else
+            OverrideInitData(supplied, nothing, sol -> copy(sol.u), nothing)
+        end
+        fn = ODEFunction{true, SciMLBase.FullSpecialize}(f!; mass_matrix = zeros(1, 1), initialization_data = data)
+        prob = ODEProblem(fn, [1.01], (0.0, 0.01))
+        integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+        @test calls[] == updated
+        @test integ.sol.retcode != SciMLBase.ReturnCode.InitialFailure
+        @test only(integ.u) ≈ root atol = 1.0e-8
+        @test abs(g(only(integ.u))) < 1.0e-10
+    end
+end
+
+@testset "default solver accepts an interval problem returned by the initializer updater" begin
+    calls = Ref(0)
+    placeholder = NonlinearLeastSquaresProblem((u, p) -> [1.0], nothing)
+    bracket = IntervalNonlinearProblem((x, p) -> x^2 - 2, (1.0, 2.0))
+    data = OverrideInitData(
+        placeholder, (_, _) -> (calls[] += 1; bracket), sol -> [sol.u], nothing;
+        is_update_oop = Val(true)
+    )
+    f!(du, u, p, t) = (du[1] = u[1]^2 - 2; nothing)
+    fn = ODEFunction{true, SciMLBase.FullSpecialize}(f!; mass_matrix = zeros(1, 1), initialization_data = data)
+    prob = ODEProblem(fn, [1.3], (0.0, 0.01))
+    integ = init(prob, Rodas5P(); abstol = 1.0e-12, reltol = 1.0e-12)
+    @test calls[] == 1
+    @test integ.sol.retcode != SciMLBase.ReturnCode.InitialFailure
+    @test only(integ.u) ≈ sqrt(2) atol = 1.0e-10
+    @test abs(only(integ.u)^2 - 2) < 1.0e-10
+end
+
+const explicit = (Returns(nothing), Returns(nothing))
+square(u, p) = u .^ 2 .- 4
+square!(du, u, p) = (du .= u .^ 2 .- 4; nothing)
+square_jac(u, p) = Diagonal(2 .* u)
+square_jac!(J, u, p) = (J .= Diagonal(2 .* u); nothing)
+
+@testset "plain and SCC defaults start at Broyden" begin
+    oop = NonlinearProblem(square, [1.5, 1.5])
+    iip = NonlinearProblem(square!, [1.5, 1.5])
+    oop_jac = NonlinearProblem(NonlinearFunction(square; jac = square_jac), [1.5, 1.5])
+    iip_jac = NonlinearProblem(NonlinearFunction(square!; jac = square_jac!), [1.5, 1.5])
+    plain = ((oop, [1.5, 1.5]), (iip, [1.5, 1.5]), (oop_jac, [1.5, 1.5]), (iip_jac, [1.5, 1.5]))
+    sccs = Tuple(
+        (SCCNonlinearProblem(blocks, explicit, nothing, Val(true)), zeros(4))
+            for blocks in ((oop, iip), (oop_jac, iip), (oop_jac, iip_jac))
+    )
+    for (prob, u) in (plain..., sccs...), isinplace in (Val(true), Val(false))
+        alg = default_nlsolve(nothing, isinplace, u, prob, false)
+        @test alg.start_index == 1
+        @test first(alg.algs).name === :Broyden
+        @test alg.algs[end].autodiff isa AutoFiniteDiff
+        @test default_nlsolve(nothing, isinplace, u, prob, true).algs[end].autodiff isa
+            AutoForwardDiff
+    end
+end
+
+@testset "SCC default keeps OrdinaryDiffEqTag and solves each block" begin
+    auto = NonlinearProblem(square!, [1.5, 1.5])
+    full = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(square!), [1.5, 1.5])
+    for blocks in ((full, full), (full, auto))
+        prob = SCCNonlinearProblem(blocks, explicit, nothing, Val(true))
+        alg = default_nlsolve(nothing, Val(true), zeros(4), prob, true)
+        @test tagof(alg.algs[end].autodiff) <: ForwardDiff.Tag
+        for block in prob.probs
+            sol = solve(block, alg; abstol = 1.0e-12)
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.u ≈ [2.0, 2.0]
+        end
+    end
+end
+
+function override_initialization(initprob, u0)
+    data = OverrideInitData(initprob, nothing, sol -> copy(sol.u), nothing)
+    f = ODEFunction((du, u, p, t) -> (du .= -u; nothing); initialization_data = data)
+    return init(ODEProblem(f, u0, (0.0, 1.0)), Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
+end
+
+@testset "default initialization solves a cubic from a zero-derivative guess" begin
     cubic! = (r, u, p) -> (r .= u .^ 3 .- 1; nothing)
     block = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(cubic!), [0.0])
     scc = SCCNonlinearProblem((block, block), explicit, nothing, Val(false))
@@ -219,7 +270,6 @@ end
         prob = SCCNonlinearProblem(blocks, explicit, nothing, Val(false))
         integ = override_initialization(prob, [1.5, 1.5])
         @test integ.sol.retcode == SciMLBase.ReturnCode.Default
-        @test integ.u ≈ expected atol = 1.0e-10
         @test maximum(abs, integ.u .- expected) <= 1.0e-10
     end
 end
@@ -234,7 +284,7 @@ plain_log!(r, u, p) = (r[1] = log(u[1]); nothing)
 plain_log_jac!(J, u, p) = (J[1, 1] = 1 / u[1]; nothing)
 resid_at(resid!, x) = (r = zeros(1); resid!(r, [x], nothing); r[1])
 
-@testset "SCC initialization with domain-limited residuals" begin
+@testset "default initialization with domain-limited residuals" begin
     cases = (
         (log_resid!, nothing, 2.0, 1.5),
         (log_resid!, log_jac!, 2.0, 1.5),
@@ -243,12 +293,11 @@ resid_at(resid!, x) = (r = zeros(1); resid!(r, [x], nothing); r[1])
     for (resid!, jac, guess, root) in cases
         block = NonlinearProblem(NonlinearFunction{true, SciMLBase.FullSpecialize}(resid!; jac), [guess])
         scc = SCCNonlinearProblem((block, block), explicit, nothing, Val(false))
-        @test newton_first(default_nlsolve(nothing, Val(true), [guess, guess], scc, true)) == false
-        data = OverrideInitData(scc, nothing, sol -> copy(sol.u), nothing)
-        f = ODEFunction((du, u, p, t) -> (du .= -u; nothing); initialization_data = data)
-        integ = init(ODEProblem(f, [guess, guess], (0.0, 1.0)), Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
-        @test integ.sol.retcode == SciMLBase.ReturnCode.Default
-        @test all(abs.(integ.u .- root) .<= 1.0e-10)
-        @test all(abs(resid_at(resid!, x)) < 1.0e-10 for x in integ.u)
+        for (prob, n) in ((block, 1), (scc, 2))
+            integ = override_initialization(prob, fill(guess, n))
+            @test integ.sol.retcode == SciMLBase.ReturnCode.Default
+            @test all(abs.(integ.u .- root) .<= 1.0e-10)
+            @test all(abs(resid_at(resid!, x)) < 1.0e-10 for x in integ.u)
+        end
     end
 end
