@@ -88,5 +88,6 @@ export BrownFullBasicInit, ShampineCollocationInit
 # Solver-author interface called or extended by sibling integrator packages.
 @public build_nlsolver, nlsolve!, nlsolvefail, markfirststage!, du_alias_or_new
 @public can_smooth_est, compute_step!, initial_η, anderson, anderson!
+@public restart_rate_on_new_W
 
 end

@@ -78,6 +78,20 @@ can_smooth_est(nlsolver::AbstractNLSolver) = can_smooth_est(nlsolver.cache)
 can_smooth_est(cache::AbstractNLSolverCache) = isnewton(cache)
 can_smooth_est(cache::NonlinearSolveCache) = cache.linsolve !== nothing
 
+"""
+    restart_rate_on_new_W(cache) -> Bool
+
+Return whether [`nlsolve!`](@ref) forgets the Newton convergence rate of earlier
+solves when it gets a new `W`. `cache` is the integrator cache passed to `nlsolve!`.
+
+A Newton solve can stop after one iteration on a rate that an earlier solve
+measured. With `true`, a solve with a new `W` measures the rate again first, as
+CVODE does after a linear solver setup. The default is `false`; solver packages add
+methods for their caches. Stages of a linear function and
+`NLNewton(always_new = true)` keep the rate either way.
+"""
+restart_rate_on_new_W(cache) = false
+
 is_always_new(nlsolver::AbstractNLSolver) = is_always_new(nlsolver.alg)
 check_div(nlsolver::AbstractNLSolver) = check_div(nlsolver.alg)
 check_div(alg) = isdefined(alg, :check_div) ? alg.check_div : true
