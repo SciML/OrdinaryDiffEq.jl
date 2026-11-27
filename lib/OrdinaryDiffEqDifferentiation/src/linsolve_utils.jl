@@ -76,17 +76,15 @@ function set_linear_abstol!(linsolve, tol::ScaledResidualTolerance, refreshed)
 end
 
 """
-    linear_residual!(integrator, linsolve, rlin, work) -> (; residual, bnorm, roundoff, rtol, zero_correction, zero_rhs)
+    linear_residual!(integrator, linsolve, rlin, work) -> (; residual, bnorm, roundoff, rtol, zero_correction)
 
-Return the norm `residual` of the true residual `b - A u` of `linsolve` in the left
-preconditioner `Pl`, with `bnorm = ‖Pl \\ b‖`, the `roundoff = 100 eps (‖Pl \\ b‖ +
+Leave the true residual `b - A u` of `linsolve` in `rlin` and return its norm `residual` in
+the left preconditioner `Pl`, with `bnorm = ‖Pl \\ b‖`, the `roundoff = 100 eps (‖Pl \\ b‖ +
 ‖Pl \\ A u‖)` of forming it, the cache's relative tolerance `rtol`, and whether the solution
-`u` (`zero_correction`) and the right-hand side `b` (`zero_rhs`) are exactly zero. The norms
-are in units of `‖b‖`: `Pl \\ b` for a tiny `b` and a large `Pl` would otherwise underflow
-to zero and pass any bound. Only the current right-hand side and product enter: the first
-residual of the step is an allowance for the Krylov stopping test
-(`ScaledResidualTolerance`) and says nothing about whether this system was solved. `rlin`
-and `work` are scratch of `b`'s size. Charges `stats.nf` for the product with `A`.
+`u` is exactly zero (`zero_correction`). Only the current right-hand side and product enter:
+the first residual of the step is an allowance for the Krylov stopping test
+(`ScaledResidualTolerance`) and says nothing about whether this system was solved. `work` is
+scratch of `b`'s size. Charges `stats.nf` for the product with `A`.
 
 `A` is applied to `u / ‖u‖` and the product scaled by `‖u‖`, so a finite-difference `A`
 perturbs by the same size as in the solve. A finite-difference `A` is linear only to about
@@ -95,34 +93,28 @@ perturbs by the same size as in the solve. A finite-difference `A` is linear onl
 function linear_residual!(integrator, linsolve, rlin, work)
     (; A, b, u, Pl, reltol) = linsolve
     T = real(eltype(b))
-    bscale = LinearAlgebra.norm(b)
-    s = iszero(bscale) || !isfinite(bscale) ? one(T) : bscale
     unorm = LinearAlgebra.norm(u)
     Auscaled = zero(T)
     if iszero(unorm)
-        @. rlin = b / s
+        copyto!(rlin, b)
     else
         # `A` is linear, so apply it to the unit vector `u / ‖u‖`, as the solve does to its
         # basis vectors: a finite-difference step sized for a tiny `u` can round away.
         @. work = u / unorm
         LinearAlgebra.mul!(rlin, A, work)
         drain_jvp_count!(integrator, unwrap_alg(integrator, true), A)
-        @. rlin = (unorm / s) * rlin
+        @. rlin = unorm * rlin
         LinearAlgebra.ldiv!(work, Pl, rlin)
         Auscaled = LinearAlgebra.norm(work)
-        @. rlin = b / s - rlin
+        @. rlin = b - rlin
     end
     LinearAlgebra.ldiv!(work, Pl, rlin)
     residual = LinearAlgebra.norm(work)
-    @. rlin = b / s
-    LinearAlgebra.ldiv!(work, Pl, rlin)
+    LinearAlgebra.ldiv!(work, Pl, b)
     bnorm = LinearAlgebra.norm(work)
     roundoff = 100 * eps(T) * (bnorm + Auscaled)
     rtol = uses_finite_differences(A) ? max(reltol, cbrt(eps(T))) : reltol
-    return (;
-        residual, bnorm, roundoff, rtol, zero_correction = iszero(unorm),
-        zero_rhs = iszero(bscale),
-    )
+    return (; residual, bnorm, roundoff, rtol, zero_correction = iszero(unorm))
 end
 
 """
@@ -135,17 +127,23 @@ the bound: a Krylov solve may stop on them, but an allowance taken from another 
 swallow the whole of this one. A solver can also report convergence on its recurrence residual
 while the iterate is far from the solution: a badly scaled preconditioner can end it at
 `u = 0` after one iteration. With `evidence = true` the tolerance is `sqrt(rtol)`, a guard
-against gross failure that accepts an iterate that clearly reduced the residual. Either way,
-nonfinite norms are rejected, and for a nonzero `b` so are a zero `u` and a `Pl \\ b` below
-`floatmin`, which `Pl` has scaled out of the range the residual can be measured in.
+against gross failure that accepts an iterate that clearly reduced the residual.
+
+Either way, nonfinite norms are rejected, and for a nonzero `b` so are a zero `u` and a
+relative bound `rtol * ‖Pl \\ b‖` below `floatmin`. A bound in the normal range resolves a
+residual at it to full precision, and a residual that underflows to zero is then genuinely
+below it; below `floatmin` the preconditioned norms are subnormal or flushed to zero (`Pl \\ b`
+for a tiny `b` and a large `Pl`), and a zero residual against a zero bound measures nothing.
 """
 function linear_residual_converged!(integrator, linsolve, rlin, work; evidence = false)
-    (; residual, bnorm, roundoff, rtol, zero_correction, zero_rhs) =
+    (; residual, bnorm, roundoff, rtol, zero_correction) =
         linear_residual!(integrator, linsolve, rlin, work)
-    bound = (evidence ? sqrt(rtol) : rtol) * bnorm + roundoff
-    (isfinite(residual) && isfinite(bound)) || return false
-    zero_rhs || (!zero_correction && bnorm >= floatmin(bnorm)) || return false
-    return residual <= bound
+    tol = (evidence ? sqrt(rtol) : rtol) * bnorm
+    (isfinite(residual) && isfinite(tol + roundoff)) || return false
+    if !iszero(linsolve.b)
+        (zero_correction || tol < floatmin(tol)) && return false
+    end
+    return residual <= tol + roundoff
 end
 
 """

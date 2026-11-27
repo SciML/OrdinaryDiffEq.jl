@@ -1,4 +1,5 @@
 using OrdinaryDiffEqBDF, LinearSolve, ADTypes, SciMLBase, Test
+import OrdinaryDiffEqDifferentiation
 using LinearAlgebra: I, Diagonal, mul!
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
 
@@ -419,6 +420,53 @@ end
     )
     step!(integrator)
     @test integrator.t == 0.0
+
+    # A subnormal operator equilibrated by `Pl` is an exact unit system: it must be solved.
+    algebraic!(r, du, u, p, t) = (r[1] = 1.0e-309 * (u[1] - t); nothing)
+    prob = DAEProblem(algebraic!, [0.0], [0.0], (0.0, 1.0); differential_vars = [false])
+    linsolve = KrylovJL_GMRES(; precs = Returns((Diagonal([1.0e-309]), I)))
+    integrator = init(
+        prob, DFBDF(; linsolve); dt = 1.0, adaptive = false, initializealg = SciMLBase.NoInit()
+    )
+    step!(integrator)
+    @test integrator.t == 1.0
+    @test only(integrator.u) ≈ 1 rtol = 1.0e-10
+
+    # Rows scaled apart by `F` and equilibrated by `Pl` are each resolved.
+    for (T, s₁, s₂) in ((Float64, 1.0e12, 1.0e-12), (Float64, 1.0e150, 1.0e-150), (Float32, 1.0f15, 1.0f-15))
+        mixed! = (r, du, u, p, t) -> (r[1] = s₁ * (du[1] + u[1]); r[2] = s₂ * (du[2] + u[2]); nothing)
+        prob = DAEProblem(mixed!, T[-1, -1], T[1, 1], (zero(T), T(0.1)))
+        linsolve = KrylovJL_GMRES(; precs = Returns((Diagonal(T[s₁, s₂]), I)))
+        integrator = init(
+            prob, DFBDF(; linsolve); dt = T(0.1), adaptive = false,
+            initializealg = SciMLBase.NoInit()
+        )
+        step!(integrator)
+        @test integrator.t == T(0.1)
+        @test integrator.u ≈ fill(1 / T(1.1), 2) rtol = 100 * sqrt(eps(T))
+    end
+end
+
+# The acceptance test applies `Pl` to the residual and right-hand side as they are: scaling
+# them by `‖b‖` first erased the second row here, and the correction `[1, 0]`, whose
+# left-preconditioned relative residual is about 0.71, was accepted.
+@testset "Acceptance test resolves rows the preconditioner equilibrates" begin
+    integrator = init(
+        DAEProblem(decay!, [-1.0], [1.0], (0.0, 0.1)), DFBDF(; linsolve = KrylovJL_GMRES());
+        initializealg = SciMLBase.NoInit()
+    )
+    Pl = Diagonal([1.0e300, 1.0e-100])
+    linsolve = init(
+        LinearProblem(Pl, [1.0e300, 1.0e-100]), KrylovJL_GMRES(; precs = Returns((Pl, I)))
+    )
+    solve!(linsolve)
+    converged(u) = (
+        linsolve.u .= u;
+        OrdinaryDiffEqDifferentiation.linear_residual_converged!(integrator, linsolve, zeros(2), zeros(2))
+    )
+    @test !converged([1.0, 0.0])
+    @test converged([1.0, 1.0])
+    @test !converged([0.0, 0.0])
 end
 
 # `cj` is a scalar, so the matrix-free `W` takes the current one every stage rather than when

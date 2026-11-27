@@ -71,7 +71,7 @@ current Newton iteration, plus the roundoff of forming it: the right-hand side a
 current iterate alone. The allowance taken from the step's first residual only lets the Krylov
 solve stop early; it never excuses an unresolved correction. A zero correction is never accepted for
 a nonzero right-hand side, nor is a correction whose residual or bound is not finite, or for
-which `Pl \ b`, measured in units of `‖b‖`, falls below `floatmin`. Otherwise one cold retry without the allowance decides,
+which the relative bound `r ‖Pl \ b‖` falls below `floatmin`. Otherwise one cold retry without the allowance decides,
 and the step is rejected unless the retry supplies a nonzero correction that clearly reduced the
 residual (the same bound with `sqrt(r)` in place of `r`). Every linear solve, a rejected retry included, is counted in
 `stats.nsolve`. Because the stopping test is on a residual norm, rows of the residual
