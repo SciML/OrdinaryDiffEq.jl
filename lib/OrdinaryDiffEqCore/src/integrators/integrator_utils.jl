@@ -823,13 +823,20 @@ end
 
 Fraction of `tspan` covered at time `t`, as a `Float64`. The ratio is computed in the
 time type with AD wrappers stripped first (so units cancel, offsets keep their
-precision, and AD doesn't trace it), then reduced to a plain number. It is not clamped, so it keeps increasing if the
-integrator runs past `tspan[2]` (e.g. with `add_tstop!` beyond the end). Returns `NaN`
-when the fraction is undefined (an infinite or empty `tspan`).
+precision, and AD doesn't trace it), then reduced to a plain number. Returns `NaN`
+(no intermediate update) when `t` is outside `tspan`, e.g. after `reinit!` onto another
+interval or past `tspan[2]` with `add_tstop!`, and when the fraction is undefined (an
+infinite or empty `tspan`).
+
+Outside `tspan` the fraction isn't computed at all, because the time type may not be
+able to represent it (with `Rational{Int}` time, `t = 10^10` against
+`tspan = (0, 1//10^10)` would overflow). Telling inside from outside takes only
+comparisons, and inside `tspan` the fraction is between 0 and 1.
 """
 function progress_fraction(t, tspan)
     t = _progress_value(t)
     t1, t2 = _progress_value(tspan[1]), _progress_value(tspan[2])
+    (t1 <= t <= t2 || t2 <= t <= t1) || return NaN
     span = t2 - t1
     # checked in the time type (a BigFloat span can be outside the Float64 range) and
     # before dividing (e.g. 0//0)
@@ -855,14 +862,16 @@ end
     reset_progress!(integrator)
 
 Reset the progress state in `integrator.opts` for a new solve from the current
-`integrator.t`, e.g. on `reinit!`. Progress is still measured against `prob.tspan`.
+`integrator.t`, e.g. on `reinit!`. Progress is still measured against `prob.tspan`, so
+only the part of the new interval inside `prob.tspan` sends intermediate updates. When
+`integrator.t` is outside it, the gate restarts from 0.
 """
 function reset_progress!(integrator)
     opts = integrator.opts
-    # only with progress on, so the fraction (e.g. overflowing Rational time) can't
-    # break reinit! otherwise
-    opts.progress_last_frac = opts.progress ?
-        progress_fraction(integrator.t, integrator.sol.prob.tspan) : 0.0
+    frac = opts.progress ? progress_fraction(integrator.t, integrator.sol.prob.tspan) : 0.0
+    # NaN would block the gate for good; the fraction may still become defined if the
+    # new interval runs into prob.tspan
+    opts.progress_last_frac = isnan(frac) ? 0.0 : frac
     opts.progress_last_ns = UInt64(0)
     return integrator
 end
@@ -888,8 +897,9 @@ message, so the clock is read only about `1 / progress_tspan` times per solve. A
 dropped update is not sent later: after a fast stretch the bar shows the last sent
 value until the next gate pass.
 
-When the fraction is undefined (an infinite or empty `tspan`, or a time type that
-can't be converted to `Float64`), no intermediate message is sent.
+When `t` is outside `prob.tspan` or the fraction is undefined (an infinite or empty
+`tspan`, or a time type that can't be converted to `Float64`), no intermediate message
+is sent.
 """
 function maybe_log_progress!(integrator)
     integrator.accept_step || return nothing

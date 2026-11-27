@@ -600,7 +600,8 @@ For information on setting up progress bars in VS Code and other environments, s
 * `progress_steps`: Only consider a progress update every `progress_steps` steps.
   Default is 1.
 * `progress_tspan`: Minimum fraction of `tspan` covered between two progress updates.
-  Default is 0.01.
+  Default is 0.01. Progress is measured against the problem's `tspan`, also after
+  `reinit!`; no intermediate updates are sent while `t` is outside it.
 * `progress_min_interval`: Minimum wall time in seconds between two progress updates,
   so fast solves only report the start and the end. Default is 0.02; 0 sends every
   update the other options allow, `Inf` only the start and the end. With an infinite

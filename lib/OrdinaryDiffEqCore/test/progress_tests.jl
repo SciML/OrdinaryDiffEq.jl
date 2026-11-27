@@ -42,9 +42,14 @@ rober_prob = ODEProblem(robertson, [1.0, 0.0, 0.0], (0.0, 1.0e5), (0.04, 3.0e7, 
     @test progress_fraction(15.0, (5.0, 25.0)) == 0.5
     # reverse time
     @test progress_fraction(7.5, (10.0, 0.0)) == 0.25
-    # not clamped, so the gate keeps working past the end (reinit!, add_tstop!)
-    @test progress_fraction(11.0, (0.0, 10.0)) == 1.1
-    @test progress_fraction(-1.0, (0.0, 10.0)) == -0.1
+    # outside tspan (reinit!, add_tstop! past the end): no fraction
+    @test isnan(progress_fraction(11.0, (0.0, 10.0)))
+    @test isnan(progress_fraction(-1.0, (0.0, 10.0)))
+    @test isnan(progress_fraction(-1.0, (10.0, 0.0)))
+    @test isnan(progress_fraction(NaN, (0.0, 10.0)))
+    # not computed there, where the time type may not represent it (10^20 here)
+    @test isnan(progress_fraction(10^10 // 1, (0 // 1, 1 // 10^10)))
+    @test progress_fraction(1 // (2 * 10^10), (0 // 1, 1 // 10^10)) == 0.5
     # undefined fraction
     @test isnan(progress_fraction(1.0, (0.0, Inf)))
     @test isnan(progress_fraction(0.0, (0.0, 0.0)))
@@ -223,23 +228,27 @@ end
     @test integrator.opts.progress_last_frac == 0
     @test integrator.opts.progress_last_ns == 0
 
-    # Progress stays measured against prob.tspan after reinit! onto another interval;
-    # the gate restarts from the fraction at the new t0, so intervals before prob.tspan
-    # (negative fractions) and after it (fractions above 1) still send updates.
+    # Progress stays measured against prob.tspan after reinit! onto another interval,
+    # and only the part of the interval inside prob.tspan sends updates (no fractions
+    # below 0 or above 1). Outside it, the gate restarts from 0.
     integrator = init(
         ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0)), Tsit5();
         progress = true, adaptive = false, dt = 1.0e-3
     )
     integrator.opts.progress_min_interval_ns = THROTTLE_OPEN
-    for (t0, tf) in ((10.0, 20.0), (-20.0, -10.0))
+    for (t0, tf, nmin, nmax) in (
+            (10.0, 20.0, 0, 0), (-20.0, -10.0, 0, 0), (-5.0, 5.0, 45, 50), (5.0, 15.0, 45, 50),
+        )
         reinit!(integrator; t0, tf)
-        @test integrator.opts.progress_last_frac == progress_fraction(t0, (0.0, 10.0))
+        @test integrator.opts.progress_last_frac ==
+            (0 <= t0 <= 10 ? progress_fraction(t0, (0.0, 10.0)) : 0.0)
         logger = Test.TestLogger(min_level = LogLevel(-1))
         with_logger(() -> solve!(integrator), logger)
         fracs = intermediate_fracs(logger)
-        @test 90 <= length(fracs) <= 100
-        @test all(progress_fraction(t0, (0.0, 10.0)) .< fracs .<= progress_fraction(tf, (0.0, 10.0)))
+        @test nmin <= length(fracs) <= nmax
+        @test all(0 .< fracs .<= 1)
         @test all(diff(fracs) .>= integrator.opts.progress_tspan * (1 - PROGRESS_TSPAN_RTOL))
+        @test last(progress_records(logger)).kwargs[:progress] == "done"
     end
 
     # an empty rational tspan must not break reinit!, with or without progress
@@ -248,19 +257,43 @@ end
             ODEProblem((u, p, t) -> -u, 1.0, (0 // 1, 0 // 1)), Tsit5();
             dt = 1 // 10, adaptive = false, progress
         )
-        reinit!(integrator)
-        # reached without a DivideError; the fraction is only computed with progress on
-        @test progress ? isnan(integrator.opts.progress_last_frac) :
-            integrator.opts.progress_last_frac == 0
+        reinit!(integrator)  # reached without a DivideError
+        @test integrator.opts.progress_last_frac == 0
     end
 
-    # without progress, reinit! never computes the fraction (here it would overflow)
-    integrator = init(
-        ODEProblem((u, p, t) -> zero(u), 1.0, (0 // 1, 1 // 10^10)), Tsit5();
-        adaptive = false, dt = 1 // 1
+    # reinit! far outside a Rational tspan, where the fraction would overflow Int64
+    # (Tsit5 can't step in Rational time, so the per-step check is called directly)
+    for progress in (false, true)
+        integrator = init(
+            ODEProblem((u, p, t) -> zero(u), 1.0, (0 // 1, 1 // 10^10)), Tsit5();
+            adaptive = false, dt = 1 // 1, progress
+        )
+        integrator.opts.progress_min_interval_ns = THROTTLE_OPEN
+        reinit!(integrator; t0 = 10^10 // 1, tf = (10^10 + 1) // 1)
+        @test integrator.t == 10^10
+        @test integrator.opts.progress_last_frac == 0
+        logger = Test.TestLogger(min_level = LogLevel(-1))
+        with_logger(() -> OrdinaryDiffEqCore.maybe_log_progress!(integrator), logger)
+        @test isempty(progress_records(logger))
+    end
+end
+
+@testset "No updates past the end of tspan" begin
+    # a stop added beyond tspan[2]: the solve goes there, but sends nothing above 1
+    added = Ref(false)
+    cb = DiscreteCallback(
+        (u, t, integrator) -> !added[],
+        integrator -> (added[] = true; add_tstop!(integrator, 1.25))
     )
-    reinit!(integrator; t0 = 10^10 // 1, tf = (10^10 + 1) // 1)
-    @test integrator.t == 10^10
+    integrator, logger = progress_solve(
+        ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0)), Tsit5();
+        throttle = THROTTLE_OPEN, adaptive = false, dt = 0.01, callback = cb
+    )
+    @test integrator.t == 1.25
+    fracs = intermediate_fracs(logger)
+    @test 95 <= length(fracs) <= 100
+    @test all(0 .< fracs .<= 1)
+    @test last(progress_records(logger)).kwargs[:progress] == "done"
 end
 
 @testset "progress_tspan and progress_min_interval are validated" begin
