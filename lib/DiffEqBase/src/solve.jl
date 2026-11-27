@@ -124,7 +124,7 @@ function _wraps_erasable_problem(prob)
     # A wrapper whose solver hook has not built its inner problem yet keeps the
     # setting so the hook can forward it once the inner problem exists.
     isdefined(prob, :prob) || return prob isa SciMLBase.AbstractJumpProblem
-    inner = getfield(prob, :prob)
+    inner = prob.prob
     return !(inner isa SciMLBase.AbstractDiscreteProblem) && _erases_callback_types(inner)
 end
 

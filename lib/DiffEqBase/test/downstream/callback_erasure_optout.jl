@@ -198,3 +198,42 @@ end
         end
     end
 end
+
+struct PropertyForwardingWrapper{K} <: SciMLBase.AbstractJumpProblem{Nothing, Nothing}
+    prob::Nothing
+    kwargs::K
+end
+
+function Base.getproperty(wrapper::PropertyForwardingWrapper, name::Symbol)
+    name === :prob || return getfield(wrapper, name)
+    return ODEProblem{true, SciMLBase.AutoSpecialize}(callback_erasure_decay!, [1.0], (0.0, 1.0))
+end
+
+function SciMLBase.__init(wrapper::PropertyForwardingWrapper, alg::Tsit5; kwargs...)
+    return init(wrapper.prob, alg; DiffEqBase.merge_problem_kwargs(wrapper; kwargs...)...)
+end
+
+function SciMLBase.__solve(wrapper::PropertyForwardingWrapper, alg::Tsit5; kwargs...)
+    return SciMLBase.__init(wrapper, alg; kwargs...)
+end
+
+@testset "property-backed wrapper forwards erasure" begin
+    callbacks = CallbackSet(
+        ContinuousCallback((u, t, integrator) -> t - 0.5, integrator -> (integrator.u .*= 2)),
+        DiscreteCallback((u, t, integrator) -> false, integrator -> nothing)
+    )
+    wrapper = PropertyForwardingWrapper(nothing, pairs((;)))
+    if VERSION >= v"1.12"
+        @test get(DiffEqBase.merge_problem_kwargs(wrapper; erase_callbacks = false), :erase_callbacks, nothing) === false
+    end
+    for run in (init, solve), setting in (false, nothing)
+        integ = run(wrapper, Tsit5(); callback = callbacks, erase_callbacks = setting, abstol = 1.0e-10, reltol = 1.0e-10)
+        if setting === false
+            @test integ.opts.callback.continuous_callbacks isa Tuple
+            @test integ.opts.callback.discrete_callbacks isa Tuple
+        elseif VERSION >= v"1.12"
+            @test integ.opts.callback.continuous_callbacks isa Vector{Any}
+        end
+        @test solve!(integ).u[end][1] ≈ 2 * exp(-1) atol = 1.0e-8
+    end
+end
