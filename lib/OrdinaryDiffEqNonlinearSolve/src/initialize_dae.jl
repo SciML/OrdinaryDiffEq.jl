@@ -85,11 +85,11 @@ function _nonlinear_jacobian(prob::NonlinearProblem, u, p)
             f.jac(J, u, p)
             return J
         end
-        return ForwardDiff.jacobian((resid, x) -> f(resid, x, p), similar(u), u)
+        return DI.jacobian((resid, x) -> f(resid, x, p), similar(u), AutoForwardDiff(), u)
     end
     SciMLBase.has_jac(f) && return f.jac(u, p)
-    u isa Number && return ForwardDiff.derivative(x -> f(x, p), u)
-    return ForwardDiff.jacobian(x -> f(x, p), u)
+    u isa Number && return DI.derivative(x -> f(x, p), AutoForwardDiff(), u)
+    return DI.jacobian(x -> f(x, p), AutoForwardDiff(), u)
 end
 
 function CommonSolve.solve(
@@ -100,6 +100,9 @@ function CommonSolve.solve(
     return _implicit_dual_solve(D, prob, alg, args...; kwargs...)
 end
 
+# At the primal root `u`, the Newton step `u - Jᵤ \ (F(u, p_dual) - F(u, p))` keeps the
+# value `u` and carries the implicit partials `-Jᵤ \ ∂F/∂p`. The state Dual takes its value
+# type from `u` and the parameter tangents, so a wider state keeps its precision.
 function _implicit_dual_solve(
         ::Type{Dual{T, V, N}}, prob, alg, args...; kwargs...
     ) where {T, V, N}
@@ -108,20 +111,16 @@ function _implicit_dual_solve(
     primal = remake(prob; u0 = _strip_dual(D, prob.u0), p)
     sol = solve(primal, alg, args...; kwargs...)
     u = sol.u
+    S = Dual{T, promote_type(eltype(u), V), N}
+    u_dual = u isa Number ? S(u) : S.(u)
     if SciMLBase.successful_retcode(sol)
-        ∂F = _nonlinear_residual(prob, u isa Number ? D(u) : D.(u), prob.p)
+        ΔF = _nonlinear_residual(prob, u_dual, prob.p) .- _nonlinear_residual(primal, u, p)
         Jᵤ = _nonlinear_jacobian(primal, u, p)
         if u isa Number
-            u_dual = D(u, -ForwardDiff.partials(∂F) / Jᵤ)
+            u_dual -= ΔF / Jᵤ
         else
-            ∂u = -(Jᵤ \ [ForwardDiff.partials(Fᵢ, k) for Fᵢ in vec(∂F), k in 1:N])
-            u_dual = similar(u, D)
-            for (i, I) in enumerate(eachindex(u))
-                u_dual[I] = D(u[I], ForwardDiff.Partials{N, V}(ntuple(k -> ∂u[i, k], Val(N))))
-            end
+            u_dual .-= reshape(Jᵤ \ vec(ΔF), size(u))
         end
-    else
-        u_dual = u isa Number ? D(u) : D.(u)
     end
     resid = _nonlinear_residual(prob, u_dual, prob.p)
     return SciMLBase.build_solution(

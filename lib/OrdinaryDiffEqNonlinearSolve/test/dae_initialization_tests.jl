@@ -413,6 +413,73 @@ end
     @test residual_derivative ≈ 0.0 atol = 1.0e-8
 end
 
+const mixed_root_slope = 2.0^-30
+mixed_init_residual(u, p) = [u[1] - 1.0 - mixed_root_slope * p.c]
+mixed_dae_rhs(u, p, t) = [-u[1], u[2] - 1.0 - mixed_root_slope * p.c]
+
+function mixed_precision_problem(c, guess)
+    initprob = NonlinearProblem(mixed_init_residual, [guess], (; c))
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> [1.0, nlsol.u[1]], nothing
+    )
+    f = ODEFunction(
+        mixed_dae_rhs; mass_matrix = Diagonal([1.0, 0.0]), initialization_data
+    )
+    return ODEProblem(f, [1.0, guess], (0.0, 0.1), (; c))
+end
+
+# Float64 state, Float32 parameter seed: z = 1 + 2^-30 c has dz/dc = 2^-30, and the root
+# 1 + 2^-29 is not representable in Float32.
+@testset "OverrideInit keeps a Float64 root under a Float32 parameter seed" begin
+    tolerances = (; abstol = 1.0e-12, reltol = 1.0e-12)
+    root = 1.0 + mixed_root_slope * 2
+    Tag = typeof(ForwardDiff.Tag(mixed_init_residual, Float32))
+    seed = ForwardDiff.Dual{Tag}(2.0f0, 1.0f0)
+    for guess in (0.5, root)
+        initprob = NonlinearProblem(mixed_init_residual, [guess], (; c = seed))
+        nlsol = solve(initprob, default_nlsolve(nothing, Val(false), [guess], initprob, true))
+        @test SciMLBase.successful_retcode(nlsol)
+        @test eltype(nlsol.u) === ForwardDiff.Dual{Tag, Float64, 1}
+        @test ForwardDiff.value(nlsol.u[1]) ≈ root atol = tolerances.abstol rtol = 0
+        @test ForwardDiff.partials(nlsol.u[1], 1) ≈ mixed_root_slope rtol = 1.0e-12
+
+        integrator = init(mixed_precision_problem(seed, guess), Rodas5P(); tolerances...)
+        sol = solve(mixed_precision_problem(seed, guess), Rodas5P(); tolerances...)
+        @test SciMLBase.successful_retcode(sol)
+        for z in (integrator.u[2], sol.u[1][2])
+            @test ForwardDiff.value(z) isa Float64
+            @test ForwardDiff.value(z) ≈ root atol = tolerances.abstol rtol = 0
+            @test ForwardDiff.partials(z, 1) ≈ mixed_root_slope rtol = 1.0e-12
+        end
+    end
+end
+
+two_param_init_residual(z, p) = [z[1]^3 + z[1] - p[1] * p[2]]
+two_param_dae_rhs(u, p, t) = [-u[1], u[2]^3 + u[2] - p[1] * p[2]]
+
+function two_param_problem(a, b, named)
+    params = named ? (; a, b) : (a, b)
+    initprob = NonlinearProblem(two_param_init_residual, [0.5], params)
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> [1.0, nlsol.u[1]], nothing
+    )
+    f = ODEFunction(
+        two_param_dae_rhs; mass_matrix = Diagonal([1.0, 0.0]), initialization_data
+    )
+    return ODEProblem(f, [1.0, 0.5], (0.0, 0.1), params)
+end
+
+# z^3 + z = a b at (a, b) = (2, 1) has root z = 1 and ∇z = (b, a) / (3z^2 + 1) = (1/4, 1/2).
+@testset "OverrideInit partials for two seeded $(named ? "NamedTuple" : "Tuple") parameters" for named in (false, true)
+    tolerances = (; abstol = 1.0e-12, reltol = 1.0e-12)
+    gradient = ForwardDiff.gradient([2.0, 1.0]) do ab
+        sol = solve(two_param_problem(ab..., named), Rodas5P(); saveat = [0.0], tolerances...)
+        @test SciMLBase.successful_retcode(sol)
+        sol.u[1][2]
+    end
+    @test gradient ≈ [0.25, 0.5] atol = 1.0e-10
+end
+
 # records the keywords Brown passes to the nonlinear solve
 struct SpyNLSolve <: SciMLBase.AbstractNonlinearAlgorithm
     kwargs::Base.RefValue{Any}

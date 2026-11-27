@@ -1,7 +1,7 @@
 using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
     OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, ADTypes
 using Test, LinearSolve, LinearAlgebra, SparseArrays, StaticArrays
-import SciMLBase
+import SciMLBase, ForwardDiff
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 
@@ -311,5 +311,30 @@ end
         @test SciMLBase.successful_retcode(sol)
         @test sol.u[1] ≈ [1.0, 1.0] atol = 1.0e-8
         @test abs(log(sol.u[1][2])) < 1.0e-8
+    end
+end
+
+@testset "Default solver keeps a Float64 root under a Float32 parameter seed" begin
+    slope = 2.0^-30
+    root = 1.0 + 2slope
+    seed = ForwardDiff.Dual{typeof(ForwardDiff.Tag(identity, Float32))}(2.0f0, 1.0f0)
+    abstol = 1.0e-12
+    for guess in (0.5, root)
+        initprob = SciMLBase.NonlinearProblem(
+            (u, p) -> [u[1] - 1.0 - slope * p.c], [guess], (; c = seed)
+        )
+        initialization_data = SciMLBase.OverrideInitData(
+            initprob, nothing, nlsol -> [1.0, nlsol.u[1]], nothing
+        )
+        f = ODEFunction(
+            (u, p, t) -> [-u[1], u[2] - 1.0 - slope * p.c];
+            mass_matrix = Diagonal([1.0, 0.0]), initialization_data
+        )
+        sol = solve(ODEProblem(f, [1.0, guess], (0.0, 0.1), (; c = seed)); abstol, reltol = abstol)
+        @test SciMLBase.successful_retcode(sol)
+        z = sol.u[1][2]
+        @test ForwardDiff.value(z) isa Float64
+        @test ForwardDiff.value(z) ≈ root atol = abstol rtol = 0
+        @test ForwardDiff.partials(z, 1) ≈ slope rtol = 1.0e-12
     end
 end
