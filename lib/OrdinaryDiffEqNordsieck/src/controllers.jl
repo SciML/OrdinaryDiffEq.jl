@@ -73,9 +73,12 @@ function _jvode_failed_dt(dt::Rational, factor::AbstractFloat)
             err isa InexactError || err isa OverflowError || rethrow()
         end
     end
-    # Converting a nonintegral factor first can inflate rational step denominators.
+    # Take the simplest rational within one ulp; `rationalize` stops short on overflow.
     T = promote_type(Float64, float(typeof(dt)), typeof(factor))
-    return oftype(dt, T(dt) / T(factor))
+    retry = T(dt) / T(factor)
+    isfinite(retry) || return oftype(dt, retry)
+    candidate = rationalize(typeof(numerator(dt)), retry; tol = eps(retry))
+    return abs(T(candidate) - retry) <= eps(retry) ? candidate : oftype(dt, retry)
 end
 
 # The controller cache delegates step-size selection to the algorithm.

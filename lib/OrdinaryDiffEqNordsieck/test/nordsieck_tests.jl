@@ -217,6 +217,9 @@ end
         (h, factor, retry, bounds) in (
             (1 // 10001, Float64(32768 // 10001), 1 // 32768, (; qsteady_min = 0.0, qsteady_max = Inf)),
             (9 // 5, 1.8, 1 // 1, NamedTuple()),
+            (1 // 1, Float16(2.5), 2 // 5, map(Float16, (; qsteady_min = 0, qsteady_max = Inf))),
+            (1 // 1, 2.5, 2 // 5, (; qsteady_min = 0.0, qsteady_max = Inf)),
+            (1 // 10, 2.5f0, 1 // 25, NamedTuple()),
         )
     prob = ODEProblem((u, p, t) -> -u / h, 1.0, (0 // 1, h))
     tol = 0.1
