@@ -1167,3 +1167,23 @@ function Base.resize!(nlcache::NonlinearSolveCache, ::AbstractNLSolver, integrat
     nlcache.J_t = zero(nlcache.J_t)
     return nothing
 end
+
+"""
+    solve_state_error!(dest, nlsolver, integrator)
+
+Use the current Newton matrix to convert the residual in `dest` to a state error,
+overwriting `dest`. With `W = J - M / γdt`, the result is `-W⁻¹ * dest / γdt`,
+using the scaling associated with the current factorization. Return `true` if
+the linear solve succeeds and the result is finite. On failure, `dest` may have
+been overwritten.
+"""
+function solve_state_error!(dest, nlsolver::NLSolver{<:NLNewton, true}, integrator)
+    (; dz, linsolve, W_γdt) = nlsolver.cache
+    linres = dolinsolve(integrator, linsolve; b = vec(dest), linu = vec(dz))
+    SciMLBase.has_stats(integrator) && (integrator.stats.nsolve += 1)
+    rc = linres.retcode
+    (SciMLBase.successful_retcode(rc) || rc == SciMLBase.ReturnCode.Default) || return false
+    c = -inv(W_γdt)
+    @.. broadcast = false dest = c * dz
+    return all(isfinite, dest)
+end

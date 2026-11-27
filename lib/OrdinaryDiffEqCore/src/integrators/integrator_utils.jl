@@ -326,8 +326,84 @@ function modify_dt_for_tstops!(integrator)
     return nothing
 end
 
+"""
+    uses_representable_step(integrator, alg)
+
+Return whether `alg` quantizes its adaptive trial steps to clock intervals.
+"""
+uses_representable_step(integrator, alg) = false
+function uses_representable_step(integrator, alg::CompositeAlgorithm)
+    return _eval_index(
+        member -> uses_representable_step(integrator, member), alg.algs, integrator.cache.current
+    )
+end
+
+function _representable_dtmin(integrator)
+    t = integrator.t
+    dtmin = timedepentdtmin(integrator)
+    t isa AbstractFloat || return dtmin
+    endpoint = t + integrator.tdir * dtmin
+    if abs(endpoint - t) < dtmin
+        endpoint = integrator.tdir > 0 ? nextfloat(endpoint) : prevfloat(endpoint)
+    end
+    return abs(endpoint - t)
+end
+
+function _force_dtmin_threshold(integrator)
+    return if uses_representable_step(integrator, integrator.alg)
+        _representable_dtmin(integrator)
+    else
+        timedepentdtmin(integrator)
+    end
+end
+
+"""
+    fix_representable_dt!(integrator)
+
+Adjust a floating-point trial step to a representable clock interval within its
+active bounds and update `integrator.dt`. Return `false`, record `DtLessThanMin`,
+and mark the step failed if no interval is admissible. A clipped time stop may
+be shorter than the minimum step.
+"""
+function fix_representable_dt!(integrator)
+    (; t, dt, tdir, opts) = integrator
+    (opts.adaptive && t isa AbstractFloat && dt isa AbstractFloat) || return true
+    endpoint = t + dt
+    if !isfinite(endpoint)
+        (isfinite(t) && isfinite(dt)) || return true
+        endpoint = tdir > 0 ? prevfloat(endpoint) : nextfloat(endpoint)
+    end
+    h = endpoint - t
+    if abs(h) > abs(opts.dtmax)
+        endpoint = tdir > 0 ? prevfloat(endpoint) : nextfloat(endpoint)
+        h = endpoint - t
+    end
+    at_tstop = _get_next_step_tstop(integrator) && endpoint == _get_tstop_target(integrator)
+    if !at_tstop && abs(h) < timedepentdtmin(integrator)
+        h = tdir * _representable_dtmin(integrator)
+        endpoint = t + h
+    end
+    if !isfinite(h) || iszero(h) || abs(h) > abs(opts.dtmax)
+        integrator.dt = zero(dt)
+        @SciMLMessage(
+            lazy"No positive representable step satisfies the time-step bounds at t=$(t).",
+            opts.verbose, :dt_min_unstable
+        )
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.DtLessThanMin)
+        integrator.force_stepfail = true
+        _set_tstop_flag!(integrator, false)
+        return false
+    end
+    if _get_next_step_tstop(integrator) && endpoint != _get_tstop_target(integrator)
+        _set_tstop_flag!(integrator, false)
+    end
+    integrator.dt = h
+    return true
+end
+
 function handle_tstop_step!(integrator)
-    return if integrator.t isa AbstractFloat && abs(integrator.dt) < eps(abs(integrator.t))
+    return if integrator.t isa AbstractFloat && abs(integrator.dt) < eps(abs(integrator.t)) &&
+            !uses_representable_step(integrator, integrator.alg)
         # Skip perform_step! entirely for tiny dt
         integrator.accept_step = true
     else
@@ -624,7 +700,7 @@ function _loopfooter!(integrator)
         ) ||
             (
             integrator.opts.force_dtmin &&
-                abs(integrator.dt) <= timedepentdtmin(integrator)
+                abs(integrator.dt) <= _force_dtmin_threshold(integrator)
         )
         if integrator.accept_step # Accept
             increment_accept!(integrator.stats)

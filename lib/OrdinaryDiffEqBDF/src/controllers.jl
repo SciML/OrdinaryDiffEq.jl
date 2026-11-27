@@ -451,6 +451,10 @@ function stepsize_controller!(
     # BIAS2 = 6 matches CVODE (cvode_impl.h).
     alpha0 = cache.bdf_coeffs[k, 1]
     q = ((6 * terk / (alpha0 * (k + 1)))^(1 / (k + 1)))
+    # After a failed attempt the accepted step may not grow (CVODE sets etamax = 1 after an
+    # error test failure). Without this, the qmax limit turns each regrowth into a
+    # grow-reject cycle whose extrapolated-history roundoff accumulates.
+    cache.consfailcnt > 0 && return max(q, one(q))
     return max(q, q_growth_limit)   # terk = 0 gives q = 0: the full growth limit
 end
 

@@ -391,12 +391,12 @@ end
 # Use the step that the stored time t + dt represents: far from t = 0, rounding of t + dt is a
 # sizable part of a small dt, and the history would disagree with the BDF formula (#5003).
 # `calc_dt_propose!` snaps the same way, but against the time before the step is applied.
+OrdinaryDiffEqCore.uses_representable_step(integrator, ::FBDF) =
+    integrator.opts.adaptive && integrator.t isa AbstractFloat && integrator.dt isa AbstractFloat
+
 function _fbdf_step_dt!(integrator)
-    (; t, dt) = integrator
-    (integrator.opts.adaptive && t isa AbstractFloat && dt isa AbstractFloat) || return dt
-    h = (t + dt) - t
-    iszero(h) && return dt
-    return integrator.dt = h
+    OrdinaryDiffEqCore.fix_representable_dt!(integrator) || return nothing
+    return integrator.dt
 end
 
 # terkp1 ≈ h² y″ for the first step after a (re)start, which is backward Euler and has no
@@ -410,18 +410,8 @@ function _fbdf_first_step_terkp1!(integrator, cache)
     @.. broadcast = false tmp = integrator.u - integrator.uprev
     _fbdf_first_step_residual!(terkp1_tmp, tmp, integrator)
     isnewton(nlsolver) || return nothing
-    # Newton's matrix is W = J - M / W_γdt, so (M - W_γdt J)⁻¹ r = -W⁻¹ r / W_γdt.
-    est = nlsolver.cache.dz
-    linres = dolinsolve(
-        integrator, nlsolver.cache.linsolve; b = vec(terkp1_tmp), linu = vec(est)
-    )
-    SciMLBase.has_stats(integrator) && (integrator.stats.nsolve += 1)
-    rc = linres.retcode
-    ok = (SciMLBase.successful_retcode(rc) || rc == SciMLBase.ReturnCode.Default) &&
-        all(isfinite, est)
-    if ok
-        c = -inv(nlsolver.cache.W_γdt)
-        @.. broadcast = false terkp1_tmp = c * est
+    if solve_state_error!(terkp1_tmp, nlsolver, integrator)
+        return nothing
     elseif integrator.f.mass_matrix === I
         # r is already a state error; recompute it, since the solve may overwrite b
         _fbdf_first_step_residual!(terkp1_tmp, tmp, integrator)
