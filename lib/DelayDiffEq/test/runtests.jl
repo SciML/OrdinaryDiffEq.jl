@@ -102,6 +102,9 @@ if TEST_GROUP == "ALL" || TEST_GROUP == "Integrators"
     @time @safetestset "FBDF Tests" begin
         include("integrators/fbdf.jl")
     end
+    @time @safetestset "FBDF Time Filter Tests" begin
+        include("integrators/fbdf_time_filter.jl")
+    end
     @time @safetestset "SDIRK Tests" begin
         include("integrators/sdirk.jl")
     end
