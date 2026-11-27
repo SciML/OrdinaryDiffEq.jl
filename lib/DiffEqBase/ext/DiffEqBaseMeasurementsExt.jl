@@ -1,8 +1,8 @@
 module DiffEqBaseMeasurementsExt
 
-using DiffEqBase
-import DiffEqBase: value
-using Measurements
+import DiffEqBase
+import SciMLBase: value
+import Measurements
 
 # Support adaptive steps should be errorless
 @inline function DiffEqBase.ODE_DEFAULT_NORM(
@@ -21,7 +21,7 @@ end
     return sqrt(sum(x -> abs2(value(x)), u) / max(length(u), 1))
 end
 @inline function DiffEqBase.ODE_DEFAULT_NORM(u::Measurements.Measurement, t)
-    return abs(Measurements.value(u))
+    return abs(value(u))
 end
 
 end

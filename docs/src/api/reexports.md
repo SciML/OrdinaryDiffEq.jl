@@ -77,9 +77,8 @@ DynamicalODEFunction, ODEFunction, SplitFunction
 ```julia
 solve, solve!, init, step!,
 remake, ReturnCode, successful_retcode, DEStats,
-NLStats, NullParameters, AutoSpecialize, FullSpecialize,
-NoSpecialize, FunctionWrapperSpecialize, CheckInit, NoInit,
-OverrideInit
+NLStats, NullParameters, AutoSpecialize, FullSpecialize, NoSpecialize,
+FunctionWrapperSpecialize, CheckInit, NoInit, OverrideInit
 ```
 
 ### Callbacks

@@ -1,3 +1,4 @@
+import OrdinaryDiffEq
 using SciMLBase, Test
 
 @testset "Re-exported SciMLBase API follows real OrdinaryDiffEq usage" begin
@@ -56,5 +57,12 @@ using SciMLBase, Test
     @test length(selective) == 9
     for (package, found) in selective
         @test (package, sort(found)) == (package, sort(documented))
+    end
+end
+
+@testset "OrdinaryDiffEq specialization exports" begin
+    for name in (:AutoDespecialize, :AutoRespecialize, :AutoDePSpecialize)
+        @test name in names(OrdinaryDiffEq)
+        @test getfield(OrdinaryDiffEq, name) === getfield(SciMLBase, name)
     end
 end
