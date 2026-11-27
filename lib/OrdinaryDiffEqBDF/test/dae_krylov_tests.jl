@@ -500,10 +500,12 @@ end
 
 # The matrix-free Newton matrix is built for the initial state dimension; every public change
 # of the state size refuses before changing any state, so the integrator can carry on.
-@testset "State-size changes of a matrix-free DFBDF integrator" begin
+@testset "State-size changes of a matrix-free $(nameof(alg)) integrator" for (alg, rtol) in (
+        (DImplicitEuler, 1.0e-3), (DABDF2, 1.0e-3), (DFBDF, 1.0e-5), (DNordsieckBDF, 1.0e-5),
+    )
     prob = DAEProblem(decay!, -ones(2), ones(2), (0.0, 1.0))
     integrator = init(
-        prob, DFBDF(; linsolve = KrylovJL_GMRES()); abstol = 1.0e-8, reltol = 1.0e-8,
+        prob, alg(; linsolve = KrylovJL_GMRES()); abstol = 1.0e-8, reltol = 1.0e-8,
         initializealg = SciMLBase.NoInit()
     )
     step!(integrator, 0.5, true)
@@ -517,7 +519,7 @@ end
     end
     solve!(integrator)
     @test successful_retcode(integrator.sol)
-    @test integrator.u ≈ fill(exp(-1), 2) rtol = 1.0e-5
+    @test integrator.u ≈ fill(exp(-1), 2) rtol = rtol
 end
 
 # The matrix-free path never forms the Newton matrix: callbacks that write one are rejected at

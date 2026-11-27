@@ -433,30 +433,32 @@ function check_fixed_dimension(integrator)
         throw(
             ArgumentError(
                 "Changing the state size (`resize!`, `deleteat!`, `addat!`) is not supported " *
-                    "for `DFBDF` with a matrix-free Krylov `linsolve`."
+                    "for a DAE algorithm with a matrix-free Krylov `linsolve`."
             )
         )
     end
     return nothing
 end
 
-const DFBDFIntegrator = OrdinaryDiffEqCore.ODEIntegrator{<:DFBDF}
+const DAEBDFIntegrator = OrdinaryDiffEqCore.ODEIntegrator{
+    <:Union{DImplicitEuler, DABDF2, DFBDF, DNordsieckBDF},
+}
 
-function Base.resize!(integrator::DFBDFIntegrator, i::Int)
+function Base.resize!(integrator::DAEBDFIntegrator, i::Int)
     check_fixed_dimension(integrator)
     return invoke(resize!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Int}, integrator, i)
 end
-function Base.resize!(integrator::DFBDFIntegrator, i::NTuple{N, Int}) where {N}
+function Base.resize!(integrator::DAEBDFIntegrator, i::NTuple{N, Int}) where {N}
     check_fixed_dimension(integrator)
     return invoke(
         resize!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, NTuple{N, Int}}, integrator, i
     )
 end
-function Base.deleteat!(integrator::DFBDFIntegrator, idxs)
+function Base.deleteat!(integrator::DAEBDFIntegrator, idxs)
     check_fixed_dimension(integrator)
     return invoke(deleteat!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Any}, integrator, idxs)
 end
-function SciMLBase.addat!(integrator::DFBDFIntegrator, idxs)
+function SciMLBase.addat!(integrator::DAEBDFIntegrator, idxs)
     check_fixed_dimension(integrator)
     return invoke(
         SciMLBase.addat!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Any}, integrator, idxs

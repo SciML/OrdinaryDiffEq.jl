@@ -81,8 +81,8 @@ residual (the same bound with `sqrt(r)` in place of `r`). Every linear solve, a 
 `stats.nsolve`. Because the stopping test is on a residual norm, rows of the residual
 scaled orders of magnitude below the others are invisible to it: give such a problem a
 preconditioner that equilibrates the rows. On the matrix-free path the state dimension is
-fixed at initialization: `resize!`, `deleteat!` and `addat!` of a `DFBDF` integrator throw an
-`ArgumentError` before changing any state.
+fixed at initialization: `resize!`, `deleteat!` and `addat!` of a `DImplicitEuler`, `DABDF2`,
+`DFBDF` or `DNordsieckBDF` integrator throw an `ArgumentError` before changing any state.
 
 ## Optional FBDF time filtering
 
