@@ -46,7 +46,10 @@ end
 
 @testset "stats.nf counts every RHS evaluation the Krylov solve costs" begin
     @testset "$adname" for (adname, ad) in
-        (("AutoForwardDiff", AutoForwardDiff()), ("AutoFiniteDiff", AutoFiniteDiff()))
+        (
+            ("AutoForwardDiff", AutoForwardDiff()), ("AutoFiniteDiff", AutoFiniteDiff()),
+            ("centered AutoFiniteDiff", AutoFiniteDiff(; fdtype = Val(:central))),
+        )
         # Fully matrix-free: the JVP operator performs every product.
         real_f, nf = counted_nf(matrix_free, FBDF(linsolve = KrylovJL_GMRES(), autodiff = ad))
         @test nf == real_f
@@ -73,6 +76,9 @@ end
     @test rhs_evals_per_jvp(AutoFiniteDiff(fdjtype = Val(:central))) == 1
     @test rhs_evals_per_jvp(AutoSparse(AutoFiniteDiff())) == 1
     @test rhs_evals_per_jvp(AutoSparse(AutoForwardDiff())) == 1
+    # A centered JVP evaluates both perturbed points.
+    @test rhs_evals_per_jvp(AutoFiniteDiff(fdtype = Val(:central))) == 2
+    @test rhs_evals_per_jvp(AutoSparse(AutoFiniteDiff(fdtype = Val(:central)))) == 2
 
     @test base_evals_per_jvp_point(AutoFiniteDiff()) == 1
     @test base_evals_per_jvp_point(AutoForwardDiff()) == 0
