@@ -120,9 +120,12 @@ function _callback_erasure_enabled(prob, kwargs, erase_callbacks = nothing)
 end
 
 function _wraps_erasable_problem(prob)
-    return hasfield(typeof(prob), :prob) &&
-        !(prob.prob isa SciMLBase.AbstractDiscreteProblem) &&
-        _erases_callback_types(prob.prob)
+    hasfield(typeof(prob), :prob) || return false
+    # A wrapper whose solver hook has not built its inner problem yet keeps the
+    # setting so the hook can forward it once the inner problem exists.
+    isdefined(prob, :prob) || return prob isa SciMLBase.AbstractJumpProblem
+    inner = getfield(prob, :prob)
+    return !(inner isa SciMLBase.AbstractDiscreteProblem) && _erases_callback_types(inner)
 end
 
 # Erasure rewrites `prob.kwargs`, which rebuilds the problem through

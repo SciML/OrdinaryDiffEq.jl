@@ -99,6 +99,55 @@ end
     end
 end
 
+mutable struct DeferredForwardingWrapper <: SciMLBase.AbstractJumpProblem{Nothing, Nothing}
+    prob::Any
+    kwargs::Base.Pairs
+    default_erase::Bool
+    function DeferredForwardingWrapper(kwargs, default_erase)
+        wrapper = new()
+        wrapper.kwargs = pairs(kwargs)
+        wrapper.default_erase = default_erase
+        return wrapper
+    end
+end
+
+function SciMLBase.__init(wrapper::DeferredForwardingWrapper, alg::Tsit5; kwargs...)
+    merged = DiffEqBase.merge_problem_kwargs(wrapper; kwargs...)
+    wrapper.prob = ODEProblem{true, SciMLBase.AutoSpecialize}(
+        callback_erasure_decay!, [1.0], (0.0, 1.0)
+    )
+    return init(wrapper.prob, alg; erase_callbacks = wrapper.default_erase, merged...)
+end
+
+function SciMLBase.__solve(wrapper::DeferredForwardingWrapper, alg::Tsit5; kwargs...)
+    return SciMLBase.__init(wrapper, alg; kwargs...)
+end
+
+@testset "deferred wrapper forwards resolved erasure" begin
+    callbacks = CallbackSet(
+        ContinuousCallback((u, t, integrator) -> t - 0.5, integrator -> nothing),
+        DiscreteCallback((u, t, integrator) -> false, integrator -> nothing)
+    )
+    cases = (
+        ((;), false, false),
+        ((; erase_callbacks = false), nothing, false),
+        ((; erase_callbacks = false), true, true),
+    )
+    for (stored, setting, resolved) in cases
+        wrapper = () -> DeferredForwardingWrapper(stored, !resolved)
+        @test DiffEqBase.merge_problem_kwargs(wrapper(); erase_callbacks = setting)[:erase_callbacks] === resolved
+        for run in (init, solve)
+            cb = () -> run(wrapper(), Tsit5(); callback = callbacks, erase_callbacks = setting).opts.callback
+            if resolved
+                VERSION >= v"1.12" && @test cb().continuous_callbacks isa Vector{Any}
+            else
+                @test cb().continuous_callbacks isa Tuple
+                @test cb().discrete_callbacks isa Tuple
+            end
+        end
+    end
+end
+
 struct CallbackWrapper{P, C, K} <: SciMLBase.AbstractJumpProblem{P, Nothing}
     prob::P
     callback::C
