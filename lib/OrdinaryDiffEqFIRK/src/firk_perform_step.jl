@@ -1,3 +1,7 @@
+# Matches the Newton solve, which does not treat a `Default` retcode as a failure.
+_linsolve_failed(linres) = !SciMLBase.successful_retcode(linres.retcode) &&
+    linres.retcode != SciMLBase.ReturnCode.Default
+
 const FIRK_MEASURE_EVERY = 16 #oldest the θ measurement can be
 const FIRK_JAGE_MAX = 50 #oldest the jac can be (backstop only)
 # tuned on vdp/rober/orego/hires/bruss.
@@ -581,6 +585,10 @@ end
 
         drain_jvp_count!(integrator, alg, W1)
         integrator.stats.nsolve += 1
+        if _linsolve_failed(linres)
+            cache.status = Divergence
+            break
+        end
         dw1 = real(dw12)
         dw2 = imag(dw12)
 
@@ -1020,6 +1028,10 @@ end
 
         drain_jvp_count!(integrator, alg, W2)
         integrator.stats.nsolve += 2
+        if _linsolve_failed(linres1) || _linsolve_failed(linres2)
+            cache.status = Divergence
+            break
+        end
         dw2 = z2
         dw3 = z3
         @.. dw2 = real(dw23)
@@ -1703,6 +1715,10 @@ end
         drain_jvp_count!(integrator, alg, W2)
         drain_jvp_count!(integrator, alg, W3)
         integrator.stats.nsolve += 3
+        if _linsolve_failed(linres1) || _linsolve_failed(linres2) || _linsolve_failed(linres3)
+            cache.status = Divergence
+            break
+        end
         dw2 = z2
         dw3 = z3
         @.. dw2 = real(dw23)
@@ -2280,14 +2296,15 @@ end
         needfactor = iter == 1 && new_W
 
         if needfactor
-            dolinsolve(
+            linres1 = dolinsolve(
                 integrator, linsolve1; A = W1, b = _vec(ubuff), linu = _vec(dw1)
             )
         else
-            dolinsolve(
+            linres1 = dolinsolve(
                 integrator, linsolve1; A = nothing, b = _vec(ubuff), linu = _vec(dw1)
             )
         end
+        linsolve_failed = _linsolve_failed(linres1)
 
         if !isthreaded(alg.threading)
             for i in 1:((num_stages - 1) ÷ 2)
@@ -2296,21 +2313,23 @@ end
                     fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                 )
                 if needfactor
-                    dolinsolve(
+                    linres2 = dolinsolve(
                         integrator, linsolve2[i]; A = W2[i],
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
                     )
                 else
-                    dolinsolve(
+                    linres2 = dolinsolve(
                         integrator, linsolve2[i]; A = nothing,
                         b = _vec(cubuff[i]), linu = _vec(dw2[i])
                     )
                 end
+                linsolve_failed |= _linsolve_failed(linres2)
             end
         else
+            any_failed = Threads.Atomic{Bool}(false)
             let integrator = integrator, linsolve2 = linsolve2, fw = fw, αdt = αdt,
                     βdt = βdt, Mw = Mw, W1 = W1, W2 = W2, cubuff = cubuff, dw2 = dw2,
-                    needfactor = needfactor
+                    needfactor = needfactor, any_failed = any_failed
 
                 @threaded alg.threading for i in 1:((num_stages - 1) ÷ 2)
                     @.. cubuff[i] = complex(
@@ -2318,24 +2337,31 @@ end
                         fw[2 * i + 1] - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1]
                     )
                     if needfactor
-                        dolinsolve(
+                        linres2 = dolinsolve(
                             integrator, linsolve2[i]; A = W2[i],
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
                         )
                     else
-                        dolinsolve(
+                        linres2 = dolinsolve(
                             integrator, linsolve2[i]; A = nothing,
                             b = _vec(cubuff[i]), linu = _vec(dw2[i])
                         )
                     end
+                    _linsolve_failed(linres2) && (any_failed[] = true)
                 end
             end
+            linsolve_failed |= any_failed[]
         end
 
         for i in 1:((num_stages - 1) ÷ 2)
             drain_jvp_count!(integrator, alg, W2[i])
         end
         integrator.stats.nsolve += (num_stages + 1) / 2
+
+        if linsolve_failed
+            cache.status = Divergence
+            break
+        end
 
         for i in 1:((num_stages - 1) ÷ 2)
             @.. dw[2 * i - 1] = real(dw2[i])
@@ -2768,8 +2794,12 @@ end
             LinearSolve.reinit!(linsolve; A = W)
         end
         set_linear_reltol!(linsolve, integrator.opts.reltol)
-        LinearSolve.solve!(linsolve)
+        linres = LinearSolve.solve!(linsolve)
         integrator.stats.nsolve += 1
+        if _linsolve_failed(linres)
+            cache.status = Divergence
+            break
+        end
 
         for i in 1:num_stages
             @views copyto!(_vec(dw[i]), ubuff[((i - 1) * n + 1):(i * n)])
