@@ -681,6 +681,7 @@ function _loopfooter!(integrator)
                 dtnew = _resume_dt_after_tstop(accepted_dt, dt_before_tstop, dtnew)
             end
             calc_dt_propose!(integrator, dtnew)
+            integrator.dt = accepted_dt
             handle_callbacks!(integrator)
         else # Reject
             increment_reject!(integrator.stats)
