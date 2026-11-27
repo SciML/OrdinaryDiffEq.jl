@@ -1,5 +1,6 @@
 using OrdinaryDiffEqBDF, LinearSolve, ADTypes, SciMLBase, Test
 import OrdinaryDiffEqDifferentiation
+using SciMLOperators: MatrixOperator
 using LinearAlgebra: I, Diagonal, mul!
 using ADTypes: AutoForwardDiff, AutoFiniteDiff
 
@@ -497,22 +498,59 @@ end
     end
 end
 
-# The matrix-free Newton matrix is built for the initial state dimension; `resize!` refuses
-# before changing any state, so the integrator can carry on.
-@testset "resize! of a matrix-free DFBDF integrator" begin
+# The matrix-free Newton matrix is built for the initial state dimension; every public change
+# of the state size refuses before changing any state, so the integrator can carry on.
+@testset "State-size changes of a matrix-free DFBDF integrator" begin
     prob = DAEProblem(decay!, -ones(2), ones(2), (0.0, 1.0))
     integrator = init(
         prob, DFBDF(; linsolve = KrylovJL_GMRES()); abstol = 1.0e-8, reltol = 1.0e-8,
         initializealg = SciMLBase.NoInit()
     )
     step!(integrator, 0.5, true)
-    for n in (3, 1)
-        @test_throws ArgumentError resize!(integrator, n)
+    for change! in (
+            i -> resize!(i, 3), i -> resize!(i, 1), i -> resize!(i, (3,)),
+            i -> deleteat!(i, 2), i -> addat!(i, 3:3),
+        )
+        @test_throws ArgumentError change!(integrator)
         @test length(integrator.u) == 2
+        @test length(integrator.du) == 2
     end
     solve!(integrator)
     @test successful_retcode(integrator.sol)
     @test integrator.u ≈ fill(exp(-1), 2) rtol = 1.0e-5
+end
+
+# The matrix-free path never forms the Newton matrix: callbacks that write one are rejected at
+# init, and a supplied `jac` or `jvp` is not called while stepping.
+@testset "DAEFunction Jacobian fields on the matrix-free path" begin
+    linsolve = KrylovJL_GMRES()
+    for kw in (
+            (; Wfact_t = (W, u, p, γ, t) -> nothing), (; Wfact = (W, u, p, γ, t) -> nothing),
+        )
+        prob = DAEProblem(DAEFunction(decay!; kw...), [-1.0], [1.0], (0.0, 1.0))
+        @test_throws ArgumentError init(prob, DFBDF(; linsolve))
+    end
+    prob = DAEProblem(
+        DAEFunction(
+            decay!; jac = (J, du, u, p, γ, t) -> nothing,
+            jac_prototype = MatrixOperator(zeros(1, 1))
+        ), [-1.0], [1.0],
+        (0.0, 1.0)
+    )
+    @test_throws ArgumentError init(prob, DFBDF(; linsolve))
+    @test_throws ArgumentError init(prob, DFBDF())
+
+    calls = Ref(0)
+    jac!(J, du, u, p, γ, t) = (calls[] += 1; J .= (1 + γ) .* one.(J); nothing)
+    jvp!(Jv, v, du, u, p, γ, t) = (calls[] += 1; @. Jv = (1 + γ) * v; nothing)
+    prob = DAEProblem(DAEFunction(decay!; jac = jac!, jvp = jvp!), [-1.0], [1.0], (0.0, 1.0))
+    sol = solve(
+        prob, DFBDF(; linsolve); abstol = 1.0e-8, reltol = 1.0e-8,
+        initializealg = SciMLBase.NoInit()
+    )
+    @test successful_retcode(sol)
+    @test only(sol.u[end]) ≈ exp(-1) rtol = 1.0e-5
+    @test calls[] == 0
 end
 
 # `cj` is a scalar, so the matrix-free `W` takes the current one every stage rather than when
