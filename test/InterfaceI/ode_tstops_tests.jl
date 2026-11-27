@@ -1,7 +1,9 @@
 using OrdinaryDiffEq, Test, Random, StaticArrays, DiffEqCallbacks
-using OrdinaryDiffEqCore: add_tstop!
+using OrdinaryDiffEqCore: add_tstop!, PIController
+using SciMLBase: SciMLBase, KeywordArgError
 import ODEProblemLibrary: prob_ode_linear
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqFIRK
 
 Random.seed!(100)
 
@@ -313,4 +315,98 @@ end
     # The next step triggers update_fsal! → shift_past_discontinuity!
     step!(integrator)
     @test integrator.tprev == nextfloat(5.0)
+end
+
+@testset "The step after a tstop resumes the proposal from before the shortening" begin
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 10.0))
+    for alg in (Tsit5(), Rodas5P(), FBDF())
+        free = solve(prob, alg; abstol = 1.0e-8, reltol = 1.0e-8)
+        j = length(free.t) ÷ 2
+        tstop = free.t[j] + 0.01 * (free.t[j + 1] - free.t[j])
+        integ = init(
+            prob, alg; abstol = 1.0e-8, reltol = 1.0e-8, tstops = [tstop],
+            resume_dt_after_tstop = true
+        )
+        while integ.t + integ.dtpropose < tstop
+            step!(integ)
+        end
+        proposed = integ.dtpropose
+        step!(integ)
+        @test integ.t == tstop
+        @test integ.t - integ.tprev < 0.02proposed
+        @test abs(get_proposed_dt(integ) - proposed) <= 2eps(tstop)
+        step!(integ)
+        @test integ.t - integ.tprev > 0.5proposed
+        @test integ.t - integ.tprev <= proposed * (1 + 1.0e-12)
+    end
+end
+
+@testset "The step after a tstop respects qmax unless resume_dt_after_tstop is set" begin
+    prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 1.0))
+    tstop = 0.125 + 2.0^-16
+    for (kwargs, next_dt) in (((;), 2.0^-15), ((; resume_dt_after_tstop = true), 0.125))
+        integ = init(
+            prob, Tsit5(); controller = PIController(Tsit5(); qmax = 2),
+            dt = 0.125, dtmax = 0.125, tstops = [tstop], kwargs...
+        )
+        while integ.t < tstop
+            step!(integ)
+        end
+        @test integ.t - integ.tprev == 2.0^-16
+        @test get_proposed_dt(integ) == next_dt
+        step!(integ)
+        @test integ.t - integ.tprev == next_dt
+    end
+end
+
+@testset "resume_dt_after_tstop is accepted with default algorithm selection" begin
+    prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 1.0))
+    tstops = [0.125 + 2.0^-16]
+    sol = solve(prob; tstops, resume_dt_after_tstop = true, kwargshandle = KeywordArgError)
+    @test SciMLBase.successful_retcode(sol)
+    @test tstops[1] in sol.t
+    integ = init(prob; tstops, resume_dt_after_tstop = true, kwargshandle = KeywordArgError)
+    @test integ.resume_dt_after_tstop
+    prob_kwarg = ODEProblem(prob.f, 0.0, (0.0, 1.0); resume_dt_after_tstop = true)
+    @test SciMLBase.successful_retcode(solve(prob_kwarg; tstops, kwargshandle = KeywordArgError))
+end
+
+@testset "Callbacks after a step shortened to a tstop see the accepted step (#4655)" begin
+    for alg in (Tsit5(), Rodas5P())
+        seen = Ref{Any}(nothing)
+        cb = DiscreteCallback(
+            (u, t, i) -> seen[] === nothing && t == 1.0,
+            i -> (seen[] = (dt = i.dt, step = i.t - i.tprev, u_mid = i(0.5)[1]));
+            save_positions = (false, false)
+        )
+        prob = ODEProblem((u, p, t) -> one.(u), [1.0], (0.0, 2.0))
+        solve(prob, alg; dt = 5.0, tstops = [1.0], callback = cb, abstol = 1.0e-8, reltol = 1.0e-8)
+        @test seen[].dt == seen[].step
+        @test seen[].u_mid ≈ 1.5
+    end
+end
+
+@testset "A tstop at the end of the proposed step does not limit the next proposal" begin
+    prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 2.0))
+    for tstops in (Float64[], [0.125])
+        integ = init(prob, Tsit5(); dt = 0.125, dtmax = 0.5, tstops)
+        step!(integ)
+        @test integ.t == 0.125
+        @test get_proposed_dt(integ) == 0.5
+    end
+end
+
+@testset "PredictiveController records a step shortened onto a tstop at its accepted length" begin
+    prob = ODEProblem((u, p, t) -> one.(u), [0.0], (0.0, 1.0))
+    for alg in (RadauIIA5(), AdaptiveRadau()), tstop in (2.0^-16, 0.125 + 2.0^-16),
+            resume_dt_after_tstop in (false, true)
+        integ = init(
+            prob, alg; dt = 0.125, dtmax = 0.125, tstops = [tstop], resume_dt_after_tstop
+        )
+        while integ.t < tstop
+            step!(integ)
+        end
+        @test integ.t == tstop
+        @test integ.controller_cache.dtacc == integ.t - integ.tprev
+    end
 end

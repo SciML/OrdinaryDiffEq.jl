@@ -134,8 +134,9 @@ resize_cases = (
     (JVODE_Adams(), 1.0e-8, 1.0e-10, 1.0e-6),
     (JVODE_BDF(), 1.0e-8, 1.0e-10, 1.0e-6),
 )
-@testset "Nordsieck state resizing ($alg, u_modified=$modified)" for
-    (alg, reltol, abstol, check_rtol) in resize_cases, modified in (true, false)
+@testset "Nordsieck state resizing ($alg, u_modified=$modified, resume_dt_after_tstop=$resume)" for
+    (alg, reltol, abstol, check_rtol) in resize_cases, modified in (true, false),
+        resume in (false, true)
     grew = Ref(false)
     shrank = Ref(false)
     restart_orders = Int[]
@@ -155,7 +156,8 @@ resize_cases = (
     )
     sol = solve(
         ODEProblem(f_resize!, copy(U0_resize), (0.0, TF_resize)), alg;
-        callback = cb, tstops = [TG_resize, TS_resize], reltol = reltol, abstol = abstol
+        callback = cb, tstops = [TG_resize, TS_resize], reltol = reltol, abstol = abstol,
+        resume_dt_after_tstop = resume
     )
     @test SciMLBase.successful_retcode(sol)
     @test sol(0.58) ≈ exact_resize(0.58) rtol = check_rtol atol = 1.0e-10
