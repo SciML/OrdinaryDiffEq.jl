@@ -15,6 +15,11 @@ integrator as `integrator.opts`.
   `save_noise`, `save_discretes`, and `save_end_user` control output.
 - `callback`, `isoutofdomain`, and `unstable_check` configure step checks.
 - `maxiters`, `verbose`, and the `progress` fields configure reporting.
+  `progress_last_frac` is the `tspan` fraction at which the `progress_tspan` gate
+  last passed, and `progress_last_ns` the `time_ns()` of the last intermediate
+  progress message. `progress_min_interval_ns` is the wall-clock throttle between
+  intermediate progress messages (the `progress_min_interval` keyword, in
+  nanoseconds).
 
 # Rules
 
@@ -55,6 +60,10 @@ mutable struct DEOptions{
     progress_name::String
     progress_message::F6
     progress_id::Symbol
+    progress_tspan::Float64
+    progress_last_frac::Float64
+    progress_last_ns::UInt64
+    progress_min_interval_ns::UInt64
     timeseries_errors::Bool
     dense_errors::Bool
     delta::DType
@@ -117,6 +126,54 @@ function DEOptions{
         nothing, trivial_limiter!, trivial_limiter!, dense, save_on, save_start, save_end,
         false, save_discretes, save_end_user, callback, isoutofdomain, unstable_check,
         verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
+    )
+end
+
+# Constructor for the field list before the `progress_tspan`, `progress_last_frac`,
+# `progress_last_ns` and `progress_min_interval_ns` fields were added, for packages that
+# construct DEOptions positionally. Accepts all 23 type params and 43 positional args.
+function DEOptions{
+        absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType, DType, StageLimiter, StepLimiter,
+    }(
+        maxiters, save_everystep, adaptive, abstol, reltol,
+        failfactor, dtmax, dtmin, internalnorm, internalopnorm,
+        save_idxs, tstops, saveat, d_discontinuities,
+        tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
+        progress, progress_steps, progress_name, progress_message, progress_id,
+        timeseries_errors, dense_errors, delta, stage_limiter!, step_limiter!,
+        dense, save_on, save_start, save_end, save_noise, save_discretes,
+        save_end_user, callback, isoutofdomain, unstable_check,
+        verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
+    ) where {
+        absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType, DType, StageLimiter, StepLimiter,
+    }
+    return DEOptions{
+        absType, relType, QT, tType, F1, F2, F3, F4, F5, F6,
+        F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+        disccache, verbType, DType, StageLimiter, StepLimiter,
+    }(
+        maxiters, save_everystep, adaptive, abstol, reltol,
+        failfactor, dtmax, dtmin, internalnorm, internalopnorm,
+        save_idxs, tstops, saveat, d_discontinuities,
+        tstops_cache, saveat_cache, d_discontinuities_cache, userdata,
+        progress, progress_steps, progress_name, progress_message, progress_id,
+        DEFAULT_PROGRESS_TSPAN, 0.0, UInt64(0), progress_min_interval_ns(),
+        timeseries_errors, dense_errors, delta, stage_limiter!, step_limiter!,
+        dense, save_on, save_start, save_end, save_noise, save_discretes,
+        save_end_user, callback, isoutofdomain, unstable_check,
+        verbose, calck, force_dtmin, advance_to_tstop, stop_at_next_tstop,
+    )
+end
+
+# The default constructor without type parameters, for the same previous field list.
+function DEOptions(args::Vararg{Any, 43})
+    return DEOptions(
+        args[1:23]..., DEFAULT_PROGRESS_TSPAN, 0.0, UInt64(0), progress_min_interval_ns(),
+        args[24:end]...,
     )
 end
 

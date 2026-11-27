@@ -664,12 +664,12 @@ function _loopfooter!(integrator)
         integrator.dtpropose = integrator.dt
         handle_callbacks!(integrator)
     end
-    if integrator.opts.progress && integrator.iter % integrator.opts.progress_steps == 0
-        log_step!(
-            integrator.opts.progress_name, integrator.opts.progress_id,
-            integrator.opts.progress_message, integrator.dt, integrator.u,
-            integrator.p, integrator.t, integrator.sol.prob.tspan
+    # `progress_steps == 1` (the default) skips the integer division on every step
+    if integrator.opts.progress && (
+            integrator.opts.progress_steps == 1 ||
+                integrator.iter % integrator.opts.progress_steps == 0
         )
+        maybe_log_progress!(integrator)
     end
 
     # Take value because if t is dual then maxeig can be dual
@@ -756,13 +756,179 @@ function increment_reject!(stats)
 end
 
 
-function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, tspan)
-    t1, t2 = tspan
+"""
+    DEFAULT_PROGRESS_TSPAN
+
+Default for the `progress_tspan` solve keyword: the minimum fraction of `tspan`
+covered between two intermediate progress messages.
+"""
+const DEFAULT_PROGRESS_TSPAN = 0.01
+
+"""
+    progress_min_interval_ns()
+
+Default minimum wall-clock time, in nanoseconds, between two intermediate progress
+messages (the `progress_min_interval` solve keyword, in seconds, overrides it). This
+keeps fast solves from flooding the logger. The value in use is stored in
+`integrator.opts.progress_min_interval_ns`.
+"""
+progress_min_interval_ns() = UInt64(20_000_000)
+
+"""
+    check_progress_min_interval(progress_min_interval)
+
+Validate the `progress_min_interval` solve keyword (seconds, `>= 0`, `Inf` allowed) and
+return it in nanoseconds as a `UInt64`. `nothing` gives
+[`progress_min_interval_ns()`](@ref progress_min_interval_ns); `Inf` disables
+intermediate progress messages.
+"""
+check_progress_min_interval(::Nothing) = progress_min_interval_ns()
+function check_progress_min_interval(progress_min_interval)
+    x = Float64(progress_min_interval)
+    (x >= 0) || throw(
+        ArgumentError("`progress_min_interval` must be non-negative seconds, got $progress_min_interval")
+    )
+    x * 1.0e9 >= typemax(UInt64) && return typemax(UInt64)
+    return round(UInt64, x * 1.0e9)
+end
+
+# Relative tolerance of the tspan gate, so that steps which divide `progress_tspan`
+# exactly (e.g. fixed `dt` of 1% of tspan) aren't skipped because of rounding in the
+# time type (`Float32` time is off by ~1e-5 of a 1% step).
+const PROGRESS_TSPAN_RTOL = 1.0e-3
+
+# Strip AD wrappers (dual numbers, tracked reals, possibly nested) before any progress
+# arithmetic, so that no AD tape records it.
+function _progress_value(x)
+    y = SciMLBase.value(x)
+    return y === x ? x : _progress_value(y)
+end
+
+# Reduce a fraction to a plain number for the progress state (stripping AD wrappers that
+# `_progress_value` can't reach, e.g. dual numbers inside a unitful quantity). Types that
+# can't be converted to `Float64` give `NaN`, which sends no intermediate updates.
+function _progress_float(x)
+    x isa Union{Float16, Float32, Float64, BigFloat, Integer, Rational} && return Float64(x)
+    y = SciMLBase.value(x)
+    y === x || return _progress_float(y)
+    try
+        return Float64(x)
+    catch
+        return NaN
+    end
+end
+
+"""
+    progress_fraction(t, tspan)
+
+Fraction of `tspan` covered at time `t`, as a `Float64`. The ratio is computed in the
+time type with AD wrappers stripped first (so units cancel, offsets keep their
+precision, and AD doesn't trace it), then reduced to a plain number. Returns `NaN`
+(no intermediate update) when `t` is outside `tspan`, e.g. after `reinit!` onto another
+interval or past `tspan[2]` with `add_tstop!`, and when the fraction is undefined (an
+infinite or empty `tspan`).
+
+Outside `tspan` the fraction isn't computed at all, because the time type may not be
+able to represent it (with `Rational{Int}` time, `t = 10^10` against
+`tspan = (0, 1//10^10)` would overflow). Telling inside from outside takes only
+comparisons, and inside `tspan` the fraction is between 0 and 1.
+"""
+function progress_fraction(t, tspan)
+    t = _progress_value(t)
+    t1, t2 = _progress_value(tspan[1]), _progress_value(tspan[2])
+    (t1 <= t <= t2 || t2 <= t <= t1) || return NaN
+    span = t2 - t1
+    # checked in the time type (a BigFloat span can be outside the Float64 range) and
+    # before dividing (e.g. 0//0)
+    (isfinite(span) && !iszero(span)) || return NaN
+    frac = _progress_float((t - t1) / span)
+    return isfinite(frac) ? frac : NaN
+end
+
+"""
+    check_progress_tspan(progress_tspan)
+
+Validate the `progress_tspan` solve keyword and return it as a `Float64`: the minimum
+fraction of `tspan` between two intermediate progress messages, finite and `>= 0`.
+"""
+function check_progress_tspan(progress_tspan)
+    x = Float64(progress_tspan)
+    (isfinite(x) && x >= 0) ||
+        throw(ArgumentError("`progress_tspan` must be finite and non-negative, got $progress_tspan"))
+    return x
+end
+
+"""
+    reset_progress!(integrator)
+
+Reset the progress state in `integrator.opts` for a new solve from the current
+`integrator.t`, e.g. on `reinit!`. Progress is still measured against `prob.tspan`, so
+only the part of the new interval inside `prob.tspan` sends intermediate updates. When
+`integrator.t` is outside it, the gate restarts from 0.
+"""
+function reset_progress!(integrator)
+    opts = integrator.opts
+    frac = opts.progress ? progress_fraction(integrator.t, integrator.sol.prob.tspan) : 0.0
+    # NaN would block the gate for good; the fraction may still become defined if the
+    # new interval runs into prob.tspan
+    opts.progress_last_frac = isnan(frac) ? 0.0 : frac
+    opts.progress_last_ns = UInt64(0)
+    return integrator
+end
+
+"""
+    maybe_log_progress!(integrator)
+
+Emit an intermediate progress message if one is due. Only accepted steps can emit, and
+two gates apply, cheapest first:
+
+ 1. `t` must be at least `opts.progress_tspan` of `prob.tspan` past the point where
+    the gate last passed (`opts.progress_last_frac`), and strictly past it, so with
+    `progress_tspan = 0` a step that leaves `t` there doesn't emit.
+ 2. At least `opts.progress_min_interval_ns` of wall time (the `progress_min_interval`
+    keyword, by default [`progress_min_interval_ns()`](@ref progress_min_interval_ns))
+    must have passed since the last message (`opts.progress_last_ns`). The clock
+    starts at the first step this function sees (an accepted step whose iteration is
+    a multiple of `progress_steps`; it isn't read at `init`), so a solve that
+    finishes within the interval sends only 0 and "done".
+
+The first gate re-arms whenever it passes, even if the throttle then drops the
+message, so the clock is read only about `1 / progress_tspan` times per solve. A
+dropped update is not sent later: after a fast stretch the bar shows the last sent
+value until the next gate pass.
+
+When `t` is outside `prob.tspan` or the fraction is undefined (an infinite or empty
+`tspan`, or a time type that can't be converted to `Float64`), no intermediate message
+is sent.
+"""
+function maybe_log_progress!(integrator)
+    integrator.accept_step || return nothing
+    opts = integrator.opts
+    if iszero(opts.progress_last_ns)  # first accepted step: start the throttle clock
+        opts.progress_last_ns = time_ns()
+    end
+    frac = progress_fraction(integrator.t, integrator.sol.prob.tspan)
+    d = frac - opts.progress_last_frac  # NaN if the fraction is undefined: never sends
+    if d > 0 && d >= opts.progress_tspan * (1 - PROGRESS_TSPAN_RTOL)
+        opts.progress_last_frac = frac
+        now = time_ns()
+        if now - opts.progress_last_ns >= opts.progress_min_interval_ns
+            log_step!(
+                opts.progress_name, opts.progress_id, opts.progress_message,
+                integrator.dt, integrator.u, integrator.p, integrator.t, frac
+            )
+            opts.progress_last_ns = now
+        end
+    end
+    return nothing
+end
+
+function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, frac)
     return @logmsg(
         LogLevel(-1), progress_name,
         _id = progress_id,
         message = progress_message(dt, u, p, t),
-        progress = (t - t1) / (t2 - t1)
+        progress = frac
     )
 end
 

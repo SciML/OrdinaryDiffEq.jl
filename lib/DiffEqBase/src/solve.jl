@@ -111,11 +111,13 @@ function _erase_problem_callback_types(prob)
     return @set prob.kwargs = merge((; prob.kwargs...), (; callback))
 end
 
-const ORDINARYDIFFEQ_LIMITER_KWARGS = NamedTuple{
-    (:stage_limiter, :step_limiter),
+# Solve keywords handled by OrdinaryDiffEqCore that older SciMLBase versions don't list
+# in `allowedkeywords`.
+const ORDINARYDIFFEQ_EXTRA_KWARGS = NamedTuple{
+    (:stage_limiter, :step_limiter, :progress_tspan, :progress_min_interval),
 }
-checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...) =
-    checkkwargs(kwargshandle; Base.structdiff(values(kwargs), ORDINARYDIFFEQ_LIMITER_KWARGS)...)
+checkkwargs_allowing_extra_kwargs(kwargshandle; kwargs...) =
+    checkkwargs(kwargshandle; Base.structdiff(values(kwargs), ORDINARYDIFFEQ_EXTRA_KWARGS)...)
 
 function init_call(
         _prob, args...; merge_callbacks = true, kwargshandle = nothing,
@@ -128,7 +130,7 @@ function init_call(
     # Merge problem kwargs with passed kwargs
     kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
 
-    checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...)
+    checkkwargs_allowing_extra_kwargs(kwargshandle; kwargs...)
 
     return if _prob isa Union{ODEProblem, DAEProblem} && isnothing(_prob.u0) &&
             !has_callbacks(kwargs)
@@ -201,7 +203,7 @@ function solve_call(
     # Merge problem kwargs with passed kwargs
     kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
 
-    checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...)
+    checkkwargs_allowing_extra_kwargs(kwargshandle; kwargs...)
     if isdefined(_prob, :u0)
         if _prob.u0 isa Array
             if !isconcretetype(RecursiveArrayTools.recursive_unitless_eltype(_prob.u0))
@@ -595,8 +597,15 @@ For information on setting up progress bars in VS Code and other environments, s
 [progress bar documentation](https://docs.sciml.ai/DiffEqDocs/stable/features/progress_bar/#Using-Progress-Bars-with-VS-Code).
 
 * `progress`: Turns on/off the Juno progressbar. Default is false.
-* `progress_steps`: Numbers of steps between updates of the progress bar.
-  Default is 1000.
+* `progress_steps`: Only consider a progress update every `progress_steps` steps.
+  Default is 1.
+* `progress_tspan`: Minimum fraction of `tspan` covered between two progress updates.
+  Default is 0.01. Progress is measured against the problem's `tspan`, also after
+  `reinit!`; no intermediate updates are sent while `t` is outside it.
+* `progress_min_interval`: Minimum wall time in seconds between two progress updates,
+  so fast solves only report the start and the end. Default is 0.02; 0 sends every
+  update the other options allow, `Inf` only the start and the end. With an infinite
+  `tspan`, only the start and the end are reported.
 * `progress_name`: Controls the name of the progressbar. Default is the name
   of the problem type.
 * `progress_message`: Controls the message with the progressbar. Defaults to

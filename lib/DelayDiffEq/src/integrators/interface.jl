@@ -516,6 +516,7 @@ function DiffEqBase.reinit!(
     # reset integration counters
     integrator.iter = 0
     integrator.success_iter = 0
+    OrdinaryDiffEqCore.reset_progress!(integrator)
     integrator.derivative_discontinuity = false
     integrator.is_disco_step = false
     integrator.disco_checkpoint = zero(integrator.t)
