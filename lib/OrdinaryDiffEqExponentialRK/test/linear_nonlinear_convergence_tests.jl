@@ -99,8 +99,13 @@ end
     f2 = (u, p, t) -> inv.(1 .+ u .^ 2) .+ source(t)
     prob = SplitODEProblem(SplitFunction(MatrixOperator(A), f2), exact(0), (0.0, 1.0))
 
-    dts = 1 ./ 2 .^ (2:5)
-    errors = [norm(solve(prob, ExpRK6s16(); dt, adaptive = false).u[end] - exact(1)) for dt in dts]
+    # The endpoint error at dt = 1/32 is near Float64 roundoff and its order is BLAS-kernel sensitive.
+    dts = 1 ./ 2 .^ (1:4)
+    errors = map(dts) do dt
+        sol = solve(prob, ExpRK6s16(); dt, adaptive = false)
+        @test SciMLBase.successful_retcode(sol)
+        norm(sol.u[end] - exact(1))
+    end
     orders = log2.(errors[1:(end - 1)] ./ errors[2:end])
     @test all(orders .> 5.4)
 end
