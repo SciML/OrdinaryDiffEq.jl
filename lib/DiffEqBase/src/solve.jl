@@ -111,11 +111,24 @@ function _erase_problem_callback_types(prob)
     return @set prob.kwargs = merge((; prob.kwargs...), (; callback))
 end
 
-const ORDINARYDIFFEQ_LIMITER_KWARGS = NamedTuple{
-    (:stage_limiter, :step_limiter),
-}
-checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...) =
-    checkkwargs(kwargshandle; Base.structdiff(values(kwargs), ORDINARYDIFFEQ_LIMITER_KWARGS)...)
+"""
+    solver_specific_kwargs(alg) -> Tuple{Vararg{Symbol}}
+
+Return the names of the keyword arguments that `alg` consumes beyond the common solver
+keywords. `solve` and `init` exempt these names from the `kwargshandle` keyword check
+only when `alg` is the selected algorithm. The fallback returns `()`; solver packages
+specialize it for their algorithm types.
+"""
+solver_specific_kwargs(alg) = ()
+
+const ORDINARYDIFFEQ_LIMITER_KWARGS = (:stage_limiter, :step_limiter)
+
+_selected_alg(args, kwargs) = isempty(args) ? get(kwargs, :alg, nothing) : first(args)
+
+function checkkwargs_for_alg(kwargshandle, alg; kwargs...)
+    exempt = NamedTuple{(ORDINARYDIFFEQ_LIMITER_KWARGS..., solver_specific_kwargs(alg)...)}
+    return checkkwargs(kwargshandle; Base.structdiff(values(kwargs), exempt)...)
+end
 
 function init_call(
         _prob, args...; merge_callbacks = true, kwargshandle = nothing,
@@ -128,7 +141,7 @@ function init_call(
     # Merge problem kwargs with passed kwargs
     kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
 
-    checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...)
+    checkkwargs_for_alg(kwargshandle, _selected_alg(args, kwargs); kwargs...)
 
     return if _prob isa Union{ODEProblem, DAEProblem} && isnothing(_prob.u0) &&
             !has_callbacks(kwargs)
@@ -201,7 +214,7 @@ function solve_call(
     # Merge problem kwargs with passed kwargs
     kwargs = merge_problem_kwargs(_prob; merge_callbacks, kwargs...)
 
-    checkkwargs_allowing_limiter_kwargs(kwargshandle; kwargs...)
+    checkkwargs_for_alg(kwargshandle, _selected_alg(args, kwargs); kwargs...)
     if isdefined(_prob, :u0)
         if _prob.u0 isa Array
             if !isconcretetype(RecursiveArrayTools.recursive_unitless_eltype(_prob.u0))
