@@ -27,7 +27,15 @@ import DifferentiationInterface as DI
 import LinearSolve
 import ForwardDiff
 using FiniteDiff: FiniteDiff
-using LinearAlgebra: mul!, I, norm, lu, UniformScaling
+using LinearAlgebra: mul!, I, norm, lu, UniformScaling, Factorization
+
+@inline _rosenbrock_lsolve(W, rhs) = W \ rhs
+@inline function _rosenbrock_lsolve(W::Factorization, rhs::AbstractArray)
+    eltype(rhs) === eltype(W) && return W \ rhs
+    b = similar(rhs, eltype(W))
+    b .= rhs
+    return W \ b
+end
 using ADTypes: ADTypes, AutoFiniteDiff, AutoForwardDiff
 using SciMLBase: @def, LinearAliasSpecifier
 import OrdinaryDiffEqCore, OrdinaryDiffEqDifferentiation

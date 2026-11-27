@@ -273,16 +273,16 @@ end
         return nothing
     end
 
-    k₁ = _restructure_state(uprev, W \ _vec((integrator.fsalfirst + dtγ * dT))) * neginvdtγ
+    k₁ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec((integrator.fsalfirst + dtγ * dT)))) * neginvdtγ
     integrator.stats.nsolve += 1
     tmp = @.. uprev + dto2 * k₁
     f₁ = f(tmp, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
-        k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
+        k₂ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(f₁ - k₁)))
     else
-        k₂ = _restructure_state(uprev, W \ _vec(f₁ - mass_matrix * k₁))
+        k₂ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(f₁ - mass_matrix * k₁)))
     end
     k₂ = @.. k₂ * neginvdtγ + k₁
     integrator.stats.nsolve += 1
@@ -304,7 +304,7 @@ end
                     c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
             )
         end
-        k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
+        k₃ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(linsolve_tmp))) * neginvdtγ
         integrator.stats.nsolve += 1
 
         if u isa Number
@@ -357,17 +357,17 @@ end
         return nothing
     end
 
-    k₁ = _restructure_state(uprev, W \ -_vec((integrator.fsalfirst + dtγ * dT))) / dtγ
+    k₁ = _restructure_state(uprev, _rosenbrock_lsolve(W, -_vec((integrator.fsalfirst + dtγ * dT)))) / dtγ
     integrator.stats.nsolve += 1
     tmp = @.. uprev + dto2 * k₁
     f₁ = f(tmp, p, t + dto2)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
 
     if mass_matrix === I
-        k₂ = _restructure_state(uprev, W \ _vec(f₁ - k₁))
+        k₂ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(f₁ - k₁)))
     else
         linsolve_tmp = f₁ - mass_matrix * k₁
-        k₂ = _restructure_state(uprev, W \ _vec(linsolve_tmp))
+        k₂ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(linsolve_tmp)))
     end
     k₂ = @.. k₂ * neginvdtγ + k₁
 
@@ -388,7 +388,7 @@ end
                 c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
         )
     end
-    k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
+    k₃ = _restructure_state(uprev, _rosenbrock_lsolve(W, _vec(linsolve_tmp))) * neginvdtγ
     integrator.stats.nsolve += 1
     u = @.. uprev + dto6 * (k₁ + 4k₂ + k₃)
 
@@ -453,7 +453,7 @@ end
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     fsalfirst_cache = du  # save for interpolation (du gets overwritten in stage loop)
     linsolve_tmp = @.. du + (dt * d[1]) * dT
-    k1 = _restructure_state(uprev, W \ -_vec(linsolve_tmp))
+    k1 = _restructure_state(uprev, _rosenbrock_lsolve(W, -_vec(linsolve_tmp)))
     # constant number for type stability make sure this is greater than num_stages
     ks = ntuple(Returns(k1), Val(20))
 
@@ -488,7 +488,7 @@ end
         end
         linsolve_tmp = @.. du + (dt * d[stage]) * dT + linsolve_tmp
 
-        ks = Base.setindex(ks, _restructure_state(uprev, W \ -_vec(linsolve_tmp)), stage)
+        ks = Base.setindex(ks, _restructure_state(uprev, _rosenbrock_lsolve(W, -_vec(linsolve_tmp))), stage)
         integrator.stats.nsolve += 1
     end
     # Solution update using explicit b weights
