@@ -45,22 +45,22 @@ function DiffEqBase.savevalues!(
     )::Tuple{Bool, Bool}
     ode_integrator = integrator.integrator
 
-    # update time of ODE integrator (can be slightly modified (< 10ϵ) because of time stops)
+    # Align the history clock after the step has been snapped to a tstop.
     # OrdinaryDiffEqCore.get_EEst(integrator) has unitless type of integrator.t
     if OrdinaryDiffEqCore.get_EEst(integrator) isa AbstractFloat
         if ode_integrator.t != integrator.t
-            # Tolerance must match the `tstop_tol = 100 * eps(...)` that
-            # modify_dt_for_tstops! uses when deciding to set
-            # next_step_tstop / tstop_target: when `dt + tstop_tol` already
-            # reaches the next tstop, dt is left at `min(original_dt,
-            # distance_to_tstop)` but the step is then snapped to the tstop
-            # in fixed_t_for_tstop_error!. That can leave `ode_integrator.t`
-            # = `tprev + dt` behind by up to `tstop_tol` from
-            # `integrator.t = tstop_target`. Match that bound on the largest
-            # of the two times so the check tracks the snap-back budget
-            # rather than just the integer-1-ULP gap of the previous
-            # (no-snap) regime.
-            tol = 100 * eps(max(abs(integrator.t), abs(ode_integrator.t)))
+            scale = max(abs(integrator.t), abs(ode_integrator.t), abs(ode_integrator.tprev))
+            # Match the nominal snap budget in modify_dt_for_tstops!.
+            tol = 100 * eps(scale)
+            if integrator.t isa AbstractFloat && isfinite(scale)
+                # Allow for the four rounded sums and differences in the tstop comparison,
+                # history clock, and discrepancy check.
+                roundoff_scale = max(
+                    scale, abs(integrator.t - ode_integrator.tprev), abs(ode_integrator.dt) + tol
+                )
+                isinf(roundoff_scale) && (roundoff_scale = prevfloat(roundoff_scale))
+                tol += 4 * eps(roundoff_scale)
+            end
             abs(integrator.t - ode_integrator.t) <= tol ||
                 error("unexpected time discrepancy detected")
 
@@ -169,25 +169,37 @@ function OrdinaryDiffEqCore.perform_step!(
     )
     algs = integrator.alg.algs
     OrdinaryDiffEqCore.init_ith_default_cache(cache, algs, cache.current)
+    history_cache = integrator.history.integrator.cache
     return if cache.current == 1
-        integrator.history.integrator.cache.cache1 = cache.cache1
+        share_history_cache!(history_cache, Val(:cache1), cache.cache1, algs, 1)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache1), repeat_step)
     elseif cache.current == 2
-        integrator.history.integrator.cache.cache2 = cache.cache2
+        share_history_cache!(history_cache, Val(:cache2), cache.cache2, algs, 2)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache2), repeat_step)
     elseif cache.current == 3
-        integrator.history.integrator.cache.cache3 = cache.cache3
+        share_history_cache!(history_cache, Val(:cache3), cache.cache3, algs, 3)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache3), repeat_step)
     elseif cache.current == 4
-        integrator.history.integrator.cache.cache4 = cache.cache4
+        share_history_cache!(history_cache, Val(:cache4), cache.cache4, algs, 4)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache4), repeat_step)
     elseif cache.current == 5
-        integrator.history.integrator.cache.cache5 = cache.cache5
+        share_history_cache!(history_cache, Val(:cache5), cache.cache5, algs, 5)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache5), repeat_step)
     elseif cache.current == 6
-        integrator.history.integrator.cache.cache6 = cache.cache6
+        share_history_cache!(history_cache, Val(:cache6), cache.cache6, algs, 6)
         OrdinaryDiffEqCore.perform_step!(integrator, @inbounds(cache.cache6), repeat_step)
     end
+end
+
+# The history integrator's sub-caches wrap `prob.h` instead of the history function, so a
+# sub-cache that stores `f` has a different type and the history needs its own instance.
+function share_history_cache!(history_cache, ::Val{name}, subcache, algs, i) where {name}
+    if fieldtype(typeof(history_cache), name) === typeof(subcache)
+        setfield!(history_cache, name, subcache)
+    else
+        OrdinaryDiffEqCore.init_ith_default_cache(history_cache, algs, i)
+    end
+    return nothing
 end
 
 # initialize the integrator

@@ -1,5 +1,6 @@
 using DelayDiffEq, DDEProblemLibrary
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqTsit5
 using SciMLBase: ReturnCode
 using Test
 
@@ -62,5 +63,56 @@ end
 
         @test sol.retcode == ReturnCode.Success
         @test sol.t ≈ sol_unconstrained.t && sol.u ≈ sol_unconstrained.u
+    end
+end
+
+# Fixed steps longer than the lag
+@testset "fixed steps" begin
+    sol = solve(prob_dde_constant_1delay_scalar, alg; adaptive = false, dt = 1.5)
+
+    @test maximum(diff(sol.t)) ≈ 1
+    @test sol.stats.nfpiter == 0
+
+    # without `dt`, fixed steps would run from one tstop to the next
+    sol = solve(prob_dde_constant_1delay_scalar, alg; adaptive = false)
+
+    @test maximum(diff(sol.t)) ≈ 1
+    @test sol.stats.nfpiter == 0
+
+    # a user `dtmax` does not limit fixed steps
+    sol = solve(prob_dde_constant_1delay_scalar, alg; adaptive = false, dt = 0.5, dtmax = 0.2)
+
+    @test maximum(diff(sol.t)) ≈ 0.5
+end
+
+# Time spans that end at zero
+@testset "tspan ending at zero" begin
+    @testset "tdir = $tdir" for tdir in (1, -1)
+        prob = DDEProblem(
+            (u, h, p, t) -> -h(p, t - tdir * 0.1), 1.0, (p, t) -> 1.0, (-tdir * 1.0, 0.0);
+            constant_lags = [tdir * 0.1]
+        )
+        sol = solve(prob, MethodOfSteps(DP5(); constrained = true))
+
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == 0
+    end
+end
+
+@testset "rounded tstop distance" begin
+    @testset "tdir = $tdir" for tdir in (1, -1)
+        e = eps(1.0)
+        endpoint = tdir * e / 4
+        prob = DDEProblem(
+            (u, h, p, t) -> tdir * h(p, t - 2 * tdir), 1.0, (p, t) -> 1.0,
+            (-tdir * 1.0, endpoint); constant_lags = [2 * tdir]
+        )
+        sol = solve(
+            prob, MethodOfSteps(Tsit5(); constrained = true);
+            adaptive = false, dt = tdir * (1 - 100 * e)
+        )
+        @test sol.retcode == ReturnCode.Success
+        @test sol.t[end] == endpoint
+        @test maximum(abs(sol(t) - (2 + tdir * t)) for t in range(-tdir * 1.0, endpoint; length = 5)) <= 104 * e
     end
 end
