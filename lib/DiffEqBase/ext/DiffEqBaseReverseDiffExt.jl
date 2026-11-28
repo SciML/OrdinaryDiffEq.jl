@@ -2,16 +2,16 @@ module DiffEqBaseReverseDiffExt
 
 using DiffEqBase
 import DiffEqBase: value
-import ReverseDiff
+import ReverseDiff, ForwardDiff
 import SciMLBase
 import DiffEqBase.ArrayInterface
 
-function fixed_event_time(t::ReverseDiff.TrackedReal, transform)
-    return ReverseDiff.track(fixed_event_time, t, transform)
+function fixed_event_time(t::ReverseDiff.TrackedReal)
+    return ReverseDiff.track(fixed_event_time, t)
 end
 
-ReverseDiff.@grad function fixed_event_time(t, transform)
-    return transform(ReverseDiff.value(t)), dt -> (zero(dt), nothing)
+ReverseDiff.@grad function fixed_event_time(t)
+    return ReverseDiff.value(t), dt -> (zero(dt),)
 end
 
 function implicit_event_time(t, residual::ReverseDiff.TrackedReal, slope)
@@ -19,85 +19,63 @@ function implicit_event_time(t, residual::ReverseDiff.TrackedReal, slope)
 end
 
 ReverseDiff.@grad function implicit_event_time(t, residual, slope)
-    return ReverseDiff.value(t), dt -> (
-            zero(dt), iszero(dt) ? zero(dt) : -dt / ReverseDiff.value(slope), zero(dt),
-        )
+    function pullback(dt)
+        s = ReverseDiff.value(slope)
+        if !isfinite(s) || iszero(s)
+            return dt, zero(dt), zero(dt)
+        end
+        return zero(dt), -dt / s, zero(dt)
+    end
+    return ReverseDiff.value(t), pullback
 end
 
-function sample_event_slope(condition, t, residual, h, bounds, centered)
-    lo, hi = bounds
-    if centered
-        left, right = clamp(t - h, lo, hi), clamp(t + h, lo, hi)
-        left < right || return nothing
-        return (condition(right) - condition(left)) / (right - left)
-    end
+struct EventTimeDerivative end
+const EventTimeTag = ForwardDiff.Tag{EventTimeDerivative}
 
-    inner, outer = clamp(t + h, lo, hi), clamp(t + 2h, lo, hi)
-    near, far = inner - t, outer - t
-    iszero(far) && return nothing
-    secant = (condition(outer) - residual) / far
-    if iszero(near) || near == far
-        return secant
-    end
-    inner_secant = (condition(inner) - residual) / near
-    return inner_secant + near * (inner_secant - secant) / (far - near)
+function dual_callback_state(integrator, callback, t::ForwardDiff.Dual{Tag}) where {Tag}
+    time = ForwardDiff.value(t)
+    kwargs = callback.idxs === nothing ? (;) : (; idxs = callback.idxs)
+    state = integrator(time, Val{0}; kwargs...)
+    tangent = integrator(time, Val{1}; kwargs...)
+    primal_with_tangent(u, du) = ForwardDiff.Dual{Tag}(u, du)
+    return map(primal_with_tangent, state, tangent)
 end
 
-function converged_event_slope(condition, t, residual, bounds, ::Type{V}) where {V}
-    lo, hi = bounds
-    left, right = t - lo, hi - t
-    h = cbrt(eps(V)) * max(one(V), abs(ReverseDiff.value(t)))
-    centered = min(left, right) >= h
-    if !centered
-        h = if left < right
-            min(h, right / 2)
-        else
-            -min(h, left / 2)
-        end
-    end
+function DiffEqBase.get_condition(
+        integrator::SciMLBase.DEIntegrator, callback::SciMLBase.ContinuousCallback,
+        t::ForwardDiff.Dual{<:EventTimeTag}
+    )
+    state = dual_callback_state(integrator, callback, t)
+    integrator.sol.stats.ncondition += 1
+    return callback.condition(state, t, integrator)
+end
 
-    slope = sample_event_slope(condition, t, residual, h, bounds, centered)
-    slope === nothing && return nothing
-    estimates = [slope]
-    reltol = sqrt(eps(V))
-    for _ in 1:precision(V)
-        h /= 2
-        estimate = sample_event_slope(condition, t, residual, h, bounds, centered)
-        estimate === nothing && return nothing
-        for (level, previous) in pairs(estimates)
-            v = ReverseDiff.value(estimate)
-            agreement = level == 1 ? reltol : 4reltol
-            if isfinite(v) && !iszero(v) &&
-                    abs(v - ReverseDiff.value(previous)) <= agreement * abs(v)
-                return estimate
-            end
-
-            # Richardson extrapolation removes the leading stencil error.
-            estimates[level] = estimate
-            order = centered ? 2level : level + 1
-            estimate += (estimate - previous) / (2^order - 1)
-        end
-        length(estimates) < 3 && push!(estimates, estimate)
-    end
-    return nothing
+function DiffEqBase.get_condition(
+        integrator::SciMLBase.DEIntegrator, callback::SciMLBase.VectorContinuousCallback,
+        t::ForwardDiff.Dual{<:EventTimeTag}
+    )
+    state = dual_callback_state(integrator, callback, t)
+    result = similar(integrator.callback_cache.tmp_condition, typeof(t), callback.len)
+    integrator.sol.stats.ncondition += 1
+    callback.condition(result, state, t, integrator)
+    return result
 end
 
 function DiffEqBase.find_root(
         f::F, bracket::Tuple{T, T}, rootfind::SciMLBase.RootfindOpt; kwargs...
     ) where {F, V <: AbstractFloat, T <: ReverseDiff.TrackedReal{V}}
     root = invoke(DiffEqBase.find_root, Tuple{F, Any, SciMLBase.RootfindOpt}, f, bracket, rootfind; kwargs...)
-    lo, hi = minmax(bracket...)
-    inner_lo, inner_hi = fixed_event_time(lo, nextfloat), fixed_event_time(hi, prevfloat)
-    inner_lo < inner_hi || return root
-
-    # Keep the root live for replay and hold the interpolation time fixed in the pullback.
-    sample = fixed_event_time(clamp(root, inner_lo, inner_hi), identity)
+    # The residual sees a fixed time in ReverseDiff and a unit time tangent in ForwardDiff.
+    sample = fixed_event_time(root)
+    tag = typeof(ForwardDiff.Tag(EventTimeDerivative(), typeof(sample)))
+    time = ForwardDiff.Dual{tag}(sample, one(V))
     p = SciMLBase.NullParameters()
-    condition(t) = f(t, p)
-    residual = condition(sample)
+    applicable(f, time, p) || return root
+    result = f(time, p)
+    result isa ForwardDiff.Dual{tag} || return root
+    residual = ForwardDiff.value(result)
     residual isa ReverseDiff.TrackedReal || return root
-    slope = converged_event_slope(condition, sample, residual, (inner_lo, inner_hi), V)
-    slope === nothing && return root
+    slope = ForwardDiff.partials(result, 1)
     return implicit_event_time(root, residual, slope)
 end
 

@@ -58,6 +58,48 @@ end
     end
 end
 
+@testset "Live event derivative decisions" begin
+    function squared_crossing(condition, x, halfwidth, side, reversed)
+        q = x[1]
+        w = halfwidth(x)
+        lo, hi = q - w, q + w
+        f(t, _) = condition(t - q, x)
+        bracket = reversed ? (hi, lo) : (lo, hi)
+        return DiffEqBase.find_root(f, bracket, side)^2
+    end
+
+    cubic(s, x) = s * (1 + x[2] * s^2)
+    narrow(s, x) = s * (1 - log1p(-(s / (2x[2]))^2))
+
+    for (f, halfwidth, recording, replay, expected) in (
+                (cubic, x -> 0.25, [0.5, 1.0], [0.625, 1.0e14], [1.25, 0.0]),
+                (narrow, last, [0.5, 0.25], [0.5, 2.0^-21], [1.0, 0.0]),
+            ),
+            side in (SciMLBase.LeftRootFind, SciMLBase.RightRootFind), reversed in (false, true)
+        g(x) = squared_crossing(f, x, halfwidth, side, reversed)
+        @test g(replay) == replay[1]^2
+        @test ReverseDiff.gradient(g, replay) ≈ expected atol = 1.0e-6
+        tape = ReverseDiff.GradientTape(g, recording)
+        for trace in (tape, ReverseDiff.compile(tape))
+            @test ReverseDiff.gradient!(trace, replay) ≈ expected atol = 1.0e-6
+        end
+    end
+end
+
+@testset "ReverseDiff roots in adjacent brackets" begin
+    q = 0.5
+    for gap in (1, 2), edge in (prevfloat(q, gap), nextfloat(q, gap)),
+            bracket in ((q, edge), (edge, q)),
+            side in (SciMLBase.LeftRootFind, SciMLBase.RightRootFind)
+        x = [q, bracket...]
+        function root(x)
+            return DiffEqBase.find_root((t, _) -> t - x[1], (x[2], x[3]), side)
+        end
+        @test root(x) == q
+        @test ReverseDiff.gradient(root, x) ≈ [1.0, 0.0, 0.0] atol = 1.0e-6
+    end
+end
+
 struct GenericEventArray{T} <: AbstractVector{T}
     data::Vector{T}
 end
