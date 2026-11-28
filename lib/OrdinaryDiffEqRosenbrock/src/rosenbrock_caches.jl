@@ -219,6 +219,11 @@ end
     jac_reuse::JRType
 end
 
+# LinearSolve types its LU cache for the factorization `lu(W)` returns, while an aliased `W`
+# is factorized in place and keeps `eltype(W)`; aliasing is only sound when the two agree.
+aliasable_W(W) = true
+aliasable_W(W::Matrix{T}) where {T} = eltype(lu(similar(W, 0, 0); check = false)) === T
+
 function alg_cache(
         alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -253,7 +258,7 @@ function alg_cache(
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
         linprob, wrapprecs(alg.linsolve, W, weight);
-        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        alias = LinearAliasSpecifier(alias_A = aliasable_W(W), alias_b = true),
         abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
@@ -323,7 +328,7 @@ function alg_cache(
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
         linprob, wrapprecs(alg.linsolve, W, weight);
-        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        alias = LinearAliasSpecifier(alias_A = aliasable_W(W), alias_b = true),
         abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
@@ -575,7 +580,7 @@ function alg_cache(
 
     linsolve = init(
         linprob, wrapprecs(alg.linsolve, W, weight);
-        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        alias = LinearAliasSpecifier(alias_A = aliasable_W(W), alias_b = true),
         abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
@@ -717,7 +722,7 @@ function alg_cache(
     linprob = LinearProblem(W, _vec(linsolve_tmp), (nothing, u, p, t); u0 = _vec(tmp))
     linsolve = init(
         linprob, wrapprecs(alg.linsolve, W, weight);
-        alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
+        alias = LinearAliasSpecifier(alias_A = aliasable_W(W), alias_b = true),
         abstol = reltol, reltol,
         assumptions = LinearSolve.OperatorAssumptions(true),
         verbose = verbose.linear_verbosity
