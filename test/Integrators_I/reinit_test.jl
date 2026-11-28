@@ -154,6 +154,30 @@ end
     end
 end
 
+@testset "reinit endpoint save exclusion" begin
+    for direction in (1.0, -1.0), save_end in (false, true),
+            u0 in (0.0, [0.0, 0.0]), internal_stops in (false, true)
+        problem = ODEProblem((u, p, t) -> one.(u), u0, (0.0, direction))
+        tstops = internal_stops ? [0.125, 0.625] .* direction : Float64[]
+        integrator = init(problem, Tsit5(); saveat = 3 / 8, save_end, tstops)
+        solve!(integrator)
+        for endpoint in (2.0, 1.5, 0.75, 1.0)
+            reinit!(integrator; tf = endpoint * direction)
+            solve!(integrator)
+            fresh_problem = remake(problem; tspan = (0.0, endpoint * direction))
+            fresh = solve(fresh_problem, Tsit5(); saveat = 3 / 8, save_end, tstops)
+            @test integrator.t == endpoint * direction
+            @test integrator.sol.t == fresh.t
+            @test integrator.sol.u ≈ fresh.u
+            if save_end === false
+                @test endpoint * direction ∉ integrator.sol.t
+            else
+                @test integrator.sol.t[end] == endpoint * direction
+            end
+        end
+    end
+end
+
 @testset "reinit with new d_discontinuities" begin
     prob = prob_ode_2Dlinear
     integrator = init(prob, Tsit5(); dt = 1 // 2^(4), d_discontinuities = [1 // 2])

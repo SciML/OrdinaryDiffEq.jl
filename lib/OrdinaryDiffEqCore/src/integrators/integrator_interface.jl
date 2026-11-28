@@ -622,6 +622,7 @@ function SciMLBase.reinit!(
 
     tType = typeof(integrator.t)
     tspan = (tType(t0), tType(tf))
+    integrator.tspan_end = tspan[2]
     reinit_tstops!(
         tType, integrator.opts.tstops, tstops, d_discontinuities, tspan;
         p = parameter_values(integrator)
