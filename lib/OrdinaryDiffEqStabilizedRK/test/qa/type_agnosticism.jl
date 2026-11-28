@@ -10,7 +10,7 @@ using Test
 @testset "Float32 type agnosticism" begin
     all_solvers = [
         ROCK2(), ROCK4(), RKC(), RKMC2(), ESERK4(), ESERK5(), SERK2(),
-        TSRKC2(), TSRKC3(), RKL1(), RKL2(), RKG1(), RKG2(),
+        TSRKC2(), TSRKC3(), RKL1(), RKL2(), RKG1(), RKG2(), DUMKA3(),
     ]
 
     for solver in all_solvers
