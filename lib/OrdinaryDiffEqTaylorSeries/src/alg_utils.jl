@@ -86,28 +86,53 @@ end
     return set_taylor_order(taylor, buffer_order)
 end
 
+jet_indices(u::AbstractArray) = Base.OneTo(length(u))
+jet_indices(u::AbstractVector) = firstindex(u):lastindex(u)
+
+jet_input(u::AbstractArray) = u
+function jet_input(u::AbstractVector)
+    firstindex(u) == 1 && return u
+    return view(u, jet_indices(u))
+end
+
 function build_jet(
-        f::ODEFunction{iip}, p, order, length = nothing, buffer_order = order
+        f::ODEFunction{iip}, p, order, state = nothing, buffer_order = order
     ) where {iip}
     # Unwrap FunctionWrappers since TaylorDiff/Symbolics types don't match wrapper signatures
     f = unwrapped_f(f)
-    return build_jet(f, Val{iip}(), p, order, length, buffer_order)
+    return build_jet(f, Val{iip}(), p, order, state, buffer_order)
 end
 
-# cache format: Dict{typeof(f), Vector{Tuple{order, p, buffer_order, jet}}}
+# Cache entries are keyed by order, parameters, buffer order, state type, and axes.
 function build_jet(
-        f, ::Val{iip}, p, order::Val{P}, length = nothing,
+        f, ::Val{iip}, p, order::Val{P}, state = nothing,
         buffer_order::Val{Q} = order
     ) where {P, Q, iip}
+    state_type = typeof(state)
+    state_axes = isnothing(state) ? () : axes(state)
     if haskey(JET_CACHE, f)
         list = JET_CACHE[f]
-        index = findfirst(x -> x[1] == order && x[2] == p && x[3] == buffer_order, list)
-        index !== nothing && return list[index][4]
+        index = findfirst(
+            x -> x[1] == order && x[2] == p && x[3] == buffer_order &&
+                x[4] == state_type && x[5] == state_axes, list
+        )
+        index !== nothing && return list[index][6]
     end
     @variables t0::Real
-    u0 = isnothing(length) ? Symbolics.variable(:u0) : Symbolics.variables(:u0, 1:length)
+    if isnothing(state)
+        u0 = Symbolics.variable(:u0)
+    else
+        # Sparse mapping can combine implicit zeros into one symbolic value.
+        prototype = state isa AbstractSparseArray ? CartesianIndices(size(state)) : state
+        index = Ref(0)
+        u0 = map(prototype) do _
+            index[] += 1
+            Symbolics.variable(Symbol("u0_$(index[])"))
+        end
+    end
     if iip
-        @assert length isa Integer
+        @assert state isa AbstractArray
+        u0 = copyto!(similar(u0), u0)
         f0 = similar(u0)
         f(f0, u0, p, t0)
     else
@@ -139,20 +164,25 @@ function build_jet(
             TaylorScalar(Tuple(scalar_jet_coeffs[1](u0_val, t0_val))), buffer_order
         )
     elseif u isa AbstractArray && eltype(u) <: TaylorScalar
-        n = Base.length(u)
-        coeffs = [TaylorDiff.flatten(u[i])[j] for i in 1:n for j in 1:(P + 1)]
+        indices = jet_indices(state)
+        coeffs = [TaylorDiff.flatten(u[i])[j] for i in indices for j in 1:(P + 1)]
+        symbols = [u0[i] for i in indices]
         array_jet_coeffs = build_function(
-            coeffs, u0, t0; expression = Val(false), cse = true
+            coeffs, symbols, t0; expression = Val(false), cse = true, similarto = Array
         )
+        slots = Dict(symbol => i for (i, symbol) in enumerate(symbols))
+        output_slots = map(entry -> slots[entry.value], u)
         jet = (
             (u0_val, t0_val) -> begin
-                coeffs_out = array_jet_coeffs[1](u0_val, t0_val)
-                return [taylor_from_coefficients(coeffs_out, i, order, buffer_order) for i in 1:n]
+                coeffs_out = array_jet_coeffs[1](jet_input(u0_val), t0_val)
+                return map(output_slots) do i
+                    taylor_from_coefficients(coeffs_out, i, order, buffer_order)
+                end
             end,
             (out, coeffs_out, u0_val, t0_val) -> begin
-                array_jet_coeffs[2](coeffs_out, u0_val, t0_val)
-                for i in 1:n
-                    out[i] = taylor_from_coefficients(coeffs_out, i, order, buffer_order)
+                array_jet_coeffs[2](coeffs_out, jet_input(u0_val), t0_val)
+                for (i, index) in enumerate(indices)
+                    out[index] = taylor_from_coefficients(coeffs_out, i, order, buffer_order)
                 end
                 return out
             end,
@@ -165,7 +195,7 @@ function build_jet(
     if !haskey(JET_CACHE, f)
         JET_CACHE[f] = []
     end
-    push!(JET_CACHE[f], (order, p, buffer_order, jet))
+    push!(JET_CACHE[f], (order, p, buffer_order, state_type, state_axes, jet))
     return jet
 end
 
