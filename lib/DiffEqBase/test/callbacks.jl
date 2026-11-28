@@ -1,5 +1,20 @@
 using DiffEqBase, Test
 
+import ReverseDiff, SciMLBase
+
+@testset "ReverseDiff callback root derivative" begin
+    for (left, right) in ((0.0, 1.0), (1.0, 0.0)),
+            side in (SciMLBase.LeftRootFind, SciMLBase.RightRootFind)
+        x = [0.5, left, right]
+        function event_time(p)
+            condition(t, _) = t - p[1]
+            return DiffEqBase.find_root(condition, (p[2], p[3]), side)
+        end
+        @test event_time(x) == x[1]
+        @test ReverseDiff.gradient(event_time, x) ≈ [1.0, 0.0, 0.0] atol = 1.0e-6
+    end
+end
+
 struct GenericEventArray{T} <: AbstractVector{T}
     data::Vector{T}
 end

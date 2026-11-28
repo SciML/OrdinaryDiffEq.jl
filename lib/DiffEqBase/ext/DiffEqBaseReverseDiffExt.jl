@@ -3,7 +3,55 @@ module DiffEqBaseReverseDiffExt
 using DiffEqBase
 import DiffEqBase: value
 import ReverseDiff
+import SciMLBase
 import DiffEqBase.ArrayInterface
+
+function implicit_event_time(t, residual::ReverseDiff.TrackedReal, slope)
+    return ReverseDiff.track(implicit_event_time, t, residual, slope)
+end
+
+ReverseDiff.@grad function implicit_event_time(t, residual, slope)
+    return t, dt -> (nothing, iszero(dt) ? zero(dt) : -dt / slope, nothing)
+end
+
+function event_condition_slope(condition, root, residual, bounds)
+    lo, hi = minmax(bounds...)
+    step = cbrt(eps(typeof(root))) * max(one(root), abs(root))
+    left, right = root - step, root + step
+    if lo <= left && right <= hi
+        return (condition(right) - condition(left)) / (right - left)
+    end
+
+    # Keep a second-order stencil inside the bracket when the root is near an endpoint.
+    edge = root - lo < hi - root ? hi : lo
+    h = copysign(min(step, abs(edge - root) / 2), edge - root)
+    inner = root + h
+    outer = clamp(root + 2h, lo, hi)
+    near, far = inner - root, outer - root
+    secant = (condition(outer) - residual) / far
+    if iszero(near) || near == far
+        return secant
+    end
+    inner_secant = (condition(inner) - residual) / near
+    return inner_secant + near * (inner_secant - secant) / (far - near)
+end
+
+function DiffEqBase.find_root(
+        f::F, bracket::Tuple{T, T}, rootfind::SciMLBase.RootfindOpt; kwargs...
+    ) where {F, T <: ReverseDiff.TrackedReal}
+    bounds = map(ReverseDiff.value, bracket)
+    primal_condition(t, p) = ReverseDiff.value(f(t, p))
+    root = DiffEqBase.find_root(primal_condition, bounds, rootfind; kwargs...)
+    p = SciMLBase.NullParameters()
+    residual = f(root, p)
+    residual isa ReverseDiff.TrackedReal || return root
+
+    # At a regular crossing, the event time derivative is -∂ₚf/∂ₜf.
+    slope = event_condition_slope(
+        t -> primal_condition(t, p), root, ReverseDiff.value(residual), bounds
+    )
+    return implicit_event_time(root, residual, slope)
+end
 
 # Support adaptive with non-tracked time
 @inline function DiffEqBase.ODE_DEFAULT_NORM(u::ReverseDiff.TrackedArray, t)
