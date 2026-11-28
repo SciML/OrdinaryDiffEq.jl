@@ -259,8 +259,14 @@ function alg_cache(
         verbose = verbose.linear_verbosity
     )
 
-    algebraic_vars = f.mass_matrix === I ? nothing :
-        find_algebraic_vars_eqs(f.mass_matrix)[1]
+    mass_matrix = f.mass_matrix
+    algebraic_vars = if mass_matrix isa UniformScaling
+        # A nonzero UniformScaling has no algebraic variables; zero scaling
+        # makes every equation algebraic. Keep the mask type stable for inference.
+        fill(iszero(mass_matrix.λ), length(u))
+    else
+        find_algebraic_vars_eqs(mass_matrix)[1]
+    end
 
     return Rosenbrock23Cache(
         u, uprev, k₁, k₂, k₃, du1, du2, f₁,

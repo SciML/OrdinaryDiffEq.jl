@@ -101,12 +101,12 @@ end
 
         if mass_matrix === I
             @.. broadcast = false linsolve_tmp = fsallast - c₃₂ * (k₂ - f₁) -
-                2(k₁ - fsalfirst) + dt * dT
+                2(k₁ - fsalfirst) + dtγ * dT
         else
             @.. broadcast = false du2 = c₃₂ * k₂ + 2k₁
             mul!(_vec(du1), mass_matrix, _vec(du2))
             @.. broadcast = false linsolve_tmp = fsallast - du1 + c₃₂ * f₁ + 2fsalfirst +
-                dt * dT
+                dtγ * dT
         end
 
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
@@ -116,7 +116,9 @@ end
 
         integrator.stats.nsolve += 1
 
-        if mass_matrix === I
+        has_algebraic_vars = cache.algebraic_vars !== nothing && any(cache.algebraic_vars)
+        if !has_algebraic_vars
+            # Avoid the mask path when every component is differential.
             @.. broadcast = false tmp = dto6 * (k₁ - 2 * k₂ + k₃)
         else
             veck₁ = _vec(k₁)
@@ -134,9 +136,8 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
-        # Guard on the field rather than `mass_matrix !== I` so inference can drop
-        # this branch (and the `reshape`) when `algebraic_vars` is statically `nothing`.
-        if cache.algebraic_vars !== nothing
+        # Only add the algebraic residual when at least one component is algebraic.
+        if has_algebraic_vars
             algvar = reshape(cache.algebraic_vars, size(u))
             # Divide in-place so vector abstol does not allocate a temporary reciprocal.
             @.. atmp = ifelse(algvar, fsallast, false) / integrator.opts.abstol
@@ -265,6 +266,7 @@ end
     end
 
     mass_matrix = integrator.f.mass_matrix
+    zero_uniform_scaling = mass_matrix isa UniformScaling && iszero(mass_matrix.λ)
 
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
@@ -295,13 +297,13 @@ end
         if mass_matrix === I
             linsolve_tmp = @.. (
                 integrator.fsallast - c₃₂ * (k₂ - f₁) -
-                    2 * (k₁ - integrator.fsalfirst) + dt * dT
+                    2 * (k₁ - integrator.fsalfirst) + dtγ * dT
             )
         else
             linsolve_tmp = mass_matrix * (@.. c₃₂ * k₂ + 2 * k₁)
             linsolve_tmp = @.. (
                 integrator.fsallast - linsolve_tmp +
-                    c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
+                    c₃₂ * f₁ + 2 * integrator.fsalfirst + dtγ * dT
             )
         end
         k₃ = _restructure_state(uprev, W \ _vec(linsolve_tmp)) * neginvdtγ
@@ -309,8 +311,21 @@ end
 
         if u isa Number
             utilde = dto6 * f.mass_matrix[1, 1] * (k₁ - 2 * k₂ + k₃)
+        elseif zero_uniform_scaling
+            # A zero UniformScaling has no differential variables, even though
+            # Core represents UniformScaling mass matrices without a mask.
+            utilde = zero.(u)
+        elseif integrator.differential_vars === nothing
+            # Nonzero UniformScaling and identity-mass ODEs have no algebraic mask.
+            utilde = @.. dto6 * (k₁ - 2 * k₂ + k₃)
         else
-            utilde = f.mass_matrix * (@.. dto6 * (k₁ - 2 * k₂ + k₃))
+            # Match the in-place cache: the error estimate is a state-space
+            # defect, not a mass-matrix-scaled residual. Exclude algebraic
+            # components before applying the state tolerances.
+            zero_state = zero(eltype(u))
+            utilde = @.. ifelse(
+                integrator.differential_vars, dto6 * (k₁ - 2 * k₂ + k₃), zero_state
+            )
         end
         atmp = calculate_residuals(
             utilde, uprev, u, integrator.opts.abstol,
@@ -319,9 +334,16 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
 
         if mass_matrix !== I
-            atmp = @. ifelse(integrator.differential_vars, false, integrator.fsallast) /
-                integrator.opts.abstol
-            OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
+            if integrator.differential_vars !== nothing
+                zero_du = zero(eltype(integrator.fsallast))
+                atmp = @. ifelse(integrator.differential_vars, zero_du, integrator.fsallast) /
+                    integrator.opts.abstol
+                OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
+            elseif zero_uniform_scaling
+                # With a zero UniformScaling every equation is algebraic.
+                atmp = @. integrator.fsallast / integrator.opts.abstol
+                OrdinaryDiffEqCore.set_EEst!(integrator, OrdinaryDiffEqCore.get_EEst(integrator) + (integrator.opts.internalnorm(atmp, t)))
+            end
         end
     end
     integrator.k[1] = k₁
