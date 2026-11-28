@@ -21,7 +21,11 @@
 
     L = integrator.f.g(uprev, p, t)
     ftmp = integrator.f(uprev, p, t)
-    gtmp = L .* integrator.W.dW
+    if is_diagonal_noise(integrator.sol.prob) || integrator.W.dW isa Number
+        gtmp = L .* integrator.W.dW
+    else
+        gtmp = L * integrator.W.dW
+    end
 
     if cache isa ImplicitEulerHeunConstantCache
         utilde = uprev + gtmp
