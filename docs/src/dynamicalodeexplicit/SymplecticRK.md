@@ -55,8 +55,8 @@ For a Hamiltonian system with energy `H(p,q)`, symplectic integrators preserve t
 
   - **`CandyRoz4`**: Fourth-order method
   - **`McAte4`**: Fourth-order McLachlan-Atela (requires quadratic kinetic energy)
-  - **`CalvoSanz4`**: Optimized fourth-order method
-  - **`McAte42`**: Alternative fourth-order method (BROKEN)
+  - **`CalvoSanz4`**: Optimized fourth-order method (requires quadratic kinetic energy)
+  - **`McAte42`**: Alternative fourth-order method (McLachlan 1995)
 
 ### Higher-order methods
 
@@ -73,6 +73,58 @@ For a Hamiltonian system with energy `H(p,q)`, symplectic integrators preserve t
   - **For molecular dynamics (common choice)**: `VelocityVerlet` (less efficient than McAte2 but widely used)
   - **For non-differentiable dynamics**: `SymplecticEuler` (first-order, only when necessary)
   - **For computational efficiency**: `McAte2` or `McAte3`
+
+### Stage times
+
+The tableau methods (`PseudoVerletLeapfrog`, `McAte2`, `Ruth3`, `McAte3`, `CandyRoz4`,
+`McAte4`, `CalvoSanz4`, `McAte42`, `McAte5`, `Yoshida6`, `KahanLi6`, `McAte8`, `KahanLi8`,
+`SofSpa10`) evaluate kick `i` of a step from `t` to `t + dt` at the time the position has
+reached, `t + (b[1] + ... + b[i]) * dt`, and drift `i` at the time the velocity has reached,
+`t + (a[1] + ... + a[i-1]) * dt`; the last evaluations of a step are at its end time. This keeps
+the order of the method for time-dependent forces. A time-dependent drift (`f2` depending
+on `t`) is outside the quadratic-kinetic-energy assumption of `McAte4`, `CalvoSanz4` and
+`McAte5`, which then drop to third order; the package tests check the stated order with a
+time-dependent drift for `PseudoVerletLeapfrog`, `McAte2`, `Ruth3`, `McAte3`, `CandyRoz4`
+and `McAte42`.
+
+Methods with negative coefficients evaluate some stages outside `[t, t + dt]`, even when
+the step ends exactly at a `tstop`. Those stages can fall outside the integration interval
+on the first or last step, and on the far side of an interior `tstop` on any step:
+
+  - the force `f1` (kick) for `Ruth3` (up to `t + 25/24 dt`) and `CandyRoz4` (from
+    about `t - 0.351207 dt` to `t + 1.351207 dt`);
+  - the drift `f2` for `McAte4`, `CalvoSanz4`, `McAte42`, `McAte5`, `Yoshida6` and
+    `McAte8`, which matters only when `f2` depends on `t`.
+
+For example, with `Ruth3`, a force that switches on just after `t = 1`, and a step that
+ends at the `tstop` `1`, the kick at `t + 25/24 dt` already sees the switched-on force.
+
+If the right-hand side is defined only on the integration interval, choose a method whose
+stages stay within each step: `PseudoVerletLeapfrog`, `McAte2`, `McAte3`, `KahanLi6`,
+`KahanLi8` or `SofSpa10`. These methods never evaluate strictly beyond a stop, but their
+last stage is evaluated at the stop itself, so it sees whatever value the right-hand side
+has there. A `tstop` alone therefore does not isolate a jump: with `McAte2`, a force equal
+to `1` for `t >= 1` and zero before, and a unit step ending at the `tstop` `1`, the final
+kick gives `v(1) = 1 - sqrt(2)/2` instead of zero. To isolate a jump, solve the intervals
+separately, using for each interval the one-sided right-hand side, including its value at
+the shared endpoint:
+
+```jldoctest
+julia> using OrdinaryDiffEqSymplecticRK
+
+julia> kick(a) = (v, u, p, t) -> a;
+
+julia> drift(v, u, p, t) = v;
+
+julia> s1 = solve(DynamicalODEProblem(kick(0.0), drift, 0.0, 0.0, (0.0, 1.0)), McAte2(); dt = 1.0);
+
+julia> v1, u1 = s1.u[end].x;
+
+julia> s2 = solve(DynamicalODEProblem(kick(1.0), drift, v1, u1, (1.0, 2.0)), McAte2(); dt = 1.0);
+
+julia> (v1, s2.u[end].x[1])
+(0.0, 1.0)
+```
 
 ### Important Note on Chaotic Systems
 
