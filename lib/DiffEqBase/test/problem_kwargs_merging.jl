@@ -104,3 +104,47 @@ import SciMLBase
     kwargs_out = DiffEqBase.merge_problem_kwargs(prob_full; kwargs_in...)
     @test kwargs_out.callback === cb1
 end
+
+# Counts the calls to it; `instantiate_callback` gives each copy its own counter
+struct CountingCondition
+    count::Base.RefValue{Int}
+end
+CountingCondition() = CountingCondition(Ref(0))
+(c::CountingCondition)(u, t, integrator) = (c.count[] += 1; false)
+
+function SciMLBase.instantiate_callback(cb::DiscreteCallback{<:CountingCondition})
+    return SciMLBase.remake(cb; condition = CountingCondition())
+end
+
+@testset "merge_problem_kwargs instantiates callbacks" begin
+    f(du, u, p, t) = (du .= -u; nothing)
+    callback_list(cb::CallbackSet) = vcat(cb.continuous_callbacks, cb.discrete_callbacks)
+    callback_list(cb) = Any[cb]
+    counters(kwargs) = [
+        cb.condition.count for cb in callback_list(kwargs.callback)
+            if cb.condition isa CountingCondition
+    ]
+
+    counting = DiscreteCallback(CountingCondition(), integrator -> nothing)
+    plain = DiscreteCallback((u, t, integrator) -> true, integrator -> nothing)
+
+    # Passed to solve, stored in the problem, or both
+    prob = ODEProblem(f, [1.0], (0.0, 1.0))
+    stored = ODEProblem(f, [1.0], (0.0, 1.0); callback = counting)
+    for kwargs in (
+            DiffEqBase.merge_problem_kwargs(prob; callback = CallbackSet(counting, plain)),
+            DiffEqBase.merge_problem_kwargs(stored),
+            DiffEqBase.merge_problem_kwargs(stored; callback = plain),
+        )
+        @test only(counters(kwargs)) !== counting.condition.count
+    end
+
+    # Callbacks without state are passed on unchanged
+    kwargs = DiffEqBase.merge_problem_kwargs(stored; callback = plain)
+    @test plain in callback_list(kwargs.callback)
+
+    # Every merge, i.e. every solve, gets fresh state
+    a = only(counters(DiffEqBase.merge_problem_kwargs(stored)))
+    b = only(counters(DiffEqBase.merge_problem_kwargs(stored)))
+    @test a !== b
+end

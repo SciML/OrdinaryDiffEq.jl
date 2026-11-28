@@ -33,6 +33,8 @@ DiffEq's standard merging rules:
 - Passed kwargs take precedence (i.e., they override problem kwargs)
 - If `merge_callbacks=true` and both prob and kwargs have callbacks, they are
   merged into a `CallbackSet` rather than one overriding the other
+- The merged `callback` is passed through `SciMLBase.instantiate_callback`, so that
+  callbacks with mutable state get fresh state for each solve or integrator
 
 Returns the merged kwargs as a Base.pairs.
 
@@ -64,6 +66,12 @@ function merge_problem_kwargs(prob; merge_callbacks = true, kwargs...)
         kwargs = isempty(prob.kwargs) ? kwargs : merge(values(prob.kwargs), kwargs)
     end
 
+    if haskey(kwargs, :callback)
+        kwargs = merge(
+            (; kwargs...),
+            (; callback = SciMLBase.instantiate_callback(kwargs[:callback]))
+        )
+    end
 
     if _erases_callback_types(prob)
         callback = haskey(kwargs, :callback) ? kwargs[:callback] : nothing
