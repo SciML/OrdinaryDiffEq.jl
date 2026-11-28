@@ -278,6 +278,7 @@ OrdinaryDiffEqNonlinearSolve.nlsolvefail
 OrdinaryDiffEqNonlinearSolve.markfirststage!
 OrdinaryDiffEqNonlinearSolve.du_alias_or_new
 OrdinaryDiffEqNonlinearSolve.can_smooth_est
+OrdinaryDiffEqNonlinearSolve.solve_state_error!
 OrdinaryDiffEqNonlinearSolve.compute_step!
 OrdinaryDiffEqNonlinearSolve.initial_η
 OrdinaryDiffEqNonlinearSolve.anderson
@@ -385,6 +386,8 @@ OrdinaryDiffEqCore.initialize_tstops
 OrdinaryDiffEqCore.initialize_saveat
 OrdinaryDiffEqCore.initialize_d_discontinuities
 OrdinaryDiffEqCore.fix_dt_at_bounds!
+OrdinaryDiffEqCore.uses_representable_step
+OrdinaryDiffEqCore.fix_representable_dt!
 OrdinaryDiffEqCore.handle_tstop!
 ```
 

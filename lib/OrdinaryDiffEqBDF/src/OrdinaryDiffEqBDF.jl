@@ -38,7 +38,7 @@ using TruncatedStacktraces: @truncate_stacktrace
 using MuladdMacro: @muladd
 using FastBroadcast: @..
 using RecursiveArrayTools: recursivefill!
-using LinearAlgebra: mul!, I, Diagonal
+using LinearAlgebra: mul!, I, Diagonal, UniformScaling
 import ArrayInterface
 import OrdinaryDiffEqCore
 import OrdinaryDiffEqCore: default_controller
@@ -55,7 +55,7 @@ else
 end
 
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
-    nlsolve!, nlsolvefail, markfirststage!
+    nlsolve!, nlsolvefail, markfirststage!, solve_state_error!
 import ADTypes: AutoForwardDiff
 
 using Reexport: Reexport, @reexport

@@ -388,6 +388,98 @@ function _resample_at_chebyshev_direct_iip!(k, u, u_history, thetas, n)
     return
 end
 
+# Use the step that the stored time t + dt represents: far from t = 0, rounding of t + dt is a
+# sizable part of a small dt, and the history would disagree with the BDF formula (#5003).
+# `calc_dt_propose!` snaps the same way, but against the time before the step is applied.
+OrdinaryDiffEqCore.uses_representable_step(integrator, ::FBDF) =
+    integrator.opts.adaptive && integrator.t isa AbstractFloat && integrator.dt isa AbstractFloat
+
+function _fbdf_step_dt!(integrator)
+    OrdinaryDiffEqCore.fix_representable_dt!(integrator) || return nothing
+    return integrator.dt
+end
+
+# terkp1 ≈ h² y″ for the first step after a (re)start (backward Euler, no history): the
+# larger, in weighted norm, of the defects r₁ = M Δu - h f(t, uprev) and
+# r₂ = 2 (M Δu - h f(t + h/2, uprev + Δu/2)), so equal endpoint slopes cannot hide interior
+# variation. With Newton each is filtered as (M - h γ J)⁻¹ r after zeroing its algebraic rows,
+# which hold the constraint residual rather than an error that shrinks with h; the filter
+# damps stiff components and gives index-1 algebraic unknowns the error their differential
+# rows imply. EEst = ‖terkp1‖ / 2 as on later order-1 steps, independent of the absolute time.
+function _fbdf_first_step_terkp1!(integrator, cache)
+    (; nlsolver, terkp1_tmp, terk_tmp, atmp, tmp, u₀) = cache
+    (; u, uprev, t, dt, p, fsalfirst, fsallast) = integrator
+    mass_matrix = integrator.f.mass_matrix
+    alg_eqs = if mass_matrix isa UniformScaling
+        iszero(mass_matrix.λ) ? true : nothing
+    else
+        OrdinaryDiffEqCore.find_algebraic_vars_eqs(mass_matrix)[2]
+    end
+    @.. broadcast = false tmp = u - uprev
+    _fbdf_first_step_defect!(terkp1_tmp, tmp, fsalfirst, 1, alg_eqs, integrator, nlsolver) ||
+        return nothing
+    @.. broadcast = false u₀ = uprev / 2 + u / 2
+    integrator.f(fsallast, u₀, p, t + dt / 2)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    _fbdf_first_step_defect!(terk_tmp, tmp, fsallast, 2, alg_eqs, integrator, nlsolver) ||
+        return nothing
+    (; abstol, reltol, internalnorm) = integrator.opts
+    calculate_residuals!(atmp, terkp1_tmp, uprev, u, abstol, reltol, internalnorm, t)
+    err_endpoint = internalnorm(atmp, t)
+    calculate_residuals!(atmp, terk_tmp, uprev, u, abstol, reltol, internalnorm, t)
+    if internalnorm(atmp, t) > err_endpoint
+        copyto!(terkp1_tmp, terk_tmp)
+    end
+    return nothing
+end
+
+# r = scale (M Δu - h fval), filtered with Newton's matrix. Return false, with the step
+# marked failed, if the filter fails where r is not already a state error.
+function _fbdf_first_step_defect!(r, Δu, fval, scale, alg_eqs, integrator, nlsolver)
+    _fbdf_first_step_residual!(r, Δu, fval, scale, integrator)
+    isnewton(nlsolver) || return true
+    if alg_eqs !== nothing
+        rv = vec(r)
+        @. rv = ifelse(alg_eqs, zero(eltype(rv)), rv)
+    end
+    if solve_state_error!(r, nlsolver, integrator)
+        return true
+    elseif integrator.f.mass_matrix === I
+        # r is already a state error; recompute it, since the solve may overwrite b
+        _fbdf_first_step_residual!(r, Δu, fval, scale, integrator)
+        return true
+    else
+        # r is in the units of M (rescaling the equations rescales it): reject the step
+        integrator.force_stepfail = true
+        return false
+    end
+end
+
+function _fbdf_first_step_residual!(r, Δu, fval, scale, integrator)
+    (; dt) = integrator
+    mass_matrix = integrator.f.mass_matrix
+    if mass_matrix === I
+        @.. broadcast = false r = scale * (Δu - dt * fval)
+    else
+        mul!(vec(r), mass_matrix, vec(Δu))
+        @.. broadcast = false r = scale * (r - dt * fval)
+    end
+    return r
+end
+
+# Out-of-place version, for M = I only and unfiltered. Out-of-place mass-matrix problems
+# keep the history-based first-step estimate.
+function _fbdf_first_step_terkp1(integrator, u)
+    (; uprev, t, dt, p, fsalfirst) = integrator
+    fmid = integrator.f(uprev / 2 + u / 2, p, t + dt / 2)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    r_endpoint = @.. u - uprev - dt * fsalfirst
+    r_midpoint = @.. 2 * (u - uprev - dt * fmid)
+    (; abstol, reltol, internalnorm) = integrator.opts
+    err(r) = internalnorm(calculate_residuals(r, uprev, u, abstol, reltol, internalnorm, t), t)
+    return err(r_midpoint) > err(r_endpoint) ? r_midpoint : r_endpoint
+end
+
 function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order}
     #calculate hᵏ⁻¹yᵏ⁻¹
     (; ts_tmp, terk_tmp, u_history, fd_weights) = cache

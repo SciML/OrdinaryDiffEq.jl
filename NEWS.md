@@ -2,6 +2,8 @@
 
 ABM32, ABM43, and ABM54 use their Adams–Bashforth predictors in steady steps; their numerical results change.
 
+Consecutive order-one FBDF steps use the local error estimate to propose the next step size when available. The first adaptive step after initialization or a restart uses a backward-Euler error estimate for `M === I` and for in-place mass-matrix problems with Newton iteration. Adaptive floating-point FBDF uses representable time increments. The step-size controller limits growth using `qmax` and `qmax_first_step` (#5003); FBDF step sequences and numerical results change.
+
 # OrdinaryDiffEq.jl v7 / DifferentialEquations.jl v8 Breaking Changes
 
 This release bumps to **SciMLBase v3**, **RecursiveArrayTools v4**, and includes breaking changes across **DiffEqBase**, **OrdinaryDiffEqCore**, and all solver sublibraries. It also coincides with the **DifferentialEquations.jl v8** umbrella release, which is itself a breaking change to the user-facing meta-package.

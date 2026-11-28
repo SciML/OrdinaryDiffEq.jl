@@ -478,6 +478,7 @@ include("precompilation_setup.jl")
             :_is_identity_massmatrix, :_is_zero_massmatrix, :_diff_alg_vars,
             :handle_callback_modifiers!, :resolve_basic, :resolve_stage_step_limiters,
             :fix_dt_at_bounds!, :handle_tstop!, :initialize_d_discontinuities,
+            :uses_representable_step, :fix_representable_dt!,
             :initialize_saveat, :initialize_tstops,
             # Noise hooks used by the SDE/RODE solver sublibs.
             :accept_noise!, :reinit_noise!, :reject_noise!, :save_noise!, :noise_curt,
