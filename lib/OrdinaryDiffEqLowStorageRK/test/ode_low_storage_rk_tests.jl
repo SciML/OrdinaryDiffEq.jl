@@ -1442,6 +1442,8 @@ end
         sim = test_convergence(dts, prob, alg)
         @test sim.𝒪est[:final] ≈ OrdinaryDiffEqLowStorageRK.alg_order(alg) atol = testTol
     end
+    sol = solve(prob_ode_sin, alg; abstol = 1.0e-6, reltol = 1.0e-6)
+    @test sol.stats.naccept < 20
     integ = init(
         prob_ode_large, alg, adaptive = false, dt = 1.0e-2, save_start = false,
         save_end = false, save_everystep = false

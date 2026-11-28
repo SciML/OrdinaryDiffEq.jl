@@ -4105,7 +4105,7 @@ function CKLLSRK85_4FM_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₁4 = convert(T, BigInt(18466735994895) // BigInt(7394178462407))
     A₁5 = convert(T, BigInt(2786140924985) // BigInt(14262827431161))
     A₁6 = convert(T, BigInt(28327099865656) // BigInt(21470840267743))
-    A₁7 = convert(T, BigInt(0) // BigInt(1))
+    A₁7 = convert(T, BigInt(583593328277) // BigInt(7028929464160))
     Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4, A₁5, A₁6, A₁7)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
@@ -4114,7 +4114,7 @@ function CKLLSRK85_4FM_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₂4 = convert(T, BigInt(-23893000145797) // BigInt(9614512377075))
     A₂5 = convert(T, BigInt(6556893593075) // BigInt(12530787773541))
     A₂6 = convert(T, BigInt(-5015572218207) // BigInt(5719938983072))
-    A₂7 = convert(T, BigInt(0) // BigInt(1))
+    A₂7 = convert(T, BigInt(6078825123673) // BigInt(15200143133108))
     Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4, A₂5, A₂6, A₂7)
 
     A₃1 = convert(T, BigInt(0) // BigInt(1))
@@ -4123,7 +4123,7 @@ function CKLLSRK85_4FM_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     A₃4 = convert(T, BigInt(4579492417936) // BigInt(7930641522963))
     A₃5 = convert(T, BigInt(-2255846922213) // BigInt(30066310003000))
     A₃6 = convert(T, BigInt(3212719728776) // BigInt(7037340048693))
-    A₃7 = convert(T, BigInt(0) // BigInt(1))
+    A₃7 = convert(T, BigInt(363006049056) // BigInt(22366003978609))
     Aᵢ₃ = (A₃1, A₃2, A₃3, A₃4, A₃5, A₃6, A₃7)
 
     B1 = convert(T, BigInt(1147876221211) // BigInt(13910763665259))
@@ -4172,11 +4172,7 @@ function CKLLSRK85_4FM_4RConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
         BigInt(190737487565451971541550207118478711767748834018874068552898297) //
             BigInt(190737487565451971541550204260359567420033302718711745345318816)
     )
-    C7 = convert(
-        T2,
-        BigInt(194373043039840208108258122050794558876) //
-            BigInt(388106905684556737922360607016380520227)
-    )
+    C7 = convert(T2, BigInt(1) // BigInt(1))
     Cᵢ = (C1, C2, C3, C4, C5, C6, C7)
 
     return LowStorageRK4RPConstantCache(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
