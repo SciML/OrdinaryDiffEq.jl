@@ -493,11 +493,20 @@ function _calc_J_dae!(alg_member, integrator, J_u, J_du, cache)
         (; uf_u, uf_du, jac_config_u, jac_config_du) = dae_jac
         du1 = cache.du1
 
+        # The colorings are fixed to `J`'s stored pattern, so an automatically detected
+        # pattern that grew since `J` was built would be decompressed into the wrong
+        # entries. Fail instead of returning a wrong Jacobian. A partial the check had to
+        # compute uncompressed is already filled and is not differentiated again.
+        # Mirrors `build_J_W`: storage comes from the user's `jac_prototype` or `sparsity`.
+        explicit = integrator.f.jac_prototype !== nothing || integrator.f.sparsity !== nothing
+
         # Compute J_u = dF/du at (du_fixed, uprev)
-        _jacobian!(alg_member, integrator, J_u, uf_u, uprev, du1, jac_config_u)
+        check_pattern_stored(alg_member, uf_u, du1, uprev, J_u, explicit) ||
+            _jacobian!(alg_member, integrator, J_u, uf_u, uprev, du1, jac_config_u)
 
         # Compute J_du = dF/d(du) at (du_eval, u_fixed)
-        _jacobian!(alg_member, integrator, J_du, uf_du, uf_u.du_fixed, du1, jac_config_du)
+        check_pattern_stored(alg_member, uf_du, du1, uf_u.du_fixed, J_du, explicit) ||
+            _jacobian!(alg_member, integrator, J_du, uf_du, uf_u.du_fixed, du1, jac_config_du)
     end
 
     integrator.stats.njacs += 1
@@ -1397,12 +1406,10 @@ function build_J_W(
             if alg_autodiff(alg) isa AutoSparse
                 if isnothing(f.sparsity)
                     !isnothing(jac_config) ?
-                        convert.(
-                            eltype(u), sparsity_pattern(jac_config[1])
-                        ) :
+                        jac_from_pattern(eltype(u), sparsity_pattern(jac_config[1])) :
                         spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
-                    convert.(eltype(u), f.sparsity)
+                    jac_from_pattern(eltype(u), f.sparsity)
                 else
                     f.sparsity
                 end
@@ -1432,10 +1439,10 @@ function build_J_W(
         elseif f.jac_prototype === nothing
             if alg_autodiff(alg) isa AutoSparse
                 if isnothing(f.sparsity)
-                    !isnothing(jac_config) ? convert.(eltype(u), sparsity_pattern(jac_config[1])) :
+                    !isnothing(jac_config) ? jac_from_pattern(eltype(u), sparsity_pattern(jac_config[1])) :
                         spzeros(eltype(u), length(u), length(u))
                 elseif eltype(f.sparsity) == Bool
-                    convert.(eltype(u), f.sparsity)
+                    jac_from_pattern(eltype(u), f.sparsity)
                 else
                     f.sparsity
                 end

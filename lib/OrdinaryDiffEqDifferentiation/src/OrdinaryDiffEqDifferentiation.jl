@@ -59,6 +59,18 @@ import DiffEqBase: OrdinaryDiffEqTag
 is_sparse(::Any) = false
 is_sparse_csc(::Any) = false
 
+# Validates the sparse `J` against the sparsity `alg`'s detector finds in `f` (at `x`, with
+# output `fx`), throwing a `DimensionMismatch` for an entry `J` does not store; `explicit`
+# marks user-supplied storage. When the detector cannot trace `f` for automatically derived
+# storage, `J` is instead filled from validated uncompressed derivatives and `true` is
+# returned, so the caller must not overwrite it with a compressed computation. Overloaded by
+# the extension.
+check_pattern_stored(alg, f, fx, x, J, explicit) = false
+
+# Allocate a Jacobian with `pattern`'s structure. A known pattern may hold stored zeros,
+# which are structural entries the coloring decompresses into, but broadcasting drops them.
+jac_from_pattern(::Type{T}, pattern) where {T} = convert.(T, pattern)
+
 # Seeding a sparsity pattern from the mass matrix uses `findall`/`getindex`, which a
 # SciMLOperator does not support. `convert` reads the operator's currently-cached array
 # rather than re-evaluating it, which is what is wanted here: only the structural

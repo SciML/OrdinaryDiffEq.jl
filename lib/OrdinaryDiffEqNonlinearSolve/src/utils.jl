@@ -312,6 +312,43 @@ struct DAEJacobiansConstantCache{JduType, ufuType, ufduType}
     uf_du::ufduType
 end
 
+# `J_u` and `J_du` are stored in `J`'s sparsity pattern (the union of dF/du and dF/d(du)),
+# and sparse AD decompresses only into the exact pattern it colored, so the separated
+# configs must color `J`'s pattern rather than detect their own. That is only sound if `J`
+# stores every entry of the pattern. A known pattern is checked against `J` here (stored
+# zeros included); it needs no tracing. A tracer is not run here, where no real `(t, u, du)`
+# exists: `_calc_J_dae!` checks it at every fresh Jacobian evaluation instead.
+function with_jac_sparsity(alg, J, uf_u, uf_du, du1, u)
+    ad = alg_autodiff(alg)
+    (ad isa ADTypes.AutoSparse && J isa SparseMatrixCSC) || return alg
+    # Coloring `J`'s fixed pattern is only safe with the refresh check that
+    # OrdinaryDiffEqDifferentiation applies; an older release keeps the separated configs
+    # detecting their own patterns.
+    isdefined(OrdinaryDiffEqDifferentiation, :check_pattern_stored) || return alg
+    detector = ADTypes.sparsity_detector(ad)
+    if detector isa ADTypes.KnownJacobianSparsityDetector
+        stored(A) = zip(findnz(A)[1], findnz(A)[2])
+        stored_J = Set(stored(J))
+        for (wrapper, x) in ((uf_u, u), (uf_du, uf_u.du_fixed))
+            detected = sparse(ADTypes.jacobian_sparsity(wrapper, du1, x, detector))
+            issubset(stored(detected), stored_J) || throw(
+                DimensionMismatch(
+                    "The Jacobian storage does not hold every entry of the known sparsity \
+                    pattern (stored zeros included), so the DAE Jacobians cannot be \
+                    decompressed into it. Make `jac_prototype` cover the sparsity pattern, \
+                    or update OrdinaryDiffEqDifferentiation."
+                )
+            )
+        end
+    end
+    autodiff = ADTypes.AutoSparse(
+        ADTypes.dense_ad(ad);
+        sparsity_detector = ADTypes.KnownJacobianSparsityDetector(J),
+        coloring_algorithm = ADTypes.coloring_algorithm(ad)
+    )
+    return remake(alg; autodiff)
+end
+
 function _nlalg_with_linsolve(inner_alg, linsolve)
     linsolve === nothing && return inner_alg
     !hasfield(typeof(inner_alg), :descent) && return inner_alg
@@ -933,6 +970,19 @@ function build_nlsolver(
             )
         else
             du = isdae ? k : nothing # k will be overwritten at solve time, but has the right type.
+            # The two partial wrappers and the algorithm prepared for them, or `nothing` when
+            # the user supplies the Jacobian(s). Prepared before the linear solver is built
+            # from a `J` that cannot hold the pattern.
+            separated = if isdae && !(
+                    islinear(f) || SciMLBase.has_jac(f) ||
+                        (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
+                )
+                uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
+                uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
+                (uf_u, uf_du, with_jac_sparsity(alg, J, uf_u, uf_du, du1, u))
+            else
+                nothing
+            end
             linprob = LinearProblem(W, _vec(k), (du, u, p, t); u0 = _vec(dz))
             linsolver = default_krylov_warm_start(alg.linsolve)
             precs = if isnothing(linsolver)
@@ -959,20 +1009,18 @@ function build_nlsolver(
                 else
                     fill!(J_du, false)
                 end
-                if islinear(f) || SciMLBase.has_jac(f) ||
-                        (SciMLBase.has_jac_u(f) && SciMLBase.has_jac_du(f))
+                if separated === nothing
                     # User provides Jacobian(s) — no wrappers, but still need J_du storage
                     dae_jacobians = DAEJacobiansCache(
                         J_du, nothing, nothing, nothing, nothing
                     )
                 else
-                    uf_u = DAEJacobianUWrapper(f, p, zero(uprev), t)
-                    uf_du = DAEJacobianDuWrapper(f, p, copy(uprev), t)
+                    uf_u, uf_du, dae_jac_alg = separated
                     jac_config_u = build_jac_config(
-                        alg, nf, uf_u, du1, uprev, u, ztmp, dz
+                        dae_jac_alg, nf, uf_u, du1, uprev, u, ztmp, dz
                     )
                     jac_config_du = build_jac_config(
-                        alg, nf, uf_du, du1, uprev, u, ztmp, dz
+                        dae_jac_alg, nf, uf_du, du1, uprev, u, ztmp, dz
                     )
                     dae_jacobians = DAEJacobiansCache(
                         J_du, uf_u, uf_du, jac_config_u, jac_config_du

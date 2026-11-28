@@ -57,6 +57,47 @@ prob = DAEProblem(f2, du₀, u₀, tspan; differential_vars)
 sol = solve(prob, DFBDF())
 ```
 
+## Sparse Jacobians
+
+`DFBDF` and the other BDF DAE methods accept an `ADTypes.AutoSparse` `autodiff`. For in-place
+DAEs with AD-computed separated Jacobians in concrete CSC storage, each partial Jacobian has its
+own matrix with the same stored pattern. Both differentiation preparations color that pattern at
+integrator construction and reuse their colorings.
+
+  - **The pattern must hold every entry seen during the solve.** An automatically detected
+    pattern (`TracerSparsityDetector`, `TracerLocalSparsityDetector`) fixes the storage when
+    the integrator is built, from the combined stage Jacobian at its initial point. Every fresh
+    Jacobian evaluation re-runs the detector on both partial Jacobians at their real
+    `(t, u, du)` and throws a `DimensionMismatch` if it finds an entry the storage does not
+    hold, rather than returning a wrong Jacobian. If the detector cannot trace the residual at the
+    refresh point (for example a comparison on a global tracer), user-supplied storage skips
+    validation for that refresh. Automatically derived storage is instead differentiated column by
+    column without compression at that point, with each column perturbed independently (for a
+    finite-difference backend the step of a column is scaled by that coordinate alone and uses the
+    backend's own stencil and step settings). If every
+    nonzero lies inside the stored pattern, those validated values are the partial Jacobian that is
+    used; otherwise a `DimensionMismatch` names the first missing entry. For a reverse-mode
+    backend (for example `AutoEnzyme(mode = Enzyme.Reverse)`) the same fallback streams one output row
+    per reverse sweep through reused buffers instead, so its cost grows with the number of rows.
+    Storage that already holds
+    every entry is never validated. Storage is never grown during the solve. For a
+    state-dependent pattern, supply a `KnownJacobianSparsityDetector` holding the union of all
+    its patterns (or a `jac_prototype` holding it), or use a dense `autodiff`.
+  - **A known pattern is trusted.** With a `KnownJacobianSparsityDetector` the pattern is not
+    re-detected during the solve, so it must hold every entry the residual can ever have.
+  - **A supplied `jac_prototype` or `sparsity` must cover every entry.** When a supplied
+    `jac_prototype` or `sparsity` defines storage, it must cover every entry. A tracer checks it
+    at each fresh Jacobian evaluation it can trace. A known pattern is checked against it when the
+    integrator is built; either throws a `DimensionMismatch` if the detector finds an entry the
+    storage does not hold. Stored zeros of a known pattern count as stored entries.
+  - A global tracer (`TracerSparsityDetector`) requires a traceable residual when the integrator
+    builds the combined stage Jacobian, including when a `jac_prototype` supplies the storage. Use
+    `TracerLocalSparsityDetector` or `KnownJacobianSparsityDetector` if the residual branches on `u`
+    or `du`. Tracer validation and any uncompressed fallback evaluations are excluded from
+    `stats.nf`. Their cost depends on the detector, backend, and problem size.
+  - The number of colors, and so of residual evaluations per Jacobian, depends on the union
+    pattern, not on each partial Jacobian alone.
+
 ## Solver Selection Guide
 
 ### Recommended DAE Methods

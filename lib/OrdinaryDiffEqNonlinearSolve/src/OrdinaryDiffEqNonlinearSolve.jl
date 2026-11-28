@@ -66,11 +66,13 @@ import OrdinaryDiffEqCore: _initialize_dae!,
     isJcurrent, get_new_W_γdt_cutoff, resize_nlsolver!, apply_step!,
     @SciMLMessage
 
+import OrdinaryDiffEqDifferentiation
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
     WOperator, StaticWOperator, wrapprecs, default_krylov_warm_start,
     build_jac_config, dolinsolve, set_linear_reltol!,
     resize_jac_config!, jacobian2W!, jacobian!, calc_J
 
+import SparseArrays: SparseMatrixCSC, findnz, sparse
 import StaticArraysCore: StaticArray
 
 include("type.jl")
