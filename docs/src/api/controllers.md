@@ -12,8 +12,7 @@ controller — not on `integrator.opts` — and the per-step state
 This page documents:
 
 1. The built-in controllers users can pick from.
-2. The [`CommonControllerOptions`](@ref) bundle of standard step-size
-   knobs that every controller composes.
+2. The [`CommonControllerOptions`](@ref) bundle of standard step-size knobs.
 3. The accessor functions the integrator uses to read knobs
    (`get_qmin`, `get_qmax`, …).
 4. The minimal contract you implement when adding a new controller.
@@ -58,9 +57,9 @@ OrdinaryDiffEqCore.CompositeController
 
 ## CommonControllerOptions
 
-Every controller embeds a `CommonControllerOptions{T}` as its `basic`
-field. This holds the seven standard step-size scalars and is the
-target of [`resolve_basic`](@ref).
+Controllers commonly store the seven standard step-size scalars in a
+`CommonControllerOptions{T}` as their `basic` field, which is the target of
+[`resolve_basic`](@ref).
 
 ```@docs
 OrdinaryDiffEqCore.CommonControllerOptions
@@ -202,7 +201,7 @@ OrdinaryDiffEqCore.reset_alg_dependent_opts!
 | Method | Default | When to override |
 |---|---|---|
 | `accept_step_controller(integrator, cache, alg)::Bool` | `get_EEst(integrator) <= 1` | Controllers that accept on a different criterion (e.g. `PIDController` uses `dt_factor >= accept_safety`). |
-| `post_newton_controller!(integrator, cache, alg)` | Shrinks `integrator.dt` by `get_failfactor(integrator)` | Implicit-solver controllers that also reduce the BDF order on Newton failure (`BDFController`, `JVODEController`). |
+| `post_newton_controller!(integrator, cache, alg)` | Shrinks `integrator.dt` by `get_failfactor(integrator)` | Controllers that lower the working order after repeated Newton failures, such as FBDF. |
 | `reinit_controller!(integrator, cache)` | no-op | Stateful controllers that need to reset `q11`, `qold`, `dtacc`, etc. on `reinit!`. |
 | `sync_controllers!(cache1, cache2)` | no-op | Composite-alg switching, when state must transfer between sub-controllers. |
 | `snapshot_controller(cache)` / `restore_controller!(cache, snapshot)` | `deepcopy(cache)`, restored with `sync_controllers!` | Caches that can save and restore their state without allocating. Solvers such as `ExplicitTaylorAdaptiveOrder` pseudo-step the controller once per candidate order and roll it back with this pair. |

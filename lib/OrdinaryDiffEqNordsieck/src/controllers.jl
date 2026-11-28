@@ -12,6 +12,8 @@ adaptive logic is integrated into the algorithm itself, so the controller
 cache falls through to alg-level dispatch but the knobs are exposed as a
 real, settable controller (instead of being hard-wired on the algorithm
 struct as before).
+
+The cache uses the discontinuity problems from the current solve.
 """
 struct JVODEController{B <: Union{NamedTuple, CommonControllerOptions}} <: AbstractController
     basic::B
@@ -23,31 +25,69 @@ JVODEController(alg; kwargs...) = JVODEController(Float64, alg; kwargs...)
 JVODEController(::Type{QT}, alg; kwargs...) where {QT} =
     JVODEController(resolve_basic(NamedTuple(kwargs), alg, QT))
 
-mutable struct JVODEControllerCache{T, E, C, NLPType} <: AbstractControllerCache
-    controller::JVODEController{CommonControllerOptions{T, NLPType}}
+mutable struct JVODEControllerCache{J <: JVODEController, C, E} <: AbstractControllerCache
+    controller::J
     cache::C
     EEst::E
 end
 
+_resolve_jvode_options(basic, alg, disco_probs) =
+    resolve_basic(basic, alg, _resolved_QT(basic); disco_probs)
+
+function _resolve_jvode_options(basic::NamedTuple, alg, disco_probs)
+    knobs = (:qmin, :qmax, :qsteady_min, :qsteady_max, :qmax_first_step, :gamma, :failfactor)
+    supplied = filter(key -> haskey(basic, key) && getproperty(basic, key) !== nothing, knobs)
+    QT = _fit_jvode_defaults(_resolved_QT(basic[supplied]))
+    return resolve_basic(basic, alg, QT; disco_probs)
+end
+
+# The JVODE defaults are `Rational{Int}` or `Int` values (`qmax_first_step = 10000`).
+_fit_jvode_defaults(::Type{QT}) where {QT} = QT
+_fit_jvode_defaults(::Type{QT}) where {QT <: Rational} = promote_type(QT, Rational{Int})
+
 function setup_controller_cache(
         alg::JVODE, cache, controller::JVODEController, ::Type{E}, disco_probs,
     ) where {E}
-    QT = _resolved_QT(controller.basic)
-    basic = resolve_basic(controller.basic, alg, QT; disco_probs)
-    resolved = JVODEController(basic)
-    return JVODEControllerCache{QT, E, typeof(cache), eltype(disco_probs)}(resolved, cache, oneunit(E))
+    resolved = JVODEController(_resolve_jvode_options(controller.basic, alg, disco_probs))
+    return JVODEControllerCache{typeof(resolved), typeof(cache), E}(resolved, cache, oneunit(E))
 end
 
-# Algorithm owns the stepsize logic; controller cache delegates back to
-# alg-level dispatch (mirroring how DummyControllerCache used to behave).
+function post_newton_controller!(integrator, cache::DummyControllerCache, ::JVODE)
+    integrator.dt = _jvode_failed_dt(integrator.dt, get_failfactor(integrator, cache))
+    return nothing
+end
+
+function post_newton_controller!(integrator, cache::JVODEControllerCache, ::JVODE)
+    integrator.dt = _jvode_failed_dt(integrator.dt, get_failfactor(integrator, cache))
+    return nothing
+end
+
+_jvode_failed_dt(dt, factor) = dt / factor
+
+function _jvode_failed_dt(dt::Rational, factor::AbstractFloat)
+    if isinteger(factor)
+        divisor = typemin(Int) <= factor <= typemax(Int) ? Int(factor) : BigInt(factor)
+        try
+            return oftype(dt, dt / divisor)
+        catch err
+            err isa InexactError || err isa OverflowError || rethrow()
+        end
+    end
+    # Take the simplest rational within one ulp; `rationalize` stops short on overflow.
+    T = promote_type(Float64, float(typeof(dt)), typeof(factor))
+    retry = T(dt) / T(factor)
+    isfinite(retry) || return oftype(dt, retry)
+    candidate = rationalize(typeof(numerator(dt)), retry; tol = eps(retry))
+    return abs(T(candidate) - retry) <= eps(retry) ? candidate : oftype(dt, retry)
+end
+
+# The controller cache delegates step-size selection to the algorithm.
 @inline stepsize_controller!(integrator, ::JVODEControllerCache, alg) =
     stepsize_controller!(integrator, alg)
 @inline step_accept_controller!(integrator, ::JVODEControllerCache, alg, q) =
     step_accept_controller!(integrator, alg, q)
 @inline step_reject_controller!(integrator, ::JVODEControllerCache, alg) =
     step_reject_controller!(integrator, alg)
-@inline post_newton_controller!(integrator, ::JVODEControllerCache, alg) =
-    post_newton_controller!(integrator, alg)
 @inline accept_step_controller(
     integrator, cache::JVODEControllerCache, alg,
 ) = get_EEst(cache) <= 1
@@ -72,9 +112,4 @@ end
 
 function step_reject_controller!(integrator, alg::JVODE)
     return integrator.dt *= integrator.cache.η
-end
-
-function post_newton_controller!(integrator, ::JVODE)
-    integrator.dt /= get_failfactor(integrator)
-    return nothing
 end
