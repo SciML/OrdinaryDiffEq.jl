@@ -109,3 +109,21 @@ end
         @test errs[3] < 1.0e-7
     end
 end
+
+@testset "Hermite dense output gets the slopes at both ends of the step" begin
+    rhs!(du, u, p, t) = (du[1] = cos(t) - u[1]^2; nothing)
+    rhs(u, p, t) = [cos(t) - u[1]^2]
+    algs = (FRK65(), MSRK5(), MSRK6(), RKM(), SIR54(), Stepanov5(), Anas5())
+    for alg in algs, f in (rhs!, rhs)
+        integrator = init(ODEProblem(f, [1.0], (0.0, 1.0)), alg; dt = 0.1, adaptive = false)
+        step!(integrator)
+        @test integrator.k[1] ≈ rhs(integrator.uprev, nothing, integrator.tprev)
+        @test integrator.k[2] ≈ rhs(integrator.u, nothing, integrator.t)
+    end
+
+    decay = ODEProblem((u, p, t) -> -u^2, 1.0, (0.0, 4.0))
+    for alg in (FRK65(), Stepanov5())
+        sol = solve(decay, alg; abstol = 1.0e-9, reltol = 1.0e-9, saveat = 0.05)
+        @test maximum(abs.(sol.u .- 1 ./ (1 .+ sol.t))) < 1.0e-5
+    end
+end
