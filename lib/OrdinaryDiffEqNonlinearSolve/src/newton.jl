@@ -984,14 +984,21 @@ function _compute_rhs!(
     return _vec(ztmp), ustep
 end
 
-# LineSearches rejects a positive initial slope. The unscaled Newton step is
-# the update used when no line search runs, so keep it.
+# LineSearches rejects a positive initial slope. That slope means the direction
+# from the reused Jacobian is not descent, so the Newton step must diverge and
+# let `nlsolve!` rebuild a stale Jacobian instead of accepting the direction.
 function _linesearch_α(linesearch, ϕ, dϕ, ϕdϕ, α0)
     ϕ0, dϕ0 = ϕdϕ(zero(α0))
-    dϕ0 > zero(dϕ0) && return α0
+    dϕ0 > zero(dϕ0) && return nothing
     α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
     return α
 end
+
+function _nondescent_step!(dz)
+    fill!(dz, oftype(real(one(eltype(dz))), NaN))
+    return dz
+end
+_nondescent_step(dz) = oftype(real(one(eltype(dz))), NaN) * dz
 
 ## relax!
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF}
@@ -1066,6 +1073,7 @@ function relax!(
         end
         α0 = one(eltype(ustep))
         α = _linesearch_α(linesearch, ϕ, dϕ, ϕdϕ, α0)
+        α === nothing && return _nondescent_step!(dz)
         @.. dz = dz * α
         return dz
     end
@@ -1133,6 +1141,7 @@ function relax(
         end
         α0 = one(eltype(dz))
         α = _linesearch_α(linesearch, ϕ, dϕ, ϕdϕ, α0)
+        α === nothing && return _nondescent_step(dz)
         dz = dz * α
         return dz
     end
