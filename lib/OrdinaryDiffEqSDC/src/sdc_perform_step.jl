@@ -199,6 +199,7 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
         @.. broadcast = false nls.tmp = tmpm
         @.. broadcast = false nls.z = zk[m]
         (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
+        nls.γ != QΔ[m, m] && refactorize_next_solve!(nls)
         nls.γ = QΔ[m, m]
         nls.c = nodes[m]
         znode = nlsolve!(nls, integrator, cache, repeat_step)
@@ -211,6 +212,11 @@ empty for a diagonal `QΔ`, which is what makes the node loop safe to thread.
         cache.nf2[m] += 1
         @.. broadcast = false zEk1[m] = dt * k2[m]
     end
+    return nothing
+end
+
+function refactorize_next_solve!(nls)
+    nls.status = Divergence
     return nothing
 end
 
@@ -265,6 +271,7 @@ end
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, sum(cache.nf))
         split && (integrator.stats.nf2 += sum(cache.nf2))
         if any(failed)
+            foreach(refactorize_next_solve!, cache.nlsolvers)
             integrator.force_stepfail = true
             return nothing
         end
@@ -346,10 +353,14 @@ end
                 nls.tmp = tmp
                 nls.z = zk[m]
                 (sweep == 1 || nls.γ != QΔ[m, m]) && markfirststage!(nls)
+                nls.γ != QΔ[m, m] && refactorize_next_solve!(nls)
                 nls.γ = QΔ[m, m]
                 nls.c = nodes[m]
                 znode = nlsolve!(nls, integrator, cache, repeat_step)
-                nlsolvefail(nls) && return
+                if nlsolvefail(nls)
+                    foreach(refactorize_next_solve!, nlsolvers)
+                    return
+                end
                 zk1[m] = znode
                 ulast = @.. broadcast = false tmp + QΔ[m, m] * znode
             end
