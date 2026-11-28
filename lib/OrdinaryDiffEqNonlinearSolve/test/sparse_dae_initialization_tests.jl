@@ -3,10 +3,11 @@ using SparseArrays
 using LinearAlgebra
 using OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqBDF
+using OrdinaryDiffEqCore: alg_autodiff
 using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs, algebraic_jacobian,
-    BrownFullBasicInit, alg_autodiff, _isforwarddiff_alg
+    BrownFullBasicInit, _isforwarddiff_alg
 using NonlinearSolve: NewtonRaphson, FastShortcutNonlinearPolyalg
-using ADTypes: AutoSparse
+using ADTypes: AutoSparse, AutoForwardDiff
 using SciMLBase: ReturnCode
 
 @testset "Sparse jac_prototype in BrownFullBasicInit" begin
@@ -340,6 +341,31 @@ end
         reltol = 1.0e-8, abstol = 1.0e-10
     )
     @test sol.retcode == ReturnCode.Success
+    x1 = 1 / 2 - exp(-2) / 2
+    @test sol.u[end] ≈ [x1, 1 - x1] rtol = 1.0e-6
+end
+
+# The same initialization with no user `jac` and an explicitly sparse AD choice, so the
+# solver's own Jacobian is built by sparse AD while Brown still needs the dense backend.
+@testset "DAEProblem BrownFullBasicInit with AutoSparse autodiff and no user jac" begin
+    function dae!(res, du, u, p, t)
+        res[1] = du[1] + u[1] - u[2]
+        res[2] = u[1] + u[2] - 1
+        return nothing
+    end
+    f = DAEFunction(dae!; jac_prototype = sparse(ones(2, 2)))
+    prob = DAEProblem(f, [0.0, 0.0], [0.0, 0.3], (0.0, 1.0); differential_vars = [true, false])
+
+    integ = init(
+        prob, DFBDF(autodiff = AutoSparse(AutoForwardDiff()));
+        initializealg = BrownFullBasicInit(), reltol = 1.0e-8, abstol = 1.0e-10
+    )
+    @test alg_autodiff(integ.alg) isa AutoSparse
+    @test integ.du[1] ≈ 1.0 atol = 1.0e-8
+
+    sol = solve!(integ)
+    @test sol.retcode == ReturnCode.Success
+    @test sol.u[1] ≈ [0.0, 1.0] atol = 1.0e-8
     x1 = 1 / 2 - exp(-2) / 2
     @test sol.u[end] ≈ [x1, 1 - x1] rtol = 1.0e-6
 end
