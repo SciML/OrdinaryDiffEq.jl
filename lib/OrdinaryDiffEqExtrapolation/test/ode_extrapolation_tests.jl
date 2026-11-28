@@ -1,6 +1,6 @@
 # Import packages
 using OrdinaryDiffEqExtrapolation, DiffEqDevTools, Test, Random
-using CommonSolve: solve
+using CommonSolve: init, solve, solve!
 using SciMLBase: SciMLBase, ODEFunction, ODEProblem
 
 # Define test problems
@@ -327,4 +327,54 @@ end
         @test SciMLBase.successful_retcode(sol)
         @test sol.u[end] ≈ [1.0, 2.0] .* exp(-1) rtol = 1.0e-6
     end
+end
+
+@testset "Threaded extrapolation inside another threaded loop" begin
+    prob_iip = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 2.0], (0.0, 1.0))
+    prob_oop = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    for prob in (prob_iip, prob_oop),
+            Alg in (
+                AitkenNeville, ImplicitEulerExtrapolation,
+                ExtrapolationMidpointDeuflhard, ImplicitDeuflhardExtrapolation,
+                ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation,
+                ImplicitEulerBarycentricExtrapolation,
+            )
+        serial = solve(prob, Alg(threading = false))
+        sols = Vector{Any}(undef, 2)
+        Threads.@threads :dynamic for i in 1:2
+            sols[i] = solve(prob, Alg(threading = true))
+        end
+        @test all(sol -> sol.u == serial.u, sols)
+        @test all(SciMLBase.successful_retcode, sols)
+        @test all(sol -> sol.t[end] == 1.0, sols)
+        rtol = Alg === ImplicitEulerExtrapolation ? 1.0e-3 : 1.0e-4
+        @test serial.u[end] ≈ prob.u0 .* exp(-1) rtol = rtol
+    end
+end
+
+@testset "Threaded extrapolation keeps a pin set by the RHS" begin
+    # Once armed, the first RHS call on the caller task schedules a sticky child.
+    function f!(du, u, p, t)
+        if p.armed[] && current_task() === p.caller &&
+                !Threads.atomic_cas!(p.fired, false, true)
+            wait(@async nothing)
+        end
+        return du .= -u
+    end
+    fired = fill(false, 2)
+    pinned = fill(false, 2)
+    Threads.@threads :dynamic for i in 1:2
+        p = (;
+            armed = Threads.Atomic{Bool}(false), fired = Threads.Atomic{Bool}(false),
+            caller = current_task(),
+        )
+        prob = ODEProblem(f!, [1.0, 2.0], (0.0, 1.0), p)
+        integrator = init(prob, ExtrapolationMidpointDeuflhard(threading = true))
+        p.armed[] = true
+        solve!(integrator)
+        fired[i] = p.fired[]
+        pinned[i] = current_task().sticky
+    end
+    @test all(fired)
+    @test all(pinned)
 end

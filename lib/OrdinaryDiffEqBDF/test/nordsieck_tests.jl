@@ -3,6 +3,7 @@ using SciMLBase: DAEProblem, ODEProblem, ODEFunction, successful_retcode, remake
     DiscreteCallback, ContinuousCallback, NoInit
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NonlinearSolveAlg
 using LinearAlgebra, Test
+using OrdinaryDiffEqCore: get_qmax, get_qmax_first_step
 
 @testset "NordsieckBDF / DNordsieckBDF: default max_iter matches CVODE MAXCOR" begin
     @test NordsieckBDF().nlsolve.max_iter == 3
@@ -341,5 +342,22 @@ end
                 t -> abs(scalar(sol(t)) - exact(t)), range(0.01, 0.99, 99)
             ) < 1.0e-6
         end
+    end
+end
+
+@testset "NordsieckBDF: a step shortened onto a tstop is recorded at its accepted length" begin
+    prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, 1.0))
+    for tstop in (2.0^-14, 0.125 + 2.0^-14), resume_dt_after_tstop in (false, true)
+        integ = init(
+            prob, NordsieckBDF(); dt = 0.125, dtmax = 0.125, tstops = [tstop],
+            resume_dt_after_tstop
+        )
+        while integ.t < tstop
+            step!(integ)
+        end
+        @test integ.t == tstop
+        @test integ.cache.tau[1] == integ.t - integ.tprev
+        growth_bound = integ.tprev == 0 ? get_qmax_first_step(integ) : get_qmax(integ)
+        @test get_proposed_dt(integ) <= growth_bound * (integ.t - integ.tprev)
     end
 end

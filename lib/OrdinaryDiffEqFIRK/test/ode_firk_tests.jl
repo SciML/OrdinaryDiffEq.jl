@@ -1,5 +1,7 @@
 using OrdinaryDiffEqFIRK, DiffEqDevTools, Test, LinearAlgebra
 using SparseArrays
+import LinearSolve
+using LinearSolve: LUFactorization
 using OrdinaryDiffEqTsit5: AutoTsit5
 using ADTypes: AutoFiniteDiff
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_vanderpol, prob_ode_rober
@@ -300,6 +302,30 @@ end
     @test integ.kshortsize == bare.kshortsize
 end
 
+@testset "AdaptiveRadau dense output across stage-count changes" begin
+    f!(du, u, p, t) = (du .= cos(t) .* u; nothing)
+    f(u, p, t) = cos(t) .* u
+    exact(t) = exp(sin(t)) .* [1.0, 2.0]
+    for prob in (ODEProblem(f!, [1.0, 2.0], (0.0, 4.0)), ODEProblem(f, [1.0, 2.0], (0.0, 4.0)))
+        sol = solve(prob, AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+        @test maximum(maximum(abs.(sol(t) - exact(t))) for t in 0:0.01:4) < 1.0e-5
+        @test sol.stats.naccept < 40
+    end
+end
+
+@testset "AdaptiveRadau dense output for mass-matrix DAEs (#5027)" begin
+    # x' = -x + z, 0 = x - 2z  =>  x(t) = exp(-t/2), z(t) = x(t) / 2
+    M = [1.0 0.0; 0.0 0.0]
+    fiip = ODEFunction((du, u, p, t) -> (du[1] = -u[1] + u[2]; du[2] = u[1] - 2u[2]; nothing); mass_matrix = M)
+    foop = ODEFunction((u, p, t) -> [-u[1] + u[2], u[1] - 2u[2]]; mass_matrix = M)
+    for f in (fiip, foop)
+        prob = ODEProblem(f, [1.0, 0.5], (0.0, 5.0))
+        sol = solve(prob, AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-8)
+        @test maximum(abs(sol(t)[1] - exp(-t / 2)) for t in 0:0.01:5) < 1.0e-6
+        @test maximum(abs(sol(t)[2] - exp(-t / 2) / 2) for t in 0:0.01:5) < 1.0e-6
+    end
+end
+
 @testset "AdaptiveRadau Newton tolerance follows the stage count" begin
     prob = prob_ode_rober
     ref = solve(prob, RadauIIA5(); abstol = 1.0e-12, reltol = 1.0e-12, save_everystep = false)
@@ -310,6 +336,10 @@ end
         @test sol.u[end][3] ≈ ref.u[end][3] rtol = 1.0e-7
         @test abs(sum(sol.u[end]) - 1) < 1.0e-8
     end
+    vdp!(du, u, p, t) = (du[1] = u[2]; du[2] = 100 * ((1 - u[1]^2) * u[2] - u[1]); nothing)
+    vdp = ODEProblem(vdp!, [2.0, 0.0], (0.0, 2.0))
+    scalar = solve(vdp, AdaptiveRadau(); reltol = 1.0e-6, abstol = 1.0e-7)
+    @test solve(vdp, AdaptiveRadau(); reltol = [1.0e-6, 1.0e-6], abstol = [1.0e-7, 1.0e-7]).u == scalar.u
 end
 
 @testset "FIRK stiff member of an AutoSwitch composite (#4364)" begin
@@ -338,4 +368,65 @@ end
         prob_rober, AutoTsit5(AdaptiveRadau(autodiff = AutoFiniteDiff()); stiffalgfirst = true)
     )
     @test @inferred(OrdinaryDiffEqCore.get_current_adaptive_order(integ.alg.algs[2], integ.cache)) isa Int
+end
+
+@testset "Out-of-place AdaptiveRadau with a mass matrix" begin
+    M = Diagonal([2.0, 0.5])
+    fiip = ODEFunction((du, u, p, t) -> (du .= [-u[1] + cos(t), -u[2] + u[1]]; nothing); mass_matrix = M)
+    foop = ODEFunction((u, p, t) -> [-u[1] + cos(t), -u[2] + u[1]]; mass_matrix = M)
+    iip = solve(ODEProblem(fiip, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+    oop = solve(ODEProblem(foop, [1.0, 0.0], (0.0, 2.0)), AdaptiveRadau(); reltol = 1.0e-8, abstol = 1.0e-10)
+    @test oop.retcode == ReturnCode.Success
+    @test oop.u[end] ≈ iip.u[end] rtol = 1.0e-8
+end
+
+# Solves with `\` and reports `Failure` on call number `fail_at`
+struct FailNthLdiv <: LinearSolve.SciMLLinearSolveAlgorithm
+    calls::Threads.Atomic{Int}
+    fail_at::Int
+end
+FailNthLdiv(fail_at) = FailNthLdiv(Threads.Atomic{Int}(0), fail_at)
+LinearSolve.needs_concrete_A(::FailNthLdiv) = true
+function LinearSolve.SciMLBase.solve!(
+        cache::LinearSolve.LinearCache, alg::FailNthLdiv, args...; kwargs...
+    )
+    n = Threads.atomic_add!(alg.calls, 1) + 1
+    cache.u .= cache.A \ cache.b
+    retcode = n == alg.fail_at ? ReturnCode.Failure : ReturnCode.Success
+    return LinearSolve.SciMLBase.build_linear_solution(alg, cache.u, nothing, cache; retcode)
+end
+
+@testset "In-place FIRK rejects the step when the linear solve fails (#4997)" begin
+    # ∂w'/∂c = -Inf at c = 0, so W is non-finite and LU reports a failed factorization
+    function f!(du, u, p, t)
+        d, c, w = u
+        du[1] = -d
+        du[2] = d - c
+        du[3] = -(c < 0 ? NaN : c^0.1) - w
+        return nothing
+    end
+    prob = ODEProblem(f!, [1.0, 0.0, 0.0], (0.0, 10.0))
+    algs = (
+        RadauIIA3(linsolve = LUFactorization()), RadauIIA5(linsolve = LUFactorization()),
+        RadauIIA9(linsolve = LUFactorization()), AdaptiveRadau(linsolve = LUFactorization()),
+        AdaptiveRadau(linsolve = LUFactorization(), threading = true),
+    )
+    for alg in algs, kw in ((;), (; adaptive = false, dt = 1.0e-3))
+        sol = solve(prob, alg; kw...)
+        @test sol.retcode != ReturnCode.Success || isapprox(sol.u[end][1], exp(-10); rtol = 1.0e-2)
+    end
+
+    # nsolve counts every solve that ran, including the failed one and its siblings
+    linprob = ODEProblem((du, u, p, t) -> (du .= -u), [1.0, 2.0], (0.0, 1.0))
+    for mkalg in (
+            a -> RadauIIA3(linsolve = a), a -> RadauIIA5(linsolve = a),
+            a -> RadauIIA9(linsolve = a), a -> GaussLegendre(linsolve = a),
+            a -> AdaptiveRadau(linsolve = a, min_order = 9, max_order = 9),
+            a -> AdaptiveRadau(linsolve = a, min_order = 9, max_order = 9, threading = true),
+        )
+        linalg = FailNthLdiv(2)
+        sol = solve(linprob, mkalg(linalg))
+        @test sol.retcode == ReturnCode.Success
+        @test sol.stats.nsolve == linalg.calls[]
+    end
 end
