@@ -1,4 +1,5 @@
 using DiffEqDevTools
+using Pkg
 using SciMLTesting
 using Test
 
@@ -9,6 +10,14 @@ function activate_qa_env()
 end
 
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    const GR_JLL_UUID = Base.UUID("d2c73de3-f751-5644-a686-071e5b155ba9")
+    @testset "GR_jll test dependency floor" begin
+        @test haskey(Pkg.project().dependencies, "GR_jll")
+        gr_jll_version = Pkg.dependencies()[GR_JLL_UUID].version
+        @info "GR_jll resolved version" gr_jll_version
+        @test gr_jll_version >= v"0.73.7"
+    end
+
     # write your own tests here
     @time @testset "Benchmark Tests" begin
         include("benchmark_tests.jl")
