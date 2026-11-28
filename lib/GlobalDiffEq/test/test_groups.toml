@@ -3,3 +3,6 @@ versions = ["lts", "1", "pre"]
 
 [QA]
 versions = ["lts", "1"]
+
+[ModelingToolkit]
+versions = ["1"]

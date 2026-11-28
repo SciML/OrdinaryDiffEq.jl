@@ -14,8 +14,14 @@ run_tests(;
         @safetestset "Companion error estimators" begin
             include("companion_tests.jl")
         end
+        @safetestset "Companion error estimators with events" begin
+            include("companion_events_tests.jl")
+        end
         @safetestset "Adjoint error estimation and control" begin
             include("adjoint_tests.jl")
+        end
+        @safetestset "Adjoint error estimation with events and DAEs" begin
+            include("adjoint_events_tests.jl")
         end
         @safetestset "GLEE solvers" begin
             include("glee_tests.jl")
@@ -30,6 +36,14 @@ run_tests(;
     qa = (;
         env = joinpath(@__DIR__, "qa"),
         body = joinpath(@__DIR__, "qa", "qa.jl"),
+    ),
+    # ModelingToolkit group: in its own sub-env (test/modelingtoolkit/Project.toml), so
+    # that Core does not load ModelingToolkit.
+    groups = Dict(
+        "ModelingToolkit" => (;
+            env = joinpath(@__DIR__, "modelingtoolkit"),
+            body = joinpath(@__DIR__, "modelingtoolkit", "event_parameters_tests.jl"),
+        ),
     ),
     all = ["Core"],
 )
