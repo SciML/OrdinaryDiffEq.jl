@@ -152,7 +152,7 @@ end
 struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 @doc generic_solver_docstring(
-    "First order method using Cayley transformations.",
+    "First-order method for isospectral flows on square matrix states using Cayley transformations.",
     "CayleyEuler",
     "Semilinear ODE solver",
     "@article{iserles2000lie,

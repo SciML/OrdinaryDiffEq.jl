@@ -299,6 +299,14 @@ function update_func!(A, u, p, t)
     return nothing
 end
 
+@testset "CayleyEuler requires a square matrix state" begin
+    A = MatrixOperator([0.0 -1.0; 1.0 0.0])
+    for u0 in (ones(2), ones(2, 3))
+        prob = ODEProblem(A, u0, (0.0, 1.0))
+        @test_throws "CayleyEuler requires a square matrix state" solve(prob, CayleyEuler(); dt = 0.1)
+    end
+end
+
 η = diagm([1.0, 2, 3, 4, 5])
 A = MatrixOperator(
     Matrix{eltype(η)}(I(size(η, 1))); update_func,

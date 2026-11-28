@@ -933,7 +933,15 @@ cay!(tmp, A) = mul!(tmp, inv(I - 1 / 2 * A), (I + 1 / 2 * A))
 cay!(tmp, A::AbstractSciMLOperator) = @error "cannot multiply two SciMLOperators with mul!"
 cay(A) = inv(I - 1 / 2 * A) * (I + 1 / 2 * A)
 
+function check_cayley_state(u)
+    if ndims(u) != 2 || size(u, 1) != size(u, 2)
+        throw(ArgumentError("CayleyEuler requires a square matrix state for its two-sided Cayley update."))
+    end
+    return nothing
+end
+
 function initialize!(integrator, cache::CayleyEulerConstantCache)
+    check_cayley_state(integrator.uprev)
     # Pre-start fsal
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
@@ -970,6 +978,7 @@ function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step 
 end
 
 function initialize!(integrator, cache::CayleyEulerCache)
+    check_cayley_state(integrator.uprev)
     integrator.kshortsize = 2
 
     resize!(integrator.k, integrator.kshortsize)
