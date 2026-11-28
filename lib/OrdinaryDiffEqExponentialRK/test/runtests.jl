@@ -9,6 +9,7 @@ end
 
 # Run functional tests
 if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+    @time @safetestset "ExpRK6s16 regressions" include("exprk6s16_tests.jl")
     @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("linear_nonlinear_krylov_tests.jl")
     @time @safetestset "Linear-Nonlinear Convergence Tests" include("linear_nonlinear_convergence_tests.jl")
 end

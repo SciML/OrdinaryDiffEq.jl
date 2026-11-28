@@ -25,13 +25,16 @@ using SciMLOperators: MatrixOperator, ScalarOperator
             ETDRK4,
             HochOst4,
             Friedli,
+            ExpRK6s16,
             ERK32ZB,
             ERK43ZB,
             ETD2,
             KenCarp3,
             CFNLIRK3,
         ]
-        sim = test_convergence(dts, prob, Alg())
+        # Sixth-order errors reach roundoff on the smaller steps used above.
+        alg_dts = Alg === ExpRK6s16 ? 1 ./ 2 .^ (5:-1:2) : dts
+        sim = test_convergence(alg_dts, prob, Alg())
         @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol = 0.2
     end
 
@@ -62,11 +65,13 @@ end
             ETDRK4(),
             HochOst4(),
             Friedli(),
+            ExpRK6s16(),
             ERK32ZB(),
             ERK43ZB(),
             ETD2(),
         ]
-        sim = test_convergence(dts, prob, Alg)
+        alg_dts = Alg isa ExpRK6s16 ? 1 ./ 2 .^ (5:-1:2) : dts
+        sim = test_convergence(alg_dts, prob, Alg)
         @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol = 0.15
     end
 
@@ -79,6 +84,30 @@ end
     sim = test_convergence(dts, prob, ETDRK4(), dense_errors = true)
     @test sim.𝒪est[:l2] ≈ 4 atol = 0.1
     @test sim.𝒪est[:L2] ≈ 4 atol = 0.1
+end
+
+@testset "ExpRK6s16 reaction-diffusion convergence" begin
+    n = 32
+    x = (1:n) ./ (n + 1)
+    dx = inv(n + 1)
+    A = diagm(
+        -1 => fill(inv(dx^2), n - 1), 0 => fill(-2inv(dx^2), n),
+        1 => fill(inv(dx^2), n - 1),
+    )
+    exact(t) = x .* (1 .- x) .* exp(t)
+    source(t) = exact(t) - A * exact(t) .- inv.(1 .+ exact(t) .^ 2)
+    f2 = (u, p, t) -> inv.(1 .+ u .^ 2) .+ source(t)
+    prob = SplitODEProblem(SplitFunction(MatrixOperator(A), f2), exact(0), (0.0, 1.0))
+
+    # The endpoint error at dt = 1/32 is near Float64 roundoff and its order is BLAS-kernel sensitive.
+    dts = 1 ./ 2 .^ (1:4)
+    errors = map(dts) do dt
+        sol = solve(prob, ExpRK6s16(); dt, adaptive = false)
+        @test SciMLBase.successful_retcode(sol)
+        norm(sol.u[end] - exact(1))
+    end
+    orders = log2.(errors[1:(end - 1)] ./ errors[2:end])
+    @test all(orders .> 5.4)
 end
 
 @info "CFNLIRK3() is broken"
