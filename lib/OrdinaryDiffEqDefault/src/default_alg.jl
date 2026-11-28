@@ -160,6 +160,11 @@ has_structured_jac_prototype(jac_prototype, f) = false
 
 storage_linsolve(jac_prototype, f) = nothing
 
+@static if VERSION < v"1.11"
+    storage_linsolve(::Bidiagonal{<:Any, <:StridedVector}, f) =
+        LinearSolve.GenericFactorization(; fact_alg = A -> lu(A; check = false))
+end
+
 function DiffEqBase.prepare_alg(
         alg::CompositeAlgorithm{CS, <:DefaultAlgorithmTuple, <:AutoSwitch}, u0, p, prob
     ) where {CS}

@@ -13,7 +13,7 @@ import ADTypes: AutoFiniteDiff
 import DiffEqBase
 import LinearSolve
 using EnumX: EnumX
-using LinearAlgebra: Bidiagonal, Diagonal, Tridiagonal
+using LinearAlgebra: Bidiagonal, Diagonal, Tridiagonal, lu
 using SparseArrays: SparseMatrixCSC
 
 import SciMLBase
