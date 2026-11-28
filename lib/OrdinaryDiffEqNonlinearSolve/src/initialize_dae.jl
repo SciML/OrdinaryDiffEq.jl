@@ -25,13 +25,32 @@ _tagged_autodiff(u, ::Val{0}) = _tagged_autodiff(u, Val(1))
 function _tagged_autodiff(u, ::Val{CS} = Val(1)) where {CS}
     return AutoForwardDiff{CS}(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(u)))
 end
+_untagged_autodiff(::Val{nothing}) = _untagged_autodiff(Val(1))
+_untagged_autodiff(::Val{0}) = _untagged_autodiff(Val(1))
+_untagged_autodiff(::Val{CS} = Val(1)) where {CS} = AutoForwardDiff(; chunksize = CS)
+
+# Initialization residuals can call ODE wrappers that require OrdinaryDiffEqTag, so keep it
+# unless NonlinearSolveBase wraps the residual in its own FunctionWrapper, which only accepts
+# the tag NonlinearSolve chooses for an untagged backend. These are the conditions under
+# which NonlinearSolveBase wraps.
+function _nonlinearsolve_wraps(u, nlprob)
+    return SciMLBase.isinplace(nlprob) && u isa AbstractArray && !(eltype(u) <: Dual) &&
+        SciMLBase.specialization(nlprob.f) in (
+        SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize, SciMLBase.AutoDePSpecialize,
+    )
+end
+function _init_autodiff(u, nlprob, autodiff, chunksize)
+    autodiff || return AutoFiniteDiff()
+    return _nonlinearsolve_wraps(u, nlprob) ? _untagged_autodiff(chunksize) :
+        _tagged_autodiff(u, chunksize)
+end
 
 function default_nlsolve(
-        ::Nothing, isinplace::Val{true}, u, ::AbstractNonlinearProblem,
+        ::Nothing, isinplace::Val{true}, u, nlprob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize)
     )
 end
 function default_nlsolve(
@@ -43,11 +62,11 @@ function default_nlsolve(
     )
 end
 function default_nlsolve(
-        ::Nothing, isinplace::Val{false}, u, ::AbstractNonlinearProblem,
+        ::Nothing, isinplace::Val{false}, u, nlprob::AbstractNonlinearProblem,
         autodiff = false, chunksize = Val(1)
     )
     return FastShortcutNonlinearPolyalg(;
-        autodiff = autodiff ? _tagged_autodiff(u, chunksize) : AutoFiniteDiff()
+        autodiff = _init_autodiff(u, nlprob, autodiff, chunksize)
     )
 end
 function default_nlsolve(
