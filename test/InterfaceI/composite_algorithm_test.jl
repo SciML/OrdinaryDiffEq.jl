@@ -148,3 +148,16 @@ end
     @test sort(unique(sol3.alg_choice)) == [1, 2, 3]
     @test sol3.retcode == ReturnCode.Success
 end
+
+@testset "Out-of-place Rosenbrock member before an explicit one (#4951)" begin
+    prob = ODEProblem((u, p, t) -> -1000 .* (u .- cos(t)), [1.0], (0.0, 1.0))
+    a = 1.0e6 / (1.0e6 + 1)
+    exact = (1 - a) * exp(-1000) + a * cos(1.0) + a / 1000 * sin(1.0)
+    fd = Rosenbrock23(autodiff = AutoFiniteDiff())
+    for (algs, ref) in (((Rosenbrock23(), Tsit5()), Rosenbrock23()), ((fd, Rosenbrock23()), fd))
+        sol = solve(prob, CompositeAlgorithm(algs, _ -> 1))
+        @test sol.retcode == ReturnCode.Success
+        @test sol.u[end] == solve(prob, ref).u[end]
+        @test sol.u[end][1] ≈ exact rtol = 1.0e-5
+    end
+end

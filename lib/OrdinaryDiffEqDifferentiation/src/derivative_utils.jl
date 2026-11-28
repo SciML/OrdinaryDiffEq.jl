@@ -240,7 +240,8 @@ Out-of-place counterpart of [`calc_tderivative!`](@ref): compute and return the
 time derivative `∂f/∂t` at the current step.
 """
 function calc_tderivative(integrator, cache)
-    (; t, dt, uprev, u, f, p, alg) = integrator
+    (; t, dt, uprev, u, f, p) = integrator
+    alg = unwrap_alg(integrator, true)
 
     # Time derivative
     if SciMLBase.has_tgrad(f)
