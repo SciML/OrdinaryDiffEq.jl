@@ -8,15 +8,26 @@
     """
     - `stage_limiter!`: function of the form `limiter!(u, integrator, p, t)`
     - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
+    - `thread`: For in-place problems on supported CPU arrays, `thread = FastBroadcast.Threaded()` enables parallel state updates. Install Polyester in the active environment, load it with `using Polyester`, and start Julia with multiple threads. The default is `FastBroadcast.Serial()`.
     """,
     """
     stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
     step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+    thread = Serial(),
     """
 )
-Base.@kwdef struct Euler{StageLimiter, StepLimiter} <: OrdinaryDiffEqAlgorithm
+Base.@kwdef struct Euler{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = Serial()
+end
+
+Euler(stage_limiter!, step_limiter!) = Euler(stage_limiter!, step_limiter!, Serial())
+function Euler{S, L}(stage_limiter!, step_limiter!) where {S, L}
+    return Euler{S, L, Serial}(stage_limiter!, step_limiter!, Serial())
+end
+function Euler{S, L}(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) where {S, L}
+    return Euler{S, L}(stage_limiter!, step_limiter!)
 end
 
 @doc generic_solver_docstring(
