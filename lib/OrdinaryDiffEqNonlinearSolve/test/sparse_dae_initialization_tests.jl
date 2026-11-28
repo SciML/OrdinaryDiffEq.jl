@@ -6,7 +6,7 @@ using OrdinaryDiffEqBDF
 using OrdinaryDiffEqNonlinearSolve: find_algebraic_vars_eqs, algebraic_jacobian,
     BrownFullBasicInit, alg_autodiff, _isforwarddiff_alg
 using NonlinearSolve: NewtonRaphson, FastShortcutNonlinearPolyalg
-using ADTypes: AutoSparse
+using ADTypes: AutoSparse, AutoForwardDiff, AutoFiniteDiff
 using SciMLBase: ReturnCode
 
 @testset "Sparse jac_prototype in BrownFullBasicInit" begin
@@ -342,4 +342,33 @@ end
     @test sol.retcode == ReturnCode.Success
     x1 = 1 / 2 - exp(-2) / 2
     @test sol.u[end] ≈ [x1, 1 - x1] rtol = 1.0e-6
+end
+
+@testset "DAEProblem BrownFullBasicInit with dense jac_prototype" begin
+    function dae!(res, du, u, p, t)
+        res[1] = du[1] + u[1] - u[2]
+        res[2] = u[1] + u[2] - 1
+        return nothing
+    end
+    function dae_jac!(J, du, u, p, gamma, t)
+        J[1, 1] = 1 + gamma
+        J[1, 2] = -1
+        J[2, 1] = 1
+        J[2, 2] = 1
+        return nothing
+    end
+    for ad in (AutoForwardDiff(), AutoFiniteDiff()), k in 1:30
+        x0 = k / 1000
+        f = DAEFunction(dae!; jac = dae_jac!, jac_prototype = ones(2, 2))
+        prob = DAEProblem(f, zeros(2), [x0, 0.3], (0.0, 1.0); differential_vars = [true, false])
+        init_alg = BrownFullBasicInit(; nlsolve = NewtonRaphson(; autodiff = ad))
+        integ = init(prob, DFBDF(; autodiff = ad); initializealg = init_alg)
+        @test integ.sol.retcode != ReturnCode.InitialFailure
+        @test integ.u ≈ [x0, 1 - x0] atol = 1.0e-8
+        @test integ.du[1] ≈ 1 - 2x0 atol = 1.0e-8
+        sol = solve(prob, DFBDF(; autodiff = ad); initializealg = init_alg, abstol = 1.0e-10, reltol = 1.0e-8)
+        @test sol.retcode == ReturnCode.Success
+        x1 = 0.5 + (x0 - 0.5) * exp(-2)
+        @test sol.u[end] ≈ [x1, 1 - x1] atol = 1.0e-6
+    end
 end

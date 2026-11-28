@@ -838,7 +838,7 @@ function _initialize_dae!(
     end
 
     nlfunc = NonlinearFunction{true, SciMLBase.FullSpecialize}(
-        nlequation!; f.jac_prototype
+        nlequation!; f.jac_prototype, sparsity = nothing
     )
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
     nlsol = solve(
