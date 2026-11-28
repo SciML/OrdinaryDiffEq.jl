@@ -46,6 +46,12 @@ RandomTamedEM
 RandomTaylor15
 ```
 
+### RandomAffineHeun - Derivative-Free Order 2 Method for Affine Noise
+
+```@docs
+RandomAffineHeun
+```
+
 ## Langevin Dynamics
 
 ### BAOAB - Langevin Integrator

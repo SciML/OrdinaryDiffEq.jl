@@ -132,6 +132,60 @@ measured rate is lower on coarser steps.
 struct RandomTaylor15 <: StochasticDiffEqRODEAlgorithm end
 
 """
+    RandomAffineHeun()
+
+**RandomAffineHeun: Derivative-free order 2 method for RODEs with affine noise**
+
+Order 2 scheme for Random Ordinary Differential Equations in which the noise enters
+linearly,
+
+```math
+\\frac{du}{dt} = f_0(t, u) + \\sum_{j=1}^m f_j(t, u) \\, \\eta^j(t),
+```
+
+driven by a path supplied as a `NoiseGrid`. The derivatives of the order 2 affine
+Taylor scheme are replaced by forward differences of the right-hand side with a
+displacement of size `dt`, so only evaluations of `f` are needed. The noise enters
+through the single and double integrals of the path over the step, which are computed
+exactly for the piecewise linear path through the stored grid values. The double
+integrals are kept for every ordered pair of noise components, so the coefficients
+`f_j` do not have to commute. The step reduces to Heun's method when `f` does not
+depend on `W`.
+
+The right-hand side is written as for the other RODE methods, `f(u, p, t, W)` or
+`f(du, u, p, t, W)`, and must be affine in `W`. The coefficients are recovered by
+evaluation, `f_0 = f(u, p, t, 0 * W)` and `f_j = f(u, p, t, e_j) - f_0` with `e_j`
+the `j`-th unit vector, and the sums over `j` are formed by evaluating `f` at weights
+built from the path integrals. None of this is checked, so the result is not
+meaningful for a right-hand side that is not affine in `W`.
+
+## Method Properties
+
+  - **Problem type**: RODEs affine in the noise, driven by a `NoiseGrid` with scalar
+    or `Vector` values
+  - **Pathwise order**: 2
+  - **Time stepping**: Fixed step size
+  - **Right-hand side evaluations**: `3m + 3` per step for `m` noise components
+  - **Noise usage**: reads the driving path between the step endpoints
+
+## When to Use
+
+The order is proved in the reference for any continuous path, whatever its regularity.
+On Wiener paths and on fractional Brownian paths with Hurst index 0.3 the measured
+order is 2, where `RandomHeun` measures about 1 and 0.7 on the same problems.
+
+The path is taken to be linear between grid points, and the method converges to the
+solution driven by that piecewise linear path, also when the steps are finer than the
+grid.
+
+## References
+
+  - Han, X., Kloeden, P. E., Random Ordinary Differential Equations and Their Numerical
+    Solution, Springer, 2017, Chapter 11.
+"""
+struct RandomAffineHeun <: StochasticDiffEqRODEAlgorithm end
+
+"""
     BAOAB(; gamma = 1.0, scale_noise = true)
 
 **BAOAB: Langevin Dynamics Integrator (Specialized)**
