@@ -83,6 +83,30 @@ end
     end
 end
 
+@testset "AdaptiveRadau rebuilds stage matrices at an order change" begin
+    n = 50
+    J = spdiagm(
+        -1 => fill(10.0, n - 1), 0 => fill(-100.0, n), 1 => fill(10.0, n - 1)
+    )
+    linear!(du, u, p, t) = mul!(du, J, u)
+    for threading in (false, true)
+        f = ODEFunction(linear!; jac_prototype = copy(J))
+        prob = ODEProblem(f, ones(n), (0.0, 0.1))
+        integ = init(prob, AdaptiveRadau(; threading); abstol = 1.0e-8, reltol = 1.0e-8)
+        for _ in 1:15
+            step!(integ)
+            integ.cache.num_stages == 5 && break
+        end
+        @test integ.cache.num_stages == 5
+        failed_newton = integ.stats.nnonlinconvfail
+        t_before, u_before = integ.t, copy(integ.u)
+        step!(integ)
+        @test integ.stats.nnonlinconvfail == failed_newton
+        exact = exp(Matrix(J) * (integ.t - t_before)) * u_before
+        @test all(isapprox.(integ.u, exact; atol = 1.0e-8))
+    end
+end
+
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
     sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob, RadauIIA5(), dense_errors = true)
     @test sim21.𝒪est[:final] ≈ 5 atol = testTol
