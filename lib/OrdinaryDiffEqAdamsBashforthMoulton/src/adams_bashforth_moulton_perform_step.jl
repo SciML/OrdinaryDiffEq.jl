@@ -414,7 +414,7 @@ end
         f(t3, tmp, p, ttmp)
         @.. broadcast = false thread = thread tmp = uprev + dt * t3
         f(t4, tmp, p, t + dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 3)
         @.. broadcast = false thread = thread u = uprev + (dt / 6) * (2 * (t2 + t3) + (k1 + t4))   #RK4
         if cnt == 1
             cache.k5 .= k1
