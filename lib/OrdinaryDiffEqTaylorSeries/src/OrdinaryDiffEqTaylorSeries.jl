@@ -44,6 +44,7 @@ using SciMLBase: SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")
+include("stage_bundles.jl")
 include("TaylorSeries_caches.jl")
 include("TaylorSeries_perform_step.jl")
 include("interpolants.jl")
