@@ -588,14 +588,26 @@ end
 _expRK_scalar_split(f, u) = u isa Number && f isa SplitFunction &&
     f.f1.f isa SciMLOperators.AbstractSciMLScalarOperator
 
+@inline function _expRK_updated_coefficient(A, u, p, t)
+    updated = @static if isdefined(SciMLBase, :invoke_with_despecialized_parameters)
+        SciMLBase.invoke_with_despecialized_parameters(
+            SciMLOperators.update_coefficients, (A, u, p, t)
+        )
+    else
+        SciMLOperators.update_coefficients(A, u, p, t)
+    end
+    return convert(Number, updated)
+end
+
 for (Alg, Cache) in [
         (:ERK32ZB, :ERK32ZBConstantCache),
         (:ERK43ZB, :ERK43ZBConstantCache),
     ]
-    @eval mutable struct $Cache{opType, FType, tType} <: ExpRKConstantCache
+    @eval mutable struct $Cache{opType, FType, tType, aType} <: ExpRKConstantCache
         ops::opType # operators for the step size in `dtcache`
         uf::FType   # derivative wrapper
         dtcache::tType
+        acache::aType # coefficient key for updating scalar operators
     end
 
     @eval function alg_cache(
@@ -608,26 +620,22 @@ for (Alg, Cache) in [
             tTypeNoUnits,
         }
         scalar_split = _expRK_scalar_split(f, u)
+        a = if scalar_split && !isconstant(f.f1.f)
+            _expRK_updated_coefficient(f.f1.f, u, p, t)
+        end
         if alg.krylov && !scalar_split
             ops = nothing # no caching
         else
             isa(f, SplitFunction) ||
                 throw(ArgumentError("Caching can only be used with SplitFunction"))
-            if scalar_split && !isconstant(f.f1.f)
-                throw(
-                    ArgumentError(
-                        "ERK32ZB and ERK43ZB require a constant linear operator for scalar split problems. Use ScalarOperator(value) for a fixed coefficient or choose a solver that supports updating operators."
-                    )
-                )
-            end
-            ops = expRK_operators(alg, dt, _expRK_linear_operator(f))
+            ops = expRK_operators(alg, dt, a === nothing ? _expRK_linear_operator(f) : a)
         end
         if isa(f, SplitFunction) || SciMLBase.has_jac(f)
             uf = nothing
         else
             uf = UDerivativeWrapper(f, t, p)
         end
-        return $Cache(ops, uf, dt)
+        return $Cache(ops, uf, dt, a)
     end
 end
 
@@ -737,6 +745,27 @@ when the operators are already built for `dt` or the step uses Krylov actions.
     cache.ops = expRK_operators(alg, dt, _expRK_linear_operator(f))
     cache.dtcache = dt
     return nothing
+end
+
+@inline function _expRK_pair_step_data!(cache, alg, f, A, u, p, t, dt)
+    if cache.acache === nothing
+        update_expRK_operators!(cache, alg, f, dt)
+        Au = _expRK_scalar_split(f, u) ? convert(Number, A) * u : A * u
+        return cache.ops, Au, nothing
+    end
+
+    a = _expRK_updated_coefficient(A, u, p, t)
+    if dt == cache.dtcache && a isa typeof(cache.acache) && isequal(a, cache.acache)
+        return cache.ops, a * u, a
+    end
+    ops = expRK_operators(alg, dt, a)
+    # Use the new values directly if an update changed their types.
+    if a isa typeof(cache.acache) && ops isa typeof(cache.ops)
+        cache.ops = ops
+        cache.dtcache = dt
+        cache.acache = a
+    end
+    return ops, a * u, a
 end
 
 ####################################

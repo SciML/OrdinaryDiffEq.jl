@@ -315,7 +315,9 @@ Base.:*(A::FixedScalarLinear, u::Number) = A.coefficient * u
             @test all(u -> u isa Real, tight.u)
             @test abs(tight.u[end] - exact) < abs(loose.u[end] - exact)
             @test abs(tight.u[end] - exact) < 1.0e-6
-            @test_throws ArgumentError solve(updating_prob, alg; adaptive = false, dt = 1 / 64)
+            updated = solve(updating_prob, alg; abstol = 1.0e-9, reltol = 1.0e-9)
+            @test SciMLBase.successful_retcode(updated)
+            @test abs(updated.u[end] - exact) < 1.0e-6
         end
     end
 
@@ -326,6 +328,74 @@ Base.:*(A::FixedScalarLinear, u::Number) = A.coefficient * u
             @test SciMLBase.successful_retcode(sol)
             @test all(u -> u isa Real, sol.u)
             @test sol.u[end] ≈ exact atol = 1.0e-6
+        end
+    end
+end
+
+@testset "Embedded ExpRK pairs with updating scalar coefficients" begin
+    for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true)
+        alg = Alg(; krylov)
+        @testset "$Alg krylov=$krylov" begin
+            @testset "Constant coefficient callbacks" begin
+                for update_func in ((a, u, p, t) -> p, (a, u, p, t) -> a)
+                    A = ScalarOperator(-1.0; update_func)
+                    prob = SplitODEProblem(A, (u, p, t) -> 0.5, 0.8, (0.0, 1.0), -1.0)
+                    sol = solve(prob, alg; adaptive = false, dt = 0.125)
+                    @test SciMLBase.successful_retcode(sol)
+                    @test all(abs.(sol.u .- (0.5 .+ 0.3 .* exp.(-sol.t))) .< 100eps(Float64))
+                end
+            end
+
+            @testset "Time-dependent coefficient" begin
+                A = ScalarOperator(-1.0; update_func = (a, u, p, t) -> -(1 + t))
+                prob = SplitODEProblem(A, (u, p, t) -> zero(u), 0.8, (0.0, 1.0))
+                exact(t) = 0.8exp(-t - t^2 / 2)
+                errors = map((1 / 16, 1 / 32)) do dt
+                    sol = solve(prob, alg; adaptive = false, dt)
+                    @test SciMLBase.successful_retcode(sol)
+                    return maximum(abs.(sol.u .- exact.(sol.t)))
+                end
+                @test errors[2] < 1.0e-6
+                @test log2(errors[1] / errors[2]) > alg_order(alg) - 0.5
+            end
+
+            @testset "State- and parameter-dependent coefficient with step rejection" begin
+                A = ScalarOperator(0.0; update_func = (a, u, p, t) -> p * u)
+                prob = SplitODEProblem(A, (u, p, t) -> zero(u), 0.8, (0.0, 1.0), -2.0)
+                exact(t) = prob.u0 / (1 - prob.p * prob.u0 * t)
+                sol = solve(prob, alg; dt = 0.8, abstol = 1.0e-9, reltol = 1.0e-9)
+                @test SciMLBase.successful_retcode(sol)
+                @test sol.stats.nreject > 0
+                @test maximum(abs.(sol.u .- exact.(sol.t))) < 1.0e-6
+            end
+        end
+    end
+end
+
+@testset "Embedded ExpRK pairs with a typed parameter in a scalar coefficient" begin
+    specializations = @static if isdefined(SciMLBase, :AutoDespecialize)
+        (SciMLBase.FullSpecialize, SciMLBase.AutoDespecialize)
+    else
+        (SciMLBase.FullSpecialize,)
+    end
+    A = ScalarOperator(-2.0; update_func = (a, u, p::Float64, t) -> p)
+    g(u, p, t) = 0.7
+    exact(t) = 0.35 + 0.45exp(-2t)
+
+    for specialize in specializations
+        f = SplitFunction{false, specialize}(ODEFunction{false}(A), ODEFunction{false}(g))
+        prob = SplitODEProblem(f, 0.8, (0.0, 1.0), -2.0)
+        for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true), adaptive in (false, true)
+            @testset "$specialize $Alg krylov=$krylov adaptive=$adaptive" begin
+                alg = Alg(; krylov)
+                sol = if adaptive
+                    solve(prob, alg; abstol = 1.0e-9, reltol = 1.0e-9)
+                else
+                    solve(prob, alg; adaptive = false, dt = 0.125)
+                end
+                @test SciMLBase.successful_retcode(sol)
+                @test maximum(abs.(sol.u .- exact.(sol.t))) < 100eps(Float64)
+            end
         end
     end
 end

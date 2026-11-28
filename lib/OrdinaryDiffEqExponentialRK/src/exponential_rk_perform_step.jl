@@ -903,18 +903,23 @@ end
 #############################################
 # Embedded ExpRK pair integrators
 
+@inline _expRK_pair_stage(f, u, p, t, Au, ::Nothing) = f.f2(u, p, t) + Au
+@inline function _expRK_pair_stage(f, u, p, t, Au, a::Number)
+    # The tableau uses the coefficient frozen at the start of the step.
+    da = _expRK_updated_coefficient(f.f1.f, u, p, t) - a
+    return f.f2(u, p, t) + da * u + Au
+end
+
 function perform_step!(integrator, cache::ERK32ZBConstantCache, repeat_step = false)
     (; t, dt, uprev, f, p) = integrator
     A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator, cache) # get linear operator
     alg = unwrap_alg(integrator, true)
-    update_expRK_operators!(cache, alg, f, dt)
-
-    Au = _expRK_scalar_split(f, uprev) ? convert(Number, A) * uprev : A * uprev
+    ops, Au, a = _expRK_pair_step_data!(cache, alg, f, A, uprev, p, t, dt)
     F1 = integrator.fsalfirst
     halfdt = dt / 2
     threequarterdt = 3dt / 4
     nf2 = 2
-    if cache.ops === nothing
+    if ops === nothing
         kwargs = _arnoldi_kwargs(alg, A, integrator, nothing)
         # Krylov on F1 (first column)
         Ks = arnoldi(A, F1; kwargs...)
@@ -975,19 +980,19 @@ function perform_step!(integrator, cache::ERK32ZBConstantCache, repeat_step = fa
             _expRK_EEst!(integrator, utilde, u)
         end
     else
-        A21, A31, A32, B1, B2, B3, E1, E2, E3, E4 = cache.ops
+        A21, A31, A32, B1, B2, B3, E1, E2, E3, E4 = ops
         # stage 1 (fsaled)
         # stage 2
         U2 = uprev + dt * (A21 * F1)
-        F2 = f.f2(U2, p, t + halfdt) + Au
+        F2 = _expRK_pair_stage(f, U2, p, t + halfdt, Au, a)
         # stage 3
         U3 = uprev + dt * (A31 * F1 + A32 * F2)
-        F3 = f.f2(U3, p, t + threequarterdt) + Au
+        F3 = _expRK_pair_stage(f, U3, p, t + threequarterdt, Au, a)
         # update u with the third order estimate
         u = uprev + dt * (B1 * F1 + B2 * F2 + B3 * F3)
         if integrator.opts.adaptive
             # the second order estimate uses the nonlinearity at the new solution
-            F4 = f.f2(u, p, t + dt) + Au
+            F4 = _expRK_pair_stage(f, u, p, t + dt, Au, a)
             nf2 += 1
             utilde = dt * (E1 * F1 + E2 * F2 + E3 * F3 + E4 * F4)
             _expRK_EEst!(integrator, utilde, u)
@@ -1144,13 +1149,11 @@ function perform_step!(integrator, cache::ERK43ZBConstantCache, repeat_step = fa
     (; t, dt, uprev, f, p) = integrator
     A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator, cache) # get linear operator
     alg = unwrap_alg(integrator, true)
-    update_expRK_operators!(cache, alg, f, dt)
-
-    Au = _expRK_scalar_split(f, uprev) ? convert(Number, A) * uprev : A * uprev
+    ops, Au, a = _expRK_pair_step_data!(cache, alg, f, A, uprev, p, t, dt)
     F1 = integrator.fsalfirst
     halfdt = dt / 2
     sixthdt = dt / 6
-    if cache.ops === nothing
+    if ops === nothing
         kwargs = _arnoldi_kwargs(alg, A, integrator, nothing)
         # Krylov on F1 (first column)
         Ks = arnoldi(A, F1; kwargs...)
@@ -1243,20 +1246,20 @@ function perform_step!(integrator, cache::ERK43ZBConstantCache, repeat_step = fa
         end
     else
         A21, A31, A32, A41, A42, A43, A51, A52, A53, A54,
-            B1, B2, B3, B4, B5, E1, E2, E3, E4, E5 = cache.ops
+            B1, B2, B3, B4, B5, E1, E2, E3, E4, E5 = ops
         # stage 1 (fsaled)
         # stage 2
         U2 = uprev + dt * (A21 * F1)
-        F2 = f.f2(U2, p, t + sixthdt) + Au
+        F2 = _expRK_pair_stage(f, U2, p, t + sixthdt, Au, a)
         # stage 3
         U3 = uprev + dt * (A31 * F1 + A32 * F2)
-        F3 = f.f2(U3, p, t + halfdt) + Au
+        F3 = _expRK_pair_stage(f, U3, p, t + halfdt, Au, a)
         # stage 4
         U4 = uprev + dt * (A41 * F1 + A42 * F2 + A43 * F3)
-        F4 = f.f2(U4, p, t + halfdt) + Au
+        F4 = _expRK_pair_stage(f, U4, p, t + halfdt, Au, a)
         # stage 5 is the third order estimate
         U5 = uprev + dt * (A51 * F1 + A52 * F2 + A53 * F3 + A54 * F4)
-        F5 = f.f2(U5, p, t + dt) + Au
+        F5 = _expRK_pair_stage(f, U5, p, t + dt, Au, a)
         integrator.stats.nf2 += 4
         # update u with the fourth order estimate
         u = uprev + dt * (B1 * F1 + B2 * F2 + B3 * F3 + B4 * F4 + B5 * F5)
