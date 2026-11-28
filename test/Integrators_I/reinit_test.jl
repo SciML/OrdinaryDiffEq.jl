@@ -154,6 +154,24 @@ end
     end
 end
 
+@testset "reinit with new tf on the saveat grid" begin
+    for tdir in (1.0, -1.0), save_end in (nothing, false, true)
+        prob = ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, tdir))
+        integrator = init(prob, Tsit5(); saveat = 3 / 8, save_end)
+        solve!(integrator)
+
+        for tf in (2.0, 1.5)
+            reinit!(integrator; tf = tf * tdir)
+            solve!(integrator)
+            fresh = solve(
+                ODEProblem((u, p, t) -> 1.0, 0.0, (0.0, tf * tdir)), Tsit5();
+                saveat = 3 / 8, save_end
+            )
+            @test integrator.sol.t == fresh.t
+        end
+    end
+end
+
 @testset "reinit with new d_discontinuities" begin
     prob = prob_ode_2Dlinear
     integrator = init(prob, Tsit5(); dt = 1 // 2^(4), d_discontinuities = [1 // 2])
