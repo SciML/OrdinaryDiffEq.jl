@@ -209,7 +209,18 @@ integ = init(
 )
 add_tstop!(integ, 2.0)
 solve!(integ)
+@test integ.t == 2.0
 @test integ.sol.t == _saveat[1:(end - 1)]
+
+_reverse_saveat = reverse(_saveat)
+integ = init(
+    ODEProblem((u, p, t) -> u, 0.0, (1.0, 0.0)), Tsit5(), saveat = _reverse_saveat,
+    save_end = false
+)
+add_tstop!(integ, -1.0)
+solve!(integ)
+@test integ.t == -1.0
+@test integ.sol.t == _reverse_saveat[1:(end - 1)]
 
 # Catch save for maxiters
 ode = ODEProblem((u, p, t) -> u, 1.0, (0.0, 1.0))

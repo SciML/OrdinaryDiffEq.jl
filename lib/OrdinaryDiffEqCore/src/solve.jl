@@ -1016,7 +1016,7 @@ Base.@constprop :aggressive function _ode_init(
         typeof(noise), typeof(c), typeof(rate_constants),
     }(
         sol, u, du, k, t, tType(_dt), f, p,
-        uprev, uprev2, duprev, tprev,
+        uprev, uprev2, duprev, tprev, tType(tspan[end]),
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est,
         controller_cache,

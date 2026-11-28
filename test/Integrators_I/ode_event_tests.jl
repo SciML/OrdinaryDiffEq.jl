@@ -3,6 +3,7 @@ using OrdinaryDiffEq,
     SparseArrays,
     LinearAlgebra
 using OrdinaryDiffEqLinear, OrdinaryDiffEqLowOrderRK, OrdinaryDiffEqRosenbrock
+using DiffEqBase: add_saveat!, terminate!
 using SciMLOperators: MatrixOperator
 
 f = function (u, p, t)
@@ -256,6 +257,21 @@ affect! = function (integrator)
 end
 saving_callback2 = DiscreteCallback(condition, affect!; save_positions)
 sol4 = solve(prob, Tsit5(), callback = saving_callback2)
+
+@testset "save after terminating callback" begin
+    terminating_prob = ODEProblem((u, p, t) -> u, 0.0, (0.0, 1.0))
+    terminate_and_save!(integ) = (terminate!(integ); add_saveat!(integ, integ.t))
+    terminating_callback = DiscreteCallback(
+        (u, t, integ) -> t == 0.5, terminate_and_save!;
+        save_positions = (false, true)
+    )
+    terminated_sol = solve(
+        terminating_prob, Tsit5(); callback = terminating_callback,
+        adaptive = false, dt = 0.25, saveat = [0.25], save_end = false
+    )
+    @test terminated_sol.retcode == ReturnCode.Terminated
+    @test last(terminated_sol.t) == 0.5
+end
 
 cbs = CallbackSet(saving_callback, saving_callback2)
 sol4_extra = solve(prob, Tsit5(), callback = cbs)

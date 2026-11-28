@@ -172,6 +172,7 @@ mutable struct ODEIntegrator{
     uprev2::uType
     duprev::duType
     tprev::tType
+    tspan_end::tType
     alg::algType
     dtcache::tType
     dtchangeable::Bool
