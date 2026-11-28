@@ -392,7 +392,9 @@ per-component event mask. The event time is found by rootfinding on the callback
         end
 
         # Evaluate condition slightly in future
-        nudged_t = nudge_tprev(integrator, callback, min_condition_val)
+        conditions_tprev = @view(integrator.callback_cache.next_condition[1:(callback.len)])
+        copyto!(conditions_tprev, bottom_condition)
+        nudged_t, window_t = nudge_tprev(integrator, callback, min_condition_val, conditions_tprev)
         tmp_condition = get_condition(integrator, callback, nudged_t)
 
         for idx in 1:callback.len
@@ -402,11 +404,28 @@ per-component event mask. The event time is found by rootfinding on the callback
         end
     else
         nudged_t = bottom_t
+        window_t = integrator.t
     end
 
-    # Check if an event occurred
-    event_occurred, event_idx, top_t, top_sign =
-        check_event_occurrence(integrator, callback, bottom_sign)
+    # Check if an event occurred, inside the nudge window first
+    event_occurred = false
+    if window_t != integrator.t
+        event_occurred, event_idx, top_sign =
+            check_event_occurrence_upto(integrator, callback, bottom_sign, window_t)
+        top_t = window_t
+        if !event_occurred
+            nudged_t = window_t
+            for idx in 1:callback.len
+                if prev_simultaneous_events[idx]
+                    ArrayInterface.allowed_setindex!(bottom_sign, ArrayInterface.allowed_getindex(top_sign, idx), idx)
+                end
+            end
+        end
+    end
+    if !event_occurred
+        event_occurred, event_idx, top_t, top_sign =
+            check_event_occurrence(integrator, callback, bottom_sign)
+    end
 
     # Find callback time if occurrence
     if !event_occurred
@@ -489,14 +508,28 @@ end
             addsteps!(integrator)
         end
 
-        bottom_t = nudge_tprev(integrator, callback, bottom_condition)
+        bottom_t, window_t = nudge_tprev(integrator, callback, bottom_condition)
         bottom_condition = get_condition(integrator, callback, bottom_t)
+    else
+        window_t = integrator.t
     end
     bottom_sign = sign(bottom_condition)
 
-    # Check if an event occurred
-    event_occurred, event_idx, top_t, top_sign =
-        check_event_occurrence(integrator, callback, bottom_sign)
+    # Check if an event occurred, inside the nudge window first
+    event_occurred = false
+    if window_t != integrator.t
+        event_occurred, event_idx, top_sign =
+            check_event_occurrence_upto(integrator, callback, bottom_sign, window_t)
+        top_t = window_t
+        if !event_occurred
+            bottom_t = window_t
+            bottom_sign = top_sign
+        end
+    end
+    if !event_occurred
+        event_occurred, event_idx, top_t, top_sign =
+            check_event_occurrence(integrator, callback, bottom_sign)
+    end
 
     if !event_occurred
         callback_t = integrator.t
@@ -515,20 +548,70 @@ end
 end
 
 """
-Return a nudged (if necessary) value of `integrator.tprev` to avoid repeat event detection
+Return a nudged (if necessary) value of `integrator.tprev` to avoid repeat event detection,
+and the end of the window to check for an event first
 - `integrator`
 - `callback`: Last occurring callback
 - `condition_tprev`: Condition of last occurring callback evaluated at `integrator.tprev`
+- `conditions_tprev`: For a `VectorContinuousCallback`, all its conditions at `integrator.tprev`
 """
-function nudge_tprev(integrator, callback, condition_tprev)
+function nudge_tprev(integrator, callback, condition_tprev, conditions_tprev = condition_tprev)
     # Assume the previous event might affect the condition/root
-    return if abs(condition_tprev - integrator.last_event_error) <= callback.abstol
-        # We are still close to the root
-        right_t = integrator.tprev + integrator.dt * callback.repeat_nudge
-    else
+    if abs(condition_tprev - integrator.last_event_error) > callback.abstol
         # We are far away from the root, keep the current sign
-        right_t = integrator.tprev
+        return integrator.tprev, integrator.t
     end
+    # We are still close to the root
+    right_t = integrator.tprev + integrator.dt * callback.repeat_nudge
+    right_sign = nudge_sign(integrator, callback, right_t)
+    # The condition can cross zero again before `right_t` (e.g. a short excursion right
+    # after the event). Sample closer to `tprev` until the condition is back near the root.
+    # A flip seen at one sample only can be rounding noise, so it must hold at twice the offset.
+    tol = abs(integrator.last_event_error) + callback.abstol
+    offset = integrator.dt * callback.repeat_nudge
+    while true
+        offset /= 10
+        t = integrator.tprev + offset
+        (t == integrator.tprev || integrator.dt + offset == integrator.dt) && break
+        crossed = nudge_crossed(integrator, callback, t, right_sign, tol, conditions_tprev)
+        crossed === nothing && break
+        crossed && nudge_crossed(
+            integrator, callback, integrator.tprev + 2offset, right_sign, tol, conditions_tprev
+        ) === true && return t, right_t
+    end
+    return right_t, integrator.t
+end
+
+nudge_sign(integrator, callback::ContinuousCallback, t) = sign(get_condition(integrator, callback, t))
+
+function nudge_sign(integrator, callback::VectorContinuousCallback, t)
+    right_sign = @view(integrator.callback_cache.next_sign[1:(callback.len)])
+    right_sign .= sign.(get_condition(integrator, callback, t))
+    return right_sign
+end
+
+# `nothing` when back near the root, otherwise whether the sign differs from `right_sign`
+function nudge_crossed(integrator, callback::ContinuousCallback, t, right_sign, tol, _)
+    condition = get_condition(integrator, callback, t)
+    abs(condition) <= tol && return nothing
+    return sign(condition) != right_sign
+end
+
+# Only the components that fired last step and sat on their root at `tprev` are checked
+function nudge_crossed(
+        integrator, callback::VectorContinuousCallback, t, right_sign, tol, conditions_tprev
+    )
+    condition = get_condition(integrator, callback, t)
+    near_root = true
+    for idx in 1:callback.len
+        integrator.callback_cache.prev_simultaneous_events[idx] || continue
+        abs(ArrayInterface.allowed_getindex(conditions_tprev, idx)) <= tol || continue
+        cond_val = ArrayInterface.allowed_getindex(condition, idx)
+        abs(cond_val) <= tol && continue
+        sign(cond_val) != ArrayInterface.allowed_getindex(right_sign, idx) && return true
+        near_root = false
+    end
+    return near_root ? nothing : false
 end
 
 """
