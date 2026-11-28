@@ -50,6 +50,41 @@ end
     end
 end
 
+const ACTIVE = Ref([1, 3])
+f_active!(du, u, p, t) = (mul!(du, view(A, ACTIVE[], ACTIVE[]), u); nothing)
+
+@testset "BDF deleteat!/addat! mid-solve" begin
+    # Each case starts on the state components `before`, edits the integrator at t = TG,
+    # and continues on `after`. `addat!` on arrays appends, so the new component is last.
+    cases = (
+        ([1, 3], [1, 3, 2], integ -> (addat!(integ, [2]); integ.u[3] = UNEW)),
+        ([1, 2, 3], [1, 3], integ -> deleteat!(integ, [2])),
+    )
+    for alg in (FBDF(), QNDF()), (before, after, edit!) in cases
+        ACTIVE[] = before
+        integ = init(
+            ODEProblem(f_active!, [1.0, -0.5, 0.2][1:length(before)], (0.0, TF)), alg;
+            tstops = [TG], reltol = 1.0e-10, abstol = 1.0e-12
+        )
+        while integ.t < TG
+            step!(integ)
+        end
+        edit!(integ)
+        ACTIVE[] = after
+        u_edit = copy(integ.u)
+        @test length(u_edit) == length(after)
+        solve!(integ)
+        @test integ.sol.retcode == ReturnCode.Success
+
+        fresh = solve(
+            ODEProblem(f_active!, u_edit, (TG, TF)), alg;
+            reltol = 1.0e-10, abstol = 1.0e-12
+        )
+        @test integ.u ≈ fresh.u[end] rtol = 1.0e-7 atol = 1.0e-10
+        @test integ.u ≈ exp(A[after, after] * (TF - TG)) * u_edit rtol = 1.0e-7 atol = 1.0e-10
+    end
+end
+
 # Shrinking a vector with `resize!` keeps its trailing memory, so growing it back exposes the old
 # values. QNDF keeps its difference history across a resize when the derivative discontinuity is
 # cleared, so the rows a resize adds to that history must not carry such values.
