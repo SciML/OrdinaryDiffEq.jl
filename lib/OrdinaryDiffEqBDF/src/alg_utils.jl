@@ -55,6 +55,7 @@ isadaptive(alg::DNordsieckBDF) = true
 get_current_alg_order(alg::NordsieckBDFAlgs, cache) = cache.order
 get_current_adaptive_order(alg::NordsieckBDFAlgs, cache) = cache.order
 has_stiff_interpolation(::NordsieckBDFAlgs) = true
+resumes_dt_after_tstop(::NordsieckBDFAlgs) = false
 
 # The Newton increment norm is scaled by tq[2], which converts it into the units of
 # the local error test. That makes `NLNewton(κ = ...)` mean CVODE's NLSCOEF: the

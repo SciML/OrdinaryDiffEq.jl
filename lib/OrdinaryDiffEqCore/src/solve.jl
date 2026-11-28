@@ -235,6 +235,9 @@ function _build_callback_cache(u, max_len, ::Val{false}, ::Type{uBottomEltype}) 
     return DiffEqBase.CallbackCache(max_len, T, T)
 end
 
+DiffEqBase.solver_specific_kwargs(::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) =
+    (:resume_dt_after_tstop,)
+
 Base.@constprop :aggressive function SciMLBase.__init(
         prob::Union{
             SciMLBase.AbstractODEProblem,
@@ -449,6 +452,7 @@ Base.@constprop :aggressive function _ode_init(
         dense_errors = false,
         advance_to_tstop = false,
         stop_at_next_tstop = false,
+        resume_dt_after_tstop = false,
         initialize_save = true,
         progress = false,
         progress_steps = 1000,
@@ -964,6 +968,7 @@ Base.@constprop :aggressive function _ode_init(
     just_hit_tstop = false
     next_step_tstop = false
     tstop_target = zero(t)
+    dt_before_tstop = tType(_dt)
     isout = false
     accept_step = false
     force_stepfail = false
@@ -1057,7 +1062,8 @@ Base.@constprop :aggressive function _ode_init(
         callback_cache,
         kshortsize, force_stepfail,
         last_stepfail,
-        just_hit_tstop, next_step_tstop, tstop_target, do_error_check,
+        just_hit_tstop, next_step_tstop, tstop_target, dt_before_tstop,
+        resume_dt_after_tstop, do_error_check,
         event_last_time,
         vector_event_last_time,
         last_event_error, accept_step,
