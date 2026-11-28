@@ -29,6 +29,7 @@ SciMLPublic = "431bcebd-1456-4ced-9d72-93c2757fff0b"
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 
 [extras]
+SCCNonlinearSolve = "9dfe8606-65a1-4bb3-9748-cb89d1561431"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -48,6 +49,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
+SCCNonlinearSolve = "1.16"
 SciMLTesting = "2.4"
 CommonSolve = "0.2.6"
 Pkg = "1"
@@ -91,4 +93,4 @@ SparseConnectivityTracer = "1"
 ConstructionBase = "1.5.8"
 
 [targets]
-test = ["DiffEqDevTools", "LineSearch", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqPDIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "SparseConnectivityTracer", "StaticArrays", "Statistics", "Test", "Pkg", "SciMLTesting"]
+test = ["SCCNonlinearSolve", "DiffEqDevTools", "LineSearch", "LineSearches", "ODEProblemLibrary", "OrdinaryDiffEqBDF", "OrdinaryDiffEqFIRK", "OrdinaryDiffEqPDIRK", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqSDIRK", "Random", "SafeTestsets", "SparseConnectivityTracer", "StaticArrays", "Statistics", "Test", "Pkg", "SciMLTesting"]

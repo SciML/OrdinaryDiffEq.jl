@@ -165,10 +165,12 @@ integrator = init(
         du[2] = u[1]^2 - u[2]^2
     end
     prob = ODEProblem(fn, [2.0, 0.0], (0.0, 1.0))
-    integ = init(prob, Rodas5P())
+    integ = init(prob, Rodas5P(); abstol = 1.0e-10, reltol = 1.0e-10)
     @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8
+    @test abs(integ.u[1]^2 - integ.u[2]^2) <= 1.0e-10
     reinit!(integ)
     @test integ.u ≈ [2.0, 2.0] atol = 1.0e-8
+    @test abs(integ.u[1]^2 - integ.u[2]^2) <= 1.0e-10
     step!(integ, 0.01, true)
     @test SciMLBase.successful_retcode(integ.sol.retcode)
     reinit!(integ, reinit_dae = false)
