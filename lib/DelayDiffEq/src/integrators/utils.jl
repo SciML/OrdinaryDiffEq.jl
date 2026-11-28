@@ -71,9 +71,7 @@ function advance_ode_integrator!(integrator::DDEIntegrator, always_calc_begin = 
             true, true
         )
     end
-    @inbounds for i in 1:length(k)
-        copyat_or_push!(ode_integrator.k, i, k[i])
-    end
+    copyto_ode_k!(ode_integrator, k)
 
     # move ODE integrator to interval [t, t+dt]
     ode_integrator.t = t + dt
@@ -165,9 +163,19 @@ function move_back_ode_integrator!(integrator::DDEIntegrator)
     # constant extrapolation is used (and interpolation data of solution at initial
     # time point is not complete!)
     if length(sol.t) > 1
-        recursivecopy!(ode_integrator.k, sol.k[end])
+        copyto_ode_k!(ode_integrator, sol.k[end])
+        iscomposite(integrator.alg) && (ode_integrator.cache.current = sol.alg_choice[end])
     end
 
+    return nothing
+end
+
+# A composite algorithm can switch to a method with fewer interpolation entries.
+function copyto_ode_k!(ode_integrator, k)
+    length(ode_integrator.k) > length(k) && resize!(ode_integrator.k, length(k))
+    @inbounds for i in 1:length(k)
+        copyat_or_push!(ode_integrator.k, i, k[i])
+    end
     return nothing
 end
 
