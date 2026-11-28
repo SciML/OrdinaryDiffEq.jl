@@ -69,7 +69,7 @@ import OrdinaryDiffEqCore: _initialize_dae!,
 import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W,
     WOperator, StaticWOperator, wrapprecs, default_krylov_warm_start,
     build_jac_config, dolinsolve, set_linear_reltol!,
-    resize_jac_config!, jacobian2W!, jacobian!, calc_J
+    resize_jac_config!, jacobian2W!, jacobian!, calc_J, islinearfunction
 
 import StaticArraysCore: StaticArray
 
@@ -88,5 +88,6 @@ export BrownFullBasicInit, ShampineCollocationInit
 # Solver-author interface called or extended by sibling integrator packages.
 @public build_nlsolver, nlsolve!, nlsolvefail, markfirststage!, du_alias_or_new
 @public can_smooth_est, compute_step!, initial_η, anderson, anderson!
+@public restart_rate_on_new_W
 
 end

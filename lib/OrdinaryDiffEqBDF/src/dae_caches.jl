@@ -371,6 +371,9 @@ const NordsieckCaches = Union{
     DNordsieckBDFCache, DNordsieckBDFConstantCache,
 }
 
+# CVODE and IDA restart their convergence rate at every linear solver setup.
+restart_rate_on_new_W(::NordsieckCaches) = true
+
 function alg_cache(
         alg::DNordsieckBDF{MO}, du, u, res_prototype, rate_prototype,
         ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},

@@ -8,7 +8,7 @@ module ExternalNonlinearSolverClient
     using OrdinaryDiffEqNonlinearSolve:
         NLAnderson, NLFunctional, NLNewton, anderson, anderson!, build_nlsolver,
         can_smooth_est, compute_step!, du_alias_or_new, initial_η, markfirststage!,
-        nlsolve!, nlsolvefail
+        nlsolve!, nlsolvefail, restart_rate_on_new_W
     using OrdinaryDiffEqSDIRK: ImplicitEuler
     using SciMLBase: ODEProblem
 
@@ -78,6 +78,7 @@ const ExternalClient = ExternalNonlinearSolverClient
         oop_prob, ExternalClient.ImplicitEuler(nlsolve = alg); dt = 0.1,
         adaptive = false
     )
+    @test !ExternalClient.restart_rate_on_new_W(integrator.cache)
     single_step_solver = ExternalClient.build_solver(oop_prob, alg, Val(false))
     @test ExternalClient.initial_η(single_step_solver, integrator) >= 0
     @test isfinite(ExternalClient.compute_step!(single_step_solver, integrator))

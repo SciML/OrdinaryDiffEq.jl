@@ -1,12 +1,32 @@
 using OrdinaryDiffEqNonlinearSolve: NLNewton
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
+using OrdinaryDiffEqBDF: DFBDF
 using DiffEqDevTools
 using DiffEqBase
 using LineSearches
 using Test
 
 using ODEProblemLibrary: prob_ode_lorenz, prob_ode_orego
+
+@testset "a rebuilt W keeps the convergence rate by default" begin
+    # u' = -u^2 with u(0) = 1, so u(1) = 1/2
+    decay!(res, du, u, p, t) = (res[1] = du[1] + u[1]^2; nothing)
+    prob = DAEProblem(decay!, [-1.0], [1.0], (0.0, 1.0); differential_vars = [true])
+    integ = init(prob, DFBDF(); abstol = 1.0e-6, reltol = 1.0e-6)
+    kept = 0
+    for _ in 1:200
+        integ.t < 1 || break
+        nw, iters = integ.stats.nw, integ.stats.nnonliniter
+        step!(integ)
+        # Past the first steps, a solve with a new W can still stop after one iteration.
+        kept += integ.iter > 10 && integ.stats.nw > nw &&
+            integ.stats.nnonliniter == iters + 1
+    end
+    @test integ.t == 1
+    @test integ.u[1] ≈ 0.5 atol = 1.0e-6
+    @test kept > 0
+end
 
 for prob in (prob_ode_lorenz, prob_ode_orego)
     sol1 = solve(prob, Trapezoid(), reltol = 1.0e-12, abstol = 1.0e-12)

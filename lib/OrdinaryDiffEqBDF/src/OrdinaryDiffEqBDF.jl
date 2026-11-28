@@ -56,6 +56,7 @@ end
 
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
     nlsolve!, nlsolvefail, markfirststage!
+import OrdinaryDiffEqNonlinearSolve: restart_rate_on_new_W
 import ADTypes: AutoForwardDiff
 
 using Reexport: Reexport, @reexport

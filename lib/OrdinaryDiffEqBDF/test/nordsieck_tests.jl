@@ -2,6 +2,7 @@ using OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock, ODEProblemLibrary
 using SciMLBase: DAEProblem, ODEProblem, ODEFunction, successful_retcode, remake,
     DiscreteCallback, ContinuousCallback, NoInit
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NonlinearSolveAlg
+using SciMLOperators: MatrixOperator
 using LinearAlgebra, Test
 using OrdinaryDiffEqCore: get_qmax, get_qmax_first_step
 
@@ -189,6 +190,60 @@ end
         # broken corrector gives O(1) error, not a factor of two
         @test norm(sol.u[end] .- rv) / norm(rv) < 1.0e-2
     end
+end
+
+@testset "NordsieckBDF / DNordsieckBDF: a new W restarts the convergence rate" begin
+    # A pit between two basins with a withdrawal of 1 (SciML/OrdinaryDiffEq.jl#4983)
+    relaxed_sqrt(x, t) = abs(x) < t ? 1 / 4 * (x / sqrt(t)) * (5 - (x / t)^2) :
+        sign(x) * sqrt(abs(x))
+    function pit!(du, u, p, t)
+        h = -0.0164 + (u[1] + u[2] - t) / 119
+        du[1] = 36.5 * relaxed_sqrt(0.0004 - h, 1.0e-4)
+        du[2] = 36.5 * relaxed_sqrt(0.0 - h, 1.0e-4)
+        for k in 3:12
+            du[k] = (5.0 * t - u[k]) / 0.05
+        end
+        return nothing
+    end
+    pit_dae!(res, du, u, p, t) = (pit!(res, u, p, t); res .= du .- res; nothing)
+    u0 = zeros(12)
+    du0 = zeros(12)
+    pit!(du0, u0, nothing, 0.0)
+    tspan = (0.0, 3600.0)
+    # RMS norm of a system with 8000 states, the others carrying no error
+    rms(u, t) = u isa Number ? abs(u) : sqrt(sum(abs2, u) / 8000)
+    for (prob, alg) in (
+            (ODEProblem(pit!, u0, tspan), NordsieckBDF()),
+            (
+                DAEProblem(pit_dae!, du0, u0, tspan, differential_vars = trues(12)),
+                DNordsieckBDF(),
+            ),
+        )
+        sol = solve(
+            prob, alg, abstol = 0.01, reltol = 0.001, internalnorm = rms,
+            save_everystep = false
+        )
+        @test successful_retcode(sol)
+        @test sol.stats.naccept < 100
+        # At equilibrium, the sum of the signed flows into the pit equals the imposed
+        # withdrawal.
+        flows = zeros(12)
+        pit!(flows, sol.u[end], nothing, 3600.0)
+        @test flows[1] + flows[2] ≈ 1 rtol = 1.0e-2
+    end
+end
+
+@testset "NordsieckBDF: a linear function keeps its convergence rate" begin
+    n = 40
+    A = Matrix(Tridiagonal(fill(1.0, n - 1), fill(-2.0, n), fill(1.0, n - 1)))
+    A .*= (n + 1)^2 / 10
+    u0 = [sin(π * i / (n + 1)) for i in 1:n]
+    prob = ODEProblem(ODEFunction(MatrixOperator(A)), u0, (0.0, 2.0))
+    sol = solve(prob, NordsieckBDF(), abstol = 1.0e-6, reltol = 1.0e-6)
+    @test successful_retcode(sol)
+    # W follows the step size, but the rate does not depend on the state, so most
+    # steps need one iteration. Restarting the rate on every new W takes two.
+    @test sol.stats.nnonliniter < 1.5 * (sol.stats.naccept + sol.stats.nreject)
 end
 
 @testset "NordsieckBDF: NonlinearSolveAlg backend" begin

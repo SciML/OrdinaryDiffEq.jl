@@ -137,7 +137,13 @@ function nlsolve!(
     apply_predictor!(nlsolver, integrator)
     initialize!(nlsolver, integrator)
     nlsolver.status = check_div′ ? Divergence : Convergence
-    η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
+    new_W = get_new_W!(nlsolver)
+    η = new_W ? initial_η(nlsolver, integrator) : nlsolver.ηold
+    # A nonlinear stage can have a different contraction rate after W is rebuilt.
+    if new_W && restart_rate_on_new_W(cache) && isnewton(nlsolver) && !always_new &&
+            hasfield(NL, :prev_θ) && !first(islinearfunction(integrator))
+        nlsolver.prev_θ = one(nlsolver.prev_θ)
+    end
 
     ndz = one(η)
     for iter in 1:maxiters
