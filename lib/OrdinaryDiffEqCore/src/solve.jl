@@ -37,7 +37,7 @@ end
 
 parameter_values(z::zero_func_struct) = z.p
 
-# The zero function is reached through a `FunctionWrapper`, whose payload is untyped;
+# The zero function may be reached through a `FunctionWrapper`, whose payload is untyped;
 # loading the step state through one typed call keeps the field writes off the
 # dynamic `setproperty!` path.
 function _load_disco_state!(z::zero_func_struct, dt, uprev, u, k, tprev, p)
@@ -51,7 +51,37 @@ function _load_disco_state!(z::zero_func_struct, dt, uprev, u, k, tprev, p)
 end
 _set_disco_index!(z::zero_func_struct, ind) = (z.ind = ind; nothing)
 
-function (z::zero_func_struct)(θ, p)
+_disco_zero(prob::IntervalNonlinearProblem) = _disco_zero(prob.f.f)
+_disco_zero(z::zero_func_struct) = z
+_disco_zero(w::FunctionWrapper) = w.obj.x
+
+function _disco_problem(::Type{F}, ::Type{T}, i, u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p) where {F, T}
+    u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
+    out, out_low, out_high = if i isa VectorContinuousCallback
+        arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
+        arr, similar(arr), similar(arr)
+    else
+        nothing, zeros(Float64, 1), zeros(Float64, 1)
+    end
+    zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
+    return IntervalNonlinearProblem{false}(F(zero_func), [zero(T), one(T)], SciMLBase.NullParameters())
+end
+
+# One problem type per callback type in the set: `maybe_discontinuity` is a run-time field, so this
+# also covers ineligible callbacks; a few callback types give a small `Union` that calls split on.
+# A callback vector gives its element type's problem type when that is concrete; other sets give
+# the abstract type, and their problems keep the `FunctionWrapper`.
+_disco_problem_type(::Type{F}, ::Type{T}, cbs::Tuple, args) where {F, T} =
+    Union{map(cb -> Base.promote_op(_disco_problem, Type{F}, Type{T}, typeof(cb), map(typeof, args)...), cbs)...}
+_disco_problem_type(::Type{F}, ::Type{T}, ::AbstractVector{C}, args) where {F, T, C} =
+    isconcretetype(C) ? Base.promote_op(_disco_problem, Type{F}, Type{T}, C, map(typeof, args)...) :
+    IntervalNonlinearProblem
+_disco_problem_type(F, T, cbs, args) = IntervalNonlinearProblem
+
+# Float64 in and out, as through the `FunctionWrapper`, also when a problem holds the zero function directly.
+(z::zero_func_struct)(θ, p) = convert(Float64, _disco_zero_value(z, convert(Float64, θ)))
+
+function _disco_zero_value(z::zero_func_struct, θ)
     iszero(θ) && return z.out_low[z.ind]
     isone(θ) && return z.out_high[z.ind]
     u = _disco_interpolant(z, θ)
@@ -204,6 +234,9 @@ function _build_callback_cache(u, max_len, ::Val{false}, ::Type{uBottomEltype}) 
     T = real(uBottomEltype)
     return DiffEqBase.CallbackCache(max_len, T, T)
 end
+
+DiffEqBase.solver_specific_kwargs(::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) =
+    (:resume_dt_after_tstop,)
 
 Base.@constprop :aggressive function SciMLBase.__init(
         prob::Union{
@@ -419,6 +452,7 @@ Base.@constprop :aggressive function _ode_init(
         dense_errors = false,
         advance_to_tstop = false,
         stop_at_next_tstop = false,
+        resume_dt_after_tstop = false,
         initialize_save = true,
         progress = false,
         progress_steps = 1000,
@@ -934,6 +968,7 @@ Base.@constprop :aggressive function _ode_init(
     just_hit_tstop = false
     next_step_tstop = false
     tstop_target = zero(t)
+    dt_before_tstop = tType(_dt)
     isout = false
     accept_step = false
     force_stepfail = false
@@ -973,24 +1008,26 @@ Base.@constprop :aggressive function _ode_init(
         IntervalNonlinearProblem{false}, disco_zero_wrapper, Vector{tType},
         SciMLBase.NullParameters
     )
-    isconcretetype(disco_prob_type) || (disco_prob_type = IntervalNonlinearProblem)
+    # Under `FullSpecialize` the problems hold the zero function itself, typed by its callback,
+    # when the callback types give a concrete problem type or a small `Union`; otherwise they keep
+    # the wrapper, so the storage stays concrete.
+    cbs = callbacks_internal.continuous_callbacks
+    direct_f = SciMLBase.IntervalNonlinearFunction{false, SciMLBase.FullSpecialize}
+    args = (u, _dt, uprev, k, cache, save_idxs, differential_vars, f, tprev, p)
+    direct = !(cbs isa Tuple{}) && f isa SciMLBase.AbstractSciMLFunction &&
+        SciMLBase.specialization(f) === SciMLBase.FullSpecialize
+    if direct
+        direct_prob_type = _disco_problem_type(direct_f, tType, cbs, args)
+        direct = isconcretetype(direct_prob_type) || direct_prob_type isa Union
+        direct && (disco_prob_type = direct_prob_type)
+    end
+    make_f = direct ? direct_f : disco_zero_wrapper
+    isconcretetype(disco_prob_type) || disco_prob_type isa Union || (disco_prob_type = IntervalNonlinearProblem)
     disco_probs = Vector{disco_prob_type}(undef, num_probs)
     idx = 1
     for i in callbacks_internal.continuous_callbacks
         if i.maybe_discontinuity::Bool
-            u₁ = (u isa AbstractArray) ? similar(u) : zero(u)
-            out, out_low, out_high = if i isa VectorContinuousCallback
-                arr = (u isa AbstractArray) ? similar(u, i.len) : zeros(typeof(u), i.len)
-                arr, similar(arr), similar(arr)
-            else
-                nothing, zeros(Float64, 1), zeros(Float64, 1)
-            end
-            zero_func = zero_func_struct(u₁, i, _dt, uprev, u, k, cache, save_idxs, differential_vars, 1, out, out_low, out_high, f, tprev, p)
-            zero_func_wrapped = disco_zero_wrapper(zero_func)
-            disco_prob = IntervalNonlinearProblem{false}(
-                zero_func_wrapped, [zero(tType), one(tType)], SciMLBase.NullParameters()
-            )
-            disco_probs[idx] = disco_prob
+            disco_probs[idx] = _disco_problem(make_f, tType, i, args...)
             idx += 1
         end
     end
@@ -1025,7 +1062,8 @@ Base.@constprop :aggressive function _ode_init(
         callback_cache,
         kshortsize, force_stepfail,
         last_stepfail,
-        just_hit_tstop, next_step_tstop, tstop_target, do_error_check,
+        just_hit_tstop, next_step_tstop, tstop_target, dt_before_tstop,
+        resume_dt_after_tstop, do_error_check,
         event_last_time,
         vector_event_last_time,
         last_event_error, accept_step,
