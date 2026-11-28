@@ -1,9 +1,11 @@
 using OrdinaryDiffEqNonlinearSolve: NLNewton
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
+using ADTypes: AutoFiniteDiff, AutoForwardDiff
 using DiffEqDevTools
 using DiffEqBase
 using LineSearches
+using LinearAlgebra: Diagonal
 using Test
 
 using ODEProblemLibrary: prob_ode_lorenz, prob_ode_orego
@@ -19,6 +21,208 @@ for prob in (prob_ode_lorenz, prob_ode_orego)
     @test sol2.stats.nf <= sol1.stats.nf + 20
 end
 
+@testset "in-place line search preserves a resolved ascent and local trial slopes" begin
+    δ = eps() / 4
+    function rhs!(du, u, p, t)
+        a = -u[2] / δ
+        a <= 1.125 || throw(DomainError(a))
+        du[1] = 1
+        du[2] = u[2] + (1 + a - p * a^2)
+        return nothing
+    end
+    function jac!(J, u, p, t)
+        fill!(J, 0)
+        J[2, 2] = 1 + inv(δ)
+        return nothing
+    end
+    prob = ODEProblem(ODEFunction(rhs!; jac = jac!), zeros(2), (0.0, 1.0), 1.5)
+    function predictor!(upred, uprev, p, t, dt)
+        upred[1] = 1
+        upred[2] = 0
+        return nothing
+    end
+    function solve_with(linesearch, problem = prob)
+        return solve(
+            problem, ImplicitEuler(nlsolve = NLNewton(predictor = predictor!, relax = linesearch));
+            dt = 1.0, adaptive = false, abstol = 0.1, reltol = 0.0,
+            internalnorm = (x, t) -> maximum(abs, x)
+        )
+    end
+
+    @testset "derivative callbacks" begin
+        function check_slopes(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+            @test dϕ0 ≈ 10 atol = 32sqrt(eps())
+            @test dϕ(0.0) == dϕ0
+            @test ϕdϕ(0.0) == (ϕ0, dϕ0)
+            value, slope = ϕdϕ(a)
+            @test value ≈ 5
+            @test slope ≈ -20 atol = 64sqrt(eps())
+            @test dϕ(a) ≈ -20 atol = 64sqrt(eps())
+            return a, value
+        end
+        solve_with(check_slopes)
+    end
+    if Base.pkgversion(LineSearches) >= v"7.8.2"
+        @test_throws LineSearches.LineSearchException solve_with(BackTracking())
+        function check_monotone_ascent(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+            @test dϕ0 ≈ 10 atol = 32sqrt(eps())
+            return BackTracking()(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+        end
+        @test_throws LineSearches.LineSearchException solve_with(
+            check_monotone_ascent, SciMLBase.remake(prob; p = 0.0)
+        )
+    end
+end
+
+@testset "in-place line search preserves a resolved mass-matrix ascent" begin
+    δ, θ, mass = 2.0^-28, 2.0^-20, 2.0^27
+    function rhs!(du, u, p, t)
+        a = (1 - u[1]) / δ
+        du[1] = 1 - min(2a^2 / hypot(a, θ), 1)
+        return nothing
+    end
+    float_rhs!(du::Vector{Float64}, u::Vector{Float64}, p, t) = rhs!(du, u, p, t)
+    jac!(J, u, p, t) = (J[1, 1] = mass + inv(δ); nothing)
+    predictor!(upred, uprev, p, t, dt) = (upred[1] = 1; nothing)
+    function check_ascent(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+        h = sqrt(eps())
+        @test (ϕ(h) - ϕ0) / h ≈ 5
+        @test dϕ0 ≈ 5
+        return BackTracking()(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+    end
+    function solve_and_check_residual(f!)
+        prob = ODEProblem(
+            ODEFunction(f!; jac = jac!, mass_matrix = Diagonal([mass])), [1.0], (0.0, 1.0)
+        )
+        sol = solve(
+            prob, ImplicitEuler(nlsolve = NLNewton(predictor = predictor!, relax = check_ascent));
+            dt = 1.0, adaptive = false, abstol = 0.1, reltol = 0.0
+        )
+        if SciMLBase.successful_retcode(sol)
+            rhs = similar(sol.u[end])
+            rhs!(rhs, sol.u[end], prob.p, sol.t[end])
+            @test abs(mass * (sol.u[end][1] - prob.u0[1]) - rhs[1]) <= 0.1
+        end
+        return sol
+    end
+    if Base.pkgversion(LineSearches) >= v"7.8.2"
+        for f! in (rhs!, float_rhs!)
+            @test_throws LineSearches.LineSearchException solve_and_check_residual(f!)
+        end
+    end
+end
+
+@testset "in-place line search recovers a roundoff-limited slope" begin
+    δ = 2.0^-28
+    function rhs!(du, u, p, t)
+        a = (1 - u[1]) / δ
+        du[1] = u[1] - a
+        return nothing
+    end
+    jac!(J, u, p, t) = (J[1, 1] = 1 + inv(δ); nothing)
+    prob = ODEProblem(ODEFunction(rhs!; jac = jac!), [1.0], (0.0, 1.0))
+    function check_slopes(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+        @test ϕ(sqrt(eps())) == ϕ0
+        @test dϕ0 ≈ -10
+        @test dϕ(0.0) == dϕ0
+        @test ϕdϕ(0.0) == (ϕ0, dϕ0)
+        value = ϕ(a)
+        slope = (ϕ(a + sqrt(eps())) - value) / sqrt(eps())
+        @test dϕ(a) == slope
+        @test ϕdϕ(a) == (value, slope)
+        return BackTracking()(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+    end
+    sol = solve(
+        prob, ImplicitEuler(nlsolve = NLNewton(relax = check_slopes));
+        dt = 1.0, adaptive = false, abstol = 0.1, reltol = 0.0
+    )
+    @test sol.retcode == SciMLBase.ReturnCode.Success
+    @test sol.u[end] == [1 - δ]
+end
+
+@testset "in-place line search keeps a finite-diff primal-only RHS" begin
+    δ = 2.0^-28
+    mass = 1.0
+    function rhs!(du, u, p, t)
+        x = reinterpret(Float64, reinterpret(UInt64, u[1]))
+        du[1] = x - (1 - x) / δ
+        return nothing
+    end
+    jac!(J, u, p, t) = (J[1, 1] = 1 + inv(δ); nothing)
+    predictor!(upred, uprev, p, t, dt) = (upred[1] = 1; nothing)
+    prob = ODEProblem(
+        ODEFunction(rhs!; jac = jac!, mass_matrix = Diagonal([mass])), [1.0], (0.0, 1.0)
+    )
+    measured = Float64[]
+    function check_slopes(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+        push!(measured, dϕ0)
+        @test dϕ0 == 0.0
+        return BackTracking()(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+    end
+    sol = solve(
+        prob,
+        ImplicitEuler(
+            autodiff = AutoFiniteDiff(),
+            nlsolve = NLNewton(predictor = predictor!, relax = check_slopes),
+        );
+        dt = 1.0, adaptive = false, abstol = 0.1, reltol = 0.0
+    )
+    @test sol.retcode == SciMLBase.ReturnCode.Success
+    @test sol.u[end] == [1 - δ]
+    @test measured == [0.0]
+    rhs = similar(sol.u[end])
+    rhs!(rhs, sol.u[end], prob.p, sol.t[end])
+    @test abs(mass * (sol.u[end][1] - prob.u0[1]) - rhs[1]) <= 0.1
+end
+
+@testset "in-place line search unwraps composite algorithm backends" begin
+    δ = 2.0^-28
+    mass = 1.0
+    function dual_rhs!(du, u, p, t)
+        du[1] = u[1] - (1 - u[1]) / δ
+        return nothing
+    end
+    function primal_rhs!(du, u, p, t)
+        x = reinterpret(Float64, reinterpret(UInt64, u[1]))
+        du[1] = x - (1 - x) / δ
+        return nothing
+    end
+    jac!(J, u, p, t) = (J[1, 1] = 1 + inv(δ); nothing)
+    predictor!(upred, uprev, p, t, dt) = (upred[1] = 1; nothing)
+    function solve_composite(f!, other_backend, selected_backend, expected_slope)
+        measured = Float64[]
+        function check_slopes(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+            push!(measured, dϕ0)
+            α, value = BackTracking()(ϕ, dϕ, ϕdϕ, a, ϕ0, dϕ0)
+            @test 0 < α <= 1
+            @test isfinite(value)
+            return α, value
+        end
+        nlsolve = NLNewton(predictor = predictor!, relax = check_slopes)
+        alg = OrdinaryDiffEqCore.CompositeAlgorithm(
+            (
+                ImplicitEuler(autodiff = other_backend, nlsolve = nlsolve),
+                ImplicitEuler(autodiff = selected_backend, nlsolve = nlsolve),
+            ),
+            _ -> 2,
+        )
+        prob = ODEProblem(
+            ODEFunction(f!; jac = jac!, mass_matrix = Diagonal([mass])), [1.0], (0.0, 1.0)
+        )
+        sol = solve(
+            prob, alg; dt = 1.0, adaptive = false, abstol = 0.1, reltol = 0.0
+        )
+        @test sol.retcode == SciMLBase.ReturnCode.Success
+        @test sol.u[end] == [1 - δ]
+        @test measured == [expected_slope]
+        rhs = similar(sol.u[end])
+        f!(rhs, sol.u[end], prob.p, sol.t[end])
+        @test abs(mass * (sol.u[end][1] - prob.u0[1]) - rhs[1]) <= 0.1
+        return sol
+    end
+    solve_composite(primal_rhs!, AutoForwardDiff(), AutoFiniteDiff(), 0.0)
+    solve_composite(dual_rhs!, AutoFiniteDiff(), AutoForwardDiff(), -10.0)
+end
 
 @testset "fixed-step ImplicitEuler respects solve-level adaptivity (#4905)" begin
     rhs(u, p, t) = -8u

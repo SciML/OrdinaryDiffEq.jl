@@ -156,6 +156,15 @@ possible) to solve `g(z) = 0`.
   - `always_new`: force recomputation of `W` on every solve.
   - `check_div`: enable early divergence detection.
   - `relax`: optional relaxation parameter in `[0, 1)` damping the Newton update.
+    For in-place stages, `relax` also accepts a callable line search that receives
+    the scaled stage residual norm and its slope estimate. When roundoff makes
+    that estimate nonnegative, the solver may recheck the merit's directional
+    derivative with ForwardDiff before calling the line search. The recheck is
+    attempted only when the integrator's configured differentiation backend is
+    ForwardDiff-based; selecting `autodiff = AutoFiniteDiff()` opts out for an
+    RHS that accepts only primal floating-point inputs. If no dual-number method
+    exists, the recheck is skipped and the measured finite-difference slope is
+    retained.
   - `predictor`: optional callable seeding each stage solve, `predictor(uprev, p, t, dt)`
     out of place and `predictor(upred, uprev, p, t, dt)` in place, returning a guess
     for the stage value at stage time `t`. Applied to every implicit stage of any

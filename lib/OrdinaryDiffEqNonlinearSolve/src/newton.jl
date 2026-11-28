@@ -1007,6 +1007,41 @@ function relax!(
     return dz
 end
 
+function linesearch_roundoff_step(x, dx)
+    iszero(dx) && return 0.0
+    scale = abs(x)
+    return roundoff_level(typeof(scale)) * (scale / abs(dx))
+end
+
+# The solver's default norm includes dual partials in error control. Differentiating
+# the stage merit requires the RMS formula with the residual's tangent intact.
+linesearch_rms_norm(x::Real, t) = x < 0 ? -x : x
+linesearch_rms_norm(x, t) = sqrt(sum(abs2, x) / max(length(x), 1))
+
+function linesearch_directional_slope(merit, f, internalnorm, z, dz, ztmp, ustep, k, atmp)
+    T = eltype(z)
+    T <: AbstractFloat || return nothing
+    norm = internalnorm === DiffEqBase.ODE_DEFAULT_NORM ? linesearch_rms_norm : internalnorm
+    try
+        return DifferentiationInterface.derivative(AutoForwardDiff(), zero(T)) do step
+            scratch(buffer) = similar(buffer, promote_type(eltype(buffer), typeof(step)))
+            trial = scratch(atmp)
+            @.. trial = z - dz * step
+            value = merit(
+                SciMLBase.unwrapped_f(f), norm, trial, scratch(ztmp), scratch(ustep), scratch(k),
+                scratch(atmp)
+            )
+            return isfinite(value) ? value : zero(step)
+        end
+    catch err
+        # Missing dual-number methods leave the derivative unavailable.
+        if err isa MethodError && any(arg -> arg isa Union{Dual, Type{<:Dual}, AbstractArray{<:Dual}}, err.args)
+            return nothing
+        end
+        rethrow()
+    end
+end
+
 function relax!(
         dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch
@@ -1018,14 +1053,13 @@ function relax!(
             linesearch = linesearch
 
         (; uprev, t, p, dt, opts, isdae) = integrator
-        (; z, tmp, ztmp, γ, iter, α, cache, method) = nlsolver
+        (; z, tmp, ztmp, γ, α, cache, method) = nlsolver
         (; ustep, atmp, tstep, k, invγdt) = cache
-        function resid(z)
-            # recompute residual (rhs)
+        function merit(f, internalnorm, z, ztmp, ustep, k, atmp)
             if isdae
                 _uprev = get_dae_uprev(integrator, uprev)
                 b, ustep2 = _compute_rhs!(
-                    tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f::TF, z
+                    tmp, ztmp, ustep, α, tstep, k, invγdt, p, _uprev, f, z
                 )
             else
                 b, ustep2 = _compute_rhs!(
@@ -1034,29 +1068,75 @@ function relax!(
             end
             calculate_residuals!(
                 atmp, b, uprev, ustep2, opts.abstol, opts.reltol,
-                opts.internalnorm, t
+                internalnorm, t
             )
-            ndz = opts.internalnorm(atmp, t)
-            return ndz
+            return internalnorm(atmp, t)
         end
         function ϕ(α)
             local z = @.. atmp = nlsolver.z - dz * α
-            res = resid(z)
-            return res
-        end
-        function dϕ(α)
-            ϵ = sqrt(eps())
-            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
-        end
-        function ϕdϕ(α)
-            ϵ = sqrt(eps())
-            ϕ_1 = ϕ(α)
-            ϕ_2 = ϕ(α + ϵ)
-            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, ∂ϕ∂α
+            return merit(f, opts.internalnorm, z, ztmp, ustep, k, atmp)
         end
         α0 = one(eltype(ustep))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
+        ϕ0 = ϕ(zero(α0))
+        ϵ = sqrt(eps())
+        dϕ0 = let slope = (ϕ(ϵ) - ϕ0) / ϵ
+            if isfinite(slope) && slope >= 0 && !iszero(ϕ0)
+                multistep = !isdae && method === COEFFICIENT_MULTISTEP
+                stage = multistep ? z : ustep
+                stage_scale = isdae || multistep ? one(γ) : γ
+                h = zero(ϵ)
+                for i in eachindex(z, dz, stage)
+                    iszero(dz[i]) && continue
+                    local_step = max(
+                        linesearch_roundoff_step(z[i], dz[i]),
+                        linesearch_roundoff_step(stage[i], stage_scale * dz[i])
+                    )
+                    if isdae
+                        local_step = max(
+                            local_step,
+                            linesearch_roundoff_step(ztmp[i], (α * invγdt) * dz[i])
+                        )
+                    end
+                    # A resolved active component can account for a genuine ascent.
+                    if local_step < ϵ
+                        h = zero(ϵ)
+                        break
+                    end
+                    h = max(h, local_step)
+                end
+                if ϵ <= h <= 2.0^-11
+                    # Keep both retry probes local and above the roundoff scale.
+                    h = min(4h, 2.0^-10)
+                    slope_half = (ϕ(h / 2) - ϕ0) / (h / 2)
+                    if isfinite(slope_half) && slope_half < 0
+                        slope_full = (ϕ(h) - ϕ0) / h
+                        # A stateful mass operator may cache coefficients from the probe.
+                        if isfinite(slope_full) && slope_full < 0 &&
+                                (isdae || !(f.mass_matrix isa AbstractSciMLOperator))
+                            directional_slope = nothing
+                            autodiff = alg_autodiff(
+                                OrdinaryDiffEqCore.unwrap_alg(integrator, true)
+                            )
+                            if ADTypes.dense_ad(autodiff) isa AutoForwardDiff
+                                directional_slope = linesearch_directional_slope(
+                                    merit, f, opts.internalnorm, z, dz, ztmp, ustep, k, atmp
+                                )
+                            end
+                            if directional_slope !== nothing && isfinite(directional_slope) && directional_slope < 0
+                                slope = directional_slope
+                            end
+                        end
+                    end
+                end
+            end
+            slope
+        end
+        function ϕdϕ(α)
+            iszero(α) && return ϕ0, dϕ0
+            ϕ_1 = ϕ(α)
+            return ϕ_1, (ϕ(α + ϵ) - ϕ_1) / ϵ
+        end
+        dϕ(α) = last(ϕdϕ(α))
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
         return dz

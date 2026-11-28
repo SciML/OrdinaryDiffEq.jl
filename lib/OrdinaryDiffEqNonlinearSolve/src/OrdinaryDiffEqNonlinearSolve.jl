@@ -41,6 +41,7 @@ import ArrayInterface: ArrayInterface
 import LinearSolve
 import ForwardDiff: ForwardDiff
 using ForwardDiff: Dual
+import DifferentiationInterface
 import OrdinaryDiffEqCore
 
 import SciMLOperators: islinear, AbstractSciMLOperator, MatrixOperator,
