@@ -55,6 +55,10 @@ end
 @inline _mmmul(z, ::Nothing) = z
 @inline _mmmul(z, d) = d * z
 
+# An explicit first stage does not determine an algebraic increment. Its
+# embedded combination is therefore only a truncation estimate on differential rows.
+@inline _embedded_error(z, d) = iszero(d) ? zero(z) : z
+
 # A SciMLOperators mass matrix may depend on `(u, p, t)`, so its diagonal is read at
 # the point each conversion belongs to: `(uprev, t)` for the first stage and
 # `(u, t + dt)` for the FSAL. The out-of-place `update_coefficients` leaves the
@@ -1327,6 +1331,9 @@ end
                     @.. broadcast = false tmp = tmp + ebtilde[j] * ks[j]
                 end
             end
+            if mmd !== nothing
+                @.. broadcast = false tmp = _embedded_error(tmp, mmd)
+            end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
                 est = nlsolver.cache.dz
                 linres = dolinsolve(
@@ -2385,6 +2392,9 @@ end
                 elseif s == 12
                     tmp_est = tmp_est + ebtilde[1] * k1 + ebtilde[2] * k2 + ebtilde[3] * k3 + ebtilde[4] * k4 + ebtilde[5] * k5 + ebtilde[6] * k6 + ebtilde[7] * k7 + ebtilde[8] * k8 + ebtilde[9] * k9 + ebtilde[10] * k10 + ebtilde[11] * k11 + ebtilde[12] * k12
                 end
+            end
+            if mmd !== nothing
+                tmp_est = _embedded_error.(tmp_est, mmd)
             end
             if can_smooth_est(nlsolver) && _esdirk_smooth_est(alg)
                 integrator.stats.nsolve += 1

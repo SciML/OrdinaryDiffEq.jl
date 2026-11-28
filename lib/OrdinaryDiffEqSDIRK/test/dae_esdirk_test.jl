@@ -138,3 +138,29 @@ end
         end
     end
 end
+
+@testset "TRBDF2 error control with a singular diagonal mass matrix" begin
+    # u₁' = 1 and u₂ = u₁, so both components are 1 + t. The explicit first
+    # stage has no increment for u₂, but this does not create truncation error.
+    rhs(u, p, t) = [1.0, u[1] - u[2]]
+    function rhs!(du, u, p, t)
+        du[1] = 1
+        du[2] = u[1] - u[2]
+        return nothing
+    end
+    mass_matrix = Diagonal([1.0, 0.0])
+    @testset "in-place=$(isinplace(f)), smooth_est=$smooth_est" for
+        f in (ODEFunction(rhs; mass_matrix), ODEFunction(rhs!; mass_matrix)),
+            smooth_est in (false, true)
+        prob = ODEProblem(f, [1.0, 1.0], (0.0, 1.0))
+        # The differential equation is integrated exactly, so eight steps of
+        # the initial size suffice to reach the end of the interval.
+        sol = solve(
+            prob, TRBDF2(; smooth_est);
+            dt = 1 / 8, abstol = 1.0e-10, reltol = 1.0e-8, maxiters = 8
+        )
+        @test SciMLBase.successful_retcode(sol.retcode)
+        @test sol.t[end] == 1.0
+        @test sol.u[end] ≈ [2.0, 2.0]
+    end
+end
