@@ -187,3 +187,42 @@ end
     solve!(integrator)
     @test integrator.sol.retcode == ReturnCode.Success
 end
+
+@testset "terminate! during initialize callback" begin
+    # https://github.com/SciML/OrdinaryDiffEq.jl/issues/5028
+    terminate_on_init = DiscreteCallback(
+        (u, t, integrator) -> false, integrator -> nothing;
+        initialize = (c, u, t, integrator) ->
+        terminate!(integrator, ReturnCode.ConvergenceFailure),
+    )
+    prob = ODEProblem((u, p, t) -> -u, 1.0, (0.0, 1.0))
+    @test solve(prob, Tsit5(); callback = terminate_on_init).retcode ==
+        ReturnCode.ConvergenceFailure
+    @test solve(prob, Tsit5(); callback = terminate_on_init, dt = 0.1).retcode ==
+        ReturnCode.ConvergenceFailure
+    integrator = init(prob, Tsit5(); callback = terminate_on_init)
+    reinit!(integrator)
+    @test solve!(integrator).retcode == ReturnCode.ConvergenceFailure
+
+    # `Success` (not a failure code) so `check_error!` lets `solve!` resume.
+    terminate_success_on_init = DiscreteCallback(
+        (u, t, integrator) -> false, integrator -> nothing;
+        initialize = (c, u, t, integrator) ->
+        terminate!(integrator, ReturnCode.Success),
+    )
+    integrator = init(prob, Tsit5(); callback = terminate_success_on_init)
+    add_tstop!(integrator, 0.1)
+    solve!(integrator)
+    @test 0.1 ∈ integrator.sol.t
+
+    # Popping the last stop without terminating also leaves an empty queue.
+    pop_last_stop = DiscreteCallback(
+        (u, t, integrator) -> false, integrator -> nothing;
+        initialize = (c, u, t, integrator) -> SciMLBase.pop_tstop!(integrator),
+    )
+    integrator = init(prob, Tsit5(); callback = pop_last_stop)
+    add_tstop!(integrator, 0.1)
+    solve!(integrator)
+    @test integrator.sol.retcode == ReturnCode.Success
+    @test 0.1 ∈ integrator.sol.t
+end

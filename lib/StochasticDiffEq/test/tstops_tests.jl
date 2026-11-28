@@ -92,6 +92,21 @@ for alg in (EM(), LambaEM())
     @test i.sol.u[end][1] ≈ only(i.W.curW) atol = 1.0e-12
 end
 
+# Popping the last stop in `initialize` must not zero the solver or noise step;
+# a stop added afterwards has to be reachable. SciML/OrdinaryDiffEq.jl#5028.
+probscalar = SDEProblem(f3175, g3175, 1.0, (0.0, 1.0))
+pop_last_stop = DiscreteCallback(
+    (u, t, integrator) -> false, integrator -> nothing;
+    initialize = (c, u, t, integrator) -> SciMLBase.pop_tstop!(integrator),
+)
+i_pop = init(probscalar, SRIW1(); callback = pop_last_stop, seed = 123)
+@test !iszero(i_pop.dt)
+@test !iszero(i_pop.W.dt)
+SciMLBase.add_tstop!(i_pop, 0.1)
+solve!(i_pop)
+@test i_pop.sol.retcode == ReturnCode.Success
+@test 0.1 ∈ i_pop.sol.t
+
 # RSwM1 hands a stack chunk back through W.dt, so the tstop shortening has to
 # bridge that chunk rather than relabel it.
 for adaptivealg in (:RSwM1, :RSwM2, :RSwM3)

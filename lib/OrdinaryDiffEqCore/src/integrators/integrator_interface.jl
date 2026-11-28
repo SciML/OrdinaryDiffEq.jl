@@ -701,7 +701,7 @@ function SciMLBase.reinit!(
         initialize!(integrator, integrator.cache)
     end
 
-    if reset_dt && iszero(integrator.dt) && !isempty(integrator.opts.tstops)
+    if reset_dt && iszero(integrator.dt)
         auto_dt_reset!(integrator)
     end
 
@@ -723,12 +723,15 @@ Convenience wrapper that calls [`ode_determine_initdt`](@ref) with the fields of
 """
 function _determine_initdt(integrator)
     tdir = integrator.tdir
-    dtmax = tdir * min(
-        abs(integrator.opts.dtmax), abs(first_tstop(integrator) - tdir * integrator.t)
-    )
+    # An empty stop queue (e.g. a callback terminated or popped the last stop
+    # during `initialize`) has no stop to bound the first step against.
+    dtmax = abs(integrator.opts.dtmax)
+    if has_tstop(integrator)
+        dtmax = min(dtmax, abs(first_tstop(integrator) - tdir * integrator.t))
+    end
     return ode_determine_initdt(
         integrator.u, integrator.t,
-        tdir, dtmax,
+        tdir, tdir * dtmax,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, integrator.sol.prob,
         integrator
