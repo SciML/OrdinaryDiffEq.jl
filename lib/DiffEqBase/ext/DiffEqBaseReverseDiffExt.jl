@@ -2,8 +2,82 @@ module DiffEqBaseReverseDiffExt
 
 using DiffEqBase
 import DiffEqBase: value
-import ReverseDiff
+import ReverseDiff, ForwardDiff
+import SciMLBase
 import DiffEqBase.ArrayInterface
+
+function fixed_event_time(t::ReverseDiff.TrackedReal)
+    return ReverseDiff.track(fixed_event_time, t)
+end
+
+ReverseDiff.@grad function fixed_event_time(t)
+    return ReverseDiff.value(t), dt -> (zero(dt),)
+end
+
+function implicit_event_time(t, residual::ReverseDiff.TrackedReal, slope)
+    return ReverseDiff.track(implicit_event_time, t, residual, slope)
+end
+
+ReverseDiff.@grad function implicit_event_time(t, residual, slope)
+    function pullback(dt)
+        s = ReverseDiff.value(slope)
+        if !isfinite(s) || iszero(s)
+            return dt, zero(dt), zero(dt)
+        end
+        return zero(dt), -dt / s, zero(dt)
+    end
+    return ReverseDiff.value(t), pullback
+end
+
+struct EventTimeDerivative end
+const EventTimeTag = ForwardDiff.Tag{EventTimeDerivative}
+
+function dual_callback_state(integrator, callback, t::ForwardDiff.Dual{Tag}) where {Tag}
+    time = ForwardDiff.value(t)
+    kwargs = callback.idxs === nothing ? (;) : (; idxs = callback.idxs)
+    state = integrator(time, Val{0}; kwargs...)
+    tangent = integrator(time, Val{1}; kwargs...)
+    primal_with_tangent(u, du) = ForwardDiff.Dual{Tag}(u, du)
+    return map(primal_with_tangent, state, tangent)
+end
+
+function DiffEqBase.get_condition(
+        integrator::SciMLBase.DEIntegrator, callback::SciMLBase.ContinuousCallback,
+        t::ForwardDiff.Dual{<:EventTimeTag}
+    )
+    state = dual_callback_state(integrator, callback, t)
+    integrator.sol.stats.ncondition += 1
+    return callback.condition(state, t, integrator)
+end
+
+function DiffEqBase.get_condition(
+        integrator::SciMLBase.DEIntegrator, callback::SciMLBase.VectorContinuousCallback,
+        t::ForwardDiff.Dual{<:EventTimeTag}
+    )
+    state = dual_callback_state(integrator, callback, t)
+    result = similar(integrator.callback_cache.tmp_condition, typeof(t), callback.len)
+    integrator.sol.stats.ncondition += 1
+    callback.condition(result, state, t, integrator)
+    return result
+end
+
+function DiffEqBase.find_root(
+        f::F, bracket::Tuple{T, T}, rootfind::SciMLBase.RootfindOpt; kwargs...
+    ) where {F, V <: AbstractFloat, T <: ReverseDiff.TrackedReal{V}}
+    root = invoke(DiffEqBase.find_root, Tuple{F, Any, SciMLBase.RootfindOpt}, f, bracket, rootfind; kwargs...)
+    # The residual sees a fixed time in ReverseDiff and a unit time tangent in ForwardDiff.
+    sample = fixed_event_time(root)
+    tag = typeof(ForwardDiff.Tag(EventTimeDerivative(), typeof(sample)))
+    time = ForwardDiff.Dual{tag}(sample, one(V))
+    p = SciMLBase.NullParameters()
+    applicable(f, time, p) || return root
+    result = f(time, p)
+    result isa ForwardDiff.Dual{tag} || return root
+    residual = ForwardDiff.value(result)
+    residual isa ReverseDiff.TrackedReal || return root
+    slope = ForwardDiff.partials(result, 1)
+    return implicit_event_time(root, residual, slope)
+end
 
 # Support adaptive with non-tracked time
 @inline function DiffEqBase.ODE_DEFAULT_NORM(u::ReverseDiff.TrackedArray, t)
