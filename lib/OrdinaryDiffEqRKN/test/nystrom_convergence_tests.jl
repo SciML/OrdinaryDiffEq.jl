@@ -1,5 +1,16 @@
 using OrdinaryDiffEqRKN, Test, RecursiveArrayTools, DiffEqDevTools, Statistics, StaticArrays
 
+@testset "SharpFineRKN6 mixed precision acceleration" begin
+    function constant_acceleration!(ddu, du, u, p, t)
+        ddu .= 1.0e-50
+    end
+    prob = SecondOrderODEProblem(constant_acceleration!, [0.0], Float32[0], (0.0, 1.0))
+    sol = solve(prob, SharpFineRKN6(); adaptive = false, dt = 0.125)
+    @test SciMLBase.successful_retcode(sol)
+    @test sol.t[end] == 1.0
+    @test sol.u[end].x[1][1] ≈ 1.0e-50 rtol = 1.0e-14 atol = 0
+end
+
 u0 = fill(0.0, 2)
 v0 = ones(2)
 function f1_harmonic(dv, v, u, p, t)
@@ -47,6 +58,9 @@ sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
 sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 7 rtol = 1.0e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+sim = test_convergence(dts, prob_big, SharpFineRKN6(), dense_errors = true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
 
 # Float64 convergence tests for DPRKN methods
@@ -115,6 +129,9 @@ sol = solve(prob, FineRKN4())
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 14
+@test SciMLBase.successful_retcode(sol)
+sol = solve(prob, SharpFineRKN6())
+@test length(sol.u) < 16
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN4())
 @test length(sol.u) < 25
@@ -186,6 +203,9 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+sim = test_convergence(dts, prob, SharpFineRKN6(), dense_errors = true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
 
 # Methods need BigFloat to test convergence rate
 dts = big"1.0" ./ big"2.0" .^ (5:-1:1)
@@ -227,6 +247,9 @@ sol = solve(prob, FineRKN4())
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 14
+@test SciMLBase.successful_retcode(sol)
+sol = solve(prob, SharpFineRKN6())
+@test length(sol.u) < 16
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, DPRKN4())
 @test length(sol.u) < 25
@@ -295,6 +318,9 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+sim = test_convergence(dts, prob, SharpFineRKN6(), dense_errors = true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
 
 # Adaptive methods regression test
 
@@ -303,6 +329,9 @@ sol = solve(prob, FineRKN4())
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 20
+@test SciMLBase.successful_retcode(sol)
+sol = solve(prob, SharpFineRKN6())
+@test length(sol.u) < 25
 @test SciMLBase.successful_retcode(sol)
 
 println("In Place")
@@ -342,6 +371,9 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1.0e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
+sim = test_convergence(dts, prob, SharpFineRKN6(), dense_errors = true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1.0e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1.0e-1
 
 # Adaptive methods regression test
 sol = solve(prob, FineRKN4())
@@ -349,6 +381,9 @@ sol = solve(prob, FineRKN4())
 @test SciMLBase.successful_retcode(sol)
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 20
+@test SciMLBase.successful_retcode(sol)
+sol = solve(prob, SharpFineRKN6())
+@test length(sol.u) < 25
 @test SciMLBase.successful_retcode(sol)
 
 # Compare in-place and out-of-place versions
@@ -444,6 +479,44 @@ end
         @test_skip sol_i.u ≈ sol_o.u
     end
 
+    @testset "SharpFineRKN6" begin
+        alg = SharpFineRKN6()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg; adaptive = false, dt)
+        sol_o = solve(ode_o, alg; adaptive = false, dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.stats.nf == sol_o.stats.nf
+        @test sol_i.stats.nf2 == sol_o.stats.nf2
+        @test sol_i.stats.naccept == sol_o.stats.naccept
+        @test 19 <= sol_i.stats.naccept <= 21
+        @test abs(sol_i.stats.nf - 8 * sol_i.stats.naccept) < 4
+        for prob in (ode_i, ode_o)
+            errors = Float64[]
+            for tol in (1.0e-4, 1.0e-8)
+                sol = solve(prob, alg; dt = 1.0, abstol = tol, reltol = tol)
+                @test SciMLBase.successful_retcode(sol)
+                @test sol.t[end] == 10.0
+                if tol == 1.0e-8
+                    @test sol.stats.nreject > 0
+                end
+                ts = range(0.0, 10.0; length = 65)
+                err = maximum(ts) do t
+                    theta = sqrt(15) * t / 4
+                    position = exp(-t / 4) * (cos(theta) + sin(theta) / sqrt(15))
+                    velocity = -4 * exp(-t / 4) * sin(theta) / sqrt(15)
+                    state = sol(t)
+                    max(abs(state.x[1][1] - velocity), abs(state.x[2][1] - position))
+                end
+                push!(errors, err)
+            end
+            @test errors[2] < errors[1]
+            @test errors[1] < 1.0e-3
+            @test errors[2] < 1.0e-6
+        end
+    end
+
     # The velocity-independent DPRKN methods no longer silently integrate this
     # velocity-dependent (`-0.5*du`) problem at order 1; they reject it at init.
     # See "velocity dependence is rejected" testset below and issue #3961.
@@ -471,7 +544,7 @@ const VDErr = OrdinaryDiffEqRKN.RKNVelocityDependenceError
         Nystrom4VelocityIndependent(), Nystrom5VelocityIndependent(),
         IRKN3(), IRKN4(),
     )
-    velocity_dependent_algs = (Nystrom4(), FineRKN4(), FineRKN5(), RKN4())
+    velocity_dependent_algs = (Nystrom4(), FineRKN4(), FineRKN5(), SharpFineRKN6(), RKN4())
 
     # The probe must be a no-op for a valid (velocity-independent) u'' = -u problem:
     # every velocity-independent method still integrates the in-place vector form to Success.
