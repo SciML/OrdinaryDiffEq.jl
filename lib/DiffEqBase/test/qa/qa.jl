@@ -1,4 +1,5 @@
-using SciMLTesting, DiffEqBase, Aqua, Test
+using SciMLTesting, DiffEqBase, Aqua, Test, ExplicitImports
+using Measurements
 
 run_qa(
     DiffEqBase;
@@ -135,4 +136,16 @@ run_qa(
     # end
     @warn "Number of method ambiguities: $(length(ambs))"
     @test length(ambs) ≤ 4
+end
+
+@testset "Measurements extension imports" begin
+    ext = Base.get_extension(DiffEqBase, :DiffEqBaseMeasurementsExt)
+    @test ext !== nothing
+    @test check_no_implicit_imports(ext) === nothing
+    @test check_all_explicit_imports_via_owners(ext) === nothing
+    @test check_all_qualified_accesses_via_owners(ext) === nothing
+    if VERSION >= v"1.11"
+        @test check_all_explicit_imports_are_public(ext) === nothing
+        @test check_all_qualified_accesses_are_public(ext) === nothing
+    end
 end
