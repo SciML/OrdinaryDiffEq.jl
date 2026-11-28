@@ -488,6 +488,7 @@ mutable struct NLSolver{
     method::MethodType
     nfails::Int
     prev_θ::E
+    step_ndz::E
 end
 
 # default to DIRK
@@ -515,6 +516,7 @@ function NLSolver{iip, tType}(
         cache,
         method,
         nfails,
+        one(RT),
         one(RT)
     )
 end
@@ -563,6 +565,7 @@ mutable struct NLNewtonCache{
     jac_config::jcType
     linsolve::lsType
     weight::uType
+    lsweight::uType
     invγdt::tType2
     new_W_γdt_cutoff::tType
     J_t::tType
