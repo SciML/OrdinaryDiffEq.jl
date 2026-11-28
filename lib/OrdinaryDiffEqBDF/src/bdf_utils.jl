@@ -148,11 +148,9 @@ const γₖ = ntuple(k -> sum(Int64(1) // j for j in 1:k), 6)
     end
 end
 
-function error_constant(integrator, alg::QNDF, k)
-    (; γₖ) = integrator.cache
-    κ = alg.kappa[k]
-    return κ * γₖ[k] + inv(k + 1)
-end
+error_constant(integrator, alg::QNDF, k) = qndf_error_constant(alg, integrator.cache.γₖ, k)
+
+qndf_error_constant(alg::QNDF, γₖ, k) = alg.kappa[k] * γₖ[k] + inv(k + 1)
 
 #This code refers to https://epubs.siam.org/doi/abs/10.1137/S0036144596322507
 #Compute all derivatives through k of the polynomials of k+1 points
