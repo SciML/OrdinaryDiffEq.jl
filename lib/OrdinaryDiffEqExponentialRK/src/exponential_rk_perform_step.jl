@@ -909,12 +909,12 @@ function perform_step!(integrator, cache::ERK32ZBConstantCache, repeat_step = fa
     alg = unwrap_alg(integrator, true)
     update_expRK_operators!(cache, alg, f, dt)
 
-    Au = A * uprev
+    Au = _expRK_scalar_split(f, uprev) ? convert(Number, A) * uprev : A * uprev
     F1 = integrator.fsalfirst
     halfdt = dt / 2
     threequarterdt = 3dt / 4
     nf2 = 2
-    if alg.krylov
+    if cache.ops === nothing
         kwargs = _arnoldi_kwargs(alg, A, integrator, nothing)
         # Krylov on F1 (first column)
         Ks = arnoldi(A, F1; kwargs...)
@@ -1146,11 +1146,11 @@ function perform_step!(integrator, cache::ERK43ZBConstantCache, repeat_step = fa
     alg = unwrap_alg(integrator, true)
     update_expRK_operators!(cache, alg, f, dt)
 
-    Au = A * uprev
+    Au = _expRK_scalar_split(f, uprev) ? convert(Number, A) * uprev : A * uprev
     F1 = integrator.fsalfirst
     halfdt = dt / 2
     sixthdt = dt / 6
-    if alg.krylov
+    if cache.ops === nothing
         kwargs = _arnoldi_kwargs(alg, A, integrator, nothing)
         # Krylov on F1 (first column)
         Ks = arnoldi(A, F1; kwargs...)

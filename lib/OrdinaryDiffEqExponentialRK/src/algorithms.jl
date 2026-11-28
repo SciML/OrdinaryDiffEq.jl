@@ -139,6 +139,8 @@ for (Alg, Description, Ref) in [
             - `krylov`: Determines whether Krylov approximation or operator caching is used, the latter only available for semilinear problems.
                 `krylov=true` is much faster for larger systems and is thus recommended whenever there are >100 ODEs.
                 With operator caching the operators are rebuilt whenever the step size changes, so `krylov=true` is usually the faster choice for an adaptive solve.
+                For scalar split problems whose linear operator is a `SciMLOperators.AbstractSciMLScalarOperator`,
+                both settings require a constant operator and use direct scalar phi-function coefficients.
             - `m`: Controls the size of Krylov subspace.
             - `iop`: If not zero, determines the length of the incomplete orthogonalization procedure (IOP).
                     Note that if the linear operator/Jacobian is hermitian, then the Lanczos algorithm will always be used and the IOP setting is ignored.

@@ -288,3 +288,44 @@ end
         @test kry.u[end] ≈ tight.u[end]
     end
 end
+
+struct FixedScalarLinear <: Function
+    coefficient::Float64
+end
+(A::FixedScalarLinear)(u, p, t) = A.coefficient * u
+Base.size(::FixedScalarLinear) = ()
+Base.convert(::Type{Number}, A::FixedScalarLinear) = A.coefficient
+Base.:*(A::FixedScalarLinear, u::Number) = A.coefficient * u
+
+@testset "Embedded ExpRK pairs with a nonlinear scalar split" begin
+    nonlinear = (u, p, t) -> 5u - 2u^2
+    prob = SplitODEProblem(ScalarOperator(-3.0), nonlinear, 0.2, (0.0, 2.0))
+    updating_operator = ScalarOperator(0.0; update_func = (a, u, p, t) -> -3.0)
+    updating_prob = SplitODEProblem(updating_operator, nonlinear, 0.2, (0.0, 2.0))
+    exact = inv(1 + 4exp(-4))
+
+    for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true)
+        @testset "$Alg krylov=$krylov" begin
+            alg = Alg(; krylov)
+            loose = solve(prob, alg; abstol = 1.0e-4, reltol = 1.0e-4)
+            tight = solve(prob, alg; abstol = 1.0e-9, reltol = 1.0e-9)
+            @test SciMLBase.successful_retcode(loose)
+            @test SciMLBase.successful_retcode(tight)
+            @test all(u -> u isa Real, loose.u)
+            @test all(u -> u isa Real, tight.u)
+            @test abs(tight.u[end] - exact) < abs(loose.u[end] - exact)
+            @test abs(tight.u[end] - exact) < 1.0e-6
+            @test_throws ArgumentError solve(updating_prob, alg; adaptive = false, dt = 1 / 64)
+        end
+    end
+
+    callable_prob = SplitODEProblem(FixedScalarLinear(-3.0), nonlinear, 0.2, (0.0, 2.0))
+    for Alg in (ERK32ZB, ERK43ZB)
+        @testset "$Alg fixed callable" begin
+            sol = solve(callable_prob, Alg(); abstol = 1.0e-9, reltol = 1.0e-9)
+            @test SciMLBase.successful_retcode(sol)
+            @test all(u -> u isa Real, sol.u)
+            @test sol.u[end] ≈ exact atol = 1.0e-6
+        end
+    end
+end

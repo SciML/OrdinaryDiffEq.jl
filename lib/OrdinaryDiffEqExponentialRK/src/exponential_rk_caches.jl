@@ -585,6 +585,9 @@ end
 # ExpRK caches are. Each cache carries the dt its operators were built for and
 # rebuilds them when dt moves.
 
+_expRK_scalar_split(f, u) = u isa Number && f isa SplitFunction &&
+    f.f1.f isa SciMLOperators.AbstractSciMLScalarOperator
+
 for (Alg, Cache) in [
         (:ERK32ZB, :ERK32ZBConstantCache),
         (:ERK43ZB, :ERK43ZBConstantCache),
@@ -604,11 +607,19 @@ for (Alg, Cache) in [
             uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits,
         }
-        if alg.krylov
+        scalar_split = _expRK_scalar_split(f, u)
+        if alg.krylov && !scalar_split
             ops = nothing # no caching
         else
             isa(f, SplitFunction) ||
                 throw(ArgumentError("Caching can only be used with SplitFunction"))
+            if scalar_split && !isconstant(f.f1.f)
+                throw(
+                    ArgumentError(
+                        "ERK32ZB and ERK43ZB require a constant linear operator for scalar split problems. Use ScalarOperator(value) for a fixed coefficient or choose a solver that supports updating operators."
+                    )
+                )
+            end
             ops = expRK_operators(alg, dt, _expRK_linear_operator(f))
         end
         if isa(f, SplitFunction) || SciMLBase.has_jac(f)
@@ -718,8 +729,7 @@ _expRK_linear_operator(f) = size(f.f1.f) == () ? convert(Number, f.f1.f) :
     update_expRK_operators!(cache, alg, f, dt)
 
 Rebuild an embedded ExpRK pair's cached operators for the current `dt`. A no-op
-when the operators are already built for `dt`, and when the algorithm runs in
-Krylov mode, where no operators are cached.
+when the operators are already built for `dt` or the step uses Krylov actions.
 """
 @inline function update_expRK_operators!(cache, alg, f, dt)
     cache.ops === nothing && return nothing
