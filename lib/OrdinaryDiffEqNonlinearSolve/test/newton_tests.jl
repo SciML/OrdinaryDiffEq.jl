@@ -1,3 +1,4 @@
+import OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NLNewton
 using OrdinaryDiffEqCore
 using OrdinaryDiffEqSDIRK
@@ -53,4 +54,24 @@ end
         @test integ.u ≈ expected atol = 1.0e-12
     end
     @test integ.stats.nreject == 0
+end
+
+@testset "a positive line-search slope is not accepted as the Newton step" begin
+    called = Ref(false)
+    function ls(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        called[] = true
+        return (0.5, ϕ0)
+    end
+    function ϕdϕ(dϕ0)
+        return function (α)
+            return (1.0, dϕ0)
+        end
+    end
+    α = OrdinaryDiffEqNonlinearSolve._linesearch_α(ls, identity, identity, ϕdϕ(1.0), 1.0)
+    @test α === nothing
+    @test !called[]
+    called[] = false
+    α = OrdinaryDiffEqNonlinearSolve._linesearch_α(ls, identity, identity, ϕdϕ(-1.0), 1.0)
+    @test α == 0.5
+    @test called[]
 end

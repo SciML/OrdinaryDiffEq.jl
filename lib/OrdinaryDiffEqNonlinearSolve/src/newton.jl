@@ -311,23 +311,19 @@ function _update_nlsolvealg_W!(nlcache, integrator, dtgamma, tstep, new_jac = tr
 end
 
 """
-    rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+    _stale_W_scale(nlsolver, integrator, nlstep_data) -> Union{Number, Nothing}
 
-Apply the stale-`W` correction of `compute_step!(::NLSolver{<:NLNewton, true}, ...)` to a
-`NonlinearSolveAlg` step: when the reused `W` was assembled at a different `γΔt` than the
-current step needs, the Newton direction it produces is off by that ratio.
+Factor that brings a Newton step factored at a reused `W`'s `γΔt` into the current
+step's `γΔt`. `nothing` when `W` is not reused or was just assembled at this `γΔt`.
 
-`NLNewton` scales the increment it just computed. `NonlinearSolveAlg` cannot: the inner
-solver computes *and* applies the increment inside `step!`. Scaling the right-hand side
-beforehand is equivalent for the Newton descent `δu = -W \\ fu`, and unlike rewriting
-`nlcache.u` afterwards it leaves the inner cache's `u`/`fu` pair mutually consistent.
-
-The scaled residual belongs to the iterate the step starts from, so it must not outlive that
-step. Every reader calls `sync_inner_residual!` first, which re-evaluates at the current
-iterate whenever the step deferred its own evaluation, and the next `initialize!`
-reinitializes the cache in any case.
+`NLNewton` multiplies the solved increment by this factor. A deferred full step does
+the same after `step!`: scaling the residual before the factorization is the same map
+in exact arithmetic and a different rounding. A line search still scales the residual,
+because it reads `fu` before an increment exists. The scaled residual belongs to the
+iterate the step starts from, so [`sync_inner_residual!`](@ref) settles a deferred
+evaluation before that scale and the next `initialize!` discards it.
 """
-function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+function _stale_W_scale(nlsolver, integrator, nlstep_data)
     cache = nlsolver.cache
     # `W` is only reused on the plain path; otherwise the inner solver refreshes its own
     # Jacobian at every stage and there is nothing stale to correct.
@@ -337,8 +333,19 @@ function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
     isdae = nlsolve_f(integrator) isa DAEFunction
     γdt = isdae ? nlsolver.α * cache.invγdt : nlsolver.γ * integrator.dt
     W_γdt ≈ γdt && return nothing
-    rmul!(get_fu(nlcache), 2 / (1 + γdt / W_γdt))
+    return 2 / (1 + γdt / W_γdt)
+end
+
+function rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+    factor = _stale_W_scale(nlsolver, integrator, nlstep_data)
+    factor === nothing && return nothing
+    rmul!(get_fu(nlcache), factor)
     return nothing
+end
+
+function _scale_taken_step!(u, z, factor)
+    @.. broadcast = false u = z + factor * (u - z)
+    return u
 end
 
 """
@@ -589,19 +596,20 @@ end
     else
         recompute_jacobian = nlsolver.iter == 1 && (cache.W === nothing || cache.new_W)
         inner_solve_failed(nlcache) && return convert(eltype(atmp), Inf)
-        # Both must precede `rescale_stale_W_rhs!`, which rewrites `fu` in place: a deferred
-        # evaluation settled after it would overwrite the rescaled residual, and the unscaled
-        # residual is the one `step!` will produce again, so it is the like-for-like read.
+        # Settle a deferred residual before it is read. A line search then scales
+        # that residual; a deferred full step scales the increment after `step!`.
         sync_inner_residual!(nlcache)
         fnorm_prev = maxabs(get_fu(nlcache))
         γΔt = residual_to_z_scale(nlsolver, nlsolve_f(integrator) isa DAEFunction)
-        rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
+        defer = nlstep_data === nothing && defers_residual(nlcache)
+        factor = defer ? _stale_W_scale(nlsolver, integrator, nlstep_data) : nothing
+        factor === nothing &&
+            rescale_stale_W_rhs!(nlcache, nlsolver, integrator, nlstep_data)
         set_inner_linear_reltol!(nlcache, integrator)
         # The `nlstep_data` branch below reads the residual on every iteration, so deferring
         # there would only move the same evaluation a few lines later.
-        step_inner!(
-            nlcache, recompute_jacobian, nlstep_data === nothing && defers_residual(nlcache)
-        )
+        step_inner!(nlcache, recompute_jacobian, defer)
+        factor === nothing || _scale_taken_step!(get_u(nlcache), z, factor)
         # `step!` can *land* in a terminal state as well as start in one. Checking only on
         # entry defers a failed step to the next call, which never comes: the iterate it
         # leaves behind is unmoved, so the outer displacement test accepts the stage first.
@@ -984,6 +992,22 @@ function _compute_rhs!(
     return _vec(ztmp), ustep
 end
 
+# LineSearches rejects a positive initial slope. That slope means the direction
+# from the reused Jacobian is not descent, so the Newton step must diverge and
+# let `nlsolve!` rebuild a stale Jacobian instead of accepting the direction.
+function _linesearch_α(linesearch, ϕ, dϕ, ϕdϕ, α0)
+    ϕ0, dϕ0 = ϕdϕ(zero(α0))
+    dϕ0 > zero(dϕ0) && return nothing
+    α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+    return α
+end
+
+function _nondescent_step!(dz)
+    fill!(dz, oftype(real(one(eltype(dz))), NaN))
+    return dz
+end
+_nondescent_step(dz) = oftype(real(one(eltype(dz))), NaN) * dz
+
 ## relax!
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF}
     return relax!(dz, nlsolver, integrator, f, relax(nlsolver))
@@ -1056,8 +1080,8 @@ function relax!(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(ustep))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = _linesearch_α(linesearch, ϕ, dϕ, ϕdϕ, α0)
+        α === nothing && return _nondescent_step!(dz)
         @.. dz = dz * α
         return dz
     end
@@ -1124,8 +1148,8 @@ function relax(
             return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(dz))
-        ϕ0, dϕ0 = ϕdϕ(zero(α0))
-        α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
+        α = _linesearch_α(linesearch, ϕ, dϕ, ϕdϕ, α0)
+        α === nothing && return _nondescent_step(dz)
         dz = dz * α
         return dz
     end
