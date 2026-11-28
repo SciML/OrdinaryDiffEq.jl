@@ -86,7 +86,7 @@ function compute_step_fixedpoint!(
     ode_integrator = integrator.integrator
 
     # A history update must allow Newton to refresh a stale Jacobian on failure.
-    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, false)
+    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache)
 
     # compute residuals
     dz = integrator.u .- ode_integrator.u
@@ -117,7 +117,7 @@ function compute_step_fixedpoint!(
     ode_integrator = integrator.integrator
 
     # A history update must allow Newton to refresh a stale Jacobian on failure.
-    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache, false)
+    OrdinaryDiffEqCore.perform_step!(integrator, integrator.cache)
 
     # compute residuals
     @.. dz = integrator.u - ode_integrator.u
