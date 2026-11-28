@@ -38,17 +38,25 @@ end
 
 function DiffEqBase.find_root(
         f::F, bracket::Tuple{T, T}, rootfind::SciMLBase.RootfindOpt; kwargs...
-    ) where {F, T <: ReverseDiff.TrackedReal}
+    ) where {F, V <: AbstractFloat, T <: ReverseDiff.TrackedReal{V}}
     bounds = map(ReverseDiff.value, bracket)
     primal_condition(t, p) = ReverseDiff.value(f(t, p))
     root = DiffEqBase.find_root(primal_condition, bounds, rootfind; kwargs...)
+    lo, hi = minmax(bounds...)
+    inner_lo, inner_hi = nextfloat(lo), prevfloat(hi)
+    if inner_lo > inner_hi
+        return invoke(DiffEqBase.find_root, Tuple{F, Any, SciMLBase.RootfindOpt}, f, bracket, rootfind; kwargs...)
+    end
+
+    # Endpoint conditions may read the stored state, including its time sensitivity.
+    sample = clamp(root, inner_lo, inner_hi)
     p = SciMLBase.NullParameters()
-    residual = f(root, p)
+    residual = f(sample, p)
     residual isa ReverseDiff.TrackedReal || return root
 
     # At a regular crossing, the event time derivative is -∂ₚf/∂ₜf.
     slope = event_condition_slope(
-        t -> primal_condition(t, p), root, ReverseDiff.value(residual), bounds
+        t -> primal_condition(t, p), sample, ReverseDiff.value(residual), bounds
     )
     return implicit_event_time(root, residual, slope)
 end
