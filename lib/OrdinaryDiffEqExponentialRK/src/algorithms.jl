@@ -140,8 +140,10 @@ for (Alg, Description, Ref) in [
                 `krylov=true` is much faster for larger systems and is thus recommended whenever there are >100 ODEs.
                 With operator caching the operators are rebuilt whenever the step size changes, so `krylov=true` is usually the faster choice for an adaptive solve.
                 For scalar split problems whose linear operator is a `SciMLOperators.AbstractSciMLScalarOperator`,
-                both settings use direct scalar phi-function coefficients. For an updating operator, these use
-                the coefficient at the start of each step attempt. The stage remainder includes its variation.
+                both settings use direct scalar phi-function coefficients. An updating operator's coefficient is
+                evaluated at the start of each step attempt. Fixed and updating operators reuse tableaus for unchanged
+                `isbits` values and built-in `BigFloat` values at matching precisions and rounding modes, including complex coefficients.
+                The stage remainder includes any coefficient variation.
             - `m`: Controls the size of Krylov subspace.
             - `iop`: If not zero, determines the length of the incomplete orthogonalization procedure (IOP).
                     Note that if the linear operator/Jacobian is hermitian, then the Lanczos algorithm will always be used and the IOP setting is ignored.
