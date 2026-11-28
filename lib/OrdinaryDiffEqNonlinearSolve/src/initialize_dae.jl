@@ -805,7 +805,7 @@ function _initialize_dae!(
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
     end
 
-    isAD = _isforwarddiff_alg(integrator.alg) || typeof(u) !== typeof(_u)
+    isAD = _isforwarddiff_alg(integrator.alg) || typeof(u) !== typeof(_u) || alg.nlsolve !== nothing
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = DiffCache(tmp, chunk)
