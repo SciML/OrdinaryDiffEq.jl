@@ -3,20 +3,6 @@ using OrdinaryDiffEqDifferentiation: OrdinaryDiffEqDifferentiation, calc_W!, cal
 using SciMLOperators: MatrixOperator
 using OrdinaryDiffEq
 
-#horid nasty hack to deal with temporary calc_W refactor
-# if there is a method that takes a W_transform argument, define the version that doesn't to set W_transform to true
-if hasmethod(calc_W, (Any, Any, Any, Any, Any))
-    function OrdinaryDiffEqDifferentiation.calc_W(integ, nlsolver, dgamma, repeat_step::Bool)
-        return OrdinaryDiffEqDifferentiation.calc_W(integ, nlsolver, dgamma, repeat_step, true)
-    end
-    function OrdinaryDiffEqDifferentiation.calc_W!(
-            integ, nlsolver, cache, dgamma, repeat_step::Bool
-        )
-        return OrdinaryDiffEqDifferentiation.calc_W(
-            integ, nlsolver, dgamma, cacherepeat_step, true
-        )
-    end
-end
 @testset "Derivative Utilities" begin
     @testset "calc_W!" begin
         A = [-1.0 0.0; 0.0 -0.5]
@@ -129,4 +115,10 @@ end
         sol2_ip = solve(prob2_ip, SKenCarp(); adaptive = false, dt = 0.01)
         @test sol1_ip(1.0) ≈ sol2_ip(1.0) rtol = 1.0e-3
     end
+end
+
+@testset "OOP Rosenbrock after derivative utilities" begin
+    prob = ODEProblem((u, p, t) -> -u, [1.0], (0.0, 1.0))
+    sol = solve(prob, Rodas5P())
+    @test sol.retcode == ReturnCode.Success
 end
