@@ -13,7 +13,7 @@ import OrdinaryDiffEqCore: perform_step!, unwrap_alg,
     DerivativeOrderNotPossibleError,
     get_fsalfirstlast
 import DiffEqBase: calculate_residuals!, calculate_residuals, initialize!
-import SciMLBase: alg_order, _unwrap_val, @def, full_cache
+import SciMLBase: alg_order, _unwrap_val, @def, full_cache, resize_non_user_cache!
 using FastBroadcast: @.., Serial
 using MuladdMacro: @muladd
 using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivecopy,
