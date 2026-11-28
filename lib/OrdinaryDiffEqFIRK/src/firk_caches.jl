@@ -120,16 +120,17 @@ function alg_cache(
     W1 = build_complex_W(alg, f, u, J, W1)
 
     linprob = LinearProblem(W1, _vec(cubuff), (nothing, u, p, t); u0 = _vec(dw12))
+    linsolve_tol = reltol isa Number ? reltol : minimum(reltol)
     linsolve = init(
         linprob, alg.linsolve; alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
-        abstol = reltol, reltol,
+        abstol = linsolve_tol, reltol = linsolve_tol,
         assumptions = LinearSolve.OperatorAssumptions(true), verbose = verbose.linear_verbosity
     )
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
     rtol = reltol isa Number ? reltol : zero(reltol)
-    atol = reltol isa Number ? reltol : zero(reltol)
+    atol = reltol isa Number ? fill!(similar(u, typeof(reltol)), reltol) : zero(reltol)
 
     return RadauIIA3Cache(
         u, uprev,
@@ -296,7 +297,7 @@ function alg_cache(
     #Pr = Diagonal(_vec(weight)))
 
     rtol = reltol isa Number ? reltol : zero(reltol)
-    atol = reltol isa Number ? reltol : zero(reltol)
+    atol = reltol isa Number ? fill!(similar(u, typeof(reltol)), reltol) : zero(reltol)
 
     return RadauIIA5Cache(
         u, uprev,
@@ -515,7 +516,7 @@ function alg_cache(
     #Pr = Diagonal(_vec(weight)))
 
     rtol = reltol isa Number ? reltol : zero(reltol)
-    atol = reltol isa Number ? reltol : zero(reltol)
+    atol = reltol isa Number ? fill!(similar(u, typeof(reltol)), reltol) : zero(reltol)
 
     return RadauIIA9Cache(
         u, uprev,
@@ -738,7 +739,7 @@ function alg_cache(
     ]
 
     rtol = reltol isa Number ? reltol : zero(reltol)
-    atol = reltol isa Number ? reltol : zero(reltol)
+    atol = reltol isa Number ? fill!(similar(u, typeof(reltol)), reltol) : zero(reltol)
 
     return AdaptiveRadauCache(
         u, uprev,
@@ -903,7 +904,7 @@ function alg_cache(
     )
 
     rtol = reltol isa Number ? reltol : zero(reltol)
-    atol = reltol isa Number ? reltol : zero(reltol)
+    atol = reltol isa Number ? fill!(similar(u, typeof(reltol)), reltol) : zero(reltol)
 
     return GaussLegendreCache(
         u, uprev, z, w, c_prime, dw, ubuff, utilde, derivatives,
