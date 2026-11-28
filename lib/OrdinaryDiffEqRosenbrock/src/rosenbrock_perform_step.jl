@@ -1,3 +1,27 @@
+function _reject_failed_rosenbrock_step!(integrator)
+    integrator.force_stepfail = true
+    # force_dtmin permits error-test failures at the minimum, but a failed
+    # linear solve cannot produce a step to accept or retry at the same dt.
+    if integrator.opts.adaptive && integrator.opts.force_dtmin &&
+            abs(integrator.dt) <= timedepentdtmin(integrator)
+        SciMLBase.terminate!(integrator, SciMLBase.ReturnCode.ConvergenceFailure)
+    end
+    return nothing
+end
+
+# Matches the Newton solve, which does not treat a `Default` retcode as a failure.
+function _reject_failed_linsolve!(integrator, linres)
+    failed = !SciMLBase.successful_retcode(linres.retcode) &&
+        linres.retcode != SciMLBase.ReturnCode.Default
+    if failed
+        # Mutable stages use u as scratch space. The endpoint saver must see
+        # the last accepted state if this failure ends the solve.
+        RecursiveArrayTools.recursivecopy!(integrator.u, integrator.uprev)
+        _reject_failed_rosenbrock_step!(integrator)
+    end
+    return failed
+end
+
 function initialize!(
         integrator, cache::Union{
             Rosenbrock23Cache,
@@ -66,6 +90,8 @@ end
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
 
+    _reject_failed_linsolve!(integrator, linres) && return nothing
+
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
 
@@ -86,6 +112,7 @@ end
     @.. linsolve_tmp = f₁ - tmp
 
     linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
+    _reject_failed_linsolve!(integrator, linres) && return nothing
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -110,6 +137,7 @@ end
         end
 
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
+        _reject_failed_linsolve!(integrator, linres) && return nothing
         vecu = _vec(linres.u)
         veck3 = _vec(k₃)
         @.. veck3 = vecu * neginvdtγ
@@ -180,6 +208,8 @@ end
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
 
+    _reject_failed_linsolve!(integrator, linres) && return nothing
+
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
 
@@ -200,6 +230,7 @@ end
     @.. broadcast = false linsolve_tmp = f₁ - tmp
 
     linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
+    _reject_failed_linsolve!(integrator, linres) && return nothing
     vecu = _vec(linres.u)
     veck₂ = _vec(k₂)
 
@@ -221,6 +252,7 @@ end
     end
 
     linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
+    _reject_failed_linsolve!(integrator, linres) && return nothing
     vecu = _vec(linres.u)
     veck3 = _vec(k₃)
 
@@ -269,7 +301,7 @@ end
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
-        OrdinaryDiffEqCore.set_EEst!(integrator, 2)
+        _reject_failed_rosenbrock_step!(integrator)
         return nothing
     end
 
@@ -353,7 +385,7 @@ end
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtγ, repeat_step)
     if !issuccess_W(W)
-        OrdinaryDiffEqCore.set_EEst!(integrator, 2)
+        _reject_failed_rosenbrock_step!(integrator)
         return nothing
     end
 
@@ -443,7 +475,7 @@ end
     # Time derivative and W matrix (with Jacobian reuse for W-methods)
     dT, W = calc_rosenbrock_differentiation(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
-        OrdinaryDiffEqCore.set_EEst!(integrator, 2)
+        _reject_failed_rosenbrock_step!(integrator)
         return nothing
     end
 
@@ -765,6 +797,8 @@ end
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, A = W, b = _vec(linsolve_tmp))
     end
 
+    _reject_failed_linsolve!(integrator, linres) && return nothing
+
     @.. $(_vec(ks[1])) = -linres.u
     integrator.stats.nsolve += 1
 
@@ -792,6 +826,7 @@ end
         end
 
         linres = dolinsolve(integrator, cache.linsolve; alg = cache.alg, b = _vec(linsolve_tmp))
+        _reject_failed_linsolve!(integrator, linres) && return nothing
         @.. $(_vec(ks[stage])) = -linres.u
         integrator.stats.nsolve += 1
     end
