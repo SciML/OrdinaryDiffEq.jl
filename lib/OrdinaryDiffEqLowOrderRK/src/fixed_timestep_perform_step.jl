@@ -503,7 +503,7 @@ end
     a63 += (189 // 100) * a65
     a64 += (-459 // 200) * a65
     @tight_loop_macros for i in uidx
-        @inbounds tmp[i] = uprev[i] + a21 * k1[i]
+        @inbounds tmp[i] = uprev[i] + dt * a21 * k1[i]
     end
     stage_limiter!(tmp, integrator, p, t + c2 * dt)
     f(k2, tmp, p, t + c2 * dt)
