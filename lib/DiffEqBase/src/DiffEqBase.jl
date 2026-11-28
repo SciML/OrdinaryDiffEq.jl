@@ -53,13 +53,11 @@ import SciMLBase
 using SciMLBase: @def, DEIntegrator, AbstractDEProblem,
     AbstractDiffEqInterpolation,
     DECallback, DECache, AbstractContinuousCallback,
-    AbstractDiscreteCallback, AbstractLinearProblem,
-    AbstractNonlinearProblem,
-    AbstractSteadyStateProblem,
+    AbstractDiscreteCallback,
     AbstractJumpProblem,
     AbstractNoiseProblem, AbstractEnsembleProblem,
     AbstractDynamicalODEProblem,
-    AbstractDEAlgorithm, StandardODEProblem, AbstractIntegralProblem,
+    AbstractDEAlgorithm, StandardODEProblem,
     AbstractSensitivityAlgorithm, AbstractODEAlgorithm,
     AbstractSDEAlgorithm, AbstractDDEAlgorithm, AbstractDAEAlgorithm,
     AbstractRODEAlgorithm, AbstractBVPAlgorithm,
@@ -122,6 +120,11 @@ import SciMLStructures
 
 using Reexport: @reexport
 @reexport using SciMLBase
+
+const AbstractLinearProblem = SciMLBase.AbstractLinearProblem
+const AbstractNonlinearProblem = SciMLBase.AbstractNonlinearProblem
+const AbstractIntegralProblem = SciMLBase.AbstractIntegralProblem
+const AbstractSteadyStateProblem = SciMLBase.AbstractSteadyStateProblem
 
 SciMLBase.isfunctionwrapper(x::FunctionWrapper) = true
 
