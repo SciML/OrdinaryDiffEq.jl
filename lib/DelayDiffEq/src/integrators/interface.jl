@@ -321,8 +321,14 @@ function DiffEqBase.deleteat_non_user_cache!(integrator::DDEIntegrator, cache, i
 end
 
 # add component(s)
-# `addat!` on the state buffers appends, so `idxs` must name the indices after the end.
-function DiffEqBase.addat!(integrator::DDEIntegrator, idxs, val = zero(eltype(integrator.u)))
+"""
+    SciMLBase.addat!(integrator::DDEIntegrator, idxs, val = zero(eltype(integrator.u)))
+
+Append `length(idxs)` components at the contiguous range immediately after the current state.
+`val` may be a scalar or an array broadcastable to the new entries. The state and step
+history are updated before solver caches are rebuilt.
+"""
+function SciMLBase.addat!(integrator::DDEIntegrator, idxs, val = zero(eltype(integrator.u)))
     oldlen = length(integrator.u)
     r = (oldlen + 1):(oldlen + length(idxs))
     vec(collect(idxs)) == r ||
@@ -331,12 +337,11 @@ function DiffEqBase.addat!(integrator::DDEIntegrator, idxs, val = zero(eltype(in
     # Converting first means a bad `val` throws before any buffer is grown.
     added = similar(integrator.u, length(r)) .= val
     foreach_state_buffer(c -> addat!(c, r), integrator)
-    resize_solver_internals!(integrator, integrator.cache, length(integrator.u))
-    addat_non_user_cache!(integrator, integrator.cache, r)
     integrator.u[r] .= added
     fill_grown_step_history!(integrator, integrator.cache, oldlen, added)
-    # Refreshes the FSAL derivative outside callbacks too.
-    SciMLBase.derivative_discontinuity!(integrator, true)
+    resize_solver_internals!(integrator, integrator.cache, length(integrator.u))
+    addat_non_user_cache!(integrator, integrator.cache, r)
+    derivative_discontinuity!(integrator, true)
     return nothing
 end
 

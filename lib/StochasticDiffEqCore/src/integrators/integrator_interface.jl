@@ -122,6 +122,17 @@ Used by [`resize_noise!`](@ref) and [`addat_noise!`](@ref) whenever the state gr
     end
 end
 
+function fill_new_noise_increment!(integrator, buffer, idxs, dt)
+    return if isinplace(integrator.W)
+        integrator.W.dist(
+            @view(buffer[idxs]), integrator.W, dt,
+            integrator.u, integrator.p, integrator.t, integrator.W.rng
+        )
+    else
+        buffer[idxs] .= integrator.noise(length(idxs), integrator, dt)
+    end
+end
+
 function resize_non_user_cache!(integrator::SDEIntegrator, cache, i)
     bot_idx = length(integrator.u) + 1
     if is_diagonal_noise(integrator.sol.prob)
@@ -231,6 +242,17 @@ stacks, and the new slots are filled with freshly sampled increments through
 [`fill_new_noise_caches!`](@ref).
 """
 function addat_noise!(integrator, cache, idxs)
+    addat!(integrator.W.dW, idxs)
+    fill_new_noise_increment!(integrator, integrator.W.dW, idxs, integrator.W.dt)
+    addat!(integrator.W.curW, idxs)
+    integrator.W.curW[idxs] .= zero(eltype(integrator.u))
+    if alg_needs_extra_process(integrator.alg)
+        addat!(integrator.W.dZ, idxs)
+        fill_new_noise_increment!(integrator, integrator.W.dZ, idxs, integrator.W.dt)
+        addat!(integrator.W.curZ, idxs)
+        integrator.W.curZ[idxs] .= zero(eltype(integrator.u))
+    end
+
     for c in integrator.W.S₁
         addat!(c[2], idxs)
         if alg_needs_extra_process(integrator.alg)
@@ -244,17 +266,6 @@ function addat_noise!(integrator, cache, idxs)
             addat!(c[3], idxs)
         end
         fill_new_noise_caches!(integrator, c, c[1], idxs)
-    end
-
-    addat!(integrator.W.dW, idxs)
-    integrator.W.dW[idxs] .= zero(eltype(integrator.u))
-    addat!(integrator.W.curW, idxs)
-    integrator.W.curW[idxs] .= zero(eltype(integrator.u))
-    if alg_needs_extra_process(integrator.alg)
-        addat!(integrator.W.dZ, idxs)
-        integrator.W.dZ[idxs] .= zero(eltype(integrator.u))
-        addat!(integrator.W.curZ, idxs)
-        integrator.W.curZ[idxs] .= zero(eltype(integrator.u))
     end
 
     i = length(integrator.u)

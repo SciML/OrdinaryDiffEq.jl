@@ -1,4 +1,9 @@
 using OrdinaryDiffEq, OrdinaryDiffEqSDIRK, Test
+using OrdinaryDiffEqBDF: FBDFCache
+using OrdinaryDiffEqCore: default_subcaches, full_cache
+using ADTypes: AutoForwardDiff, AutoSparse
+using SparseConnectivityTracer: TracerLocalSparsityDetector
+using SparseMatrixColorings: GreedyColoringAlgorithm
 
 decay!(du, u, p, t) = (du .= -p .* u; nothing)
 decay_prefix!(du, u, p, t) = (du .= -view(p, 1:length(u)) .* u; nothing)
@@ -116,4 +121,92 @@ end
     @test sol.retcode == ReturnCode.Success
     @test 4 in sol.alg_choice
     @test iszero(sol.u[end][7:8])
+end
+
+@testset "addat! writes values before sparse Jacobian preparation" begin
+    checked_f!(du, u, p, t) = (
+        any(x -> x <= 0, u) && throw(DomainError(u));
+        du .= -u;
+        nothing
+    )
+    alg = Rodas5P(
+        autodiff = AutoSparse(
+            AutoForwardDiff();
+            sparsity_detector = TracerLocalSparsityDetector(),
+            coloring_algorithm = GreedyColoringAlgorithm()
+        )
+    )
+    integ = init(ODEProblem(checked_f!, [1.0, 1.0, 1.0], (0.0, 1.0)), alg)
+    integ.u[3] = -99.0
+    deleteat!(integ, 3)
+    addat!(integ, 3, 2.0)
+    @test integ.u == [1.0, 1.0, 2.0]
+    @test all(v -> v[3] == 2.0, step_history(integ))
+end
+
+@testset "default cache hooks tolerate uninitialized sub-caches" begin
+    integ = init(ODEProblem(decay!, [1.0, 1.0], (0.0, 1.0), [1.0, 1.0]))
+    @test resize_non_user_cache!(integ, 2) === nothing
+    @test deleteat_non_user_cache!(integ, 1:1) === nothing
+    @test addat_non_user_cache!(integ, 3:3) === nothing
+    @test integ.u == [1.0, 1.0]
+end
+
+function default_fbdf_integrator(n)
+    p = fill(0.5, n + 2)
+    p[(end - 1):end] .= 2000.0
+    integ = init(
+        ODEProblem(decay_prefix!, ones(n), (0.0, 0.002), p),
+        DefaultODEAlgorithm(stiffalgfirst = true);
+        abstol = 1.0e-8, reltol = 1.0e-8
+    )
+    full_cache(integ)
+    fbdf_caches = filter(
+        c -> c isa FBDFCache,
+        default_subcaches(integ.cache)
+    )
+    @test length(fbdf_caches) == 2
+    return integ, fbdf_caches
+end
+
+@testset "default solver resizes both FBDF nonlinear solvers" begin
+    for (name, n, target, change!) in (
+            ("addat!", 52, 54, integ -> addat!(integ, 53:54, [1.0, 1.0])),
+            ("resize!", 52, 54, integ -> (resize!(integ, 54); integ.u[53:54] .= 1.0)),
+            ("deleteat!", 54, 52, integ -> deleteat!(integ, 53:54)),
+        )
+        integ, fbdf_caches = default_fbdf_integrator(n)
+        change!(integ)
+        @test length(integ.u) == target
+        @test all(fbdf_caches) do cache
+            nlsolver = cache.nlsolver
+            length(nlsolver.z) == length(nlsolver.tmp) == length(nlsolver.ztmp) == target &&
+                length(nlsolver.cache.dz) == target &&
+                size(nlsolver.cache.J) == (target, target) &&
+                size(nlsolver.cache.W) == (target, target) &&
+                length(nlsolver.cache.linsolve.b) == target
+        end
+        step!(integ)
+    end
+end
+
+@testset "default solver callback $name resizes FBDF caches" for (name, n, target, change!) in (
+        ("addat!", 52, 54, integ -> addat!(integ, 53:54, [1.0, 1.0])),
+        ("resize!", 52, 54, integ -> (resize!(integ, 54); integ.u[53:54] .= 1.0)),
+        ("deleteat!", 54, 52, integ -> deleteat!(integ, 53:54)),
+    )
+    p = fill(0.5, n + 2)
+    p[(end - 1):end] .= 2000.0
+    prob = ODEProblem(decay_prefix!, ones(n), (0.0, 0.002), p)
+    cb = DiscreteCallback(
+        (u, t, integ) -> t >= 0.001 && length(u) == n,
+        integ -> change!(integ);
+        save_positions = (false, false)
+    )
+    sol = solve(
+        prob, DefaultODEAlgorithm(stiffalgfirst = true);
+        callback = cb, tstops = [0.001], abstol = 1.0e-8, reltol = 1.0e-8
+    )
+    @test sol.retcode == ReturnCode.Success
+    @test length(sol.u[end]) == target
 end

@@ -15,14 +15,21 @@ function resize_bdf_buffers_zeroed!(buffers, i)
     return nothing
 end
 
+function resize_fbdf_nlsolver!(integrator, cache::FBDFCache, i)
+    nlsolver = cache.nlsolver
+    resize!(nlsolver, integrator, i)
+    nlsolver.alg isa NLNewton && resize!(nlsolver.cache.linsolve, i)
+    isnewton(nlsolver) && (nlsolver.cache.firstcall = true)
+    return nothing
+end
+
 function resize_non_user_cache!(
         integrator::OrdinaryDiffEqCore.ODEIntegrator,
         cache::FBDFCache, i::Int
     )
     resize!(integrator.u, i)
     resize!(integrator.uprev, i)
-    # The generic resize runs before integrator.u has its new size.
-    resize_nlsolver!(integrator, i)
+    resize_fbdf_nlsolver!(integrator, cache, i)
     resize_bdf_buffers!(cache.u_history, i)
     resize_bdf_buffers!(cache.u_corrector, i)
     resize_bdf_buffers!(cache.dense, i)

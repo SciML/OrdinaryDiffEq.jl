@@ -428,7 +428,10 @@ end
 
 # `full_cache(integrator)` builds every sub-cache before any resize reaches these.
 function default_subcaches(cache::DefaultCache)
-    return (cache.cache1, cache.cache2, cache.cache3, cache.cache4, cache.cache5, cache.cache6)
+    return ntuple(Val(6)) do i
+        field = Symbol(:cache, i)
+        isdefined(cache, field) ? getfield(cache, field) : nothing
+    end
 end
 
 # Only the default solver's composite algorithm builds a `DefaultCache`. Restricting the
@@ -437,21 +440,21 @@ const DefaultSolverIntegrator = ODEIntegrator{<:OrdinaryDiffEqCompositeAlgorithm
 
 function resize_non_user_cache!(integrator::DefaultSolverIntegrator, cache::DefaultCache, i)
     for _cache in default_subcaches(cache)
-        resize_non_user_cache!(integrator, _cache, i)
+        _cache === nothing || resize_non_user_cache!(integrator, _cache, i)
     end
     return
 end
 
 function deleteat_non_user_cache!(integrator::DefaultSolverIntegrator, cache::DefaultCache, i)
     for _cache in default_subcaches(cache)
-        deleteat_non_user_cache!(integrator, _cache, i)
+        _cache === nothing || deleteat_non_user_cache!(integrator, _cache, i)
     end
     return
 end
 
 function addat_non_user_cache!(integrator::DefaultSolverIntegrator, cache::DefaultCache, i)
     for _cache in default_subcaches(cache)
-        addat_non_user_cache!(integrator, _cache, i)
+        _cache === nothing || addat_non_user_cache!(integrator, _cache, i)
     end
     return
 end
@@ -507,27 +510,33 @@ function appended_range(integrator, idxs)
     return r
 end
 
-# The next step starts from the step history, so it gets `val` as well, and the
-# discontinuity refreshes the FSAL derivative outside callbacks too.
+# The next step starts from the step history, so it gets `val` as well.
 function set_added_components!(integrator, r, val)
     cache = integrator.cache
     uprev3 = hasfield(typeof(cache), :uprev3) ? cache.uprev3 : nothing
     for v in (integrator.u, integrator.uprev, integrator.uprev2, uprev3)
         v isa AbstractArray && (v[r] .= val)
     end
-    derivative_discontinuity!(integrator, true)
     return nothing
 end
 
+"""
+    addat!(integrator::ODEIntegrator, idxs, val = zero(eltype(integrator.u)))
+
+Append `length(idxs)` components at the contiguous range immediately after the current state.
+`val` may be a scalar or an array broadcastable to the new entries. The state and step
+history are updated before solver caches are rebuilt.
+"""
 function addat!(integrator::ODEIntegrator, idxs, val = zero(eltype(integrator.u)))
     r = appended_range(integrator, idxs)
     isempty(r) && return nothing
     # Converting first means a bad `val` throws before any buffer is grown.
     added = similar(integrator.u, length(r)) .= val
     foreach_unique_state_buffer(c -> addat!(c, r), integrator)
+    set_added_components!(integrator, r, added)
     resize_solver_internals!(integrator)
     addat_non_user_cache!(integrator, integrator.cache, r)
-    set_added_components!(integrator, r, added)
+    derivative_discontinuity!(integrator, true)
     return nothing
 end
 
