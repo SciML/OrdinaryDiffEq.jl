@@ -21,6 +21,43 @@ import ReverseDiff, SciMLBase
     end
 end
 
+@testset "ReverseDiff callback slope and replay" begin
+    function event_time(f, x, side)
+        condition(t, _) = f(t, x)
+        return DiffEqBase.find_root(condition, (x[2], x[3]), side)
+    end
+
+    sharp(t, x) = atan((t - x[1]) / 1.0e-6)
+    function endpoint_residual(t, x)
+        delta = t - x[1]
+        return t == x[2] || t == x[3] ? 2delta : delta
+    end
+    for (condition, q, lo, hi) in (
+                (sharp, 0.5, 0.49998, 0.50002),
+                (endpoint_residual, 0.625, prevfloat(0.625, 4), nextfloat(0.625, 4)),
+            ),
+            (a, b) in ((lo, hi), (hi, lo)),
+            side in (SciMLBase.LeftRootFind, SciMLBase.RightRootFind)
+        x = [q, a, b]
+        root(x) = event_time(condition, x, side)
+        @test root(x) == q
+        @test ReverseDiff.gradient(root, x) ≈ [1.0, 0.0, 0.0] atol = 1.0e-6
+    end
+
+    affine(t, x) = t - x[1]
+    scaled(t, x) = (1 + x[1]) * (t - x[1])
+    squared_root(x) = event_time(affine, x, SciMLBase.LeftRootFind)^2
+    scaled_root(x) = event_time(scaled, x, SciMLBase.LeftRootFind)
+    recording = [0.25, 0.0, 1.0]
+    replay = [0.375, 0.0, 1.0]
+    for (f, expected) in ((squared_root, [0.75, 0.0, 0.0]), (scaled_root, [1.0, 0.0, 0.0]))
+        tape = ReverseDiff.GradientTape(f, recording)
+        for trace in (tape, ReverseDiff.compile(tape))
+            @test ReverseDiff.gradient!(trace, replay) ≈ expected atol = 1.0e-6
+        end
+    end
+end
+
 struct GenericEventArray{T} <: AbstractVector{T}
     data::Vector{T}
 end

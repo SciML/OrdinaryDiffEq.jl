@@ -6,28 +6,35 @@ import ReverseDiff
 import SciMLBase
 import DiffEqBase.ArrayInterface
 
+function fixed_event_time(t::ReverseDiff.TrackedReal, transform)
+    return ReverseDiff.track(fixed_event_time, t, transform)
+end
+
+ReverseDiff.@grad function fixed_event_time(t, transform)
+    return transform(ReverseDiff.value(t)), _ -> (nothing, nothing)
+end
+
 function implicit_event_time(t, residual::ReverseDiff.TrackedReal, slope)
     return ReverseDiff.track(implicit_event_time, t, residual, slope)
 end
 
 ReverseDiff.@grad function implicit_event_time(t, residual, slope)
-    return t, dt -> (nothing, iszero(dt) ? zero(dt) : -dt / slope, nothing)
+    return ReverseDiff.value(t), dt -> (
+            nothing, iszero(dt) ? zero(dt) : -dt / ReverseDiff.value(slope), nothing,
+        )
 end
 
-function event_condition_slope(condition, root, residual, bounds)
-    lo, hi = minmax(bounds...)
-    step = cbrt(eps(typeof(root))) * max(one(root), abs(root))
-    left, right = root - step, root + step
-    if lo <= left && right <= hi
+function sample_event_slope(condition, t, residual, h, bounds, centered)
+    lo, hi = bounds
+    if centered
+        left, right = clamp(t - h, lo, hi), clamp(t + h, lo, hi)
+        left < right || return nothing
         return (condition(right) - condition(left)) / (right - left)
     end
 
-    # Keep a second-order stencil inside the bracket when the root is near an endpoint.
-    edge = root - lo < hi - root ? hi : lo
-    h = copysign(min(step, abs(edge - root) / 2), edge - root)
-    inner = root + h
-    outer = clamp(root + 2h, lo, hi)
-    near, far = inner - root, outer - root
+    inner, outer = clamp(t + h, lo, hi), clamp(t + 2h, lo, hi)
+    near, far = inner - t, outer - t
+    iszero(far) && return nothing
     secant = (condition(outer) - residual) / far
     if iszero(near) || near == far
         return secant
@@ -36,28 +43,61 @@ function event_condition_slope(condition, root, residual, bounds)
     return inner_secant + near * (inner_secant - secant) / (far - near)
 end
 
+function converged_event_slope(condition, t, residual, bounds, ::Type{V}) where {V}
+    lo, hi = bounds
+    left, right = t - lo, hi - t
+    h = cbrt(eps(V)) * max(one(V), abs(ReverseDiff.value(t)))
+    centered = min(left, right) >= h
+    if !centered
+        h = if left < right
+            min(h, right / 2)
+        else
+            -min(h, left / 2)
+        end
+    end
+
+    slope = sample_event_slope(condition, t, residual, h, bounds, centered)
+    slope === nothing && return nothing
+    estimates = [slope]
+    reltol = sqrt(eps(V))
+    for _ in 1:precision(V)
+        h /= 2
+        estimate = sample_event_slope(condition, t, residual, h, bounds, centered)
+        estimate === nothing && return nothing
+        for (level, previous) in pairs(estimates)
+            v = ReverseDiff.value(estimate)
+            agreement = level == 1 ? reltol : 4reltol
+            if isfinite(v) && !iszero(v) &&
+                    abs(v - ReverseDiff.value(previous)) <= agreement * abs(v)
+                return estimate
+            end
+
+            # Richardson extrapolation removes the leading stencil error.
+            estimates[level] = estimate
+            order = centered ? 2level : level + 1
+            estimate += (estimate - previous) / (2^order - 1)
+        end
+        length(estimates) < 3 && push!(estimates, estimate)
+    end
+    return nothing
+end
+
 function DiffEqBase.find_root(
         f::F, bracket::Tuple{T, T}, rootfind::SciMLBase.RootfindOpt; kwargs...
     ) where {F, V <: AbstractFloat, T <: ReverseDiff.TrackedReal{V}}
-    bounds = map(ReverseDiff.value, bracket)
-    primal_condition(t, p) = ReverseDiff.value(f(t, p))
-    root = DiffEqBase.find_root(primal_condition, bounds, rootfind; kwargs...)
-    lo, hi = minmax(bounds...)
-    inner_lo, inner_hi = nextfloat(lo), prevfloat(hi)
-    if inner_lo > inner_hi
-        return invoke(DiffEqBase.find_root, Tuple{F, Any, SciMLBase.RootfindOpt}, f, bracket, rootfind; kwargs...)
-    end
+    root = invoke(DiffEqBase.find_root, Tuple{F, Any, SciMLBase.RootfindOpt}, f, bracket, rootfind; kwargs...)
+    lo, hi = minmax(bracket...)
+    inner_lo, inner_hi = fixed_event_time(lo, nextfloat), fixed_event_time(hi, prevfloat)
+    inner_lo < inner_hi || return root
 
-    # Endpoint conditions may read the stored state, including its time sensitivity.
-    sample = clamp(root, inner_lo, inner_hi)
+    # Keep the root live for replay and hold the interpolation time fixed in the pullback.
+    sample = fixed_event_time(clamp(root, inner_lo, inner_hi), identity)
     p = SciMLBase.NullParameters()
-    residual = f(sample, p)
+    condition(t) = f(t, p)
+    residual = condition(sample)
     residual isa ReverseDiff.TrackedReal || return root
-
-    # At a regular crossing, the event time derivative is -∂ₚf/∂ₜf.
-    slope = event_condition_slope(
-        t -> primal_condition(t, p), sample, ReverseDiff.value(residual), bounds
-    )
+    slope = converged_event_slope(condition, sample, residual, (inner_lo, inner_hi), V)
+    slope === nothing && return root
     return implicit_event_time(root, residual, slope)
 end
 

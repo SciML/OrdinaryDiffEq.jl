@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, SciMLBase
+import DiffEqBase, ReverseDiff
 # https://github.com/SciML/DiffEqBase.jl/issues/1231
 @testset "Successive different callbacks in same integration step" begin
     cb = ContinuousCallback(
@@ -133,5 +134,38 @@ end
             sol = solve(prob, Tsit5(), callback = vcb)
             @test record ≈ sqrt.([0.1, 0.2, 0.4, 0.5, 0.8, 0.9])
         end
+    end
+end
+
+@testset "ReverseDiff at a sharp continuous callback" begin
+    function drift!(du, u, p, t)
+        du[1] = p[2]
+        return nothing
+    end
+    condition(u, t, integrator) = atan((only(u) - integrator.p[1]) / 1.0e-6)
+    vector_condition!(out, u, t, integrator) = (out[1] = condition(u, t, integrator))
+    function reset!(integrator, args...)
+        integrator.u[1] += 2
+        return terminate!(integrator)
+    end
+    p = [0.43, 1.0]
+    for rootfind in (SciMLBase.LeftRootFind, SciMLBase.RightRootFind),
+            callback in (
+                ContinuousCallback(condition, reset!; rootfind),
+                VectorContinuousCallback(vector_condition!, reset!, 1; rootfind),
+            )
+        function event_solve(x)
+            u0 = [convert(eltype(x), 0.07)]
+            tspan = convert.(eltype(x), (0.0, 1.0))
+            prob = ODEProblem{true, SciMLBase.FullSpecialize}(drift!, u0, tspan, x)
+            return solve(
+                prob, Tsit5(); callback, save_everystep = false,
+                sensealg = DiffEqBase.SensitivityADPassThrough()
+            )
+        end
+        # The reset gives u = p[1] + 2 at t = (p[1] - 0.07) / p[2].
+        @test only(last(event_solve(p).u)) ≈ 2.43
+        @test ReverseDiff.gradient(x -> only(last(event_solve(x).u)), p) ≈ [1.0, 0.0] atol = 1.0e-6
+        @test ReverseDiff.gradient(x -> last(event_solve(x).t), p) ≈ [1.0, -0.36] atol = 1.0e-6
     end
 end
