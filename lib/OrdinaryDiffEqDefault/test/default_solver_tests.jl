@@ -1,7 +1,7 @@
 using OrdinaryDiffEqDefault, OrdinaryDiffEqTsit5, OrdinaryDiffEqVerner,
     OrdinaryDiffEqRosenbrock, OrdinaryDiffEqBDF, ADTypes
 using Test, LinearSolve, LinearAlgebra, SparseArrays, StaticArrays
-import SciMLBase
+import SciMLBase, ForwardDiff
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 
@@ -289,4 +289,140 @@ end
         bytes = stiff_step_bytes(prob)
         @test bytes < 1000
     end
+end
+
+@testset "Default solver initializes a logarithmic algebraic constraint" begin
+    log_init_residual(u, p) = [log(u[1])]
+    log_init_jacobian(u, p) = reshape([inv(u[1])], 1, 1)
+    log_dae_rhs(u, p, t) = [-u[1], log(u[2])]
+    for analytic_jacobian in (false, true)
+        nlf = analytic_jacobian ?
+            SciMLBase.NonlinearFunction(log_init_residual; jac = log_init_jacobian) :
+            log_init_residual
+        initprob = SciMLBase.NonlinearProblem(nlf, [3.0])
+        initialization_data = SciMLBase.OverrideInitData(
+            initprob, nothing, nlsol -> [1.0, nlsol.u[1]], nothing
+        )
+        f = ODEFunction(
+            log_dae_rhs; mass_matrix = Diagonal([1.0, 0.0]), initialization_data
+        )
+        prob = ODEProblem(f, [1.0, 3.0], (0.0, 0.1))
+        sol = solve(prob; abstol = 1.0e-10, reltol = 1.0e-10)
+        @test SciMLBase.successful_retcode(sol)
+        @test sol.u[1] ≈ [1.0, 1.0] atol = 1.0e-8
+        @test abs(log(sol.u[1][2])) < 1.0e-8
+    end
+end
+
+@testset "Default solver keeps a Float64 root under a Float32 parameter seed" begin
+    slope = 2.0^-30
+    root = 1.0 + 2slope
+    seed = ForwardDiff.Dual{typeof(ForwardDiff.Tag(identity, Float32))}(2.0f0, 1.0f0)
+    abstol = 1.0e-12
+    for guess in (0.5, root)
+        initprob = SciMLBase.NonlinearProblem(
+            (u, p) -> [u[1] - 1.0 - slope * p.c], [guess], (; c = seed)
+        )
+        initialization_data = SciMLBase.OverrideInitData(
+            initprob, nothing, nlsol -> [1.0, nlsol.u[1]], nothing
+        )
+        f = ODEFunction(
+            (u, p, t) -> [-u[1], u[2] - 1.0 - slope * p.c];
+            mass_matrix = Diagonal([1.0, 0.0]), initialization_data
+        )
+        sol = solve(ODEProblem(f, [1.0, guess], (0.0, 0.1), (; c = seed)); abstol, reltol = abstol)
+        @test SciMLBase.successful_retcode(sol)
+        z = sol.u[1][2]
+        @test ForwardDiff.value(z) isa Float64
+        @test ForwardDiff.value(z) ≈ root atol = abstol rtol = 0
+        # The default algorithm differentiates with `AutoFiniteDiff()`, so the implicit
+        # tangent uses a forward-difference ∂F/∂u with relative error up to eps / √eps ≈ 1.5e-8.
+        @test ForwardDiff.partials(z, 1) ≈ slope rtol = 2.0e-8
+    end
+end
+
+# (z - c)^3 = 0 has a singular Jacobian at its root z = c, so a consistent dual warm start
+# z = c keeps its tangent 1 under the default finite-difference initialization.
+@testset "Default solver keeps the tangent of a repeated root" begin
+    c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, Float64))}(2.0, 1.0)
+    initprob = SciMLBase.NonlinearProblem((z, p) -> [(z[1] - p.c)^3], [c], (; c))
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> [1.0, nlsol.u[1]], nothing
+    )
+    f = ODEFunction(
+        (u, p, t) -> [-u[1], u[2] - p.c];
+        mass_matrix = Diagonal([1.0, 0.0]), initialization_data
+    )
+    sol = solve(
+        ODEProblem(f, [one(c), c], (0.0, 0.1), (; c));
+        saveat = [0.0], abstol = 1.0e-12, reltol = 1.0e-12
+    )
+    @test SciMLBase.successful_retcode(sol)
+    @test ForwardDiff.value(sol.u[1][2]) ≈ 2.0 atol = 1.0e-8
+    @test ForwardDiff.partials(sol.u[1][2], 1) ≈ 1.0 atol = 1.0e-8
+end
+
+# 2^-30 (z₁ - c) = 0, (z₂ - 2) + (z₂ - 2)^2 = 0 has the regular root (c, 2) and tangent (1, 0).
+@testset "Default solver keeps the tangent of a regular root with a small scaled row" begin
+    c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, Float64))}(2.0, 1.0)
+    residual(z, p) = [2.0^-30 * (z[1] - p.c), (z[2] - 2) + (z[2] - 2)^2]
+    initprob = SciMLBase.NonlinearProblem(residual, [2.0, 2.0], (; c))
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> vcat(1.0, nlsol.u), nothing
+    )
+    f = ODEFunction(
+        (u, p, t) -> vcat(-u[1], residual(u[2:3], p));
+        mass_matrix = Diagonal([1.0, 0.0, 0.0]), initialization_data
+    )
+    sol = solve(
+        ODEProblem(f, [one(c), 2.0, 2.0], (0.0, 0.1), (; c));
+        saveat = [0.0], abstol = 1.0e-12, reltol = 1.0e-12
+    )
+    @test SciMLBase.successful_retcode(sol)
+    @test ForwardDiff.value.(sol.u[1][2:3]) ≈ [2.0, 2.0] atol = 1.0e-8
+    @test ForwardDiff.partials.(sol.u[1][2:3], 1) ≈ [1.0, 0.0] atol = 1.0e-8
+end
+
+# z₁ - c + a ((z₂ - 2)^2 + (z₃ - 2)^2) = 0, z₂ = 2, z₃ = 2 has the regular root (c, 2, 2)
+# and tangent (1, 0, 0); the curvature a perturbs the finite-difference Jacobian of row 1.
+@testset "Default solver keeps the tangent of a regular coupled root, a = $a" for a in (0.0, 17 * 2.0^20)
+    c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, Float64))}(2.0, 1.0)
+    residual(z, p) = [z[1] - p.c + a * ((z[2] - 2)^2 + (z[3] - 2)^2), z[2] - 2, z[3] - 2]
+    initprob = SciMLBase.NonlinearProblem(residual, [2.0, 2.0, 2.0], (; c))
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> vcat(1.0, nlsol.u), nothing
+    )
+    f = ODEFunction(
+        (u, p, t) -> vcat(-u[1], residual(u[2:4], p));
+        mass_matrix = Diagonal([1.0, 0.0, 0.0, 0.0]), initialization_data
+    )
+    sol = solve(
+        ODEProblem(f, [one(c), 2.0, 2.0, 2.0], (0.0, 0.1), (; c));
+        saveat = [0.0], abstol = 1.0e-12, reltol = 1.0e-12
+    )
+    @test SciMLBase.successful_retcode(sol)
+    @test ForwardDiff.value.(sol.u[1][2:4]) ≈ [2.0, 2.0, 2.0] atol = 1.0e-8
+    @test ForwardDiff.partials.(sol.u[1][2:4], 1) ≈ [1.0, 0.0, 0.0] atol = 1.0e-8
+end
+
+@testset "Default solver initializes a regular BigFloat root" begin
+    c = ForwardDiff.Dual{typeof(ForwardDiff.Tag(vcat, BigFloat))}(big"2.0", big"1.0")
+    initprob = SciMLBase.NonlinearProblem((z, p) -> [z[1] - p.c], [big"2.0"], (; c))
+    initialization_data = SciMLBase.OverrideInitData(
+        initprob, nothing, nlsol -> vcat(one(BigFloat), nlsol.u), nothing
+    )
+    f = ODEFunction(
+        (u, p, t) -> [-u[1], u[2] - p.c];
+        mass_matrix = Diagonal(BigFloat[1, 0]), initialization_data
+    )
+    sol = solve(
+        ODEProblem(f, [one(c), c], (big"0.0", big"1e-6"), (; c));
+        saveat = [big"0.0"], abstol = big"1e-12", reltol = big"1e-12"
+    )
+    @test SciMLBase.successful_retcode(sol)
+    z = sol.u[1][2]
+    @test ForwardDiff.value(z) isa BigFloat
+    @test ForwardDiff.partials(z, 1) isa BigFloat
+    @test ForwardDiff.value(z) ≈ 2 atol = big"1e-30"
+    @test ForwardDiff.partials(z, 1) ≈ 1 atol = big"1e-30"
 end

@@ -1,6 +1,8 @@
 module OrdinaryDiffEqNonlinearSolve
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoFiniteDiff
+import CommonSolve
+import DifferentiationInterface as DI
 using SparseArrays: AbstractSparseMatrix, nonzeros
 using CommonSolve: init, solve, solve!, step!
 
