@@ -475,18 +475,22 @@ sync_controllers!(::OrdinaryDiffEqCache, ::OrdinaryDiffEqCache) = nothing
 """
     snapshot_controller(cache)
 
-Capture the per-solve state of the controller cache `cache` so that
+Capture the controller scratch state of `cache` so that
 [`restore_controller!`](@ref) can put it back. Solvers use the pair to
 pseudo-step the controller, e.g. to compare the step size each candidate
 order would get, without leaking that state into the real step.
+
+When a pseudo-step changes `EEst`, save it with [`get_EEst`](@ref) and
+restore it with [`set_EEst!`](@ref) after calling [`restore_controller!`](@ref).
 
 The default returns `deepcopy(cache)`, which `restore_controller!` writes
 back with [`sync_controllers!`](@ref), so a custom controller only has to
 implement `sync_controllers!` for its state to be restored. The built-in
 `IController`, `PIController`, `PIDController` and `PredictiveController`
 caches return an allocation-free `NamedTuple` of the fields their
-`sync_controllers!` copies. Override both methods together when a custom
-cache can snapshot its state more cheaply than `deepcopy`.
+`sync_controllers!` copies. These four snapshots omit `EEst`. Override both
+methods together when a custom cache can snapshot its state more cheaply than
+`deepcopy`.
 """
 snapshot_controller(cache) = deepcopy(cache)
 
@@ -496,6 +500,9 @@ snapshot_controller(cache) = deepcopy(cache)
 Write `snapshot`, taken from `cache` by [`snapshot_controller`](@ref), back
 into `cache`. The default calls `sync_controllers!(cache, snapshot)`.
 Returns `nothing`.
+
+The fallback restores the fields copied by [`sync_controllers!`](@ref).
+Restore any saved `EEst` after calling this method.
 """
 function restore_controller!(cache, snapshot)
     sync_controllers!(cache, snapshot)
