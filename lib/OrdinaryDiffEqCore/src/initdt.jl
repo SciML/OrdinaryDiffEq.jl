@@ -305,7 +305,16 @@ end
     )
 end
 
-# ODE iip entry point
+"""
+    initial_timestep_order(alg, cache) -> Int
+
+Return the denominator of the exponent in the automatic ODE initial timestep
+estimate. Defaults to [`get_current_alg_order`](@ref). Solver sublibraries can
+extend this hook to select the startup order independently of the step-size
+controller.
+"""
+initial_timestep_order(alg, cache) = get_current_alg_order(alg, cache)
+
 """
     ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm, prob, integrator) -> dt
 
@@ -321,7 +330,7 @@ function ode_determine_initdt(
     return _ode_initdt_iip(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing, nothing,
-        get_current_alg_order(integrator.alg, integrator.cache), integrator
+        initial_timestep_order(integrator.alg, integrator.cache), integrator
     )
 end
 
@@ -475,7 +484,7 @@ function ode_determine_initdt(
     return _ode_initdt_oop(
         u0, t, tdir, dtmax, abstol, reltol, internalnorm,
         prob, nothing,
-        get_current_alg_order(integrator.alg, integrator.cache), integrator
+        initial_timestep_order(integrator.alg, integrator.cache), integrator
     )
 end
 
