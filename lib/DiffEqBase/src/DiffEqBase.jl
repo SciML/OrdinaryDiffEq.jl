@@ -121,6 +121,11 @@ import SciMLStructures
 using Reexport: @reexport
 @reexport using SciMLBase
 
+const AbstractLinearProblem = SciMLBase.AbstractLinearProblem
+const AbstractNonlinearProblem = SciMLBase.AbstractNonlinearProblem
+const AbstractIntegralProblem = SciMLBase.AbstractIntegralProblem
+const AbstractSteadyStateProblem = SciMLBase.AbstractSteadyStateProblem
+
 SciMLBase.isfunctionwrapper(x::FunctionWrapper) = true
 
 # Rootfinder for callbacks
