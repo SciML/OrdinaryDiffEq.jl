@@ -66,6 +66,11 @@ is_sparse_csc(::Any) = false
 concrete_mass_matrix(mm) = mm
 concrete_mass_matrix(mm::AbstractSciMLOperator) = convert(AbstractMatrix, mm)
 
+# Positions of the mass matrix entries to seed into a sparsity pattern. Base's generic
+# `findall` visits all n² entries of a `Diagonal`, so that case only looks at the diagonal.
+mass_matrix_nonzeros(mm) = findall(!iszero, mm)
+mass_matrix_nonzeros(mm::Diagonal) = map(i -> CartesianIndex(i, i), findall(!iszero, mm.diag))
+
 """
     has_mass_matrix(f)
 
