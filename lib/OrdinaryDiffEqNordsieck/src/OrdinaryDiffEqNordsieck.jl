@@ -6,7 +6,7 @@ import SciMLBase: alg_order, resize_non_user_cache!
 # DiffEqBase (re-provided through OrdinaryDiffEqCore); import them from the owner
 # so the ExplicitImports owner check passes. `initialize!` is public in
 # DiffEqBase; the `calculate_residuals` pair is DiffEqBase-internal.
-import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!
+import DiffEqBase: initialize!, calculate_residuals, calculate_residuals!, timedepentdtmin
 import OrdinaryDiffEqCore: alg_adaptive_order,
     qmin_default, qmax_default, qsteady_min_default, qsteady_max_default,
     get_current_alg_order,

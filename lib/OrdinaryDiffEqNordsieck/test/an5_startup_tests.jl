@@ -1,4 +1,5 @@
 using OrdinaryDiffEqNordsieck, OrdinaryDiffEqCore, Test
+import SciMLBase
 
 # AN5 builds its Nordsieck history in one shot from a Tsit5 step, reading the
 # higher derivatives out of the Tsit5 interpolant. `ode_interpolant`'s first
@@ -54,5 +55,52 @@ end
                 @test accepted_dts(fwd, AN5(); kw...) == accepted_dts(bwd, AN5(); kw...)
             end
         end
+    end
+end
+
+@testset "AN5 rejection and callback accuracy" begin
+    for inplace in (false, true)
+        f = inplace ? ((du, u, p, t) -> (du .= u)) : ((u, p, t) -> u)
+        for modified in (false, true)
+            done = Ref(false)
+            cb = DiscreteCallback(
+                (u, t, it) -> !done[] && t >= 0.2,
+                it -> (done[] = true; u_modified!(it, modified));
+                save_positions = (false, false)
+            )
+            sol = solve(
+                ODEProblem(f, [1.0], (0.0, 0.4)), AN5();
+                dt = 0.01, callback = cb, tstops = [0.2], reltol = 1.0e-10, abstol = 1.0e-12
+            )
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.t[end] == 0.4
+            @test isapprox(sol.u[end][1], exp(0.4); rtol = 1.0e-6, atol = 1.0e-9)
+        end
+        f = inplace ? ((du, u, p, t) -> (du .= (1 + t) .* u)) : ((u, p, t) -> (1 + t) .* u)
+        for dt in (1.0e-4, 0.01, 0.1)
+            sol = solve(
+                ODEProblem(f, [1.0], (0.0, 0.4)), AN5();
+                dt, reltol = 1.0e-10, abstol = 1.0e-12
+            )
+            @test SciMLBase.successful_retcode(sol)
+            @test sol.t[end] == 0.4
+            if dt == 0.1
+                @test sol.stats.nreject > 0
+            end
+            @test isapprox(sol.u[end][1], exp(0.4 + 0.4^2 / 2); rtol = 1.0e-6, atol = 1.0e-9)
+        end
+    end
+end
+
+@testset "AN5 forced minimum timestep" begin
+    for inplace in (false, true)
+        f = inplace ? ((du, u, p, t) -> (du .= (1 + 20t^4) .* u)) :
+            ((u, p, t) -> (1 + 20t^4) .* u)
+        sol = solve(
+            ODEProblem(f, [1.0], (0.0, 0.4)), AN5(); dt = 0.05, dtmin = 0.05,
+            force_dtmin = true, reltol = 1.0e-8, abstol = 1.0e-10
+        )
+        @test SciMLBase.successful_retcode(sol)
+        @test isapprox(sol.u[end][1], exp(0.4 + 4 * 0.4^5); rtol = 1.0e-4)
     end
 end
