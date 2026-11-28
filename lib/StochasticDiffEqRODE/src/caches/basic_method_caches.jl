@@ -98,10 +98,10 @@ struct RandomTaylor15ConstantCache <: StochasticDiffEqConstantCache end
     rtmpm::rateType
 end
 
-function warn_unresolved_grid(prob, t, dt)
+function warn_unresolved_grid(alg, prob, t, dt)
     lo, hi = minmax(t, t + dt)
     if count(ti -> lo < ti < hi, prob.noise.t) == 0
-        @warn "RandomTaylor15 is stepping a noise grid with no grid point inside the step, " *
+        @warn "$(nameof(typeof(alg))) is stepping a noise grid with no grid point inside the step, " *
             "so the step integrals reduce to the endpoint rule and the order drops to 1. " *
             "Use a finer noise grid or RandomEM."
     end
@@ -114,7 +114,7 @@ function alg_cache(
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, f, t, dt,
         ::Type{Val{false}}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    warn_unresolved_grid(prob, t, dt)
+    warn_unresolved_grid(alg, prob, t, dt)
     return RandomTaylor15ConstantCache()
 end
 
@@ -124,11 +124,52 @@ function alg_cache(
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, f, t, dt,
         ::Type{Val{true}}, verbose
     ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    warn_unresolved_grid(prob, t, dt)
+    warn_unresolved_grid(alg, prob, t, dt)
     tmp = zero(u)
     rtmp = zero(rate_prototype)
     rtmp0 = zero(rate_prototype)
     rtmpp = zero(rate_prototype)
     rtmpm = zero(rate_prototype)
     return RandomTaylor15Cache(u, uprev, tmp, rtmp, rtmp0, rtmpp, rtmpm)
+end
+
+struct RandomTaylor25ConstantCache <: StochasticDiffEqConstantCache end
+@cache struct RandomTaylor25Cache{uType, rateType} <: StochasticDiffEqMutableCache
+    u::uType
+    uprev::uType
+    tmp::uType
+    g0::rateType
+    gp1::rateType
+    gm1::rateType
+    gp2::rateType
+    gm2::rateType
+    gw::rateType
+    gww::rateType
+    jg::rateType
+    rtmp1::rateType
+    rtmp2::rateType
+    rtmp3::rateType
+end
+
+function alg_cache(
+        alg::RandomTaylor25, prob, u, ΔW, ΔZ, p, rate_prototype,
+        noise_rate_prototype, jump_rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, f, t, dt,
+        ::Type{Val{false}}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    warn_unresolved_grid(alg, prob, t, dt)
+    return RandomTaylor25ConstantCache()
+end
+
+function alg_cache(
+        alg::RandomTaylor25, prob, u, ΔW, ΔZ, p, rate_prototype,
+        noise_rate_prototype, jump_rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, f, t, dt,
+        ::Type{Val{true}}, verbose
+    ) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    warn_unresolved_grid(alg, prob, t, dt)
+    tmp = zero(u)
+    g0, gp1, gm1, gp2, gm2 = ntuple(_ -> zero(rate_prototype), 5)
+    gw, gww, jg, rtmp1, rtmp2, rtmp3 = ntuple(_ -> zero(rate_prototype), 6)
+    return RandomTaylor25Cache(u, uprev, tmp, g0, gp1, gm1, gp2, gm2, gw, gww, jg, rtmp1, rtmp2, rtmp3)
 end
