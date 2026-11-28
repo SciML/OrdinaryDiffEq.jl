@@ -37,6 +37,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "Composite reinit!" include("composite_reinit.jl")
     @time @safetestset "Composite reinit! with ForwardDiff" include("composite_reinit_ad.jl")
     @time @safetestset "DefaultCache argument types" include("default_cache_argtypes.jl")
+    @time @safetestset "Mass-matrix error checks" include("massmatrix_error_check.jl")
 end
 
 # Run QA tests (JET, Aqua)
