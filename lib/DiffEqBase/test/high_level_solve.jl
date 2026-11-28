@@ -106,6 +106,23 @@ else
     @test despecialized_solved === despecialized_default_problem
 end
 
+if VERSION >= v"1.12"
+    # Callback-free and callback-carrying Auto problems must share one concrete
+    # type so Tsit5 precompile covers both (integrator-type equality).
+    despecialized_cb = ContinuousCallback(
+        (u, t, integrator) -> u - 0.5, integrator -> nothing
+    )
+    despecialized_with_cb = ODEProblem{false, SciMLBase.AutoSpecialize}(
+        despecialized_default_f, 1.0, (0.0, 1.0), 2.0; callback = despecialized_cb
+    )
+    concrete_free = DiffEqBase.get_concrete_problem(despecialized_default_problem, true)
+    concrete_with = DiffEqBase.get_concrete_problem(despecialized_with_cb, true)
+    @test typeof(concrete_free) === typeof(concrete_with)
+    @test concrete_with.kwargs[:callback] isa
+        SciMLBase.CallbackSet{Vector{Any}, Vector{Any}}
+    @test only(concrete_with.kwargs[:callback].continuous_callbacks) === despecialized_cb
+end
+
 # Problems that `ConstructionBase.setproperties` cannot rebuild are left untouched.
 rode_problem = RODEProblem((u, p, t, W) -> u + W, 1.0, (0.0, 1.0))
 bv_problem = BVProblem(

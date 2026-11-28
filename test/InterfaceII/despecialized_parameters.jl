@@ -113,7 +113,9 @@ end
             integrator -> nothing
         )
 
-        for specialize in (SciMLBase.AutoDespecialize, SciMLBase.NoSpecialize)
+        for specialize in (
+                SciMLBase.AutoSpecialize, SciMLBase.AutoDespecialize, SciMLBase.NoSpecialize,
+            )
             no_callback_problem = ODEProblem{true, specialize}(
                 callback_constant_rhs!, [0.0], (0.0, 1.0)
             )
