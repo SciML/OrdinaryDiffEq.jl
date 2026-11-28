@@ -1517,7 +1517,8 @@ end
         du_np1 = f(u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         ϕ_np1!(cache, du_np1, k + 1)
-        u = muladd(g[k], ϕ_np1[k], u)
+        corrector_start = k == 1 ? uprev : u
+        u = muladd(g[k], ϕ_np1[k], corrector_start)
         if integrator.opts.adaptive
             utilde = (g[k + 1] - g[k]) * ϕ_np1[k + 1]
             atmp = calculate_residuals(
@@ -1617,7 +1618,8 @@ end
         f(k4, u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         ϕ_np1!(cache, k4, k + 1)
-        @.. broadcast = false thread = thread u = muladd(g[k], ϕ_np1[k], u)
+        corrector_start = k == 1 ? uprev : u
+        @.. broadcast = false thread = thread u = muladd(g[k], ϕ_np1[k], corrector_start)
         if integrator.opts.adaptive
             @.. broadcast = false thread = thread utilde = (g[k + 1] - g[k]) * ϕ_np1[k + 1]
             calculate_residuals!(
