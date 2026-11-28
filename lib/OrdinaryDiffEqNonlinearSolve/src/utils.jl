@@ -312,6 +312,78 @@ struct DAEJacobiansConstantCache{JduType, ufuType, ufduType}
     uf_du::ufduType
 end
 
+# The matrix-free DAE Newton test measures the Krylov residual as `norm(Pl \ r)`, applying
+# the left preconditioner with `ldiv!` (see `compute_step!`). Of the Krylov.jl methods,
+# GMRES, FGMRES and BiCGStab measure it that way, unless a `W` weights their inner product.
+# `ldiv = false` applies `Pl` with `mul!`, LinearSolve calls the likes of DQGMRES without
+# `Pl`, and CG and MINRES measure `sqrt(r' * (Pl \ r))`; tested against that tolerance,
+# any of them can accept a zero correction.
+const DAE_KRYLOV_METHODS = (:gmres!, :fgmres!, :bicgstab!)
+# The methods validated with the centered finite-difference operator.
+const DAE_KRYLOV_FINITE_DIFF_METHODS = (:gmres!, :fgmres!)
+# Krylov.jl keywords that override what that test relies on: the preconditioners, the
+# inner product and the tolerances.
+const DAE_KRYLOV_OWN_KWARGS = (:M, :N, :W, :atol, :rtol)
+
+function check_dae_krylov(linsolver, autodiff = nothing, f = nothing)
+    # `Wfact`/`Wfact_t` write a concrete Newton matrix, which this path never forms; the
+    # other `DAEFunction` Jacobian fields are not used for it (see docs/src/implicit/BDF.md).
+    f !== nothing && (SciMLBase.has_Wfact(f) || SciMLBase.has_Wfact_t(f)) && throw(
+        ArgumentError(
+            "A `DAEFunction` with `Wfact` or `Wfact_t` is not supported with a matrix-free " *
+                "Krylov solve of the DAE Newton system: those callbacks write a concrete " *
+                "Newton matrix, which this path never forms."
+        )
+    )
+    linsolver isa LinearSolve.IterativeSolversJL && throw(
+        ArgumentError(
+            "`IterativeSolversJL` is not supported for a matrix-free Krylov solve of a DAE " *
+                "Newton system: the Newton convergence test sets the linear tolerances " *
+                "through `LinearSolve.update_tolerances!`, which the IterativeSolvers.jl " *
+                "wrapper does not support. Use KrylovJL_GMRES, KrylovJL_FGMRES or " *
+                "KrylovJL_BICGSTAB."
+        )
+    )
+    linsolver isa LinearSolve.KrylovJL || throw(
+        ArgumentError(
+            "`$(nameof(typeof(linsolver)))` is not supported for a matrix-free Krylov solve " *
+                "of a DAE Newton system. Use KrylovJL_GMRES, KrylovJL_FGMRES or " *
+                "KrylovJL_BICGSTAB, or a factorization `linsolve` such as the default."
+        )
+    )
+    kwargs = linsolver.kwargs
+    keeps_defaults = get(kwargs, :ldiv, true) &&
+        !any(k -> haskey(kwargs, k), DAE_KRYLOV_OWN_KWARGS)
+    keeps_defaults || throw(
+        ArgumentError(
+            "A matrix-free Krylov solve of a DAE Newton system sets the preconditioners " *
+                "and tolerances its convergence test is measured in, so `KrylovJL` " *
+                "cannot take `ldiv = false` or the Krylov.jl keywords " *
+                "$(join(map(k -> "`$k`", DAE_KRYLOV_OWN_KWARGS), ", ")): pass " *
+                "preconditioners through `precs` and tolerances to `solve`."
+        )
+    )
+    method = nameof(linsolver.KrylovAlg)
+    autodiff = autodiff isa ADTypes.AutoSparse ? ADTypes.dense_ad(autodiff) : autodiff
+    autodiff isa AutoFiniteDiff && !(method in DAE_KRYLOV_FINITE_DIFF_METHODS) && throw(
+        ArgumentError(
+            "`Krylov.$method` is not supported with finite differences for a matrix-free " *
+                "Krylov solve of a DAE Newton system: with a centered stencil only " *
+                "KrylovJL_GMRES and KrylovJL_FGMRES were validated (BiCGStab fails on " *
+                "Robertson's DAE). Use one of those or `AutoForwardDiff()`."
+        )
+    )
+    method in DAE_KRYLOV_METHODS || throw(
+        ArgumentError(
+            "`Krylov.$method` is not supported for a matrix-free Krylov solve of a DAE " *
+                "Newton system: it does not measure its residual as `norm(Pl \\ r)`, the " *
+                "norm the Newton convergence test sets its tolerance in. Use " *
+                "KrylovJL_GMRES, KrylovJL_FGMRES or KrylovJL_BICGSTAB."
+        )
+    )
+    return nothing
+end
+
 function _nlalg_with_linsolve(inner_alg, linsolve)
     linsolve === nothing && return inner_alg
     !hasfield(typeof(inner_alg), :descent) && return inner_alg
@@ -942,16 +1014,23 @@ function build_nlsolver(
             else
                 (;)
             end
+            # A `DAEFunction`'s only operator `W` is the matrix-free `dae_jvp_cache`.
+            # `compute_step!` sets its Krylov `abstol` relative to each step's residual;
+            # a fixed one would be in the units of `F`, which the user can scale freely.
+            matrix_free_dae = isdae && J isa AbstractSciMLOperator
+            matrix_free_dae && check_dae_krylov(linsolver, alg_autodiff(alg), f)
+            linabstol = matrix_free_dae ? (; abstol = zero(uTolType)) : (;)
             linsolve = init(
                 linprob, wrapprecs(linsolver, W, weight);
-                precs...,
+                precs..., linabstol...,
                 alias = LinearAliasSpecifier(alias_A = true, alias_b = true),
                 assumptions = LinearSolve.OperatorAssumptions(true),
                 verbose = verbose.linear_verbosity
             )
 
-            # Build separated DAE Jacobian cache if applicable
-            if isdae
+            # Build separated DAE Jacobian cache if applicable. A matrix-free W never
+            # forms J_u or J_du.
+            if isdae && !matrix_free_dae
                 # cuSPARSE matrices have no `fill!`, so sparse J_du is zeroed through its stored values
                 J_du = similar(J)
                 if J_du isa AbstractSparseMatrix
@@ -986,7 +1065,8 @@ function build_nlsolver(
                 ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
                 linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t,
-                dae_jacobians
+                dae_jacobians,
+                matrix_free_dae ? zero(dz) : atmp, matrix_free_dae ? zero(dz) : atmp
             )
         end
     elseif nlalg isa NLFunctional

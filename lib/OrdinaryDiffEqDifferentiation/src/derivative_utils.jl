@@ -915,7 +915,11 @@ function _calc_W!(alg, integrator, W, nlsolver, cache, dtgamma, repeat_step, new
     end
 
     # calculate W
-    if W isa WOperator
+    if isdae && W isa JVPCache
+        # Matrix-free: compute_step! sets the point at each Newton iterate. `cj` costs nothing
+        # to refresh, so the operator is never stale; `new_W` only schedules the `precs` refresh.
+        set_dae_jvp_cj!(W, dae_cj(nlsolver, integrator))
+    elseif W isa WOperator
         if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
             update_coefficients!(W; gamma = dtgamma)
@@ -1347,6 +1351,13 @@ function build_J_W(
         W = f.W_prototype
         J = f.jac_prototype
     elseif f.jac_prototype isa AbstractSciMLOperator
+        # The `WOperator` below is the ODE form `M/(γΔt) - J`; a `DAEFunction` has no mass matrix.
+        f isa DAEFunction && throw(
+            ArgumentError(
+                "A `DAEFunction` `jac_prototype` cannot be a SciMLOperator. For a matrix-free " *
+                    "Newton matrix pass a Krylov `linsolve` instead."
+            )
+        )
         J = deepcopy(f.jac_prototype)
         if J isa AbstractMatrix
             @assert SciMLBase.has_jac(f) "f needs to have an associated jacobian"
@@ -1383,10 +1394,14 @@ function build_J_W(
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
         # Jacobian is a bad idea and create a fully matrix-free solver. This can
         # be overridden with concrete_jac.
-        jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
+        if f isa DAEFunction
+            J = W = dae_jvp_cache(f, u, p, t; autodiff = alg_autodiff(alg))
+        else
+            jacvec = JVPCache(f, copy(u), u, p, t, autodiff = alg_autodiff(alg))
 
-        J = jacvec
-        W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u), jacvec)
+            J = jacvec
+            W = WOperator{IIP}(f.mass_matrix, dtgamma_prototype, J, _vec(u), jacvec)
+        end
     elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
             concrete_jac(alg) !== nothing && concrete_jac(alg)
         # The linear solver does not need a concrete Jacobian, but the user has

@@ -33,6 +33,57 @@ BDF methods are recommended for:
   - **`QNDF`**: Adaptive order quasi-constant timestep BDF, best general choice for large systems
   - **`FBDF`**: Fixed-leading coefficient BDF, often more efficient than QNDF
 
+## Matrix-free Krylov solves of DAEs
+
+For an in-place `DAEProblem`, `DFBDF` with its default Newton solver can apply the Newton
+matrix without forming it by passing a supported Krylov `linsolve` and leaving `concrete_jac`
+unset or false, for example `DFBDF(; linsolve = KrylovJL_GMRES())`. The Newton matrix
+`∂F/∂u + (α/(γ h)) ∂F/∂du` is then applied as a Jacobian-vector product, and
+`stats.njacs` stays zero. The `cj = α/(γ h)` of the current step is used at every stage. The
+matrix-free path uses the selected `autodiff` backend for Jacobian-vector products, including
+when `DAEFunction.jvp` is supplied. It never forms the Newton matrix, so the `DAEFunction` fields
+`jac`, `jac_u`, `jac_du`, `vjp`, `jac_prototype`, `sparsity` and `colorvec` are not used for it
+(`jac` and `jac_prototype` still serve the DAE initialization), and a `DAEFunction` with `Wfact`
+or `Wfact_t` throws an `ArgumentError` when the integrator is initialized. A SciMLOperator
+`jac_prototype` is not supported for a `DAEFunction` and throws an `ArgumentError`.
+
+The supported combinations of Jacobian-vector product and Krylov solver are:
+
+| `autodiff`                                  | `KrylovJL_GMRES` | `KrylovJL_FGMRES` | `KrylovJL_BICGSTAB` |
+|:------------------------------------------- |:----------------:|:-----------------:|:-------------------:|
+| `AutoForwardDiff()` (the default)           | yes              | yes               | yes                 |
+| `AutoFiniteDiff(; fdtype = Val(:central))`  | yes              | yes               | no                  |
+| any other finite-difference backend         | no               | no                | no                  |
+
+Forward finite differences destabilize stiff DAEs such as Robertson's through the matrix-free
+operator, and BiCGStab fails with the centered stencil on it, so those combinations throw an
+`ArgumentError` when the integrator is initialized; use forward AD or a concrete `linsolve`.
+The Newton iteration sets the linear tolerances and measures the residual in the left
+preconditioner of the solve, so these are also rejected with an `ArgumentError`: other
+Krylov.jl methods, `KrylovJL` with `ldiv = false` or the Krylov.jl keywords `M`, `N`, `W`,
+`atol` and `rtol`, and any other `linsolve` that does not need a concrete matrix, such as
+`SimpleGMRES` and the `IterativeSolversJL*` wrappers. Pass preconditioners through `precs` and tolerances to `solve`.
+
+A Krylov solve takes one scalar relative tolerance. It is the requested `reltol` (also for a
+fixed step); a vector `reltol` is reduced to its smallest component, and the result is floored
+at working precision (`eps`), so a zero component cannot make the stopping tolerances zero.
+For a finite-difference Jacobian product, which is linear only to about `sqrt(eps)`, the
+tolerance `r` used below is further floored at `cbrt(eps)`; an AD product keeps `reltol`.
+The integration tolerances stay componentwise. A correction is accepted only if its true
+left-preconditioned residual `‖Pl \ (b - A u)‖` is at most `r` times `‖Pl \ b‖` for the
+current Newton iteration, plus the roundoff of forming it: the right-hand side and product of the
+current iterate alone. The allowance taken from the step's first residual only lets the Krylov
+solve stop early; it never excuses an unresolved correction. A zero correction is never accepted for
+a nonzero right-hand side, nor is a correction whose residual or bound is not finite, or for
+which the relative bound `r ‖Pl \ b‖` falls below `floatmin`. Otherwise one cold retry without the allowance decides,
+and the step is rejected unless the retry supplies a nonzero correction that clearly reduced the
+residual (the same bound with `sqrt(r)` in place of `r`). Every linear solve, a rejected retry included, is counted in
+`stats.nsolve`. Because the stopping test is on a residual norm, rows of the residual
+scaled orders of magnitude below the others are invisible to it: give such a problem a
+preconditioner that equilibrates the rows. On the matrix-free path the state dimension is
+fixed at initialization: `resize!`, `deleteat!` and `addat!` of a `DImplicitEuler`, `DABDF2`,
+`DFBDF` or `DNordsieckBDF` integrator throw an `ArgumentError` before changing any state.
+
 ## Optional FBDF time filtering
 
 `FBDF(time_filter = true)` adds embedded candidates to the fixed-coefficient

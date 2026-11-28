@@ -777,7 +777,12 @@ end
     end
 
     # update W
-    if W isa Union{WOperator, StaticWOperator}
+    matrix_free_dae = isdae && W isa AbstractSciMLOperator
+    if matrix_free_dae
+        # The matrix-free `dae_jvp_cache` is linearized at this iterate's `(du, u)`;
+        # `_compute_rhs!` left `du` in `ztmp`.
+        update_coefficients!(W, ustep, p, tstep; du = ztmp)
+    elseif W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
     elseif W isa AbstractSciMLOperator
         # logic for generic AbstractSciMLOperator does not yet support partial state updates, so provide full state
@@ -789,26 +794,78 @@ end
     else
         reltol = eps(real(one(eltype(dz))))
     end
+    # A Krylov solve has one scalar tolerance: the smallest component is the conservative one,
+    # floored at working precision because a zero component would make both of its stopping
+    # tolerances zero.
+    # The matrix-free fixed-step solve uses the requested tolerance as well: a machine-epsilon
+    # forcing tolerance is beyond what Krylov can reach.
+    linreltol = if matrix_free_dae
+        requested = integrator.opts.reltol
+        max(requested isa Number ? requested : minimum(requested), eps(real(one(eltype(dz)))))
+    else
+        reltol
+    end
+
+    # Inexact Newton for the matrix-free DAE `W`: a Krylov solve stops at
+    # `‖P(b - W dz)‖ ≤ reltol * ‖P b‖ + abstol`, where `b` is the current Newton residual, `P`
+    # the left preconditioner the solve uses and `abstol = reltol * ‖P b₁‖` an allowance taken
+    # from the step's first residual `b₁`. Both terms scale with `F`, so a rescaled residual
+    # gets the same `dz`. The allowance keeps a late iterate, whose `b` is near the roundoff
+    # floor of `W * dz`, from being held to `reltol` of that floor, which it cannot reach. It
+    # is a stopping tolerance only: whether the correction is accepted is judged below against
+    # the current iterate alone. `P` can change when `precs` is called for the solve, so
+    # `dolinsolve` measures `b₁` in it once installed.
+    linabstol = if matrix_free_dae
+        iter == 1 && copyto!(cache.b₁, b)
+        (; abstol = ScaledResidualTolerance(_vec(cache.b₁), _vec(atmp), linreltol, true))
+    else
+        (;)
+    end
 
     if is_always_new(nlsolver) || (iter == 1 && new_W)
         linres = dolinsolve(
             integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
-            reltol
+            reltol = linreltol, linabstol...
         )
     else
         linres = dolinsolve(
             integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
-            reltol
+            reltol = linreltol, linabstol...
         )
     end
 
-    if !SciMLBase.successful_retcode(linres.retcode) &&
-            linres.retcode != SciMLBase.ReturnCode.Default
-        return convert(eltype(atmp), Inf)
-    end
-
-    if SciMLBase.has_stats(integrator)
-        integrator.stats.nsolve += 1
+    if matrix_free_dae
+        # Every linear solve is charged as it returns, a retry that is rejected included.
+        if SciMLBase.has_stats(integrator)
+            integrator.stats.nsolve += 1
+        end
+        # The correction is accepted only if its true residual meets the tolerance relative to
+        # this iterate's own residual (plus roundoff). Otherwise one cold retry without the
+        # allowance decides, and the step is rejected unless the retry supplies a nonzero
+        # correction that clearly reduced the residual. The solver's return code is not
+        # consulted: Krylov.jl reports breakdowns as failures with a correct iterate.
+        ok = linear_residual_converged!(integrator, linsolve, _vec(cache.rlin), _vec(atmp))
+        if !ok
+            fill!(dz, zero(eltype(dz)))
+            dolinsolve(
+                integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
+                reltol = linreltol, abstol = zero(linreltol)
+            )
+            if SciMLBase.has_stats(integrator)
+                integrator.stats.nsolve += 1
+            end
+            ok = linear_residual_converged!(
+                integrator, linsolve, _vec(cache.rlin), _vec(atmp); evidence = true
+            )
+        end
+        ok || return convert(eltype(atmp), Inf)
+    else
+        if !linsolve_succeeded(linres)
+            return convert(eltype(atmp), Inf)
+        end
+        if SciMLBase.has_stats(integrator)
+            integrator.stats.nsolve += 1
+        end
     end
 
     # relaxed Newton
@@ -817,7 +874,9 @@ end
     # page 54.
     γdt = isdae ? α * invγdt : γ * dt
 
-    !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
+    # The matrix-free DAE `W` takes the current `cj` every stage (see `_calc_W!`), so it is
+    # never stale; `W_γdt` there records only when the preconditioners were last refreshed.
+    !matrix_free_dae && !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
     relax!(dz, nlsolver, integrator, f)
 
     calculate_residuals!(
@@ -837,6 +896,9 @@ end
 
     ndz
 end
+
+linsolve_succeeded(linres) = SciMLBase.successful_retcode(linres.retcode) ||
+    linres.retcode == SciMLBase.ReturnCode.Default
 
 function get_dae_uprev(integrator, uprev)
     # not all predictors are uprev, for other forms of predictors, defined in u₀
@@ -1139,6 +1201,9 @@ function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i:
     resize!(nlcache.atmp, i)
     resize!(nlcache.dz, i)
     resize!(nlcache.du1, i)
+    # Aliased to `atmp` unless the DAE `W` is matrix-free.
+    nlcache.b₁ === nlcache.atmp || resize!(nlcache.b₁, i)
+    nlcache.rlin === nlcache.atmp || resize!(nlcache.rlin, i)
 
     resize_jac_config!(nlcache, integrator)
     resize!(nlcache.weight, i)

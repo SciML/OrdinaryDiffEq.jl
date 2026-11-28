@@ -424,3 +424,43 @@ end
 # the array has to be committed here instead. The order still ramps up to
 # `max_order` through the usual `qwait` countdown, which keeps the saved
 # correction column valid for the order increase.
+
+# The matrix-free DAE Newton matrix (`dae_jvp_cache`) is built once for the initial state
+# dimension, so every public change of the state size refuses before mutating any buffer.
+function check_fixed_dimension(integrator)
+    nlcache = integrator.cache.nlsolver.cache
+    if hasproperty(nlcache, :W) && jvp_counter(nlcache.W) !== nothing
+        throw(
+            ArgumentError(
+                "Changing the state size (`resize!`, `deleteat!`, `addat!`) is not supported " *
+                    "for a DAE algorithm with a matrix-free Krylov `linsolve`."
+            )
+        )
+    end
+    return nothing
+end
+
+const DAEBDFIntegrator = OrdinaryDiffEqCore.ODEIntegrator{
+    <:Union{DImplicitEuler, DABDF2, DFBDF, DNordsieckBDF},
+}
+
+function Base.resize!(integrator::DAEBDFIntegrator, i::Int)
+    check_fixed_dimension(integrator)
+    return invoke(resize!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Int}, integrator, i)
+end
+function Base.resize!(integrator::DAEBDFIntegrator, i::NTuple{N, Int}) where {N}
+    check_fixed_dimension(integrator)
+    return invoke(
+        resize!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, NTuple{N, Int}}, integrator, i
+    )
+end
+function Base.deleteat!(integrator::DAEBDFIntegrator, idxs)
+    check_fixed_dimension(integrator)
+    return invoke(deleteat!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Any}, integrator, idxs)
+end
+function SciMLBase.addat!(integrator::DAEBDFIntegrator, idxs)
+    check_fixed_dimension(integrator)
+    return invoke(
+        SciMLBase.addat!, Tuple{OrdinaryDiffEqCore.ODEIntegrator, Any}, integrator, idxs
+    )
+end
