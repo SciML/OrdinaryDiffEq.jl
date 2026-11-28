@@ -903,7 +903,8 @@ end
     PIDController(
         beta1, beta2, beta3 = zero(beta1);
         limiter = default_dt_factor_limiter,
-        accept_safety = 0.81
+        accept_safety = 0.81,
+        retry_cap = nothing
     )
 
 The proportional-integral-derivative (PID) controller is a generalization of the
@@ -926,6 +927,30 @@ limiter(x) = one(x) + atan(x - one(x))
 as proposed by Söderlind and Wang (2006). A step will be accepted whenever the
 predicted step size change is bigger than `accept_safety`. Otherwise, the step
 is rejected and re-tried with the predicted step size.
+
+For standalone `QNDF`, `FBDF`, `DFBDF`, `NordsieckBDF`, and `DNordsieckBDF`
+solves, the algorithm selects step size and order, so the PID gains and
+`limiter` have no effect and a step is accepted when the scaled error estimate
+is at most one (see [`pid_uses_error_estimate`](@ref)).
+
+With `retry_cap` in `(0, 1)`, the PID controller bounds its proposed retry factor
+by `retry_cap`. A non-finite or non-positive predicted factor uses the cap. Domain
+rejection, nonlinear failure, discontinuity handling, and algorithm-managed retries
+follow their own step-size rules. The solver applies `dtmin` to the proposed step.
+With `retry_cap = nothing`, PID uses its predicted factor.
+
+`retry_cap` must stay inside `(0, 1)` after conversion to the controller's
+resolved precision: the beta type at construction, and the common type of the
+controller options (such as `qmin`) when the solve initializes. A cap that rounds
+to `0` or `1` there throws an `ArgumentError`, for example `prevfloat(1.0)` with
+`Float32` options.
+
+The capped retry step is computed in the time type of the integrator. For time types
+supporting `prevfloat`, if it rounds back to the rejected step's magnitude there (for
+example `retry_cap = prevfloat(1.0)` with `Float32` time), the retry uses the next smaller
+representable magnitude, `prevfloat(abs(dt))`. `dtmin` still takes precedence over that
+step: a retry at or below `dtmin` ends the solve with `DtLessThanMin`, or is accepted at
+`dtmin` with `force_dtmin = true`.
 
 Some standard controller parameters suggested in the literature are
 
@@ -972,21 +997,34 @@ struct PIDController{B <: Union{NamedTuple, CommonControllerOptions}, QT, Limite
     accept_safety::QT   # accept a step if the predicted change of the step size
     # is bigger than this parameter
     limiter::Limiter    # limiter of the dt factor (before clipping)
+    retry_cap::Union{Nothing, QT}
 end
 
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
+
+_pid_retry_cap(::Type, ::Nothing) = nothing
+function _pid_retry_cap(::Type{QT}, retry_cap::Real) where {QT}
+    converted = QT(retry_cap)
+    0 < converted < 1 || throw(
+        ArgumentError(
+            "`retry_cap` must lie in (0, 1) after conversion to $QT, got $retry_cap ↦ $converted"
+        )
+    )
+    return converted
+end
 
 # Two/three-positional form: betas explicit, common-controller-knobs ride
 # along as a `NamedTuple` of overrides until `setup_controller_cache`.
 function PIDController(
         beta1::Real, beta2::Real, beta3::Real = zero(beta1);
-        accept_safety = 0.81, limiter = default_dt_factor_limiter, kwargs...
+        accept_safety = 0.81, limiter = default_dt_factor_limiter, retry_cap = nothing,
+        kwargs...
     )
     beta = map(float, promote(beta1, beta2, beta3))
     QT = typeof(beta[1])
     basic = NamedTuple(kwargs)
     return PIDController{typeof(basic), QT, typeof(limiter)}(
-        basic, beta, QT(accept_safety), limiter,
+        basic, beta, QT(accept_safety), limiter, _pid_retry_cap(QT, retry_cap),
     )
 end
 
@@ -997,7 +1035,7 @@ end
 function PIDController(
         ::Type{QT}, alg;
         beta = nothing, accept_safety = 0.81,
-        limiter = default_dt_factor_limiter,
+        limiter = default_dt_factor_limiter, retry_cap = nothing,
         kwargs...
     ) where {QT}
     if beta === nothing
@@ -1010,7 +1048,7 @@ function PIDController(
     beta = map(float, promote(beta1, beta2, beta3))
     basic = resolve_basic(NamedTuple(kwargs), alg, QT)
     return PIDController{typeof(basic), QT, typeof(limiter)}(
-        basic, beta, QT(accept_safety), limiter,
+        basic, beta, QT(accept_safety), limiter, _pid_retry_cap(QT, retry_cap),
     )
 end
 
@@ -1019,6 +1057,7 @@ function Base.show(io::IO, controller::PIDController)
         io, "PIDController(beta=", controller.beta,
         ", accept_safety=", controller.accept_safety,
         ", limiter=", controller.limiter,
+        ", retry_cap=", controller.retry_cap,
         ")"
     )
 end
@@ -1047,6 +1086,7 @@ function setup_controller_cache(alg, cache, controller::PIDController, ::Type{E}
     basic = resolve_basic(controller.basic, alg, QT; disco_probs)
     resolved = PIDController{typeof(basic), QT, typeof(controller.limiter)}(
         basic, map(QT, controller.beta), QT(controller.accept_safety), controller.limiter,
+        _pid_retry_cap(QT, controller.retry_cap),
     )
     err = ones(QT, 3)
     return PIDControllerCache{QT, typeof(controller.limiter), E, eltype(disco_probs)}(
@@ -1097,8 +1137,32 @@ end
     return cache.dt_factor
 end
 
+"""
+    pid_uses_error_estimate(alg) -> Bool
+
+Return whether `PIDController` accepts steps using the scaled error estimate
+(`<= 1`) instead of its predicted step-size factor. Algorithms that choose
+their own step size, so that the PID step-size factor is never computed for
+them, specialize this hook to return `true`.
+"""
+pid_uses_error_estimate(alg) = false
+
+_pid_retry_factor(factor, ::Nothing) = factor
+_pid_retry_factor(factor, cap) =
+    isfinite(factor) && factor > 0 ? min(factor, oftype(factor, cap)) : oftype(factor, cap)
+
+_pid_retry_dt(dt, factor, ::Nothing) = dt * factor
+function _pid_retry_dt(dt, factor, cap)
+    trial = oftype(dt, dt * _pid_retry_factor(factor, cap))
+    !iszero(dt) && abs(trial) >= abs(dt) || return trial
+    applicable(prevfloat, abs(dt)) || return trial
+    smaller = prevfloat(abs(dt))
+    return dt < zero(dt) ? -smaller : smaller
+end
+
 @inline function accept_step_controller(integrator, cache::PIDControllerCache, alg)
-    return cache.dt_factor >= cache.controller.accept_safety
+    return pid_uses_error_estimate(alg) ? get_EEst(integrator) <= 1 :
+        cache.dt_factor >= cache.controller.accept_safety
 end
 
 function step_accept_controller!(integrator, cache::PIDControllerCache, alg, dt_factor)
@@ -1119,7 +1183,7 @@ end
 
 function step_reject_controller!(integrator, cache::PIDControllerCache, alg)
     handle_disco_reject!(integrator, cache.controller.basic) && return integrator.dt
-    return integrator.dt *= cache.dt_factor
+    return integrator.dt = _pid_retry_dt(integrator.dt, cache.dt_factor, cache.controller.retry_cap)
 end
 
 function sync_controllers!(cache1::PIDControllerCache, cache2::PIDControllerCache)

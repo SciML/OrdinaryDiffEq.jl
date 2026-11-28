@@ -98,4 +98,26 @@ end
             @test successful_retcode(solve(prob, Tsit5()))
         end
     end
+
+    @testset "PIDController retry_cap with unitful Float32 time" begin
+        using OrdinaryDiffEqCore: PIDController
+        cap = prevfloat(1.0)
+        dt = 0.125f0u"s"
+        for tdir in (1, -1)
+            prob = ODEProblem(
+                (u, p, t) -> zero(u) / oneunit(t), 0.0,
+                (0.0f0u"s", tdir * 0.5f0u"s"),
+            )
+            integ = Ref{Any}()
+            limiter = x -> abs(integ[].dt) < dt ? 1.0 : cap
+            controller = PIDController(
+                0.7, -0.4; limiter, accept_safety = 1.0, retry_cap = cap, qmin = 0.1,
+            )
+            integ[] = init(prob, Tsit5(); dt, controller, maxiters = 10)
+            sol = solve!(integ[])
+            @test sol.retcode == ReturnCode.Success
+            @test sol.stats.nreject == 1
+            @test sol.t[2] === tdir * prevfloat(dt)
+        end
+    end
 end

@@ -35,6 +35,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
     @time @safetestset "BDF Restart Tests" include("bdf_restart_tests.jl")
     @time @safetestset "BDF Reinit Tests" include("bdf_reinit_tests.jl")
     @time @safetestset "BDF Regression Tests" include("bdf_regression_tests.jl")
+    @time @safetestset "BDF PIDController Tests" include("bdf_pid_controller_tests.jl")
     @time @safetestset "BDF Resize Tests" include("resize_tests.jl")
     @time @safetestset "BDF Time Reversal Tests" include("bdf_time_reversal_tests.jl")
     @time @safetestset "FBDF Time Filter Tests" include("fbdf_time_filter_tests.jl")

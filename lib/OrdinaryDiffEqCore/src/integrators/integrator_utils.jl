@@ -630,6 +630,46 @@ function finalize_endpoint!(integrator)
     end
 end
 
+"""
+    commit_step!(integrator, cache) -> Nothing
+
+Record the step just taken by `perform_step!` in the step history held by
+`cache`. The integrator calls this once per accepted step while `integrator.dt`
+still holds the accepted step length. Adaptive acceptance includes the
+`force_dtmin` override. The hook also runs after a successful fixed step.
+Rejected attempts never reach it. Multistep methods whose next step reads that
+history specialize this hook, so that `perform_step!` only builds the trial
+state and a rejected attempt leaves the history untouched. The default does
+nothing.
+"""
+commit_step!(integrator, cache) = nothing
+
+function commit_step!(integrator, cache::CompositeCache)
+    return if cache.current == 1
+        commit_step!(integrator, @inbounds(cache.caches[1]))
+    elseif cache.current == 2
+        commit_step!(integrator, @inbounds(cache.caches[2]))
+    else
+        commit_step!(integrator, @inbounds(cache.caches[cache.current]))
+    end
+end
+
+function commit_step!(integrator, cache::DefaultCache)
+    return if cache.current == 1
+        commit_step!(integrator, @inbounds(cache.cache1))
+    elseif cache.current == 2
+        commit_step!(integrator, @inbounds(cache.cache2))
+    elseif cache.current == 3
+        commit_step!(integrator, @inbounds(cache.cache3))
+    elseif cache.current == 4
+        commit_step!(integrator, @inbounds(cache.cache4))
+    elseif cache.current == 5
+        commit_step!(integrator, @inbounds(cache.cache5))
+    elseif cache.current == 6
+        commit_step!(integrator, @inbounds(cache.cache6))
+    end
+end
+
 # Want to extend loopfooter! for DDEIntegrator
 loopfooter!(integrator::ODEIntegrator) = _loopfooter!(integrator)
 
@@ -661,6 +701,7 @@ function _loopfooter!(integrator)
         )
         if integrator.accept_step # Accept
             increment_accept!(integrator.stats)
+            commit_step!(integrator, integrator.cache)
             apply_solve_step_limiter!(integrator, ttmp)
             integrator.last_stepfail = false
             integrator.tprev = integrator.t
@@ -688,6 +729,7 @@ function _loopfooter!(integrator)
         end
     elseif !integrator.opts.adaptive #Not adaptive
         increment_accept!(integrator.stats)
+        commit_step!(integrator, integrator.cache)
         apply_solve_step_limiter!(integrator, ttmp)
         integrator.tprev = integrator.t
         integrator.t = fixed_t_for_tstop_error!(integrator, ttmp)

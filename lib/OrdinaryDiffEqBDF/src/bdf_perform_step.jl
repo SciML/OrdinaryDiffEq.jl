@@ -77,17 +77,16 @@ end
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
 
-    ################################### Finalize
-
-    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
-        cache.fsalfirstprev = integrator.fsalfirst
-        cache.dtₙ₋₁ = dtₙ
-    end
-
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = uₙ
     return
+end
+
+function OrdinaryDiffEqCore.commit_step!(integrator, cache::ABDF2ConstantCache)
+    cache.fsalfirstprev = integrator.fsalfirst
+    cache.dtₙ₋₁ = integrator.dt
+    return nothing
 end
 
 function initialize!(integrator, cache::ABDF2Cache)
@@ -173,14 +172,13 @@ end
         )
         OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
     end
-
-    ################################### Finalize
-
-    if OrdinaryDiffEqCore.get_EEst(integrator) < one(OrdinaryDiffEqCore.get_EEst(integrator))
-        @.. broadcast = false cache.fsalfirstprev = integrator.fsalfirst
-        cache.dtₙ₋₁ = dtₙ
-    end
     return
+end
+
+function OrdinaryDiffEqCore.commit_step!(integrator, cache::ABDF2Cache)
+    @.. broadcast = false cache.fsalfirstprev = integrator.fsalfirst
+    cache.dtₙ₋₁ = integrator.dt
+    return nothing
 end
 
 # SBDF
@@ -459,17 +457,18 @@ function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = fals
             OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
-    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
-        return
-    end
-    cache.dtₙ₋₁ = dt
-    cache.uprev2 = uprev
     integrator.fsallast = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
     return
+end
+
+function OrdinaryDiffEqCore.commit_step!(integrator, cache::QNDF1ConstantCache)
+    cache.dtₙ₋₁ = integrator.dt
+    cache.uprev2 = integrator.uprev
+    return nothing
 end
 
 function initialize!(integrator, cache::QNDF1Cache)
@@ -551,14 +550,15 @@ function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
             OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
-    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
-        return
-    end
-    cache.uprev2 .= uprev
-    cache.dtₙ₋₁ = dt
     f(integrator.fsallast, u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     return
+end
+
+function OrdinaryDiffEqCore.commit_step!(integrator, cache::QNDF1Cache)
+    cache.uprev2 .= integrator.uprev
+    cache.dtₙ₋₁ = integrator.dt
+    return nothing
 end
 
 function initialize!(integrator, cache::QNDF2ConstantCache)
@@ -648,6 +648,9 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
     u = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
+    # `commit_step!` forms the new `D` from these trial differences.
+    D2[1] = u - uprev
+    D2[2] = D2[1] - d₁
     if integrator.opts.adaptive
         if success_cnt == 0
             OrdinaryDiffEqCore.set_EEst!(integrator, one(OrdinaryDiffEqCore.get_EEst(integrator)))
@@ -660,8 +663,6 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
             )
             OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         else
-            D2[1] = u - uprev
-            D2[2] = D2[1] - d₁
             D2[3] = D2[2] - d₂
             utilde = (κ * γ₂ + inv(k + 1)) * D2[3]
             atmp = calculate_residuals(
@@ -672,23 +673,23 @@ function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = fals
             OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
-    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
-        return
-    end
-
-    Δ = u - uprev
-    cache.D[1] = Δ
-    cache.D[2] = success_cnt == 0 ? zero(Δ) : Δ - d₁
-    cache.uprev3 = uprev2
-    cache.uprev2 = uprev
-    cache.dtₙ₋₂ = dtₙ₋₁
-    cache.dtₙ₋₁ = dt
     integrator.fsallast = f(u, p, t + dt)
     OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
     return
+end
+
+function OrdinaryDiffEqCore.commit_step!(integrator, cache::QNDF2ConstantCache)
+    (; D, D2) = cache
+    D[1] = D2[1]
+    D[2] = integrator.success_iter == cache.success_iter_at_event ? zero(D2[2]) : D2[2]
+    cache.uprev3 = cache.uprev2
+    cache.uprev2 = integrator.uprev
+    cache.dtₙ₋₂ = cache.dtₙ₋₁
+    cache.dtₙ₋₁ = integrator.dt
+    return nothing
 end
 
 function initialize!(integrator, cache::QNDF2Cache)
@@ -803,23 +804,25 @@ function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
             OrdinaryDiffEqCore.set_EEst!(integrator, integrator.opts.internalnorm(atmp, t))
         end
     end
-    if OrdinaryDiffEqCore.get_EEst(integrator) > one(OrdinaryDiffEqCore.get_EEst(integrator))
-        return
-    end
+    f(integrator.fsallast, u, p, t + dt)
+    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    return
+end
 
-    if success_cnt == 0
+function OrdinaryDiffEqCore.commit_step!(integrator, cache::QNDF2Cache)
+    (; u, uprev) = integrator
+    (; D, Dtmp) = cache
+    if integrator.success_iter == cache.success_iter_at_event
         @.. broadcast = false D[2] = false
     else
         @.. broadcast = false D[2] = (u - uprev) - Dtmp[1]
     end
     @.. broadcast = false D[1] = u - uprev
-    cache.uprev3 .= uprev2
+    cache.uprev3 .= cache.uprev2
     cache.uprev2 .= uprev
-    cache.dtₙ₋₂ = dtₙ₋₁
-    cache.dtₙ₋₁ = dt
-    f(integrator.fsallast, u, p, t + dt)
-    OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-    return
+    cache.dtₙ₋₂ = cache.dtₙ₋₁
+    cache.dtₙ₋₁ = integrator.dt
+    return nothing
 end
 
 function initialize!(integrator, cache::QNDFConstantCache{max_order}) where {max_order}

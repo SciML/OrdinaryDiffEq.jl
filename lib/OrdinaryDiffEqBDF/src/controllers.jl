@@ -50,6 +50,10 @@ end
     integrator, cache::BDFControllerCache, alg,
 ) = get_EEst(cache) <= 1
 
+@inline OrdinaryDiffEqCore.pid_uses_error_estimate(
+    ::Union{QNDF, FBDF, DFBDF, NordsieckBDFAlgs}
+) = true
+
 # Per-algorithm defaults for `CommonControllerOptions` knobs that don't match the
 # generic IController defaults. These match the historical alg-struct kwargs
 # `QNDF(qmax=5//1, qsteady_min=9//10, qsteady_max=12//10)` etc. and the formerly
