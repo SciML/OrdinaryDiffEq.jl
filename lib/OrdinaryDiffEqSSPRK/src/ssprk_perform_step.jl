@@ -972,10 +972,9 @@ end
     dt = dts[1]
 
     if cache.step < 3 #starting Procedure
+        u = uprev + dt * integrator.fsalfirst
         k = f(u, p, t + dt)
-        u = uprev + dt * k
-        k = f(u, p, t + dt)
-        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 2)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
         u = (uprev + u + dt * k) / 2
         if cache.step == 1
             u_2 = uprev
@@ -1099,18 +1098,15 @@ end
         u = (uprev + u + dt * k) / 2
         if cache.step == 1
             u_3 = uprev
-            cache.k3 = f(u_3, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            cache.k3 = integrator.fsalfirst
         end
         if cache.step == 2
             u_2 = uprev
-            cache.k2 = f(u_2, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            cache.k2 = integrator.fsalfirst
         end
         if cache.step == 3
             u_1 = uprev
-            cache.k1 = f(u_1, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            cache.k1 = integrator.fsalfirst
         end
         # u
     else
@@ -1157,18 +1153,15 @@ end
         stage_limiter!(u, integrator, p, t + dt)
         if cache.step == 1
             cache.u_3 .= uprev
-            f(k3, u_3, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            cache.k3 .= fsalfirst
         end
         if cache.step == 2
             cache.u_2 .= uprev
-            f(k2, u_2, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            cache.k2 .= fsalfirst
         end
         if cache.step == 3
             cache.u_1 .= uprev
-            f(k1, u_1, p, t + dt)
-            OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+            cache.k1 .= fsalfirst
         end
         # u
     else
@@ -1231,7 +1224,7 @@ end
     if integrator.opts.adaptive
         k = f(u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        utilde = (uprev + 6 * u + 6 * dt * k) / 7
+        utilde = (uprev + 6 * u + dt * k) / 7
     end
     # u6*
     u = (3 * uprev + dt_2 * integrator.fsalfirst + 2 * u) / 5
@@ -1301,7 +1294,7 @@ end
         stage_limiter!(u, integrator, p, t + dt)
         f(k, u, p, t + dt)
         OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
-        @.. broadcast = false thread = thread utilde = (uprev + 6 * u + 6 * dt * k) / 7
+        @.. broadcast = false thread = thread utilde = (uprev + 6 * u + dt * k) / 7
     end
     # u6*
     @.. broadcast = false thread = thread u = (3 * uprev + dt_2 * integrator.fsalfirst + 2 * u) /
