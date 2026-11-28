@@ -2,6 +2,7 @@ using OrdinaryDiffEqExponentialRK, Test, DiffEqDevTools, Random, LinearAlgebra, 
 using OrdinaryDiffEqVerner, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: alg_order
 using OrdinaryDiffEqExponentialRK: expRK_operators, phi
+using ExponentialUtilities: ExpMethodHigham2005Base, exponential!
 using SciMLOperators: MatrixOperator, ScalarOperator
 
 @testset "Caching Out-of-place" begin
@@ -286,5 +287,372 @@ end
         kry = solve(prob, Alg(krylov = true); abstol = 1.0e-9, reltol = 1.0e-9)
         @test kry.t ≈ tight.t
         @test kry.u[end] ≈ tight.u[end]
+    end
+end
+
+struct FixedScalarLinear <: Function
+    coefficient::Float64
+end
+(A::FixedScalarLinear)(u, p, t) = A.coefficient * u
+Base.size(::FixedScalarLinear) = ()
+Base.convert(::Type{Number}, A::FixedScalarLinear) = A.coefficient
+Base.:*(A::FixedScalarLinear, u::Number) = A.coefficient * u
+
+@testset "Embedded ExpRK pairs with a nonlinear scalar split" begin
+    nonlinear = (u, p, t) -> 5u - 2u^2
+    prob = SplitODEProblem(ScalarOperator(-3.0), nonlinear, 0.2, (0.0, 2.0))
+    updating_operator = ScalarOperator(0.0; update_func = (a, u, p, t) -> -3.0)
+    updating_prob = SplitODEProblem(updating_operator, nonlinear, 0.2, (0.0, 2.0))
+    exact = inv(1 + 4exp(-4))
+
+    for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true)
+        @testset "$Alg krylov=$krylov" begin
+            alg = Alg(; krylov)
+            loose = solve(prob, alg; abstol = 1.0e-4, reltol = 1.0e-4)
+            tight = solve(prob, alg; abstol = 1.0e-9, reltol = 1.0e-9)
+            @test SciMLBase.successful_retcode(loose)
+            @test SciMLBase.successful_retcode(tight)
+            @test all(u -> u isa Real, loose.u)
+            @test all(u -> u isa Real, tight.u)
+            @test abs(tight.u[end] - exact) < abs(loose.u[end] - exact)
+            @test abs(tight.u[end] - exact) < 1.0e-6
+            updated = solve(updating_prob, alg; abstol = 1.0e-9, reltol = 1.0e-9)
+            @test SciMLBase.successful_retcode(updated)
+            @test abs(updated.u[end] - exact) < 1.0e-6
+        end
+    end
+
+    callable_prob = SplitODEProblem(FixedScalarLinear(-3.0), nonlinear, 0.2, (0.0, 2.0))
+    for Alg in (ERK32ZB, ERK43ZB)
+        @testset "$Alg fixed callable" begin
+            sol = solve(callable_prob, Alg(); abstol = 1.0e-9, reltol = 1.0e-9)
+            @test SciMLBase.successful_retcode(sol)
+            @test all(u -> u isa Real, sol.u)
+            @test sol.u[end] ≈ exact atol = 1.0e-6
+        end
+    end
+end
+
+@testset "Embedded ExpRK pairs with updating scalar coefficients" begin
+    for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true)
+        alg = Alg(; krylov)
+        @testset "$Alg krylov=$krylov" begin
+            @testset "Constant coefficient callbacks" begin
+                for update_func in ((a, u, p, t) -> p, (a, u, p, t) -> a)
+                    A = ScalarOperator(-1.0; update_func)
+                    prob = SplitODEProblem(A, (u, p, t) -> 0.5, 0.8, (0.0, 1.0), -1.0)
+                    sol = solve(prob, alg; adaptive = false, dt = 0.125)
+                    @test SciMLBase.successful_retcode(sol)
+                    @test all(abs.(sol.u .- (0.5 .+ 0.3 .* exp.(-sol.t))) .< 100eps(Float64))
+                end
+            end
+
+            @testset "Time-dependent coefficient" begin
+                A = ScalarOperator(-1.0; update_func = (a, u, p, t) -> -(1 + t))
+                prob = SplitODEProblem(A, (u, p, t) -> zero(u), 0.8, (0.0, 1.0))
+                exact(t) = 0.8exp(-t - t^2 / 2)
+                errors = map((1 / 16, 1 / 32)) do dt
+                    sol = solve(prob, alg; adaptive = false, dt)
+                    @test SciMLBase.successful_retcode(sol)
+                    return maximum(abs.(sol.u .- exact.(sol.t)))
+                end
+                @test errors[2] < 1.0e-6
+                @test log2(errors[1] / errors[2]) > alg_order(alg) - 0.5
+            end
+
+            @testset "State- and parameter-dependent coefficient with step rejection" begin
+                A = ScalarOperator(0.0; update_func = (a, u, p, t) -> p * u)
+                prob = SplitODEProblem(A, (u, p, t) -> zero(u), 0.8, (0.0, 1.0), -2.0)
+                exact(t) = prob.u0 / (1 - prob.p * prob.u0 * t)
+                sol = solve(prob, alg; dt = 0.8, abstol = 1.0e-9, reltol = 1.0e-9)
+                @test SciMLBase.successful_retcode(sol)
+                @test sol.stats.nreject > 0
+                @test maximum(abs.(sol.u .- exact.(sol.t))) < 1.0e-6
+            end
+        end
+    end
+end
+
+@testset "Embedded ExpRK pairs with a typed parameter in a scalar coefficient" begin
+    specializations = @static if isdefined(SciMLBase, :AutoDespecialize)
+        (SciMLBase.FullSpecialize, SciMLBase.AutoDespecialize)
+    else
+        (SciMLBase.FullSpecialize,)
+    end
+    A = ScalarOperator(-2.0; update_func = (a, u, p::Float64, t) -> p)
+    g(u, p, t) = 0.7
+    exact(t) = 0.35 + 0.45exp(-2t)
+
+    for specialize in specializations
+        f = SplitFunction{false, specialize}(ODEFunction{false}(A), ODEFunction{false}(g))
+        prob = SplitODEProblem(f, 0.8, (0.0, 1.0), -2.0)
+        for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true), adaptive in (false, true)
+            @testset "$specialize $Alg krylov=$krylov adaptive=$adaptive" begin
+                alg = Alg(; krylov)
+                sol = if adaptive
+                    solve(prob, alg; abstol = 1.0e-9, reltol = 1.0e-9)
+                else
+                    solve(prob, alg; adaptive = false, dt = 0.125)
+                end
+                @test SciMLBase.successful_retcode(sol)
+                @test maximum(abs.(sol.u .- exact.(sol.t))) < 100eps(Float64)
+            end
+        end
+    end
+end
+
+@testset "Embedded ExpRK pairs with a scalar coefficient initialized by a callback" begin
+    A = ScalarOperator(
+        -1.0; update_func = (a, u, p, t) -> begin
+            p[] || error("coefficient queried before callback initialization")
+            return a
+        end
+    )
+    initialize = (cb, u, t, integrator) -> (integrator.p[] = true; nothing)
+    callback = DiscreteCallback((u, t, integrator) -> false, identity; initialize)
+    exact(t) = 0.5 + 0.3exp(-t)
+
+    for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true), adaptive in (false, true)
+        @testset "$Alg krylov=$krylov adaptive=$adaptive" begin
+            p = Ref(false)
+            prob = SplitODEProblem(A, (u, p, t) -> 0.5, 0.8, (0.0, 1.0), p)
+            sol = solve(
+                prob, Alg(; krylov); adaptive, dt = 0.125, callback,
+                abstol = 1.0e-9, reltol = 1.0e-9
+            )
+            @test p[]
+            @test SciMLBase.successful_retcode(sol)
+            @test maximum(abs.(sol.u .- exact.(sol.t))) < 100eps(Float64)
+        end
+    end
+end
+
+struct CountedExpRKCoefficient{T} <: Number
+    value::T
+end
+const EXP_RK_TABLEAU_BUILDS = Ref(0)
+Base.:*(a::CountedExpRKCoefficient, u::Number) = a.value * u
+Base.:-(a::CountedExpRKCoefficient, b::CountedExpRKCoefficient) = a.value - b.value
+Base.isequal(a::CountedExpRKCoefficient, b::CountedExpRKCoefficient) =
+    isequal(a.value, b.value)
+
+for Alg in (ERK32ZB, ERK43ZB)
+    @eval function OrdinaryDiffEqExponentialRK.expRK_operators(alg::$Alg, dt, a::CountedExpRKCoefficient)
+        EXP_RK_TABLEAU_BUILDS[] += 1
+        return expRK_operators(alg, dt, a.value)
+    end
+end
+
+@testset "Embedded ExpRK pairs reuse scalar tableaus" begin
+    update_func = (a, u, phase, t) -> begin
+        phase[] == 1 && return CountedExpRKCoefficient(-1.0)
+        phase[] == 2 && return CountedExpRKCoefficient(-2.0)
+        return CountedExpRKCoefficient(-2.0f0)
+    end
+    A = ScalarOperator(-1.0; update_func)
+    callback = DiscreteCallback(
+        (u, t, integrator) -> t == 0.25 || t == 0.375,
+        integrator -> (integrator.p[] += 1);
+        save_positions = (false, false)
+    )
+    for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true)
+        @testset "$Alg krylov=$krylov" begin
+            EXP_RK_TABLEAU_BUILDS[] = 0
+            p = Ref(1)
+            prob = SplitODEProblem(A, (u, p, t) -> zero(u), 0.8, (0.0, 0.6875), p)
+            integrator = init(prob, Alg(; krylov); dt = 0.125, adaptive = false, callback, tstops = [0.25, 0.375])
+            @test EXP_RK_TABLEAU_BUILDS[] == 0
+            # Refresh when the coefficient's value or type changes and for the shortened final step.
+            for expected in (1, 1, 2, 3, 3, 4)
+                step!(integrator)
+                @test EXP_RK_TABLEAU_BUILDS[] == expected
+            end
+            exact(t) = 0.8exp(-min(t, 0.25) - 2max(t - 0.25, 0))
+            @test maximum(abs.(integrator.sol.u .- exact.(integrator.sol.t))) < 100eps(Float64)
+        end
+    end
+end
+
+# The older BLAS-only exponential backend does not support BigFloat phi functions.
+if hasmethod(exponential!, Tuple{Matrix{BigFloat}, ExpMethodHigham2005Base})
+    @testset "Embedded ExpRK pairs reuse high-precision scalar tableaus" begin
+        for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true), T in (Float64, BigFloat), complex_rate in (false, true)
+            @testset "$Alg krylov=$krylov time=$T complex=$complex_rate" begin
+                setprecision(BigFloat, 128) do
+                    rate(x) = complex_rate ? complex(BigFloat(x), BigFloat(0.5)) : BigFloat(x)
+                    initial_rate, next_rate = rate(-1), rate(-2)
+                    p = Ref(initial_rate)
+                    A = ScalarOperator(initial_rate; update_func = (a, u, p, t) -> p[])
+                    callback = DiscreteCallback(
+                        (u, t, integrator) -> t == 0.25 || t == 0.5,
+                        integrator -> begin
+                            if integrator.t == 0.25
+                                integrator.p[] = next_rate
+                            elseif complex_rate
+                                integrator.p[] = complex(real(next_rate), BigFloat(imag(next_rate); precision = 192))
+                            else
+                                integrator.p[] = BigFloat(next_rate; precision = 192)
+                            end
+                        end;
+                        save_positions = (false, false)
+                    )
+                    u0 = oftype(initial_rate, BigFloat("0.8"))
+                    prob = SplitODEProblem(A, (u, p, t) -> zero(u), u0, (T(0), T(1.0625)), p)
+                    integrator = init(prob, Alg(; krylov); dt = T(0.125), adaptive = false, callback, tstops = T[0.25, 0.5])
+                    tableau_step!() = (step!(integrator); integrator.cache.ops[])
+
+                    @test integrator.cache.ops[] === nothing
+                    initial = tableau_step!()
+                    @test initial !== nothing && initial.a !== p[]
+                    @test initial !== nothing && (T === Float64 || initial.dt !== integrator.dt)
+                    @test tableau_step!() === initial
+                    changed_rate = tableau_step!()
+                    @test changed_rate !== initial
+                    @test tableau_step!() === changed_rate
+                    changed_input_precision = tableau_step!()
+                    @test changed_input_precision !== changed_rate
+
+                    setprecision(BigFloat, 160) do
+                        changed_precision = tableau_step!()
+                        @test changed_precision !== changed_input_precision
+                        @test tableau_step!() === changed_precision
+                        setrounding(BigFloat, RoundDown) do
+                            changed_rounding = tableau_step!()
+                            @test changed_rounding !== changed_precision
+                            @test tableau_step!() !== changed_rounding # shortened final step
+                        end
+                    end
+                    exact(t) = u0 * exp(initial_rate * min(t, 0.25) + next_rate * max(t - 0.25, 0))
+                    @test maximum(abs.(integrator.sol.u .- exact.(integrator.sol.t))) < big"1e-28"
+                end
+            end
+        end
+    end
+
+    @testset "Embedded ExpRK pairs refresh fixed scalar tableaus after reinit" begin
+        for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true),
+                (A, T) in ((BigFloat, Float64), (BigFloat, BigFloat), (Float64, BigFloat))
+            @testset "$Alg krylov=$krylov rate=$A time=$T" begin
+                setprecision(BigFloat, 256) do
+                    alg = Alg(; krylov)
+                    a, u0, dt = A(-1), BigFloat("0.8"), T(0.125)
+                    prob = SplitODEProblem(ScalarOperator(a), (u, p, t) -> zero(u), u0, (zero(dt), dt))
+                    integrator = setprecision(BigFloat, 64) do
+                        integrator = init(prob, alg; dt, adaptive = false)
+                        step!(integrator)
+                        return integrator
+                    end
+
+                    reinit!(integrator)
+                    step!(integrator)
+                    fresh = solve(prob, alg; dt, adaptive = false)
+                    @test SciMLBase.successful_retcode(fresh)
+                    @test integrator.u == fresh.u[end]
+                    @test abs(integrator.u - u0 * exp(-BigFloat(dt))) < 128eps(BigFloat)
+
+                    setprecision(BigFloat, 64) do
+                        reinit!(integrator)
+                        step!(integrator)
+                        setrounding(BigFloat, RoundDown) do
+                            reinit!(integrator)
+                            step!(integrator)
+                            fresh = solve(prob, alg; dt, adaptive = false)
+                            @test SciMLBase.successful_retcode(fresh)
+                            @test integrator.u == fresh.u[end]
+                            @test abs(integrator.u - u0 * exp(-BigFloat(dt))) < 128eps(BigFloat)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+mutable struct MutableExpRKRate{T <: AbstractFloat} <: Number
+    value::T
+end
+
+struct WrappedExpRKRate{T <: AbstractFloat} <: Number
+    inner::MutableExpRKRate{T}
+end
+
+const SharedExpRKRate = Union{MutableExpRKRate, WrappedExpRKRate}
+exp_rk_rate(a::MutableExpRKRate) = a.value
+exp_rk_rate(a::WrappedExpRKRate) = exp_rk_rate(a.inner)
+Base.:*(a::SharedExpRKRate, u::Real) = exp_rk_rate(a) * u
+Base.:*(u::Real, a::SharedExpRKRate) = u * exp_rk_rate(a)
+Base.:-(a::SharedExpRKRate, b::SharedExpRKRate) = exp_rk_rate(a) - exp_rk_rate(b)
+Base.isequal(a::SharedExpRKRate, b::SharedExpRKRate) = isequal(exp_rk_rate(a), exp_rk_rate(b))
+
+if hasmethod(exponential!, Tuple{Matrix{BigFloat}, ExpMethodHigham2005Base})
+    @testset "Embedded ExpRK pairs refresh a fixed high-precision scalar mutated by a callback" begin
+        for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true)
+            @testset "$Alg krylov=$krylov" begin
+                setprecision(BigFloat, 256) do
+                    u0 = BigFloat("0.8")
+                    rate = MutableExpRKRate(BigFloat(-1))
+                    A = ScalarOperator(rate)
+                    callback = DiscreteCallback(
+                        (u, t, integrator) -> t == 0.25,
+                        integrator -> (integrator.p.value = BigFloat(-2));
+                        save_positions = (false, false)
+                    )
+                    prob = SplitODEProblem(A, (u, p, t) -> zero(u), u0, (0.0, 0.5), rate)
+                    sol = solve(prob, Alg(; krylov); dt = 0.125, adaptive = false, tstops = [0.25], callback)
+                    exact(t) = u0 * exp(-min(BigFloat(t), BigFloat(0.25)) - 2max(BigFloat(t) - BigFloat(0.25), 0))
+                    @test SciMLBase.successful_retcode(sol)
+                    @test rate.value == -2
+                    @test maximum(abs.(sol.u .- exact.(sol.t))) < 128eps(BigFloat)
+                end
+            end
+        end
+    end
+end
+
+@testset "Embedded ExpRK pairs with a scalar coefficient mutated by a callback" begin
+    A = ScalarOperator(-1.0; update_func = (a, u, p, t) -> p.rate)
+    callback = DiscreteCallback(
+        (u, t, integrator) -> t == 0.25,
+        integrator -> (integrator.p.storage.value = -2.0);
+        save_positions = (false, false)
+    )
+    exact(t) = 0.8exp(-min(t, 0.25) - 2max(t - 0.25, 0))
+    for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true), wrap in (identity, WrappedExpRKRate)
+        @testset "$Alg krylov=$krylov wrap=$wrap" begin
+            storage = MutableExpRKRate(-1.0)
+            p = (; rate = wrap(storage), storage)
+            prob = SplitODEProblem(A, (u, p, t) -> zero(u), 0.8, (0.0, 0.5), p)
+            sol = solve(prob, Alg(; krylov); dt = 0.125, adaptive = false, tstops = [0.25], callback)
+            @test SciMLBase.successful_retcode(sol)
+            @test storage.value == -2.0
+            @test maximum(abs.(sol.u .- exact.(sol.t))) < 1.0e-12
+        end
+    end
+end
+
+@testset "Embedded ExpRK pairs with a scalar coefficient reused across stages" begin
+    exact(t) = 0.8exp(-t - t^2 / 2)
+    reuse_rate = (a, u, p, t) -> begin
+        p.storage.value = -(1 + t)
+        return p.rate
+    end
+    for Alg in (ERK32ZB, ERK43ZB), krylov in (false, true), wrap in (identity, WrappedExpRKRate)
+        fresh_rate = (a, u, p, t) -> wrap(MutableExpRKRate(-(1 + t)))
+        for (label, update_func) in (("fresh", fresh_rate), ("reused", reuse_rate))
+            @testset "$Alg krylov=$krylov wrap=$wrap $label" begin
+                alg = Alg(; krylov)
+                storage = MutableExpRKRate(-1.0)
+                p = (; rate = wrap(storage), storage)
+                A = ScalarOperator(-1.0; update_func)
+                prob = SplitODEProblem(A, (u, p, t) -> zero(u), 0.8, (0.0, 1.0), p)
+                errors = map((1 / 16, 1 / 32)) do dt
+                    sol = solve(prob, alg; dt, adaptive = false)
+                    @test SciMLBase.successful_retcode(sol)
+                    return maximum(abs.(sol.u .- exact.(sol.t)))
+                end
+                @test errors[2] < 1.0e-6
+                @test log2(errors[1] / errors[2]) > alg_order(alg) - 0.5
+            end
+        end
     end
 end

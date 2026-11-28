@@ -580,10 +580,36 @@ end
 ####################################
 # Embedded ExpRK pair caches
 #
-# These pairs step adaptively, so dt moves between steps and the cached
-# operators cannot be built once at cache construction the way the fixed-step
-# ExpRK caches are. Each cache carries the dt its operators were built for and
-# rebuilds them when dt moves.
+# Rebuild cached operators when the step size changes. For scalars that need
+# a checked tableau, the current coefficient also determines reuse.
+
+struct ExpRKScalarTableau{T, A, Context, Ops <: Tuple}
+    dt::T
+    a::A
+    context::Context
+    ops::Ops
+end
+
+const ExpRKScalarCache = Ref{Union{Nothing, ExpRKScalarTableau}}
+const ExpRKBigScalar = Union{BigFloat, Complex{BigFloat}}
+
+_expRK_big_precision(x) = nothing
+_expRK_big_precision(x::BigFloat) = precision(x)
+_expRK_big_precision(x::Complex{BigFloat}) = (precision(real(x)), precision(imag(x)))
+
+_expRK_scalar_split(f, u) = u isa Number && f isa SplitFunction &&
+    f.f1.f isa SciMLOperators.AbstractSciMLScalarOperator
+
+@inline function _expRK_updated_coefficient(A, u, p, t)
+    updated = @static if isdefined(SciMLBase, :invoke_with_despecialized_parameters)
+        SciMLBase.invoke_with_despecialized_parameters(
+            SciMLOperators.update_coefficients, (A, u, p, t)
+        )
+    else
+        SciMLOperators.update_coefficients(A, u, p, t)
+    end
+    return convert(Number, updated)
+end
 
 for (Alg, Cache) in [
         (:ERK32ZB, :ERK32ZBConstantCache),
@@ -604,7 +630,17 @@ for (Alg, Cache) in [
             uEltypeNoUnits, uBottomEltypeNoUnits,
             tTypeNoUnits,
         }
-        if alg.krylov
+        scalar_split = _expRK_scalar_split(f, u)
+        if scalar_split
+            A = f.f1.f
+            if isconstant(A)
+                a = convert(Number, A)
+                ops = isbits(a) && isbits(dt) ? expRK_operators(alg, dt, a) : ExpRKScalarCache(nothing)
+            else
+                # The first coefficient is available only after callback initialization.
+                ops = ExpRKScalarCache(nothing)
+            end
+        elseif alg.krylov
             ops = nothing # no caching
         else
             isa(f, SplitFunction) ||
@@ -718,8 +754,7 @@ _expRK_linear_operator(f) = size(f.f1.f) == () ? convert(Number, f.f1.f) :
     update_expRK_operators!(cache, alg, f, dt)
 
 Rebuild an embedded ExpRK pair's cached operators for the current `dt`. A no-op
-when the operators are already built for `dt`, and when the algorithm runs in
-Krylov mode, where no operators are cached.
+when the operators are already built for `dt` or the step uses Krylov actions.
 """
 @inline function update_expRK_operators!(cache, alg, f, dt)
     cache.ops === nothing && return nothing
@@ -727,6 +762,48 @@ Krylov mode, where no operators are cached.
     cache.ops = expRK_operators(alg, dt, _expRK_linear_operator(f))
     cache.dtcache = dt
     return nothing
+end
+
+@inline function _expRK_scalar_operators!(cache::ExpRKScalarCache, alg, dt, a, context = nothing)
+    tableau = cache[]
+    if tableau isa ExpRKScalarTableau{typeof(dt), typeof(a), typeof(context)} &&
+            isequal(dt, tableau.dt) && isequal(a, tableau.a) && isequal(context, tableau.context)
+        ops = tableau.ops
+        if (dt isa Float64 && a isa Float64) ||
+                (dt isa Union{Float64, BigFloat} && a isa ExpRKBigScalar)
+            # Keep stage arithmetic concrete when the stored tuple permits it.
+            ops isa Tuple{Vararg{typeof(a)}} && return ops
+        else
+            return ops
+        end
+    end
+    dt = deepcopy(dt)
+    ops = expRK_operators(alg, dt, a)
+    cache[] = ExpRKScalarTableau(dt, a, context, ops)
+    return ops
+end
+
+@inline function _expRK_pair_step_data!(cache, alg, f, A, u, p, t, dt)
+    if cache.ops isa ExpRKScalarCache
+        fixed = isconstant(A)
+        a = fixed ? convert(Number, A) : _expRK_updated_coefficient(A, u, p, t)
+        if isbits(a) && isbits(dt)
+            ops = _expRK_scalar_operators!(cache.ops, alg, dt, a)
+        else
+            # The cached key must own its value across callbacks and stage updates.
+            a = deepcopy(a)
+            if (a isa ExpRKBigScalar || isbits(a)) && (dt isa BigFloat || isbits(dt))
+                context = (precision(BigFloat), rounding(BigFloat), _expRK_big_precision(dt), _expRK_big_precision(a))
+                ops = _expRK_scalar_operators!(cache.ops, alg, dt, a, context)
+            else
+                ops = expRK_operators(alg, dt, a)
+            end
+        end
+        return ops, a * u, fixed ? nothing : a
+    end
+    update_expRK_operators!(cache, alg, f, dt)
+    Au = _expRK_scalar_split(f, u) ? convert(Number, A) * u : A * u
+    return cache.ops, Au, nothing
 end
 
 ####################################
