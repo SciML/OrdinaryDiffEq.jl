@@ -334,3 +334,42 @@ end
         @test all(isapprox(sum(u[1:3]), 1; atol = 1.0e-8) for u in sol.u)
     end
 end
+
+@testset "FBDF steps by the increment it commits at large t (#4909)" begin
+    λ = 1.0e4
+    f!(du, u, p, t) = (du[1] = -λ * (u[1] - cos(t - p)); du[2] = cos(t - p) - u[2] + u[1]; nothing)
+    f(u, p, t) = [-λ * (u[1] - cos(t - p)), cos(t - p) - u[2] + u[1]]
+    a = (2λ^2 + 1) / (λ^2 + 1)
+    b = λ / (λ^2 + 1)
+    c = 1 / ((λ^2 + 1) * (1 - λ))
+    exact = [
+        (λ^2 * cos(1) + λ * sin(1) + exp(-λ)) / (λ^2 + 1),
+        (a - b) / 2 * (cos(1) - exp(-1)) + (a + b) / 2 * sin(1) + c * (exp(-λ) - exp(-1)),
+    ]
+    for rhs in (f!, f)
+        ref = solve(ODEProblem(rhs, [1.0, 0.0], (0.0, 1.0), 0.0), FBDF(); reltol = 1.0e-10, abstol = 1.0e-12)
+        t0 = 1.0e6
+        sol = solve(ODEProblem(rhs, [1.0, 0.0], (t0, t0 + 1), t0), FBDF(); reltol = 1.0e-10, abstol = 1.0e-12)
+        @test sol.retcode == ReturnCode.Success
+        @test sol.u[end] ≈ ref.u[end] rtol = 1.0e-8
+        @test sol.u[end] ≈ exact rtol = 1.0e-8
+        @test ref.u[end] ≈ exact rtol = 1.0e-8
+    end
+end
+
+@testset "FBDF restores dt after an RHS exception" begin
+    t0 = 3600.0
+    dt = 1.5eps(t0)
+    f!(du, u, p, t) = t > t0 ? error("RHS failure") : (du[1] = 1.0; nothing)
+    f(u, p, t) = t > t0 ? error("RHS failure") : [1.0]
+    for rhs in (f!, f)
+        integrator = init(
+            ODEProblem(rhs, [0.0], (t0, t0 + 1)), FBDF();
+            adaptive = false, dt, dtmax = dt, abstol = 1.0e-12, reltol = 1.0e-9,
+            save_everystep = false, dense = false
+        )
+        before = integrator.dt
+        @test_throws ErrorException step!(integrator)
+        @test integrator.dt == before
+    end
+end
