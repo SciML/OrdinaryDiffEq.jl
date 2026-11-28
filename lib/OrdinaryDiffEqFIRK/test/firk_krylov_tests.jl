@@ -148,6 +148,11 @@ end
     end
 end
 
+function stage_diagonal_preconditioner(W)
+    T = eltype(W)
+    return Diagonal([(W * T[1, 0])[1], (W * T[0, 1])[2]]), I
+end
+
 @testset "AdaptiveRadau refreshes stage preconditioners on a shortened fixed step" begin
     rates = [1.0, 265.8]
     rhs!(du, u, p, t) = (@. du = rates * (u - (1 + t)) + 1; nothing)
@@ -165,8 +170,7 @@ end
         precs_calls = Ref(0)
         function precs(W, p)
             precs_calls[] += 1
-            T = eltype(W)
-            return Diagonal([(W * T[1, 0])[1], (W * T[0, 1])[2]]), I
+            return stage_diagonal_preconditioner(W)
         end
         alg = AdaptiveRadau(
             max_order = 5, maxiters = 2, extrapolant = :constant,
@@ -185,6 +189,53 @@ end
         @test integ.stats.nnonlinconvfail == 0
         @test precs_calls[] == calls_after_first_step + 2
         @test norm(integ.u - exact, Inf) < 1.0e-8
+    end
+end
+
+@testset "AdaptiveRadau refreshes stage preconditioners when a fixed-step operator changes" begin
+    rates = [-1.0, -8.0]
+    slope = [-128.0, -256.0]
+    dt = 1 / 64
+    tf = 1 / 32
+    function update_rates!(A, u, p, t; kwargs...)
+        @. A.diag = rates + t * slope
+        return nothing
+    end
+    varying = ODEFunction(MatrixOperator(Diagonal(copy(rates)); update_func! = update_rates!))
+    A = Diagonal(copy(rates))
+    piecewise = ODEFunction(MatrixOperator(A))
+    change_rates = SciMLBase.DiscreteCallback(
+        (u, t, integrator) -> t == dt,
+        integrator -> (integrator.p.diag .+= dt .* slope; nothing)
+    )
+    cases = (
+        ("time-varying RHS", varying, nothing, nothing, exp.(rates * tf + slope * tf^2 / 2)),
+        ("callback changes coefficients", piecewise, A, change_rates, exp.(rates * tf + slope * dt^2)),
+    )
+    @testset "$name" for (name, f, p, callback, exact) in cases
+        prob = ODEProblem(f, ones(2), (0.0, tf), p)
+        precs_calls = Ref(0)
+        function precs(W, p)
+            precs_calls[] += 1
+            return stage_diagonal_preconditioner(W)
+        end
+        alg = AdaptiveRadau(
+            max_order = 5, extrapolant = :constant,
+            linsolve = KrylovJL_GMRES(; precs, itmax = 1)
+        )
+        integ = init(prob, alg; dt, adaptive = false, callback, reltol = 1.0e-10, abstol = 1.0e-10)
+        step!(integ)
+        @test integ.t == dt
+        @test integ.dt == dt
+        @test precs_calls[] == 4
+
+        sol = solve!(integ)
+        @test sol.retcode == SciMLBase.ReturnCode.Success
+        @test integ.t == tf
+        @test integ.stats.naccept == 2
+        @test integ.stats.nnonlinconvfail == 0
+        @test precs_calls[] == 6
+        @test norm(integ.u - exact, Inf) < 1.0e-6
     end
 end
 

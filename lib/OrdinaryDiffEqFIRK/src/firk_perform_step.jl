@@ -43,16 +43,17 @@ end
 function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
     integrator.iter <= 1 && return true
     repeat_step && return false
-    first(islinearfunction(integrator)) && return false
-    if !integrator.opts.adaptive
+    if cache isa AdaptiveRadauCache && !integrator.opts.adaptive
         f = integrator.f
         return !(
-            cache isa AdaptiveRadauCache && !integrator.derivative_discontinuity &&
+            !integrator.derivative_discontinuity &&
                 f isa SciMLBase.ODEFunction && f.W_prototype === nothing &&
                 cache.J isa SciMLOperators.MatrixOperator && SciMLOperators.isconstant(cache.J) &&
                 SciMLOperators.isconstant(f.mass_matrix)
         )
     end
+    first(islinearfunction(integrator)) && return false
+    integrator.opts.adaptive || return true
     alg_can_repeat_jac(alg) || return true
     integrator.derivative_discontinuity && return true
     # below is Newton specific logic, so we return non-Newton algs here
