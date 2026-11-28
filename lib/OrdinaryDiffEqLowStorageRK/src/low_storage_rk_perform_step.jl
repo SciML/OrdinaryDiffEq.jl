@@ -370,6 +370,14 @@ end
     integrator.u = u
 end
 
+function refresh_aliased_fsalfirst!(integrator, k)
+    if integrator.fsalfirst === k && integrator.iter > 1 && !integrator.accept_step
+        integrator.f(k, integrator.uprev, integrator.p, integrator.t)
+        OrdinaryDiffEqCore.increment_nf!(integrator.stats, 1)
+    end
+    return nothing
+end
+
 function initialize!(integrator, cache::LowStorageRK3SpFSALCache)
     (; k, fsalfirst) = cache
 
@@ -393,6 +401,7 @@ end
         c2end, bhat1, bhat2end, bhatfsal,
     ) = cache.tab
 
+    refresh_aliased_fsalfirst!(integrator, k)
     # u1
     @.. broadcast = false thread = thread tmp = uprev
     @.. broadcast = false thread = thread u = tmp + β1 * dt * integrator.fsalfirst
@@ -446,7 +455,8 @@ end
         integrator, cache::LowStorageRK2RPConstantCache,
         repeat_step = false
     )
-    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; t, dt, uprev, f, fsalfirst, p) = integrator
+    u = uprev
     (; Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = cache
 
     k = fsalfirst
@@ -498,8 +508,10 @@ end
     stage_limiter! = integrator.opts.stage_limiter!
     (; Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = cache.tab
 
+    refresh_aliased_fsalfirst!(integrator, k)
     @.. broadcast = false thread = thread k = fsalfirst
     integrator.opts.adaptive && (@.. broadcast = false tmp = zero(uprev))
+    integrator.opts.adaptive && (@.. broadcast = false thread = thread u = uprev)
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ)
@@ -546,7 +558,8 @@ end
         integrator, cache::LowStorageRK3RPConstantCache,
         repeat_step = false
     )
-    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; t, dt, uprev, f, fsalfirst, p) = integrator
+    u = uprev
     (; Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = cache
 
     fᵢ₋₂ = zero(fsalfirst)
@@ -604,9 +617,11 @@ end
     stage_limiter! = integrator.opts.stage_limiter!
     (; Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = cache.tab
 
+    refresh_aliased_fsalfirst!(integrator, k)
     @.. broadcast = false thread = thread fᵢ₋₂ = zero(fsalfirst)
     @.. broadcast = false thread = thread k = fsalfirst
     integrator.opts.adaptive && (@.. broadcast = false thread = thread tmp = zero(uprev))
+    integrator.opts.adaptive && (@.. broadcast = false thread = thread u = uprev)
     @.. broadcast = false thread = thread uᵢ₋₁ = uprev
     @.. broadcast = false thread = thread uᵢ₋₂ = uprev
 
@@ -659,7 +674,8 @@ end
         integrator, cache::LowStorageRK4RPConstantCache,
         repeat_step = false
     )
-    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; t, dt, uprev, f, fsalfirst, p) = integrator
+    u = uprev
     (; Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = cache
 
     fᵢ₋₂ = zero(fsalfirst)
@@ -721,10 +737,12 @@ end
     stage_limiter! = integrator.opts.stage_limiter!
     (; Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = cache.tab
 
+    refresh_aliased_fsalfirst!(integrator, k)
     @.. broadcast = false thread = thread fᵢ₋₂ = zero(fsalfirst)
     @.. broadcast = false thread = thread fᵢ₋₃ = zero(fsalfirst)
     @.. broadcast = false thread = thread k = fsalfirst
     integrator.opts.adaptive && (@.. broadcast = false thread = thread tmp = zero(uprev))
+    integrator.opts.adaptive && (@.. broadcast = false thread = thread u = uprev)
     @.. broadcast = false thread = thread uᵢ₋₁ = uprev
     @.. broadcast = false thread = thread uᵢ₋₂ = uprev
     @.. broadcast = false thread = thread uᵢ₋₃ = uprev
@@ -785,7 +803,8 @@ end
         integrator, cache::LowStorageRK5RPConstantCache,
         repeat_step = false
     )
-    (; t, dt, u, uprev, f, fsalfirst, p) = integrator
+    (; t, dt, uprev, f, fsalfirst, p) = integrator
+    u = uprev
     (; Aᵢ₁, Aᵢ₂, Aᵢ₃, Aᵢ₄, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = cache
 
     fᵢ₋₂ = zero(fsalfirst)
@@ -851,11 +870,13 @@ end
     stage_limiter! = integrator.opts.stage_limiter!
     (; Aᵢ₁, Aᵢ₂, Aᵢ₃, Aᵢ₄, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ) = cache.tab
 
+    refresh_aliased_fsalfirst!(integrator, k)
     @.. broadcast = false thread = thread fᵢ₋₂ = zero(fsalfirst)
     @.. broadcast = false thread = thread fᵢ₋₃ = zero(fsalfirst)
     @.. broadcast = false thread = thread fᵢ₋₄ = zero(fsalfirst)
     @.. broadcast = false thread = thread k = fsalfirst
     integrator.opts.adaptive && (@.. broadcast = false thread = thread tmp = zero(uprev))
+    integrator.opts.adaptive && (@.. broadcast = false thread = thread u = uprev)
     @.. broadcast = false thread = thread uᵢ₋₁ = uprev
     @.. broadcast = false thread = thread uᵢ₋₂ = uprev
     @.. broadcast = false thread = thread uᵢ₋₃ = uprev
