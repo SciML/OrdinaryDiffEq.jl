@@ -57,7 +57,15 @@ For linear systems `du/dt = A(t) * u`, the exact solution is `u(t) = exp(∫A(s)
   - **`LieRK4`**: Fourth-order Lie Runge-Kutta method
   - **`CG2`**: Second-order Crouch-Grossman method
   - **`CG4a`**: Fourth-order Crouch-Grossman method
-  - **`CayleyEuler`**: First-order method using Cayley transformations
+
+### Isospectral matrix equations
+
+Use `CayleyEuler` for a square matrix state satisfying
+`dU/dt = B(U) * U - U * B(U)` with a skew-symmetric generator `B(U)`.
+In a `SplitODEProblem`, supply the matrix operator for `B(U)` as the first
+term and the right product `-U * B(U)` as the second. Each step updates
+`U` as `V * U * transpose(V)`, where `V` is the Cayley transform of
+`dt * B(U)`. For the vector equation in the example below, use `LieRK4`.
 
 ### Adaptive methods
 
