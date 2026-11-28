@@ -14,6 +14,7 @@ if TEST_GROUP == "GPU"
     activate_gpu_env()
     @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
     @time @safetestset "Composite reinit! GPU" include("gpu/composite_reinit.jl")
+    @time @safetestset "Default GPU Jacobian storage" include("gpu/jac_prototype_tests.jl")
 end
 
 # Run functional tests
@@ -34,6 +35,7 @@ if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
         @test !any(Base.isexported.(Ref(OrdinaryDiffEqDefault), internal))
     end
     @time @safetestset "Default Solver Tests" include("default_solver_tests.jl")
+    @time @safetestset "Jacobian prototype storage" include("jac_prototype_tests.jl")
     @time @safetestset "Composite reinit!" include("composite_reinit.jl")
     @time @safetestset "Composite reinit! with ForwardDiff" include("composite_reinit_ad.jl")
     @time @safetestset "DefaultCache argument types" include("default_cache_argtypes.jl")

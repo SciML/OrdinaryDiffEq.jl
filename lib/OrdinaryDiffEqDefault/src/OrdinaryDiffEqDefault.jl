@@ -1,7 +1,7 @@
 module OrdinaryDiffEqDefault
 
 using OrdinaryDiffEqCore: alg_stability_size, beta2_default, beta1_default, AutoSwitchCache,
-    CompositeAlgorithm, AutoAlgSwitch
+    CompositeAlgorithm, AutoAlgSwitch, AutoSwitch
 using OrdinaryDiffEqVerner: Vern7
 using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas5P
@@ -13,6 +13,8 @@ import ADTypes: AutoFiniteDiff
 import DiffEqBase
 import LinearSolve
 using EnumX: EnumX
+using LinearAlgebra: Bidiagonal, Diagonal, Tridiagonal, lu
+using SparseArrays: SparseMatrixCSC
 
 import SciMLBase
 

@@ -38,8 +38,11 @@ an explicit algorithm for an ODE problem.
 
 `DefaultODEAlgorithm` starts with explicit nonstiff methods and switches to stiff
 methods when stiffness is detected. It chooses among `Tsit5`, `Vern7`,
-`Rosenbrock23`, `Rodas5P`, and `FBDF`, using Krylov-based `FBDF` for larger stiff
-systems.
+`Rosenbrock23`, `Rodas5P`, and `FBDF`. For stiff systems with more than 500 states,
+`FBDF` uses LinearSolve's storage-specific solver for supported sparse and structured
+Jacobian prototypes. Other prototypes default to matrix-free GMRES. A supplied
+`linsolve` takes precedence in every stiff method. See [Default algorithm](@ref)
+for the supported storage.
 
 # Keywords
 
@@ -71,13 +74,8 @@ function DefaultODEAlgorithm(; lazy = Val{true}(), stiffalgfirst = false, kwargs
     return AutoAlgSwitch(nonstiff, stiff; stiffalgfirst)
 end
 
-function isdefaultalg(
-        alg::CompositeAlgorithm{
-            <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF},
-        }
-    )
-    return true
-end
+const DefaultAlgorithmTuple = Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}
+isdefaultalg(::CompositeAlgorithm{<:Any, <:DefaultAlgorithmTuple}) = true
 
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractODEProblem, ::Nothing) = true
 SciMLBase.supports_solve_rng(::SciMLBase.AbstractDAEProblem, ::Nothing) = true
@@ -152,13 +150,52 @@ function nonstiffchoice(reltol)
     return Int(x)
 end
 
-function stiffchoice(reltol, len, mass_matrix)
-    x = if len > MEDIUMSIZE
+has_structured_jac_prototype(
+    ::Union{
+        SparseMatrixCSC, Bidiagonal{<:Any, <:StridedVector},
+        Diagonal{<:Any, <:StridedVector}, Tridiagonal{<:Any, <:StridedVector},
+    }, f
+) = true
+has_structured_jac_prototype(jac_prototype, f) = false
+
+storage_linsolve(jac_prototype, f) = nothing
+
+@static if VERSION < v"1.11"
+    storage_linsolve(::Bidiagonal{<:Any, <:StridedVector}, f) =
+        LinearSolve.GenericFactorization(; fact_alg = A -> lu(A; check = false))
+end
+
+function DiffEqBase.prepare_alg(
+        alg::CompositeAlgorithm{CS, <:DefaultAlgorithmTuple, <:AutoSwitch}, u0, p, prob
+    ) where {CS}
+    fbdf_slot = Int(DefaultSolverChoice.FBDF)
+    if length(u0) > MEDIUMSIZE && alg.algs[fbdf_slot].linsolve === nothing
+        linsolve = storage_linsolve(prob.f.jac_prototype, prob.f)
+        if linsolve !== nothing
+            switch = alg.choice_function
+            fbdf = SciMLBase.remake(alg.algs[fbdf_slot]; linsolve)
+            nonstiff = alg.algs[1:NUM_NONSTIFF]
+            stiff = (alg.algs[(NUM_NONSTIFF + 1):(fbdf_slot - 1)]..., fbdf, alg.algs[(fbdf_slot + 1):end]...)
+            alg = CompositeAlgorithm(
+                (nonstiff..., stiff...),
+                AutoSwitch(
+                    nonstiff, stiff,
+                    switch.maxstiffstep, switch.maxnonstiffstep, switch.nonstifftol,
+                    switch.stifftol, switch.dtfac, switch.stiffalgfirst, switch.switch_max
+                )
+            )
+        end
+    end
+    return invoke(DiffEqBase.prepare_alg, Tuple{CompositeAlgorithm, Any, Any, Any}, alg, u0, p, prob)
+end
+
+function stiffchoice(reltol, len, f)
+    x = if len > MEDIUMSIZE && !has_structured_jac_prototype(f.jac_prototype, f)
         DefaultSolverChoice.KrylovFBDF
     elseif len > SMALLSIZE
         DefaultSolverChoice.FBDF
     else
-        if reltol < LOW_TOL || !_is_identity_massmatrix(mass_matrix)
+        if reltol < LOW_TOL || !_is_identity_massmatrix(f.mass_matrix)
             DefaultSolverChoice.Rodas5P
         else
             DefaultSolverChoice.Rosenbrock23
@@ -181,7 +218,7 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
         AS.is_stiffalg = AS.stiffalgfirst ||
             !_is_identity_massmatrix(integrator.f.mass_matrix)
         AS.current = if AS.is_stiffalg
-            stiffchoice(reltol, len, integrator.f.mass_matrix)
+            stiffchoice(reltol, len, integrator.f)
         else
             nonstiffchoice(reltol)
         end
@@ -202,7 +239,7 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
     elseif (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
         integrator.dt = dt * AS.dtfac
         AS.is_stiffalg = true
-        AS.current = stiffchoice(reltol, len, integrator.f.mass_matrix)
+        AS.current = stiffchoice(reltol, len, integrator.f)
     elseif (AS.is_stiffalg && AS.count < -AS.maxnonstiffstep)
         integrator.dt = dt / AS.dtfac
         AS.is_stiffalg = false
@@ -212,13 +249,7 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
 end
 
 # hack for the default alg
-function is_mass_matrix_alg(
-        alg::CompositeAlgorithm{
-            <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF},
-        }
-    )
-    return true
-end
+is_mass_matrix_alg(::CompositeAlgorithm{<:Any, <:DefaultAlgorithmTuple}) = true
 
 """
     DefaultImplicitODEAlgorithm(; lazy = Val{true}(), stol = 0, ntol = Inf, kwargs...)
