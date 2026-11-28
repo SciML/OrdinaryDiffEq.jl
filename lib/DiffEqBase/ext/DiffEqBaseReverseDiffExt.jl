@@ -11,7 +11,7 @@ function fixed_event_time(t::ReverseDiff.TrackedReal, transform)
 end
 
 ReverseDiff.@grad function fixed_event_time(t, transform)
-    return transform(ReverseDiff.value(t)), _ -> (nothing, nothing)
+    return transform(ReverseDiff.value(t)), dt -> (zero(dt), nothing)
 end
 
 function implicit_event_time(t, residual::ReverseDiff.TrackedReal, slope)
@@ -20,7 +20,7 @@ end
 
 ReverseDiff.@grad function implicit_event_time(t, residual, slope)
     return ReverseDiff.value(t), dt -> (
-            nothing, iszero(dt) ? zero(dt) : -dt / ReverseDiff.value(slope), nothing,
+            zero(dt), iszero(dt) ? zero(dt) : -dt / ReverseDiff.value(slope), zero(dt),
         )
 end
 
